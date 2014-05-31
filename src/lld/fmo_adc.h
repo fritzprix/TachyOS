@@ -31,32 +31,44 @@
 
 typedef struct _tch_adc_instance tch_adc_instance;
 typedef struct _tch_adc_cfg_t tch_adc_cfg;
-typedef struct _tch_adc_chlist tch_adc_chlist;
+typedef struct _tch_adc_chcfg_t tch_adc_chcfg;
 
-struct _tch_adc_chlist {
-	uint8_t*     list;
-	uint8_t      lsize;
+/**
+ * ADC Channel Config Type
+ */
+struct _tch_adc_chcfg_t {
+	uint8_t     ch;                 // adc channel to use
+	tch_gpio_t  port;               // io port correspond to adc channel
+	uint8_t     pin;                // io pin to be used as analog input
 };
 
-typedef enum {
-	CircularMode,DoubleBufferMode
-}tch_adc_bufferMode;
 
+/**
+ *  ADC Config Type
+ */
 struct _tch_adc_cfg_t {
 	uint8_t ADC_Resolution;
 	uint8_t ADC_SampleHold;
 	uint32_t ADC_SampleFreqInHz;
+	tch_adc_chcfg* ADC_ChCfg_List;            /// can be null -> default Ch cfg is used (ref. bl_confg.h)
+	uint8_t ADC_ChCnt;                        /// can be zero
 };
 
 
+/**
+ *  ADC Driver Model
+ */
 struct _tch_adc_instance {
 	BOOL (*open)(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pcfg);
-	void (*close)(const tch_adc_instance* self);
+	BOOL (*close)(const tch_adc_instance* self);
 	uint16_t (*convert)(const tch_adc_instance* self,uint8_t ch);
 	BOOL (*read)(const tch_adc_instance* self,uint16_t* rb,uint32_t size,uint16_t ch);
-	BOOL (*scan)(const tch_adc_instance* self,tch_adc_chlist* chlist,uint16_t* rb,uint32_t scancnt);    // size of rb should be cautiously chosen considering scan count and channel list
+	BOOL (*scan)(const tch_adc_instance* self,uint8_t* chlist,uint16_t* rb,uint32_t scancnt);    // size of rb should be cautiously chosen considering scan count and channel list
 };
 
+/**
+ *  ADC Driver Static Object
+ */
 extern const tch_adc_instance* adc1;
 extern const tch_adc_instance* adc2;
 extern const tch_adc_instance* adc3;

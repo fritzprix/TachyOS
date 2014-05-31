@@ -32,7 +32,8 @@ struct _tch_bdc_adc_t {
 	tch_gpio_t           port;
 	tch_timer            timer;
 	tch_timer_event_type tevt;
-	uint16_t             adc_pins;
+	uint8_t              adc_pin;
+	uint8_t              adc_ch;
 };
 
 
@@ -77,10 +78,13 @@ __attribute__((section(".data")))static tch_bdc_usart USART_BD_CFGs[] = {
 
 
 /**
- * 	dma_t               adc_dma;
-	uint8_t             adc_dma_ch;
+	dma_t                adc_dma;
+	uint8_t              adc_dma_ch;
 	tch_gpio_t           port;
-	uint16_t            adc_pins;
+	tch_timer            timer;
+	tch_timer_event_type tevt;
+	uint8_t              adc_pin;
+	uint8_t              adc_ch;
  */
 __attribute__((section(".data"))) static tch_bdc_adc ADC_BD_CFGs[] = {
 		{
@@ -89,7 +93,8 @@ __attribute__((section(".data"))) static tch_bdc_adc ADC_BD_CFGs[] = {
 				GPIO_A,
 				Timer2,
 				CC2,
-				(1 << 4)
+				4,
+				4
 		},
 		{
 				DMA2_Str2,
@@ -97,7 +102,8 @@ __attribute__((section(".data"))) static tch_bdc_adc ADC_BD_CFGs[] = {
 				GPIO_A,
 				Timer3,
 				CC1,
-				(1 << 5)
+				5,
+				5
 		},
 		{
 				DMA2_Str1,
@@ -105,7 +111,8 @@ __attribute__((section(".data"))) static tch_bdc_adc ADC_BD_CFGs[] = {
 				GPIO_A,
 				Timer5,
 				CC1,
-				(1 << 6)
+				3,
+				3
 		}
 };
 

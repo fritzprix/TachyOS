@@ -17,6 +17,8 @@
 #include "stm32f4xx_adc.h"
 
 #define ADC_SQR1_LEN_Pos                    ((uint8_t) 20)
+#define ADC_CH_CNT                          ((uint8_t) 19)
+
 
 #define PUBLIC_INTERFACE                   {\
 	                                         lld_adc_open,\
@@ -39,6 +41,9 @@
 #define ADC_STATE_BURST_BUSY_Msk            ((uint16_t) 1 << ADC_STATE_BURST_BUSY_Pos)
 
 
+/**
+ * Macro for modifying status flag of adc instance
+ */
 #define ADC_SET_OPEN(ins)                   (ins->state |= ADC_STATE_OPEN_Msk)
 #define ADC_CLR_OPEN(ins)                   (ins->state &= ~ADC_STATE_OPEN_Msk)
 #define ADC_IS_OPEN(ins)                    (ins->state & ADC_STATE_OPEN_Msk)
@@ -68,7 +73,12 @@
 
 typedef struct _tch_adc_evQue tch_adc_evQue;
 typedef struct _tch_adc_prototype tch_adc_prototype;
+typedef struct _tch_adc_iohandle_t tch_adc_iohandle;
 
+struct _tch_adc_iohandle_t {
+	tch_gpio_instance*     _ain_handle;
+	uint8_t                 ain_pin;
+};
 
 struct _tch_adc_evQue {
 	tch_genericList_queue_t    dma_tcqueue;
@@ -79,12 +89,12 @@ struct _tch_adc_prototype {
 	uint16_t                         state;
 	uint8_t                          idx;
 	tch_dma_instance*               _dma_handle;
-	tch_gpio_instance*              _io_handle;
 	tch_pwm_instance*               _tim_handle;
 	tch_adc_evQue                    evqueue;
 #ifdef FEATURE_MTHREAD
 	mtx_lock                         lock;
 #endif
+	tch_adc_iohandle                 io_handles[19];
 };
 
 
@@ -95,10 +105,10 @@ struct _tch_adc_prototype {
  * public function
  */
 static BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pcfg);
-static void lld_adc_close(const tch_adc_instance* self);
+static BOOL lld_adc_close(const tch_adc_instance* self);
 static uint16_t lld_adc_convert(const tch_adc_instance* self,uint8_t ch);
 static BOOL lld_adc_read(const tch_adc_instance* self,uint16_t* rb,uint32_t size,uint16_t ch);
-static BOOL lld_adc_scan(const tch_adc_instance* self,tch_adc_chlist* chlist,uint16_t* rb,uint32_t cnt);
+static BOOL lld_adc_scan(const tch_adc_instance* self,uint8_t* chlist,uint16_t* rb,uint32_t cnt);
 
 
 
@@ -111,6 +121,8 @@ static BOOL lld_adc_scan(const tch_adc_instance* self,tch_adc_chlist* chlist,uin
 
 static void inline lld_adc_reset(tch_adc_prototype* ins) __attribute__((always_inline));
 static void inline lld_adc_setRegChannel(tch_adc_prototype* ins,uint8_t ch,uint8_t order)  __attribute__((always_inline));
+static void inline lld_adc_setRegSampleHold(tch_adc_prototype* ins,uint8_t ch,uint8_t ADC_SampleHold) __attribute__((always_inline));
+static void inline lld_adc_setRegScanCount(tch_adc_prototype* ins,uint8_t cnt) __attribute__((always_inline));
 static BOOL lld_adc_monitorEvent(const tch_adc_prototype* self,uint16_t evType);
 static BOOL lld_adc_handle_dmaEvent(tch_adc_prototype* ins,uint16_t evtype);
 
@@ -118,21 +130,9 @@ static DMA_EVENTLISTENER(lld_adc1_dma_listener);
 static DMA_EVENTLISTENER(lld_adc2_dma_listener);
 static DMA_EVENTLISTENER(lld_adc3_dma_listener);
 
-static GPT_TIMEOUT_LISTENER(lld_adc1_timer_listener);
-static GPT_TIMEOUT_LISTENER(lld_adc2_timer_listener);
-static GPT_TIMEOUT_LISTENER(lld_adc3_timer_listener);
 
 
 /**
- * tch_adc_instance                _pix;
-	uint16_t                         state;
-	uint8_t                          idx;
-	tch_dma_instance*               _dma_handle;
-	tch_gpio_instance*              _io_handle;
-	tch_gptimer_instance*           _timer_handle;
-	tch_adc_readrequest              rreq;
-#ifdef FEATURE_MTHREAD
-	mtx_lock                         lock;
  */
 __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[] = {
 		{
@@ -145,6 +145,7 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 #ifdef FEATURE_MTHREAD
 				,MTX_INIT
 #endif
+				,{0,}
 		},
 		{
 				PUBLIC_INTERFACE,
@@ -156,6 +157,7 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 #ifdef FEATURE_MTHREAD
 				,MTX_INIT
 #endif
+				,{0,}
 		},
 		{
 				PUBLIC_INTERFACE,
@@ -167,16 +169,11 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 #ifdef FEATURE_MTHREAD
 				,MTX_INIT
 #endif
+				,{0,}
 		}
 };
 
 /**
- * 	ADC_TypeDef*        _hw;
-	uint16_t             state;
-	volatile uint32_t*  _clkenr;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       clkmsk;
-	const uint32_t       lpclkmsk;
  */
 static adc_hw_descriptor ADC_HWs[] = {
 		{
@@ -234,13 +231,6 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 #ifdef FEATURE_MTHREAD
 	tch_Mtx_unlockt(&ins->lock);
 #endif
-	tch_gpio_cfg iocfg;
-	tch_lld_gpio_cfgInit(&iocfg);
-	iocfg.GPIO_LP_Mode = pcfg == ActOnSleep? GPIO_LP_Mode_ON : GPIO_LP_Mode_OFF;
-	iocfg.GPIO_Mode = GPIO_Mode_AN;
-	ins->_io_handle = tch_lld_getGpio(acfg->port,acfg->adc_pins,&iocfg);
-	if(!ins->_io_handle)
-			return FALSE;                                             /// io occupied any other instance, return fail
 
 	if(!(*ahw->_clkenr & ahw->clkmsk)){                                /// check whether clock is enabled or not
 		*ahw->_clkenr |= ahw->clkmsk;
@@ -253,6 +243,33 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 		*ahw->_lpclkenr &= ~ahw->lpclkmsk;
 		break;
 	}
+
+
+	tch_gpio_cfg iocfg;
+	tch_lld_gpio_cfgInit(&iocfg);
+	iocfg.GPIO_LP_Mode = pcfg == ActOnSleep? GPIO_LP_Mode_ON : GPIO_LP_Mode_OFF;
+	iocfg.GPIO_Mode = GPIO_Mode_AN;
+	if(cfg->ADC_ChCnt == 0){
+		ins->io_handles[0].ain_pin = acfg->adc_pin;
+		ins->io_handles[0]._ain_handle = tch_lld_getGpio(acfg->port,1 << acfg->adc_pin,&iocfg);
+		if(!ins->io_handles[0]._ain_handle)
+			return FALSE;                                             /// io occupied any other instance, return fail
+		lld_adc_setRegChannel(ins,acfg->adc_pin,0);
+		lld_adc_setRegSampleHold(ins,acfg->adc_pin,cfg->ADC_SampleHold);
+		lld_adc_setRegScanCount(ins,1);
+	}else{
+		uint8_t idx = 0;
+		while(idx < cfg->ADC_ChCnt){
+			ins->io_handles[idx].ain_pin = cfg->ADC_ChCfg_List->pin;
+			ins->io_handles[idx]._ain_handle = tch_lld_getGpio(cfg->ADC_ChCfg_List[idx].port,1 << cfg->ADC_ChCfg_List[idx].pin,&iocfg);
+			if(!ins->io_handles[idx]._ain_handle){
+				return FALSE;
+			}
+			lld_adc_setRegSampleHold(ins,cfg->ADC_ChCfg_List[idx].ch,cfg->ADC_SampleHold);
+		}
+		lld_adc_setRegScanCount(ins,cfg->ADC_ChCnt);
+	}
+
 
 	tch_dma_cfg dmacfg;
 	tch_lld_DMA_initCfg(&dmacfg);
@@ -278,29 +295,40 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 	lld_adc_reset(ins);
 
 	ahw->_hw->CR1 |= (cfg->ADC_Resolution << ADC_Resolution_Pos) | ADC_CR1_OVRIE;
-
-	uint16_t pin = acfg->adc_pins;
-	uint8_t pos = 0;
-	uint8_t cnt = 0;
-	while(pin){
-		if(pin & 1){
-			if(pos > 9){
-				ahw->_hw->SMPR1 |= (cfg->ADC_SampleHold << (ADC_SampleHold_Offset * (10 - pos)));
-			}else{
-				ahw->_hw->SMPR2 |= (cfg->ADC_SampleHold << (ADC_SampleHold_Offset * pos));
-			}
-			lld_adc_setRegChannel(ins,pos,cnt++);
-		}
-		pin >>= 1;
-		pos++;
-	}
-	ahw->_hw->SQR1 |= (cnt << ADC_SQR1_LEN_Pos);
-	ahw->_hw->CR2 |= (ADC_CR2_EOCS | ADC_CR2_ADON | (ahw->extsel << 24));
+	ahw->_hw->CR2 |= (ADC_CR2_ADON | (ahw->extsel << 24));
 
 	return TRUE;
 }
 
-void lld_adc_close(const tch_adc_instance* self){
+BOOL lld_adc_close(const tch_adc_instance* self){
+	tch_adc_prototype* ins = (tch_adc_prototype*) self;
+	adc_hw_descriptor* ahw = &ADC_HWs[ins->idx];
+	if(!ADC_IS_OPEN(ins)){
+		return FALSE;
+	}
+	ADC_LOCK(ins);
+	ADC_CLR_OPEN(ins);
+	ADC_UNLOCK(ins);
+
+	while(ADC_IS_BUSY(ins)){
+		tchThread_sleep(1);
+	}
+	ahw->_hw->CR2 = 0;
+	ahw->_hw->CR1 = 0;
+	ins->_dma_handle->close(ins->_dma_handle);
+	ins->_tim_handle->stop(ins->_tim_handle);
+	ins->_tim_handle->close(ins->_tim_handle);
+	uint8_t idx = 0;
+	while(idx < ADC_CH_CNT){
+		if(ins->io_handles[idx]._ain_handle){
+			ins->io_handles[idx]._ain_handle->free(ins->io_handles[idx]._ain_handle,1 << ins->io_handles[idx].ain_pin);
+		}
+		idx++;
+	}
+	*ahw->_clkenr &= ~(ahw->clkmsk);
+	*ahw->_lpclkenr &= ~(ahw->lpclkmsk);
+	ahw->state = 0;
+	return TRUE;
 
 }
 
@@ -314,6 +342,7 @@ uint16_t lld_adc_convert(const tch_adc_instance* self,uint8_t ch){
 	ADC_LOCK(ins);
 	ADC_SET_BUSY(ins);
 	lld_adc_setRegChannel(ins,ch,0);                      //set channel to convert
+	lld_adc_setRegScanCount(ins,1);
 	ahw->_hw->CR2 |= ADC_CR2_DMA;
 	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Mem0,(uint32_t) &av);
 	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Periph,(uint32_t) &ahw->_hw->DR);
@@ -326,97 +355,6 @@ uint16_t lld_adc_convert(const tch_adc_instance* self,uint8_t ch){
 	return av;
 }
 /**
-  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC |
-                         RCC_APB2Periph_TIM1 |
-                         RCC_APB2Periph_ADC1, ENABLE);
-}
-
-void GPIO_Configuration(void)
-{
-  GPIO_InitTypeDef GPIO_InitStructure;
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-}
-
-int main(void)
-{
-  ADC_InitTypeDef   ADC_InitStructure;
-  DMA_InitTypeDef   DMA_InitStructure;
-  TIM_TimeBaseInitTypeDef   TIM_TimeBaseStructure;
-  TIM_OCInitTypeDef         TIM_OCInitStructure;
-
-  RCC_Configuration();
-
-  GPIO_Configuration();
-
-  TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-  TIM_TimeBaseStructure.TIM_Period = 150 - 1;
-  TIM_TimeBaseStructure.TIM_Prescaler = 0;
-  TIM_TimeBaseStructure.TIM_ClockDivision = 0x0;
-  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
-
-  TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM_OCInitStructure.TIM_Pulse = 150 / 2;
-  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-  TIM_OC1Init(TIM1, &TIM_OCInitStructure);
-
-  DMA_DeInit(DMA1_Channel1);
-  DMA_InitStructure.DMA_PeripheralBaseAddr = ADC1_DR_Address;
-  DMA_InitStructure.DMA_MemoryBaseAddr = (u32)ADC_RegularConvertedValueTab;
-  DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-  DMA_InitStructure.DMA_BufferSize = 64;
-  DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-  DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-  DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-  DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
-  DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-  DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-  DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-  DMA_Init(DMA1_Channel1, &DMA_InitStructure);
-
-  DMA_Cmd(DMA1_Channel1, ENABLE);
-
-  ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
-  ADC_InitStructure.ADC_ScanConvMode = ENABLE;
-  ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-  ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
-  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-  ADC_InitStructure.ADC_NbrOfChannel = 1;
-  ADC_Init(ADC1, &ADC_InitStructure);
-
-  ADC_RegularChannelConfig(ADC1, ADC_Channel_14, 2, ADC_SampleTime_1Cycles5);
-
-  ADC_ExternalTrigConvCmd(ADC1, ENABLE);
-
-  ADC_DMACmd(ADC1, ENABLE);
-
-  ADC_Cmd(ADC1, ENABLE);
-
-  ADC_ResetCalibration(ADC1);
-
-  while(ADC_GetResetCalibrationStatus(ADC1));
-
-  ADC_StartCalibration(ADC1);
-
-  while(ADC_GetCalibrationStatus(ADC1));
-
-  TIM_Cmd(TIM1, ENABLE);
-
-  TIM_CtrlPWMOutputs(TIM1, ENABLE);
-
-  while(1)
-  {
-  }
-
-
-    return(1);
-}
  */
 
 
@@ -429,11 +367,13 @@ BOOL lld_adc_read(const tch_adc_instance* self,uint16_t* rb,uint32_t size,uint16
 	ADC_LOCK(ins);
 	ADC_SET_BUSY(ins);
 	lld_adc_setRegChannel(ins,ch,0);
-	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Mem0,(uint32_t) &rb);
-	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Periph,&ahw->_hw->DR);
+	lld_adc_setRegScanCount(ins,1);
+	ahw->_hw->CR2 |= ADC_CR2_DMA;
+	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Mem0,(uint32_t) rb);
+	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Periph,(uint32_t) &ahw->_hw->DR);
 	ahw->_hw->CR2 |= (1 << 28);
-	ins->_tim_handle->start(ins->_tim_handle);
 	ins->_dma_handle->beginXfer(ins->_dma_handle,size);
+	ins->_tim_handle->start(ins->_tim_handle);
 	while(ADC_IS_BUSY(ins)){
 		if(!lld_adc_monitorEvent(ins,ADC_EvType_EOC)){
 			ADC_UNLOCK(ins);
@@ -444,8 +384,33 @@ BOOL lld_adc_read(const tch_adc_instance* self,uint16_t* rb,uint32_t size,uint16
 	return TRUE;
 }
 
-BOOL lld_adc_scan(const tch_adc_instance* self,tch_adc_chlist* chlist,uint16_t* rb,uint32_t cnt){
-
+BOOL lld_adc_scan(const tch_adc_instance* self,uint8_t* chlist,uint16_t* rb,uint32_t cnt){
+	tch_adc_prototype* ins = (tch_adc_prototype*) self;
+	adc_hw_descriptor* ahw = (adc_hw_descriptor*) &ADC_HWs[ins->idx];
+	while(ADC_IS_BUSY(ins)){
+		tchThread_sleep(0);
+	}
+	ADC_LOCK(ins);
+	ADC_SET_BUSY(ins);
+	uint8_t idx = 0;
+	while(idx < cnt){
+		lld_adc_setRegChannel(ins,chlist[idx],idx);
+	}
+	lld_adc_setRegScanCount(ins,cnt);
+	ahw->_hw->CR2 |= ADC_CR2_DMA;
+	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Mem0,(uint32_t) rb);
+	ins->_dma_handle->setAddress(ins->_dma_handle,DMA_TargetAddress_Periph,(uint32_t) &ahw->_hw->DR);
+	ahw->_hw->CR2 |= (1 << 28);
+	ins->_dma_handle->beginXfer(ins->_dma_handle,cnt);
+	ins->_tim_handle->start(ins->_tim_handle);
+	while(ADC_IS_BUSY(ins)){
+		if(!lld_adc_monitorEvent(ins,ADC_EvType_EOC)){
+			ADC_UNLOCK(ins);
+			return FALSE;
+		}
+	}
+	ADC_UNLOCK(ins);
+	return TRUE;
 }
 
 BOOL lld_adc_monitorEvent(const tch_adc_prototype* self,uint16_t evType){
@@ -454,7 +419,7 @@ BOOL lld_adc_monitorEvent(const tch_adc_prototype* self,uint16_t evType){
 	}
 	switch(evType){
 	case ADC_EvType_EOC:
-		tchThread_wait(&self->evqueue.dma_tcqueue);
+		tchThread_wait((tch_genericList_queue_t*)&self->evqueue.dma_tcqueue);
 	}
 	if(!ADC_IS_OPEN(self)){
 		return FALSE;
@@ -467,6 +432,8 @@ BOOL lld_adc_handle_dmaEvent(tch_adc_prototype* ins,uint16_t evtype){
 	switch(evtype){
 	case DMA_FLAG_EvTC:
 		ahw->_hw->CR2 &= ~ADC_CR2_DMA;
+		ahw->_hw->CR2 &= ~ADC_CR2_EXTEN;
+		ins->_tim_handle->stop(ins->_tim_handle);
 		if(ins->evqueue.dma_tcqueue.entry){
 			tchThread_wake(&ins->evqueue.dma_tcqueue);
 		}
@@ -516,5 +483,25 @@ static void inline lld_adc_setRegChannel(tch_adc_prototype* ins,uint8_t ch,uint8
 }
 
 
+static void inline lld_adc_setRegSampleHold(tch_adc_prototype* ins,uint8_t ch,uint8_t ADC_SampleHold){
+	adc_hw_descriptor* ahw = &ADC_HWs[ins->idx];
+	if(ch > 9){
+		ahw->_hw->SMPR1 &= ~(7 << ((ch - 10) * 3));
+		ahw->_hw->SMPR1 |= ADC_SampleHold << ((ch - 10) * 3);
+	}else{
+		ahw->_hw->SMPR1 &= ~(7 << (ch * 3));
+		ahw->_hw->SMPR1 |= ADC_SampleHold << (ch * 3);
+	}
+}
+
+static void inline lld_adc_setRegScanCount(tch_adc_prototype* ins,uint8_t cnt){
+	adc_hw_descriptor* ahw = &ADC_HWs[ins->idx];
+	ahw->_hw->SQR1 &= ~(0xF << ADC_SQR1_LEN_Pos);
+	ahw->_hw->SQR1 |= (cnt << ADC_SQR1_LEN_Pos);
+}
+
+
+
 void ADC_IRQHandler(void){
+	//nop
 }

@@ -108,16 +108,18 @@ void* main(void* arg){
 	tch_adc_cfg acfg;
 	acfg.ADC_Resolution = ADC_Resolution_12B;
 	acfg.ADC_SampleHold = ADC_SampleHold_3Cycle;
-	acfg.ADC_SampleFreqInHz = 10000;
-	adc1->open(adc1,&acfg,DeactOnSleep);
+	acfg.ADC_SampleFreqInHz = 100000;
+	adc1->open(adc1,&acfg,ActOnSleep);
+	adc1->read(adc1,ana_val,200,4);
+	adc1->close(adc1);
 
+
+	adc1->open(adc1,&acfg,ActOnSleep);
 	uint8_t c;
 	uint16_t av = 0;
 	while(1){
-		//av = adc1->convert(adc1,4);
 		adc1->read(adc1,ana_val,200,4);
-		c = usart3->getc(usart3);
-		usart3->putc(usart3,c);
+		usart3->writeCstr(usart3,"Conversion Complete\n",NULL);
 	}
 	return 0;
 }
@@ -151,8 +153,8 @@ THREAD_ROUTINE(childRoutine){
 	while(1){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
-		tchThread_sleep(1000);
-		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
+		tchThread_sleep(1);
+//		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
 //		postTimeEvent();
 	}
 	return NULL;
@@ -162,9 +164,8 @@ THREAD_ROUTINE(childRoutine1){
 	uint32_t cnt = 0;
 	while(1){
 		cnt++;
-		TIM2->EGR |= TIM_EGR_CC2G;
-		tchThread_sleep(1000);
-		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
+		tchThread_sleep(1);
+//		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
 	}
 	return NULL;
 }

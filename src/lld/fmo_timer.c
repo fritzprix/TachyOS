@@ -613,7 +613,23 @@ uint32_t lld_timer_pwm_getMaxDuty(tch_pwm_instance* self){
 
 
 BOOL lld_timer_pwm_close(tch_pwm_instance* self){
-
+	tch_pwm_prototype* ins = (tch_pwm_prototype*) self;
+	timer_hw_descriptor* thw = &TIMER_Hw_Desc[ins->p_timer];
+	if(!PWM_IS_INIT(ins)){
+		return FALSE;
+	}
+	tch_Mtx_lockt(&ins->p_lock,MTX_TRYMODE_WAIT);
+	PWM_CLR_INIT(ins);
+	tch_Mtx_unlockt(&ins->p_lock);
+	PWM_CLR_CHCNT(ins);
+	thw->_hw->CR1 = 0;
+	thw->_hw->CR2 = 0;
+	thw->_hw->CCER = 0;
+	thw->_hw->CCMR1 = 0;
+	thw->_hw->CCMR2 = 0;
+	*thw->clken &= ~thw->clkmsk;
+	*thw->_lpCklenr &= ~thw->lpClkmsk;
+	return TRUE;
 }
 
 
