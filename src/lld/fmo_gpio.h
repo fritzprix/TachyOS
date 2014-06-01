@@ -8,8 +8,7 @@
 #ifndef FMO_GPIO_H_
 #define FMO_GPIO_H_
 
-#include "stm32f4xx.h"
-
+#include "../core/port/tch_stdtypes.h"
 
 
 #define GPIO_Mode_IN                   (uint8_t) (0)
@@ -92,7 +91,6 @@ struct _tch_gpio_cfg_t {
 	uint8_t GPIO_OSpeed;
 	uint8_t GPIO_PuPd;
 	uint8_t GPIO_AF;
-	uint8_t GPIO_LP_Mode;
 };
 
 
@@ -106,7 +104,7 @@ struct _tch_gpio_cfg_t {
 #define GPIO_H                     (tch_gpio_t) (7)
 
 void tch_lld_gpio_cfgInit(tch_gpio_cfg* cfg);
-tch_gpio_instance* tch_lld_getGpio(const tch_gpio_t gpio,uint16_t pin,const tch_gpio_cfg* cfg);
+tch_gpio_instance* tch_lld_gpio_init(const tch_gpio_t gpio,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwrMgrCfg pcfg);
 
 
 

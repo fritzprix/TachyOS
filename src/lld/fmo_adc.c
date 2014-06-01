@@ -13,8 +13,6 @@
 #include "../core/fmo_task.h"
 #include "hw_descriptor_types.h"
 #include "bl_config.h"
-#include "stm32f4xx_tim.h"
-#include "stm32f4xx_adc.h"
 
 #define ADC_SQR1_LEN_Pos                    ((uint8_t) 20)
 #define ADC_CH_CNT                          ((uint8_t) 19)
@@ -217,6 +215,21 @@ const tch_adc_instance* adc2 = (tch_adc_instance*) &ADC_StaticInstances[1];
 const tch_adc_instance* adc3 = (tch_adc_instance*) &ADC_StaticInstances[2];
 
 
+void tch_lld_adc_initCfg(tch_adc_cfg* cfg){
+	cfg->ADC_ChCnt = 0;
+	cfg->ADC_ChCfg_List = NULL;
+	cfg->ADC_Resolution = ADC_Resolution_12B;
+	cfg->ADC_SampleFreqInHz = 1000;
+	cfg->ADC_SampleHold = ADC_SampleHold_3Cycle;
+}
+
+
+/**
+ *  Initiate ADC Object
+ *  @arg1 self : instance to open
+ *  @arg2 cfg  : adc configuration
+ *  @arg3 pcfg : power management option (will be inherited to child member instance)
+ */
 BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pcfg){
 	tch_adc_prototype* ins = (tch_adc_prototype*) self;
 	adc_hw_descriptor* ahw = &ADC_HWs[ins->idx];
@@ -247,11 +260,10 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 
 	tch_gpio_cfg iocfg;
 	tch_lld_gpio_cfgInit(&iocfg);
-	iocfg.GPIO_LP_Mode = pcfg == ActOnSleep? GPIO_LP_Mode_ON : GPIO_LP_Mode_OFF;
 	iocfg.GPIO_Mode = GPIO_Mode_AN;
 	if(cfg->ADC_ChCnt == 0){
 		ins->io_handles[0].ain_pin = acfg->adc_pin;
-		ins->io_handles[0]._ain_handle = tch_lld_getGpio(acfg->port,1 << acfg->adc_pin,&iocfg);
+		ins->io_handles[0]._ain_handle = tch_lld_gpio_init(acfg->port,1 << acfg->adc_pin,&iocfg,pcfg);
 		if(!ins->io_handles[0]._ain_handle)
 			return FALSE;                                             /// io occupied any other instance, return fail
 		lld_adc_setRegChannel(ins,acfg->adc_pin,0);
@@ -261,7 +273,7 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 		uint8_t idx = 0;
 		while(idx < cfg->ADC_ChCnt){
 			ins->io_handles[idx].ain_pin = cfg->ADC_ChCfg_List->pin;
-			ins->io_handles[idx]._ain_handle = tch_lld_getGpio(cfg->ADC_ChCfg_List[idx].port,1 << cfg->ADC_ChCfg_List[idx].pin,&iocfg);
+			ins->io_handles[idx]._ain_handle = tch_lld_gpio_init(cfg->ADC_ChCfg_List[idx].port,1 << cfg->ADC_ChCfg_List[idx].pin,&iocfg,pcfg);
 			if(!ins->io_handles[idx]._ain_handle){
 				return FALSE;
 			}
@@ -272,7 +284,7 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 
 
 	tch_dma_cfg dmacfg;
-	tch_lld_DMA_initCfg(&dmacfg);
+	tch_lld_dma_cfginit(&dmacfg);
 
 
 	ins->_tim_handle = lld_timer_openTimerAsPulseOut(acfg->timer,(1000000 / cfg->ADC_SampleFreqInHz),pcfg);
@@ -290,7 +302,7 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 	dmacfg.DMA_Pinc = DMA_Pinc_Disable;
 	dmacfg.DMA_Prior = DMA_Prior_Med;
 
-	ins->_dma_handle = tch_lld_DMA_getInstance(acfg->adc_dma,&dmacfg,pcfg);
+	ins->_dma_handle = tch_lld_dma_init(acfg->adc_dma,&dmacfg,pcfg);
 	ins->_dma_handle->registerEventListener(ins->_dma_handle,ADC_DMAListeners[ins->idx],DMA_FLAG_EvTC | DMA_FLAG_EvTE);
 	lld_adc_reset(ins);
 
@@ -327,7 +339,7 @@ BOOL lld_adc_close(const tch_adc_instance* self){
 	}
 	*ahw->_clkenr &= ~(ahw->clkmsk);
 	*ahw->_lpclkenr &= ~(ahw->lpclkmsk);
-	ahw->state = 0;
+	ahw->status = 0;
 	return TRUE;
 
 }

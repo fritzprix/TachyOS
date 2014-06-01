@@ -126,6 +126,7 @@ struct _dma_instance_t{
 	void (*setAddress)(tch_dma_instance* self,uint8_t targetAddress,uint32_t addr);
 	void (*registerEventListener)(tch_dma_instance* self,tch_dma_eventListener listener,uint16_t evType);
 	void (*unregisterEventListener)(tch_dma_instance* self);
+	void (*setIncrementMode)(tch_dma_instance* self,uint8_t targetAddress,BOOL enable);
 	void (*close)(tch_dma_instance* self);
 };
 
@@ -143,8 +144,8 @@ struct _dma_cfg_t {
 	uint8_t DMA_FlowControl;
 };
 
-void tch_lld_DMA_initCfg(tch_dma_cfg* cfg);
-tch_dma_instance* tch_lld_DMA_getInstance(dma_t dma,tch_dma_cfg* dma_cfg,tch_pwrMgrCfg cfg);
+void tch_lld_dma_cfginit(tch_dma_cfg* cfg);
+tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_dma_cfg* dma_cfg,tch_pwrMgrCfg cfg);
 
 
 

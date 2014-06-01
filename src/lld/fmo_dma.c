@@ -14,6 +14,7 @@
 	                                              tch_lld_dma_setAddress,\
 	                                              tch_lld_dma_registerEventListener,\
 	                                              tch_lld_dma_unregisterEventListener,\
+	                                              tch_lld_dma_setIncrementMode,\
 	                                              tch_lld_dma_close\
                                                 }
 
@@ -67,9 +68,10 @@ static BOOL tch_lld_dma_beginXfer(tch_dma_instance* self,uint32_t size);
 static void tch_lld_dma_setAddress(tch_dma_instance* self,uint8_t targetAddress,uint32_t addr);
 static void tch_lld_dma_registerEventListener(tch_dma_instance* self,tch_dma_eventListener listener,uint16_t evType);
 static void tch_lld_dma_unregisterEventListener(tch_dma_instance* self);
+static void tch_lld_dma_setIncrementMode(tch_dma_instance* self,uint8_t targetAddress,BOOL enable);
 static void tch_lld_dma_close(tch_dma_instance* self);
 
-static inline BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw) __attribute__((always_inline));
+static BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw);
 
 
 __attribute__((section(".data"))) static tch_dma_prototype DMA_StaticInstances[] = {
@@ -228,11 +230,11 @@ __attribute__((section(".data"))) static dma_hw_descriptor DMA_HWs[] = {
 
 static __attribute__((section(".data"))) dma_com_hw_desc_t DMA_COM_HWs = {{0,0}};
 
-void tch_lld_DMA_initCfg(tch_dma_cfg* cfg){
+void tch_lld_dma_cfginit(tch_dma_cfg* cfg){
 
 }
 
-tch_dma_instance* tch_lld_DMA_getInstance(dma_t dma,tch_dma_cfg* dmacfg,tch_pwrMgrCfg cfg){
+tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_dma_cfg* dmacfg,tch_pwrMgrCfg cfg){
 	tch_dma_prototype* ins = &DMA_StaticInstances[dma];
 	dma_hw_descriptor* dhw = &DMA_HWs[dma];
 
@@ -342,6 +344,29 @@ void tch_lld_dma_unregisterEventListener(tch_dma_instance* self){
 	NVIC_EnableIRQ(dhw->irq);
 }
 
+void tch_lld_dma_setIncrementMode(tch_dma_instance* self,uint8_t targetAddress,BOOL enable){
+	tch_dma_prototype* ins = (tch_dma_prototype*) self;
+	dma_hw_descriptor* dhw = (dma_hw_descriptor*) &DMA_HWs[ins->idx];
+	switch(targetAddress){
+	case DMA_TargetAddress_Mem0:
+	case DMA_TargetAddress_Mem1:
+		if(enable){
+			dhw->_hw->CR |= DMA_SxCR_MINC;
+		}else{
+			dhw->_hw->CR &= ~DMA_SxCR_MINC;
+		}
+		break;
+	case DMA_TargetAddress_Periph:
+		if(enable){
+			dhw->_hw->CR |= DMA_SxCR_PINC;
+		}else{
+			dhw->_hw->CR &= ~DMA_SxCR_PINC;
+		}
+		break;
+	}
+}
+
+
 void tch_lld_dma_close(tch_dma_instance* self){
 	tch_dma_prototype* ins = (tch_dma_prototype*) self;
 	dma_hw_descriptor* dhw = (dma_hw_descriptor*) &DMA_HWs[ins->idx];
@@ -382,7 +407,7 @@ void tch_lld_dma_close(tch_dma_instance* self){
 }
 
 
-inline BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw){
+BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw){
 	if(ins->listener == NULL){
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvTC)){
 			DMA_CLR_ISR(dhw,DMA_FLAG_EvTC);
@@ -402,7 +427,7 @@ inline BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw){
 		return FALSE;
 	}else{
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvTC)){
-			if(ins->listener(ins,DMA_FLAG_EvTC)){
+			if(ins->listener((tch_dma_instance*)ins,DMA_FLAG_EvTC)){
 				DMA_CLR_ISR(dhw,DMA_FLAG_EvTC);
 				DMA_CLR_BUSY(ins);
 				return TRUE;
@@ -410,28 +435,28 @@ inline BOOL __handle_dma_event(tch_dma_prototype* ins,dma_hw_descriptor* dhw){
 			return FALSE;
 		}
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvTE)){
-			if(ins->listener(ins,DMA_FLAG_EvTE)){
+			if(ins->listener((tch_dma_instance*)ins,DMA_FLAG_EvTE)){
 				DMA_CLR_ISR(dhw,DMA_FLAG_EvTE);
 				return TRUE;
 			}
 			return FALSE;
 		}
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvFE)){
-			if(ins->listener(ins,DMA_FLAG_EvFE)){
+			if(ins->listener((tch_dma_instance*)ins,DMA_FLAG_EvFE)){
 				DMA_CLR_ISR(dhw,DMA_FLAG_EvFE);
 				return TRUE;
 			}
 			return FALSE;
 		}
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvDME)){
-			if(ins->listener(ins,DMA_FLAG_EvDME)){
+			if(ins->listener((tch_dma_instance*)ins,DMA_FLAG_EvDME)){
 				DMA_CLR_ISR(dhw,DMA_FLAG_EvDME);
 				return TRUE;
 			}
 			return FALSE;
 		}
 		if((DMA_GET_ISR(dhw) & DMA_FLAG_EvHT)){
-			if(ins->listener(ins,DMA_FLAG_EvHT)){
+			if(ins->listener((tch_dma_instance*)ins,DMA_FLAG_EvHT)){
 				DMA_CLR_ISR(dhw,DMA_FLAG_EvHT);
 				return TRUE;
 			}

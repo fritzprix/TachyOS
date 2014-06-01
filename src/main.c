@@ -16,6 +16,7 @@
 #include "lld/fmo_adc.h"
 
 #include "lld/fmo_usart.h"
+#include "lld/fmo_spi.h"
 
 
 static uint32_t child_Stack[1 << 8];
@@ -73,14 +74,14 @@ void* main(void* arg){
 	io_cfg.GPIO_Mode = GPIO_Mode_OUT;
 	io_cfg.GPIO_Otype = GPIO_OType_PP;
 	io_cfg.GPIO_PuPd = GPIO_PuPd_UP;
-	ledIo = tch_lld_getGpio(GPIO_F,led_pin,&io_cfg);
+	ledIo = tch_lld_gpio_init(GPIO_F,led_pin,&io_cfg,ActOnSleep);
 	usart3->writeCstr(usart3,"LED GPIO Initialized\n",NULL);
 
 	tch_lld_gpio_cfgInit(&io_cfg);
 	io_cfg.GPIO_Mode = GPIO_Mode_IN;
 	io_cfg.GPIO_Otype = GPIO_OType_OD;
 	io_cfg.GPIO_PuPd = GPIO_PuPd_PU;
-	tch_gpio_instance* evt_io = tch_lld_getGpio(GPIO_F,ev_pin,&io_cfg);
+	tch_gpio_instance* evt_io = tch_lld_gpio_init(GPIO_F,ev_pin,&io_cfg,ActOnSleep);
 
 	tch_gpio_evt_cfg ev_cfg;
 	ev_cfg.GPIO_Evt_Edge_Mode = GPIO_Evt_Edge_Fall;
@@ -106,6 +107,7 @@ void* main(void* arg){
 	usart3->writeCstr(usart3,"Device Initailized Complete\n",NULL);
 
 	tch_adc_cfg acfg;
+	tch_lld_adc_initCfg(&acfg);
 	acfg.ADC_Resolution = ADC_Resolution_12B;
 	acfg.ADC_SampleHold = ADC_SampleHold_3Cycle;
 	acfg.ADC_SampleFreqInHz = 100000;
@@ -115,11 +117,19 @@ void* main(void* arg){
 
 
 	adc1->open(adc1,&acfg,ActOnSleep);
+	usart3->close(usart3);
+	usart3->open(usart3,115200,ActOnSleep,&ucfg);
 	uint8_t c;
 	uint16_t av = 0;
+
+	tch_spi_cfg spicfg;
+	tch_lld_spi_cfginit(&spicfg);
+	spi1->open(spi1,&spicfg,ActOnSleep);
+
 	while(1){
-		adc1->read(adc1,ana_val,200,4);
-		usart3->writeCstr(usart3,"Conversion Complete\n",NULL);
+		spi1->transceive(spi1,'A',NULL);
+		adc1->read(adc1,ana_val,200,10);
+		usart3->writeCstr(usart3,"ADC Conversion Completed\n",NULL);
 	}
 	return 0;
 }
@@ -154,8 +164,7 @@ THREAD_ROUTINE(childRoutine){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
 		tchThread_sleep(1);
-//		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
-//		postTimeEvent();
+		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
 	}
 	return NULL;
 }
@@ -165,7 +174,7 @@ THREAD_ROUTINE(childRoutine1){
 	while(1){
 		cnt++;
 		tchThread_sleep(1);
-//		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
+		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
 	}
 	return NULL;
 }

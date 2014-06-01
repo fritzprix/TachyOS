@@ -315,7 +315,6 @@ static tch_gpio_prototype GPIO_static_Instances[] = {
 
 void tch_lld_gpio_cfgInit(tch_gpio_cfg* cfg){
 	cfg->GPIO_AF = 0;
-	cfg->GPIO_LP_Mode = GPIO_LP_Mode_OFF;
 	cfg->GPIO_Mode = GPIO_Mode_IN;
 	cfg->GPIO_OSpeed = GPIO_OSpeed_2M;
 	cfg->GPIO_Otype = GPIO_OType_OD;
@@ -323,7 +322,7 @@ void tch_lld_gpio_cfgInit(tch_gpio_cfg* cfg){
 }
 
 
-tch_gpio_instance* tch_lld_getGpio(const tch_gpio_t gpio,uint16_t pin,const tch_gpio_cfg* cfg){
+tch_gpio_instance* tch_lld_gpio_init(const tch_gpio_t gpio,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwrMgrCfg pcfg){
 	tch_gpio_prototype* ins = &GPIO_static_Instances[gpio];
 	gpio_hw_descriptor* gpio_hwp = &GPIO_HWs[gpio];
 	LOCK_INS(ins);                                                                        // thread try lock mtx to set occupation flag for given gpio pin
@@ -351,7 +350,7 @@ tch_gpio_instance* tch_lld_getGpio(const tch_gpio_t gpio,uint16_t pin,const tch_
 				ACCESS_HW(gpio_hwp)->AFR[1] &= ~(GPIO_AF_Msk << ((pos - 8) << 2));
 				ACCESS_HW(gpio_hwp)->AFR[1] |= (cfg->GPIO_AF << ((pos - 8) << 2));
 			}
-			if(cfg->GPIO_LP_Mode == GPIO_LP_Mode_ON){                                      // if lp mode is required (io pin have to be active when device goes into sleep)
+			if(pcfg == ActOnSleep){                                      // if lp mode is required (io pin have to be active when device goes into sleep)
 				if((*gpio_hwp->_lpClkenr & gpio_hwp->lpClkmsk) == 0){
 					*gpio_hwp->_lpClkenr |= gpio_hwp->lpClkmsk;
 				}

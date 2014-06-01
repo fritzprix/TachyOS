@@ -22,8 +22,9 @@ typedef struct _dma_common_hw_desc_t dma_com_hw_desc_t;
 typedef struct _dma_hw_desc_t dma_hw_descriptor;
 typedef struct _usart_hw_desc_t usart_hw_descriptor;
 typedef struct _adc_hw_desc_t adc_hw_descriptor;
+typedef struct _spi_hw_desc_t spi_hw_descriptor;
 
-typedef enum _pwr_ctrl {ActOnSleep,DeactOnSleep} tch_pwrMgrCfg;
+
 typedef void (*generic_handler)(void*);
 
 
@@ -90,7 +91,7 @@ struct _dma_common_hw_desc_t {
 
 struct _dma_hw_desc_t {
 	DMA_Stream_TypeDef* _hw;
-	uint16_t             flag;
+	uint16_t             status;
 	volatile uint32_t*  _isr;
 	volatile uint32_t*  _icr;
 	const uint32_t       ipos;
@@ -100,23 +101,36 @@ struct _dma_hw_desc_t {
 
 struct _usart_hw_desc_t {
 	USART_TypeDef*      _hw;
-	uint16_t             flag;
+	uint16_t             status;
 	volatile uint32_t*  _clkenr;
 	volatile uint32_t*  _lpclkenr;
 	const uint32_t       clkmsk;
 	const uint32_t       lpclkmsk;
+	const uint32_t       io_afv;
 	IRQn_Type            irq;
 };
 
 struct _adc_hw_desc_t {
 	ADC_TypeDef*        _hw;
-	uint16_t             state;
+	uint16_t             status;
 	volatile uint32_t*  _clkenr;
 	volatile uint32_t*  _lpclkenr;
 	const uint32_t       clkmsk;
 	const uint32_t       lpclkmsk;
 	const uint8_t        extsel;
 };
+
+struct _spi_hw_desc_t {
+	SPI_TypeDef*         _hw;
+	uint16_t              status;
+	volatile uint32_t*   _clkenr;
+	volatile uint32_t*   _lpclkenr;
+	const uint32_t        clkmsk;
+	const uint32_t        lpclkmsk;
+	const uint32_t        io_afv;
+	IRQn_Type             irq;
+};
+
 
 
 #endif /* HW_DESCRIPTOR_TYPES_H_ */

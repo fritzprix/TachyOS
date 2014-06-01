@@ -7,9 +7,8 @@
 
 #include "../core/port/cortex_v7m_port.h"
 #include "fmo_timer.h"
-#include "stm32f4xx.h"
-#include "stm32f4xx_tim.h"
 #include "../core/fmo_sched.h"
+#include "stm32f4xx_tim.h"
 
 
 
@@ -17,26 +16,8 @@
 
 /**
  * Macro Variable
- * 	BOOL (*start)(tch_pwm_instance* self);
-	BOOL (*stop)(tch_pwm_instance* self);
-	uint8_t (*getChannelCount)(tch_pwm_instance* self);
-	BOOL (*isChannelEnabled)(tch_pwm_instance* self,uint8_t ch);
-	void (*setChannelEnable)(tch_pwm_instance* self,uint8_t ch,BOOL enable);
-	void (*setDuty)(tch_pwm_instance* self,uint8_t ch,uint32_t duty);                         // set duty of pwm in range of 16 bit integer (0 ~ 66258)
-	uint32_t (*getDuty)(tch_pwm_instance* self,uint8_t ch);                                   // get current duty of pwm device
-	uint32_t (*getMaxDuty)(tch_pwm_instance* self,uint8_t ch);
-	BOOL (*close)(tch_pwm_instance* self);
  */
 
-/**
- * 	BOOL (*start)(tch_pwm_instance* self);
-	BOOL (*stop)(tch_pwm_instance* self);
-	uint8_t (*getChannelCount)(tch_pwm_instance* self);
-	void (*setDuty)(tch_pwm_instance* self,uint8_t ch,uint32_t duty);                         // set duty of pwm in range of 16 bit integer (0 ~ 66258)
-	uint32_t (*getDuty)(tch_pwm_instance* self,uint8_t ch);                                   // get current duty of pwm device
-	uint32_t (*getMaxDuty)(tch_pwm_instance* self);
-	BOOL (*close)(tch_pwm_instance* self);
- */
 #define _PWM_PINTERFACE {\
 	lld_timer_pwm_start,\
 	lld_timer_pwm_stop,\
@@ -491,6 +472,7 @@ tch_gptimer_instance* lld_timer_openGPTimer(tch_timer timer,uint32_t unitTimeInu
 	}else{
 		*thw->_lpCklenr &= ~thw->lpClkmsk;
 	}
+	uint8_t maxCh = 1;                                                         // minimum channel number : 1
 
 	TIM_DeInit(thw->_hw);                                                      // clear hw register
 	TIM_OCInitTypeDef t_init;
@@ -499,10 +481,8 @@ tch_gptimer_instance* lld_timer_openGPTimer(tch_timer timer,uint32_t unitTimeInu
 	t_init.TIM_OCPolarity = TIM_OCPolarity_High;
 	t_init.TIM_OutputState = TIM_OutputState_Disable;
 	t_init.TIM_Pulse = 0;
-
 	TIM_OC1Init(thw->_hw,&t_init);
 
-	uint8_t maxCh = 1;                                                         // minimum channel number : 1
 	if((thw->feature_flags & TIMER_FEATURE_CH_2) != 0){                        // check hw feature and enable
 		TIM_OC2Init(thw->_hw,&t_init);
 		maxCh++;
@@ -515,6 +495,8 @@ tch_gptimer_instance* lld_timer_openGPTimer(tch_timer timer,uint32_t unitTimeInu
 		TIM_OC4Init(thw->_hw,&t_init);
 		maxCh++;
 	}
+
+
 	GPT_SET_MAXREQ(sp,maxCh);                                                  // save number of channel
 
 	uint32_t psc = 0;
@@ -666,7 +648,7 @@ int tch_GptSetTimeout(tch_gptimer_instance* self,uint32_t id,uint32_t timeIn_tu)
 int tch_GptClose(tch_gptimer_instance* self){
 	tch_gptimer_prototype* sp = (tch_gptimer_prototype*) self;
 	timer_hw_descriptor* thw = &TIMER_Hw_Desc[sp->p_timer];
-	TIM_Cmd(thw->_hw,DISABLE);                                                     // stop timer operation
+	TIM_Cmd(thw->_hw,DISABLE);                                                    // stop timer operation
 	TIM_DeInit(thw->_hw);                                                          // clear hw register
 	*thw->clken &= ~thw->clkmsk;                                                   // clock disable for saving power
 	NVIC_DisableIRQ(thw->irq);                                                     // disable timer interrupt

@@ -11,6 +11,7 @@
 #include "stm32f4xx.h"
 
 typedef enum {FALSE = 0,TRUE = 1} BOOL;
+typedef enum _pwr_ctrl {ActOnSleep,DeactOnSleep} tch_pwrMgrCfg;
 #define NULL               (void*)  0
 
 

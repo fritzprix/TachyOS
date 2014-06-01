@@ -105,9 +105,9 @@ struct _tch_usart_prototype_t{
 	uint8_t                        idx;
 	tch_dma_instance*              tx_dma_handle;
 	tch_dma_instance*              rx_dma_handle;
-	tch_gpio_instance*              gpiov_handle;
+	tch_gpio_instance*             gpiov_handle;
 	tch_usart_evQue                evQue;
-};
+}__attribute__((packed));
 
 
 
@@ -159,6 +159,7 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				&RCC->APB2LPENR,
 				RCC_APB2ENR_USART1EN,
 				RCC_APB2LPENR_USART1LPEN,
+				GPIO_AF_USART1,
 				USART1_IRQn
 		},
 		{
@@ -168,6 +169,7 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				&RCC->APB1LPENR,
 				RCC_APB1ENR_USART2EN,
 				RCC_APB1LPENR_USART2LPEN,
+				GPIO_AF_USART2,
 				USART2_IRQn
 		},
 		{
@@ -177,6 +179,7 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				&RCC->APB1LPENR,
 				RCC_APB1ENR_USART3EN,
 				RCC_APB1LPENR_USART3LPEN,
+				GPIO_AF_USART3,
 				USART3_IRQn
 		}
 };
@@ -264,18 +267,17 @@ BOOL lld_usart_open(const tch_usart_instance* self,uint32_t brate,tch_pwrMgrCfg 
 	uhw->_hw->CR1 |= USART_CR1_UE;
 
 	tch_gpio_cfg io_cfg;
-	io_cfg.GPIO_AF = uhw_cfg->io_afv;
-	io_cfg.GPIO_LP_Mode = pmopt == ActOnSleep? GPIO_LP_Mode_ON : GPIO_LP_Mode_OFF;
+	io_cfg.GPIO_AF = uhw->io_afv;
 	io_cfg.GPIO_Mode = GPIO_Mode_AF;
 	io_cfg.GPIO_OSpeed = GPIO_OSpeed_25M;
 	io_cfg.GPIO_Otype = GPIO_Otype_PP;
 	io_cfg.GPIO_PuPd = GPIO_PuPd_PD;
 
-	ins->gpiov_handle = tch_lld_getGpio(uhw_cfg->port,(1 << uhw_cfg->tx_pin) | (1 << uhw_cfg->rx_pin),&io_cfg);
+	ins->gpiov_handle = tch_lld_gpio_init(uhw_cfg->port,(1 << uhw_cfg->tx_pin) | (1 << uhw_cfg->rx_pin),&io_cfg,pmopt);
 
 	tch_dma_cfg dma_cfg;
 	if(uhw_cfg->tx_dma != DMA_NOT_USED){
-		tch_lld_DMA_initCfg(&dma_cfg);
+		tch_lld_dma_cfginit(&dma_cfg);
 		dma_cfg.DMA_BufferMode = DMA_BufferMode_Normal;
 		dma_cfg.DMA_Ch = uhw_cfg->tx_dma_ch;
 		dma_cfg.DMA_Dir = DMA_Dir_MemToPeriph;
@@ -287,14 +289,14 @@ BOOL lld_usart_open(const tch_usart_instance* self,uint32_t brate,tch_pwrMgrCfg 
 		dma_cfg.DMA_PDataAlign = DMA_DataAlign_Byte;
 		dma_cfg.DMA_Pinc = DMA_Pinc_Disable;
 		dma_cfg.DMA_Prior = DMA_Prior_Med;
-		ins->tx_dma_handle = tch_lld_DMA_getInstance(uhw_cfg->tx_dma,&dma_cfg,pmopt);
+		ins->tx_dma_handle = tch_lld_dma_init(uhw_cfg->tx_dma,&dma_cfg,pmopt);
 		ins->tx_dma_handle->registerEventListener(ins->tx_dma_handle,USART_TXDMA_Handlers[ins->idx],DMA_FLAG_EvTC | DMA_FLAG_EvTE);
 		uhw->_hw->CR3 |= USART_CR3_DMAT;
 	}
 	if(uhw_cfg->rx_dma != DMA_NOT_USED){
 		dma_cfg.DMA_Ch = uhw_cfg->rx_dma_ch;
 		dma_cfg.DMA_Dir = DMA_Dir_PeriphToMem;
-		ins->rx_dma_handle = tch_lld_DMA_getInstance(uhw_cfg->rx_dma,&dma_cfg,pmopt);
+		ins->rx_dma_handle = tch_lld_dma_init(uhw_cfg->rx_dma,&dma_cfg,pmopt);
 		ins->rx_dma_handle->registerEventListener(ins->rx_dma_handle,USART_RXDMA_Handlers[ins->idx],DMA_FLAG_EvTC | DMA_FLAG_EvTE);
 		uhw->_hw->CR3 |= USART_CR3_DMAR;
 	}
@@ -583,7 +585,7 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 }
 
 BOOL lld_usart_readCstr(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err){
-
+	return TRUE;
 }
 
 void inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType){
@@ -658,15 +660,15 @@ DMA_EVENTLISTENER(usart3_txdma_listener){
 
 
 DMA_EVENTLISTENER(usart1_rxdma_listener){
-
+	return FALSE;
 }
 
 DMA_EVENTLISTENER(usart2_rxdma_listener){
-
+	return FALSE;
 }
 
 DMA_EVENTLISTENER(usart3_rxdma_listener){
-
+	return FALSE;
 }
 
 static inline BOOL __handle_usart_event(tch_usart_prototype* ins,usart_hw_descriptor* uhw){

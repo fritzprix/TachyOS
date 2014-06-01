@@ -47,9 +47,9 @@ struct _tch_adc_chcfg_t {
  *  ADC Config Type
  */
 struct _tch_adc_cfg_t {
-	uint8_t ADC_Resolution;
-	uint8_t ADC_SampleHold;
-	uint32_t ADC_SampleFreqInHz;
+	uint8_t ADC_Resolution;                   /// conversion resolution
+	uint8_t ADC_SampleHold;                   /// sample hold time
+	uint32_t ADC_SampleFreqInHz;              /// sampling freq. which affects multiple sample request (e.g. read() )
 	tch_adc_chcfg* ADC_ChCfg_List;            /// can be null -> default Ch cfg is used (ref. bl_confg.h)
 	uint8_t ADC_ChCnt;                        /// can be zero
 };
@@ -66,6 +66,7 @@ struct _tch_adc_instance {
 	BOOL (*scan)(const tch_adc_instance* self,uint8_t* chlist,uint16_t* rb,uint32_t scancnt);    // size of rb should be cautiously chosen considering scan count and channel list
 };
 
+void tch_lld_adc_initCfg(tch_adc_cfg* cfg);
 /**
  *  ADC Driver Static Object
  */
