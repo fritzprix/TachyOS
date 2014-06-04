@@ -288,12 +288,11 @@ BOOL tch_lld_dma_beginXfer(tch_dma_instance* self,uint32_t size){
 	}
 	tch_Mtx_lockt(&ins->acc_lock,MTX_TRYMODE_WAIT);
 	DMA_SET_BUSY(ins);
-	tch_Mtx_unlockt(&ins->acc_lock);
-//	while((DMA_GET_ISR(dhw) & DMA_FLAG_EvTC) == 0){tchThread_sleep(1);}
 	dhw->_hw->NDTR = size;
 	__DMB();
 	__ISB();
 	dhw->_hw->CR |= DMA_SxCR_EN;
+	tch_Mtx_unlockt(&ins->acc_lock);
 	return TRUE;
 
 }

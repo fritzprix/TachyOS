@@ -62,6 +62,22 @@ static __attribute__((section(".data")))tch_genericList_queue_t sys_threadHolder
 
 
 static const char* sysThreadName = "sysThread";
+
+/**
+ * 	tch_genericList_node_t      t_listNode;
+	tch_genericList_queue_t     t_joinQ;
+	tch_thread_routine_t        t_fn;
+	const char*                 t_name;
+	void*                       t_arg;
+	uint8_t                     t_lckCnt;
+	uint32_t                    t_tslot;
+	uint32_t                    t_status;
+	uint32_t                    t_prior;
+	uint32_t                    t_svd_prior;
+	uint32_t                    t_id;
+	uint64_t                    t_to;
+	fmo_thr_cntx                t_tctx;
+ */
 static __attribute__((section(".data"))) struct sys_thread SYSTHREAD = {
 		{0,},                                                /// Thread Stack Area
 		{                                                    /// System Thread Structure
@@ -70,9 +86,9 @@ static __attribute__((section(".data"))) struct sys_thread SYSTHREAD = {
 				system_threadRoutine,
 				"sysThread",
 				NULL,
+				0,
 				THREAD_TIME_SLOT,
 				THREAD_STATUS_DEACTIVE,
-				0,
 				THREAD_PRIORITY_KERNEL,
 				THREAD_PRIORITY_KERNEL,
 				(uint32_t)&SYSTHREAD.thread_stack,

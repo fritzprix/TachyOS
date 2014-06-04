@@ -197,9 +197,10 @@ tchThread_t* _fmo_thread_init(tchThread_t* thread){
 	thread->t_listNode.next = NULL;
 	thread->t_listNode.prev = NULL;
 	tch_genericQue_Init(&thread->t_joinQ);
-	thread->t_flags = 0;
 	thread->t_tslot = THREAD_TIME_SLOT;
+	thread->t_lckCnt = 0;
 	thread->t_to = 0;
+	thread->t_status = 0;
 	SET_THREAD_STATUS(thread,THREAD_STATUS_DEACTIVE);
 	return thread;
 }
@@ -231,5 +232,5 @@ BOOL tchThread_join(tchThread_t* jtarget){
 }
 
 tchThread_t* tchThread_getCurrent(){
-
+	return sched_getCurrentThread();
 }

@@ -74,12 +74,16 @@ int tch_thQue_remove(tchThread_queue* queue,tchThread_t* thread);
 #define THREAD_STATUS_DEACTIVE     (uint32_t) (1 << 3)  // never started
 #define THREAD_STATUS_READY        (uint32_t) (1 << 4)
 #define THREAD_STATUS_TERMINATED   (uint32_t) (1 << 5)
+
+#define THREAD_STATUS_START        (uint32_t) (1 << 6)
+
 #define THREAD_STATUS_MASK         (THREAD_STATUS_ACTIVE |\
 		                            THREAD_STATUS_DEACTIVE|\
 		                            THREAD_STATUS_PEND|\
-		                            THREAD_STATUS_WAIT)
+		                            THREAD_STATUS_WAIT|\
+		                            THREAD_STATUS_READY|\
+		                            THREAD_STATUS_TERMINATED)
 
-#define THREAD_FLAG_START          (uint32_t) (1 << 0)
 #define THREAD_QUEUE_INIT          {NULL,NULL,0}
 
 
@@ -94,9 +98,9 @@ int tch_thQue_remove(tchThread_queue* queue,tchThread_t* thread);
 }
 
 #define GET_THREAD_STATUS(th_p) (th_p->t_status & THREAD_STATUS_MASK)
-#define SET_THREAD_STARTED(th_p) (th_p->t_flags |= THREAD_FLAG_START)
-#define CLEAR_THREAD_STARTED(th_p) (th_p->t_flags &= ~(THREAD_FLAG_START))
-#define IS_THREAD_STARTED(th_p) ((th_p->t_flags & THREAD_FLAG_START) != 0)
+#define SET_THREAD_STARTED(th_p) (th_p->t_status |= THREAD_STATUS_START)
+#define CLEAR_THREAD_STARTED(th_p) (th_p->t_status &= ~(THREAD_STATUS_START))
+#define IS_THREAD_STARTED(th_p) ((th_p->t_status & THREAD_STATUS_START) != 0)
 #define THREAD_ROUTINE(fn)       void* fn(void* arg)
 
 
@@ -116,19 +120,19 @@ struct _tchthread_t{
 	tch_genericList_node_t      t_listNode;
 	tch_genericList_queue_t     t_joinQ;
 	tch_thread_routine_t        t_fn;
-	const char*                t_name;
-	void*                      t_arg;
-	uint32_t                   t_tslot;
-	uint32_t                   t_status;
-	uint32_t                   t_flags;
-	uint32_t                   t_prior;
-	uint32_t                   t_svd_prior;
-	uint32_t                   t_id;
-	uint64_t                   t_to;
-	fmo_thr_cntx               t_tctx;
+	const char*                 t_name;
+	void*                       t_arg;
+	uint32_t                    t_lckCnt;
+	uint32_t                    t_tslot;
+	uint32_t                    t_status;
+	uint32_t                    t_prior;
+	uint32_t                    t_svd_prior;
+	uint32_t                    t_id;
+	uint64_t                    t_to;
+	fmo_thr_cntx                t_tctx;
 #ifdef THR_TRACE_ENABLE
-	exc_trace                  t_trace[THR_TRACE_SIZE];
-	uint8_t                    t_traceIdx;
+	exc_trace                   t_trace[THR_TRACE_SIZE];
+	uint8_t                     t_traceIdx;
 #endif
 }__attribute__((aligned (4)));
 

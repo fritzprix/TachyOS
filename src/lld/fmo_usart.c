@@ -122,7 +122,7 @@ uint32_t lld_usart_available(const tch_usart_instance* self);
 static BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_t* err);
 static BOOL lld_usart_readCstr(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err);
 
-__attribute__((always_inline)) static void lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType);
+__attribute__((always_inline)) static BOOL lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType);
 
 static DMA_EVENTLISTENER(usart1_txdma_listener);
 static DMA_EVENTLISTENER(usart2_txdma_listener);
@@ -363,19 +363,12 @@ BOOL lld_usart_putc(const tch_usart_instance* self,uint8_t c){
 	if(!USART_IS_OPENED(ins)){
 		return FALSE;
 	}
-	if(USART_IS_TXBUSY(ins)){
-		lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-		if(!USART_IS_OPENED(ins)){
-			return FALSE;
-		}
-	}
 	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
 	if(!USART_IS_OPENED(ins)){
 		tch_Mtx_unlockt(&ins->wacc_lock);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
-	tch_Mtx_unlockt(&ins->wacc_lock);
 	if(ins->tx_dma_handle != NULL){
 		uhw->_hw->CR1 &= ~USART_EVType_TC;                                                                                            /// disable Transmit complete interrupt
 		uint8_t* tbp = USART_TX_Stream[ins->idx].iobuffer;
@@ -384,39 +377,33 @@ BOOL lld_usart_putc(const tch_usart_instance* self,uint8_t c){
 		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Periph,(uint32_t)&uhw->_hw->DR);
 		uhw->_hw->SR &= ~USART_SR_TC;
 		while(!ins->tx_dma_handle->beginXfer(ins->tx_dma_handle,1)){
-			lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
-				return FALSE;
-			}
+			tchThread_sleep(0);
 		}
 		while(USART_IS_TXBUSY(ins)){
-			tchThread_sleep(1);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
-				return FALSE;
-			}
+			tchThread_sleep(0);
 		}
 		uhw->_hw->CR1 |= USART_EVType_TC;
 		if(USART_GET_TXERR(ins)){
 			USART_CLR_TXERR(ins);
+			tch_Mtx_unlockt(&ins->wacc_lock);
 			return FALSE;
 		}
+		tch_Mtx_unlockt(&ins->wacc_lock);
 		return TRUE;
 	}else{
-		while(!(uhw->_hw->SR & USART_SR_TXE));
+		while(!(uhw->_hw->SR & USART_SR_TXE)){
+			tchThread_sleep(0);
+		}
 		uhw->_hw->DR = c;
-		if(!(uhw->_hw->SR & USART_SR_TC)){
-			lld_usart_monitorEvent(self,USART_EVType_TC);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
-				return FALSE;
-			}
+		while(!(uhw->_hw->SR & USART_SR_TC)){
+			tchThread_sleep(0);
 		}
 		if(USART_GET_TXERR(ins)){
 			USART_CLR_TXERR(ins);
+			tch_Mtx_unlockt(&ins->wacc_lock);
 			return FALSE;
 		}
+		tch_Mtx_unlockt(&ins->wacc_lock);
 		return TRUE;
 	}
 	return FALSE;
@@ -439,46 +426,38 @@ BOOL lld_usart_write(const tch_usart_instance* self,const uint8_t* bp,uint32_t s
 	usart_hw_descriptor* uhw = &USART_HWs[ins->idx];
 	if(!USART_IS_OPENED(ins) || !size){
 		return FALSE;
-	}
-	if(USART_IS_TXBUSY(ins)){
-		lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-		if(!USART_IS_OPENED(ins)){
-			return FALSE;
-		}
-	}                                                                                     /// check whether tx busy,if it is thread will be put on wait state and wake up by hw interrupt
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);                                       /// otherwise tx busy flag is set
+	}                                                                               /// check whether tx busy,if it is thread will be put on wait state and wake up by hw interrupt
+
+	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
 	if(!USART_IS_OPENED(ins)){
 		tch_Mtx_unlockt(&ins->wacc_lock);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
-	tch_Mtx_unlockt(&ins->wacc_lock);
-	if(ins->tx_dma_handle != NULL){                                                                                                   /// tx dma handle is available
-		uhw->_hw->CR1 &= ~USART_EVType_TC;                                                                                            /// disable Transmit complete interrupt
-		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Mem0,(uint32_t)bp);                                       /// set address of memory source
-		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Periph,(uint32_t)&uhw->_hw->DR);                          /// set address of peripheral target
-		uhw->_hw->SR &= ~USART_SR_TC;                                                                                                 /// clear tc bit in the Status register
-		while(!ins->tx_dma_handle->beginXfer(ins->tx_dma_handle,size)){
-			lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
-				return FALSE;
-			}
-		}              /// begin dma transfer
-		while(USART_IS_TXBUSY(ins)){
+
+	if(ins->tx_dma_handle){
+		while(!uhw->_hw->SR & USART_SR_TC){
 			tchThread_sleep(0);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
+		}
+		uhw->_hw->CR1 &= ~USART_EVType_TC;                                                                                            /// disable Transmit complete interrupt
+		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Mem0,(uint32_t) bp);
+		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Periph,(uint32_t)&uhw->_hw->DR);
+		uhw->_hw->SR &= ~USART_SR_TC;
+		while(!ins->tx_dma_handle->beginXfer(ins->tx_dma_handle,size)){
+			tchThread_sleep(0);
+		}
+		if(lld_usart_monitorEvent(self,USART_EVType_TCDMA)){
+			*err = USART_GET_TXERR(ins);
+			USART_CLR_TXERR(ins);
+			uhw->_hw->CR1 |= USART_EVType_TC;
+			if(*err){
+				tch_Mtx_unlockt(&ins->wacc_lock);
 				return FALSE;
 			}
+
+			tch_Mtx_unlockt(&ins->wacc_lock);
+			return TRUE;
 		}
-		uhw->_hw->CR1 |= USART_EVType_TC;
-		*err = USART_GET_TXERR(ins);
-		USART_CLR_TXERR(ins);
-		if(*err){
-			return FALSE;
-		}
-		return TRUE;
 	}else{
 		uint32_t idx = 0;
 		while(idx < size){
@@ -494,11 +473,13 @@ BOOL lld_usart_write(const tch_usart_instance* self,const uint8_t* bp,uint32_t s
 		*err = USART_GET_TXERR(ins);
 		USART_CLR_TXERR(ins);
 		USART_CLR_TXBUSY(ins);
+		tch_Mtx_unlockt(&ins->wacc_lock);
 		if(*err){
 			return FALSE;
 		}
 		return TRUE;
 	}
+	tch_Mtx_unlockt(&ins->wacc_lock);
 	return FALSE;
 }
 
@@ -519,49 +500,45 @@ uint32_t lld_usart_available(const tch_usart_instance* self){
 BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_t* err){
 	tch_usart_prototype* ins = (tch_usart_prototype*) self;
 	usart_hw_descriptor* uhw = &USART_HWs[ins->idx];
-	uint32_t size = 0;
-	uint8_t* mp = USART_TX_Stream[ins->idx].iobuffer;
-	if(USART_IS_TXBUSY(ins)){
-		lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-		if(!USART_IS_OPENED(ins)){
-			return FALSE;
-		}
+	if(!USART_IS_OPENED(ins)){
+		return FALSE;
 	}
+	uint32_t size = 0;
+	uint8_t mp[256];
+	while(*(cstr + size) != '\0'){
+		*(mp + size) = *(cstr + size++);
+	}
+	*(mp + size++) = '\r';
 	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
 	if(!USART_IS_OPENED(ins)){
 		tch_Mtx_unlockt(&ins->wacc_lock);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
-	tch_Mtx_unlockt(&ins->wacc_lock);
-	while(*(cstr + size) != '\0'){*(mp + size) = *(cstr + size++);}
-	*(mp + size++) = '\r';
+
 	if(ins->tx_dma_handle){
-		uhw->_hw->CR1 &= ~USART_EVType_TC;
+		while(!uhw->_hw->SR & USART_SR_TC){
+			tchThread_sleep(0);
+		}
+		uhw->_hw->CR1 &= ~USART_EVType_TC;                                                                                            /// disable Transmit complete interrupt
 		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Mem0,(uint32_t)mp);
 		ins->tx_dma_handle->setAddress(ins->tx_dma_handle,DMA_TargetAddress_Periph,(uint32_t)&uhw->_hw->DR);
 		uhw->_hw->SR &= ~USART_SR_TC;
 		while(!ins->tx_dma_handle->beginXfer(ins->tx_dma_handle,size)){
-			lld_usart_monitorEvent(self,USART_EVType_TCDMA);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
+			tchThread_sleep(0);
+		}
+		if(lld_usart_monitorEvent(self,USART_EVType_TCDMA)){
+			*err = USART_GET_TXERR(ins);
+			USART_CLR_TXERR(ins);
+			uhw->_hw->CR1 |= USART_EVType_TC;
+			if(*err){
+				tch_Mtx_unlockt(&ins->wacc_lock);
 				return FALSE;
 			}
+
+			tch_Mtx_unlockt(&ins->wacc_lock);
+			return TRUE;
 		}
-		while(USART_IS_TXBUSY(ins)){
-			tchThread_sleep(1);
-			if(!USART_IS_OPENED(ins)){
-				USART_CLR_TXBUSY(ins);
-				return FALSE;
-			}
-		}
-		uhw->_hw->CR1 |= USART_EVType_TC;
-		*err = USART_GET_TXERR(ins);
-		USART_CLR_TXERR(ins);
-		if(*err){
-			return FALSE;
-		}
-		return TRUE;
 	}else{
 		uint32_t idx = 0;
 		while(idx < size){
@@ -577,19 +554,25 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 		*err = USART_GET_TXERR(ins);
 		USART_CLR_TXERR(ins);
 		USART_CLR_TXBUSY(ins);
+		tch_Mtx_unlockt(&ins->wacc_lock);
 		if(*err){
 			return FALSE;
 		}
 		return TRUE;
 	}
+	tch_Mtx_unlockt(&ins->wacc_lock);
+	return FALSE;
 }
 
 BOOL lld_usart_readCstr(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err){
 	return TRUE;
 }
 
-void inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType){
+BOOL inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType){
 	tch_usart_prototype* ins = (tch_usart_prototype*)self;
+	if(!USART_IS_OPENED(ins)){
+		return FALSE;
+	}
 	switch(evType){
 	case USART_EVType_RXNE:
 		tchThread_wait(&ins->evQue.rxneque);
@@ -601,6 +584,10 @@ void inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evTyp
 		tchThread_wait(&ins->evQue.txdmaque);
 		break;
 	}
+	if(!USART_IS_OPENED(ins)){
+		return FALSE;
+	}
+	return TRUE;
 	/// check usart is closed.
 }
 

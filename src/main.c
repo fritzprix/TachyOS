@@ -117,8 +117,8 @@ void* main(void* arg){
 
 
 	adc1->open(adc1,&acfg,ActOnSleep);
-	usart3->close(usart3);
-	usart3->open(usart3,115200,ActOnSleep,&ucfg);
+//	usart3->close(usart3);
+//	usart3->open(usart3,115200,ActOnSleep,&ucfg);
 	uint8_t c;
 	uint16_t av = 0;
 
@@ -129,7 +129,10 @@ void* main(void* arg){
 	while(1){
 		spi1->transceive(spi1,'A',NULL);
 		adc1->read(adc1,ana_val,200,10);
+//		usart3->putc(usart3,'A');
 		usart3->writeCstr(usart3,"ADC Conversion Completed\n",NULL);
+//		usart3->write(usart3,"123",3,NULL);
+
 	}
 	return 0;
 }
@@ -163,8 +166,11 @@ THREAD_ROUTINE(childRoutine){
 	while(1){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
-		tchThread_sleep(1);
+		tchThread_sleep(0);
+//		usart3->putc(usart3,'B');
 		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
+//		usart3->write(usart3,"456",3,NULL);
+
 	}
 	return NULL;
 }
@@ -173,8 +179,10 @@ THREAD_ROUTINE(childRoutine1){
 	uint32_t cnt = 0;
 	while(1){
 		cnt++;
-		tchThread_sleep(1);
+		tchThread_sleep(0);
+//		usart3->putc(usart3,'C');
 		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
+//		usart3->write(usart3,"789",3,NULL);
 	}
 	return NULL;
 }

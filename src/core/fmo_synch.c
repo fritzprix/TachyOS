@@ -43,7 +43,7 @@ void tch_Mtx_lockt(mtx_lock* lock,uint16_t try_mode){
 		}else{
 			__pndsv_call(SVC_MTX_LOCK,(uint32_t)lock,try_mode);
 		}
-		if(lock->key){                                                                 //// check whether thread lock mtx and return,otherwise retry lock mtx
+		if(lock->key == tchThread_getCurrent()){                                                                 //// check whether thread lock mtx and return,otherwise retry lock mtx
 			return;
 		}
 	}

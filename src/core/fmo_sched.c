@@ -416,8 +416,10 @@ void PendSV_Handler(void){
 		case MTX_TRYMODE_WAIT:                                                       /// if try has failed current thread will put on the mtx wait queue and new thread will be active
 			if(!((mtx_lock*)arg1)->key){
 				((mtx_lock*) arg1)->key = (uint32_t) cthread;
-				cthread->t_svd_prior = cthread->t_prior;                             /// to prevent thread being preemted critical section
-				cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				if(!cthread->t_lckCnt++){
+					cthread->t_svd_prior = cthread->t_prior;                             /// to prevent thread being preemted critical section
+					cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				}
 				break;
 			}else{
 				nth = AS_THREAD(tch_genericQue_dequeue(&th_rq));
@@ -435,7 +437,9 @@ void PendSV_Handler(void){
 		}
 		break;
 		case SVC_MTX_UNLOCK:                                                          /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
-			cthread->t_prior = cthread->t_svd_prior;
+			if(!(--cthread->t_lckCnt)){
+				cthread->t_prior = cthread->t_svd_prior;
+			}
 			((mtx_lock*) arg1)->key = 0;
 			if(((mtx_lock*)arg1)->w_q.entry != NULL){
 				nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((mtx_lock*)arg1)->w_q);
@@ -561,8 +565,10 @@ void SVC_Handler(void){                                                         
 		case MTX_TRYMODE_WAIT:                                                       /// if try has failed current thread will put on the mtx wait queue and new thread will be active
 			if(!((mtx_lock*)stack->R1)->key){
 				((mtx_lock*) stack->R1)->key = (uint32_t) cthread;
-				cthread->t_svd_prior = cthread->t_prior;                             /// save original priority of thread
-				cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				if(!cthread->t_lckCnt++){
+					cthread->t_svd_prior = cthread->t_prior;                             /// save original priority of thread
+					cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				}
 				break;
 			}else{
 				nth = AS_THREAD(tch_genericQue_dequeue(&th_rq));
@@ -581,7 +587,9 @@ void SVC_Handler(void){                                                         
 		break;
 		case SVC_MTX_UNLOCK:                                                          /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
 			((mtx_lock*) stack->R1)->key = 0;
-			cthread->t_prior = cthread->t_svd_prior;
+			if(!(--cthread->t_lckCnt)){
+				cthread->t_prior = cthread->t_svd_prior;
+			}
 			if(((mtx_lock*)stack->R1)->w_q.entry != NULL){
 				nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((mtx_lock*)stack->R1)->w_q);
 				SET_THREAD_STATUS(nth,THREAD_STATUS_READY);
