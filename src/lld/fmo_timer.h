@@ -65,7 +65,6 @@ struct _tch_capt_instance_t{
 	int (*close)(tch_pcapt_intance* self);
 };
 
-
 #define Timer2        ((tch_timer) 0)
 #define Timer3        ((tch_timer) 1)
 #define Timer4        ((tch_timer) 2)
@@ -73,9 +72,11 @@ struct _tch_capt_instance_t{
 #define Timer9        ((tch_timer) 4)
 #define Timer10       ((tch_timer) 5)
 #define Timer11       ((tch_timer) 6)
+#ifndef STM32F401x
 #define Timer12       ((tch_timer) 7)
 #define Timer13       ((tch_timer) 8)
 #define Timer14       ((tch_timer) 9)
+#endif
 
 
 tch_pwm_instance* lld_timer_openTimerAsPulseOut(tch_timer timer,uint32_t periodIn_us,tch_pwrMgrCfg pcfg);

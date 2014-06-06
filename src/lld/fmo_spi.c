@@ -279,8 +279,8 @@ BOOL tch_lld_spi_open(const tch_spi_instance* self,tch_spi_cfg* cfg,tch_pwrMgrCf
 	iocfg.GPIO_AF = shw->io_afv;
 	iocfg.GPIO_Mode = GPIO_Mode_AF;
 	iocfg.GPIO_OSpeed = GPIO_OSpeed_25M;
-	iocfg.GPIO_Otype = GPIO_OType_PP;
-	iocfg.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	iocfg.GPIO_Otype = GPIO_Otype_PP;
+	iocfg.GPIO_PuPd = GPIO_PuPd_Float;
 
 	if(cfg->SPI_OPMode == SPI_OPMode_Master){
 		SPI_SET_MASTER(ins);
@@ -315,7 +315,7 @@ BOOL tch_lld_spi_open(const tch_spi_instance* self,tch_spi_cfg* cfg,tch_pwrMgrCf
 
 	dmacfg.DMA_Prior = DMA_Prior_Med;
 	ins->_txdma_handle = tch_lld_dma_init(spicfg->tx_dma,&dmacfg,pcfg);
-	ins->_txdma_handle->registerEventListener(ins->_txdma_handle,SPI_TXDMA_Listeners[ins->idx],DMA_FLAG_EvTC);
+//	ins->_txdma_handle->registerEventListener(ins->_txdma_handle,SPI_TXDMA_Listeners[ins->idx],DMA_FLAG_EvTC);
 
 
 	/**
@@ -525,6 +525,7 @@ BOOL tch_lld_spi_registerSlaveEventListener(const tch_spi_instance* self,tch_spi
 		return FALSE;
 	}
 	ins->_listener = listener;
+	return TRUE;
 }
 
 BOOL tch_lld_spi_unregisterSlaveEventListener(const tch_spi_instance* self){
@@ -535,6 +536,7 @@ BOOL tch_lld_spi_unregisterSlaveEventListener(const tch_spi_instance* self){
 
 	}
 	ins->_listener = NULL;
+	return TRUE;
 }
 
 BOOL tch_lld_spi_close(const tch_spi_instance* self){
@@ -582,6 +584,7 @@ BOOL tch_lld_spi_close(const tch_spi_instance* self){
 
 	SPI_CLR_MASTER(ins);
 	SPI_CLR_OPEN(ins);
+	return TRUE;
 }
 
 
@@ -591,10 +594,10 @@ static inline BOOL tch_lld_spi_monitorEvent(const tch_spi_prototype* ins,tch_spi
 	}
 	switch(ev){
 	case TXC:
-		tchThread_wait(&ins->evque.txcqueue);
+		tchThread_wait((tch_genericList_queue_t*) &ins->evque.txcqueue);
 		break;
 	case RXC:
-		tchThread_wait(&ins->evque.rxcqueue);
+		tchThread_wait((tch_genericList_queue_t*) &ins->evque.rxcqueue);
 		break;
 	}
 	if(!SPI_IS_OPEN(ins)){
@@ -646,13 +649,13 @@ DMA_EVENTLISTENER(tch_lld_spi3_rxdma_eventlistener){
 }
 
 DMA_EVENTLISTENER(tch_lld_spi1_txdma_eventlistener){
-
+	return TRUE;
 }
 
 DMA_EVENTLISTENER(tch_lld_spi2_txdma_eventlistener){
-
+	return TRUE;
 }
 
 DMA_EVENTLISTENER(tch_lld_spi3_txdma_eventlistener){
-
+	return TRUE;
 }

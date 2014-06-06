@@ -111,16 +111,6 @@ typedef struct _tch_clk_prototype_t tch_clk_prototype;
 typedef struct _tch_pcapt_prototype_t tch_pcapt_prototype;
 
 /**
- * private function
- * 	BOOL (*start)(tch_pwm_instance* self);
-	BOOL (*stop)(tch_pwm_instance* self);
-	uint8_t (*getChannelCount)(tch_pwm_instance* self);
-	BOOL (*isChannelEnabled)(tch_pwm_instance* self,uint8_t ch);
-	void (*setChannelEnable)(tch_pwm_instance* self,uint8_t ch,BOOL enable);
-	void (*setDuty)(tch_pwm_instance* self,uint8_t ch,uint32_t duty);                         // set duty of pwm in range of 16 bit integer (0 ~ 66258)
-	uint32_t (*getDuty)(tch_pwm_instance* self,uint8_t ch);                                   // get current duty of pwm device
-	uint32_t (*getMaxDuty)(tch_pwm_instance* self,uint8_t ch);
-	BOOL (*close)(tch_pwm_instance* self);
  */
 static BOOL lld_timer_pwm_start(tch_pwm_instance* self);
 static BOOL lld_timer_pwm_stop(tch_pwm_instance* self);
@@ -247,8 +237,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB1ENR_TIM2EN,
 				RCC_APB1LPENR_TIM12LPEN,
 				TIM2_IRQn
-		},
-		{
+		}
+		,{
 				TIM3,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1|TIMER_FEATURE_CH_2|TIMER_FEATURE_CH_3|TIMER_FEATURE_CH_4,
@@ -257,8 +247,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB1ENR_TIM3EN,
 				RCC_APB1LPENR_TIM3LPEN,
 				TIM3_IRQn
-		},
-		{
+		}
+		,{
 				TIM4,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1|TIMER_FEATURE_CH_2|TIMER_FEATURE_CH_3|TIMER_FEATURE_CH_4,
@@ -267,8 +257,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB1ENR_TIM4EN,
 				RCC_APB1LPENR_TIM14LPEN,
 				TIM4_IRQn
-		},
-		{
+		}
+		,{
 				TIM5,
 				0,
 				TIMER_FEATURE_RES32B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1|TIMER_FEATURE_CH_2|TIMER_FEATURE_CH_3|TIMER_FEATURE_CH_4,
@@ -277,8 +267,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB1ENR_TIM5EN,
 				RCC_APB1LPENR_TIM5LPEN,
 				TIM5_IRQn
-		},
-		{
+		}
+		,{
 				TIM9,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1|TIMER_FEATURE_CH_2,
@@ -287,8 +277,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB2ENR_TIM9EN,
 				RCC_APB2LPENR_TIM9LPEN,
 				TIM1_BRK_TIM9_IRQn
-		},
-		{
+		}
+		,{
 				TIM10,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1,
@@ -297,8 +287,8 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB2ENR_TIM10EN,
 				RCC_APB2LPENR_TIM10LPEN,
 				TIM1_UP_TIM10_IRQn
-		},
-		{
+		}
+		,{
 				TIM11,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1,
@@ -307,8 +297,9 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB2ENR_TIM11EN,
 				RCC_APB2LPENR_TIM11LPEN,
 				TIM1_TRG_COM_TIM11_IRQn
-		},
-		{
+		}
+#ifndef STM32F401x
+		,{
 				TIM12,
 				0,
 				TIMER_FEATURE_RES16B|TIMER_FEATURE_COMPARE|TIMER_FEATURE_PULSE_INPUT|TIMER_FEATURE_PWM|TIMER_FEATURE_CH_1|TIMER_FEATURE_CH_2,
@@ -338,32 +329,37 @@ struct _timer_hw_desc_t TIMER_Hw_Desc[] = {
 				RCC_APB1LPENR_TIM14LPEN,
 				TIM8_TRG_COM_TIM14_IRQn
 		}
+#endif
 };
 
 static struct _tch_pwm_prototype_t PWM_Instances[] = {
-		PWM_INSTANCE_INIT(0),
-		PWM_INSTANCE_INIT(1),
-		PWM_INSTANCE_INIT(2),
-		PWM_INSTANCE_INIT(3),
-		PWM_INSTANCE_INIT(4),
-		PWM_INSTANCE_INIT(5),
-		PWM_INSTANCE_INIT(6),
-		PWM_INSTANCE_INIT(7),
-		PWM_INSTANCE_INIT(8),
-		PWM_INSTANCE_INIT(9)
+		PWM_INSTANCE_INIT(0)
+		,PWM_INSTANCE_INIT(1)
+		,PWM_INSTANCE_INIT(2)
+		,PWM_INSTANCE_INIT(3)
+		,PWM_INSTANCE_INIT(4)
+		,PWM_INSTANCE_INIT(5)
+		,PWM_INSTANCE_INIT(6)
+#ifndef STM32F401x
+		,PWM_INSTANCE_INIT(7)
+		,PWM_INSTANCE_INIT(8)
+		,PWM_INSTANCE_INIT(9)
+#endif
 };
 
 static struct _tch_gpt_prototype_t GpTimer_Instances[] = {
-		GPT_INSTANCE_INIT(0,TIM2),
-		GPT_INSTANCE_INIT(1,TIM3),
-		GPT_INSTANCE_INIT(2,TIM4),
-		GPT_INSTANCE_INIT(3,TIM5),
-		GPT_INSTANCE_INIT(4,TIM9),
-		GPT_INSTANCE_INIT(5,TIM10),
-		GPT_INSTANCE_INIT(6,TIM11),
-		GPT_INSTANCE_INIT(7,TIM12),
-		GPT_INSTANCE_INIT(8,TIM13),
-		GPT_INSTANCE_INIT(9,TIM14)
+		GPT_INSTANCE_INIT(0,TIM2)
+		,GPT_INSTANCE_INIT(1,TIM3)
+		,GPT_INSTANCE_INIT(2,TIM4)
+		,GPT_INSTANCE_INIT(3,TIM5)
+		,GPT_INSTANCE_INIT(4,TIM9)
+		,GPT_INSTANCE_INIT(5,TIM10)
+		,GPT_INSTANCE_INIT(6,TIM11)
+#ifndef STM32F401x
+		,GPT_INSTANCE_INIT(7,TIM12)
+		,GPT_INSTANCE_INIT(8,TIM13)
+		,GPT_INSTANCE_INIT(9,TIM14)
+#endif
 };
 
 static struct _tch_clk_prototype_t Clk_Instances[] = {

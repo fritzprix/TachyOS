@@ -26,6 +26,7 @@
 
 #define CTRL_PSTACK_FLAG           (uint32_t) (1 << 1)
 #define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
+#define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 
 #define IDLE_STACK_SIZE            (uint32_t) (1 << 9)
@@ -101,6 +102,8 @@ int sched_Init(){
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);
 
+
+
 	INIT_QUEUE(th_rq);
 	INIT_QUEUE(th_pq);
 
@@ -111,11 +114,15 @@ int sched_Init(){
 
 	tchThread_t * __init_sp = (tchThread_t*)( __mthread_stack_top - 1);
 	//stack initialize
-	__set_PSP((uint32_t)__init_sp);
+	__set_PSP((uint32_t)__init_sp);\
 
 	//put thread mode
 	uint32_t mcu_ctrl = __get_CONTROL();
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
+#ifdef FEATURE_HFLOAT
+	FPU->FPCCR |= FPU_FPCCR_ASPEN_Msk;
+	SCB->CPACR |= (0xF << 20);
+#endif
 	__set_CONTROL(mcu_ctrl);
 	__ISB();
 
@@ -264,8 +271,15 @@ int sv_isPreemtable(){
 void __attribute__((naked)) sched_switchContext(void){
 	asm volatile(
 			"push {r4-r11,lr}\n"
+#ifdef FEATURE_HFLOAT
+			"vpush {s0-s15}\n"
+#endif
 			"str sp,[%1]\n"
+
 			"ldr sp,[%0]\n"
+#ifdef FEATURE_HFLOAT
+			"vpop {s0-s15}\n"
+#endif
 			"pop  {r4-r11,lr}\n"
 			"ldr r0,=%2\n"
 			"dmb\n"
@@ -277,10 +291,13 @@ void __attribute__((naked)) sched_switchContext(void){
 
 void __attribute__((naked)) sched_saveAndStart(void){
 	asm volatile(
-				"push {r4-r11,lr}\n"
-				"str sp,[%0]\n"
-				"dmb\n"
-				"isb\n" : :"r"(&PREV_THREAD(cthread)->t_tctx.R13) :
+			"push {r4-r11,lr}\n"
+#ifdef FEATURE_HFLOAT
+			"vpush {s0-s15}\n"
+#endif
+			"str sp,[%0]\n"
+			"dmb\n"
+			"isb\n" : :"r"(&PREV_THREAD(cthread)->t_tctx.R13) :
 	);
 	sv_startCurrentThread();
 }
@@ -288,6 +305,9 @@ void __attribute__((naked)) sched_saveAndStart(void){
 void __attribute__((naked)) sched_resumeContext(void){
 	asm volatile(
 			"ldr sp,[%0]\n"
+#ifdef FEATURE_HFLOAT
+			"vpop {s0-s15}\n"
+#endif
 			"pop {r4-r11,lr}\n"
 			"ldr r0,=%1\n"
 			"dmb\n"

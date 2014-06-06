@@ -95,7 +95,27 @@ struct _arm_exc_stack{
 	uint32_t LR14;
 	uint32_t Return;
 	uint32_t xPSR;
-};
+#ifdef FEATURE_HFLOAT
+	uint32_t S0;
+	uint32_t S1;
+	uint32_t S2;
+	uint32_t S3;
+	uint32_t S4;
+	uint32_t S5;
+	uint32_t S6;
+	uint32_t S7;
+	uint32_t S8;
+	uint32_t S9;
+	uint32_t S10;
+	uint32_t S11;
+	uint32_t S12;
+	uint32_t S13;
+	uint32_t S14;
+	uint32_t S15;
+	uint32_t FPSCR;
+	uint32_t RESV;
+#endif
+} __attribute__((aligned(8)));
 
 struct _fmo_exc_context{
 	arm_exc_stack* R13;

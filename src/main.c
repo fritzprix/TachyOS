@@ -41,7 +41,8 @@ static DECLARE_TASK_FN(ledTask);
 static mtx_lock time_eventLock;
 static GPT_TIMEOUT_LISTENER(time_eventListener);
 static void postTimeEvent(void);
-
+float a = 1.f;
+float b = 2.f;
 /**
  * Test Only Purpose
  */
@@ -125,8 +126,8 @@ void* main(void* arg){
 	tch_spi_cfg spicfg;
 	tch_lld_spi_cfginit(&spicfg);
 	spi1->open(spi1,&spicfg,ActOnSleep);
-
 	while(1){
+		a += 0.0001f;
 		spi1->transceive(spi1,'A',NULL);
 		adc1->read(adc1,ana_val,200,10);
 //		usart3->putc(usart3,'A');
@@ -179,6 +180,8 @@ THREAD_ROUTINE(childRoutine1){
 	uint32_t cnt = 0;
 	while(1){
 		cnt++;
+//		fv += 0.001f;
+		b += 0.001f;
 		tchThread_sleep(0);
 //		usart3->putc(usart3,'C');
 		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);

@@ -70,8 +70,14 @@ void tch_lld_adc_initCfg(tch_adc_cfg* cfg);
 /**
  *  ADC Driver Static Object
  */
+
+
+
 extern const tch_adc_instance* adc1;
+
+#ifndef STM32F401x
 extern const tch_adc_instance* adc2;
 extern const tch_adc_instance* adc3;
+#endif
 
 #endif /* FMO_ADC_H_ */

@@ -18,6 +18,7 @@
 #define USART_BUFFER_SIZE                    (uint16_t) (1 << 9)
 #endif
 
+
 #define PUBLIC_INTERFACE                     {\
 	                                           lld_usart_open,\
 	                                           lld_usart_close,\
@@ -126,26 +127,35 @@ __attribute__((always_inline)) static BOOL lld_usart_monitorEvent(const tch_usar
 
 static DMA_EVENTLISTENER(usart1_txdma_listener);
 static DMA_EVENTLISTENER(usart2_txdma_listener);
+
+#ifndef STM32F401x
 static DMA_EVENTLISTENER(usart3_txdma_listener);
+#endif
 
 static DMA_EVENTLISTENER(usart1_rxdma_listener);
 static DMA_EVENTLISTENER(usart2_rxdma_listener);
+#ifndef STM32F401x
 static DMA_EVENTLISTENER(usart3_rxdma_listener);
+#endif
 
 __attribute__((always_inline)) static inline BOOL __handle_txdma_event(tch_usart_prototype* ins,uint16_t evtype);
 __attribute__((always_inline)) static inline BOOL __handle_rxdma_event(tch_usart_prototype* ins,uint16_t evtype);
 __attribute__((always_inline)) static inline BOOL __handle_usart_event(tch_usart_prototype* ins,usart_hw_descriptor* uhw);
 
 __attribute__((section(".data"))) static tch_dma_eventListener USART_TXDMA_Handlers[] = {
-		usart1_txdma_listener,
-		usart2_txdma_listener,
-		usart3_txdma_listener
+		usart1_txdma_listener
+		,usart2_txdma_listener
+#ifndef STM32F401x
+		,usart3_txdma_listener
+#endif
 };
 
 __attribute__((section(".data"))) static tch_dma_eventListener USART_RXDMA_Handlers[] = {
-		usart1_rxdma_listener,
-		usart2_rxdma_listener,
-		usart3_rxdma_listener
+		usart1_rxdma_listener
+		,usart2_rxdma_listener
+#ifndef STM32F401x
+		,usart3_rxdma_listener
+#endif
 };
 
 /**
@@ -161,8 +171,8 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				RCC_APB2LPENR_USART1LPEN,
 				GPIO_AF_USART1,
 				USART1_IRQn
-		},
-		{
+		}
+		,{
 				USART2,
 				0,
 				&RCC->APB1ENR,
@@ -171,8 +181,9 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				RCC_APB1LPENR_USART2LPEN,
 				GPIO_AF_USART2,
 				USART2_IRQn
-		},
-		{
+		}
+#ifndef STM32F401x
+		,{
 				USART3,
 				0,
 				&RCC->APB1ENR,
@@ -182,6 +193,17 @@ __attribute__((section(".data"))) static usart_hw_descriptor USART_HWs[] = {
 				GPIO_AF_USART3,
 				USART3_IRQn
 		}
+#else
+		,{
+				USART6,
+				&RCC->APB2ENR,
+				&RCC->APB2LPENR,
+				RCC_APB2ENR_USART6EN,
+				RCC_APB1LPENR_USART6LPEN,
+				GPIO_AF_USART6,
+				USART6_IRQn
+		}
+#endif
 };
 
 
@@ -199,8 +221,8 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				NULL,
 				NULL,
 				INIT_USART_EVQ
-		},
-		{
+		}
+		,{
 				PUBLIC_INTERFACE,
 				MTX_INIT,
 				MTX_INIT,
@@ -210,8 +232,8 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				NULL,
 				NULL,
 				INIT_USART_EVQ
-		},
-		{
+		}
+		,{
 				PUBLIC_INTERFACE,
 				MTX_INIT,
 				MTX_INIT,
@@ -697,9 +719,16 @@ void USART2_IRQHandler(void){
 	usart_hw_descriptor* uhw = &USART_HWs[ins->idx];
 	__handle_usart_event(ins,uhw);
 }
-
+#ifndef STM32F401x
 void USART3_IRQHandler(void){
 	tch_usart_prototype* ins = &USART_StaticInstances[2];
 	usart_hw_descriptor* uhw = &USART_HWs[ins->idx];
 	__handle_usart_event(ins,uhw);
 }
+#else
+void USART6_IRQHandler(void){
+	tch_usart_prototype* ins = &USART_StaticInstances[2];
+	usart_hw_descriptor* uhw = &USART_HWs[ins->idx];
+	__handle_usart_event(ins,uhw);
+}
+#endif

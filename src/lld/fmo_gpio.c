@@ -317,8 +317,8 @@ void tch_lld_gpio_cfgInit(tch_gpio_cfg* cfg){
 	cfg->GPIO_AF = 0;
 	cfg->GPIO_Mode = GPIO_Mode_IN;
 	cfg->GPIO_OSpeed = GPIO_OSpeed_2M;
-	cfg->GPIO_Otype = GPIO_OType_OD;
-	cfg->GPIO_PuPd = GPIO_PuPd_NOPULL;
+	cfg->GPIO_Otype = GPIO_Otype_OD;
+	cfg->GPIO_PuPd = GPIO_PuPd_Float;
 }
 
 

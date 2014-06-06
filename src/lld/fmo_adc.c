@@ -144,8 +144,9 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 				,MTX_INIT
 #endif
 				,{0,}
-		},
-		{
+		}
+#ifndef STM32F401x
+		,{
 				PUBLIC_INTERFACE,
 				0,
 				1,
@@ -156,8 +157,8 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 				,MTX_INIT
 #endif
 				,{0,}
-		},
-		{
+		}
+		,{
 				PUBLIC_INTERFACE,
 				0,
 				2,
@@ -169,6 +170,7 @@ __attribute__((section(".data"))) static tch_adc_prototype ADC_StaticInstances[]
 #endif
 				,{0,}
 		}
+#endif
 };
 
 /**
@@ -182,8 +184,9 @@ static adc_hw_descriptor ADC_HWs[] = {
 				RCC_APB2ENR_ADC1EN,
 				RCC_APB2LPENR_ADC1LPEN,
 				3
-		},
-		{
+		}
+#ifndef STM32F401x
+		,{
 				ADC2,
 				0,
 				&RCC->APB2ENR,
@@ -191,8 +194,8 @@ static adc_hw_descriptor ADC_HWs[] = {
 				RCC_APB2ENR_ADC2EN,
 				RCC_APB2LPENR_ADC2PEN,
 				7
-		},
-		{
+		}
+		,{
 				ADC3,
 				0,
 				&RCC->APB2ENR,
@@ -201,18 +204,23 @@ static adc_hw_descriptor ADC_HWs[] = {
 				RCC_APB2LPENR_ADC3LPEN,
 				10,
 		}
+#endif
 };
 
 
 __attribute__((section(".data"))) static tch_dma_eventListener ADC_DMAListeners[] = {
-		lld_adc1_dma_listener,
-		lld_adc2_dma_listener,
-		lld_adc3_dma_listener
+		lld_adc1_dma_listener
+#ifndef STM32F401x
+		,lld_adc2_dma_listener
+		,lld_adc3_dma_listener
+#endif
 };
 
 const tch_adc_instance* adc1 = (tch_adc_instance*) &ADC_StaticInstances[0];
+#ifndef STM32F401x
 const tch_adc_instance* adc2 = (tch_adc_instance*) &ADC_StaticInstances[1];
 const tch_adc_instance* adc3 = (tch_adc_instance*) &ADC_StaticInstances[2];
+#endif
 
 
 void tch_lld_adc_initCfg(tch_adc_cfg* cfg){
