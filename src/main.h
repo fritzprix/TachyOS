@@ -12,6 +12,7 @@
 #include "stm32f4xx.h"
 #include "core_cm4.h"
 #include "stm32f4xx_conf.h"
+#include "hld/atcmd_bt.h"
 
 void* main(void*);
 void device_Init(void);

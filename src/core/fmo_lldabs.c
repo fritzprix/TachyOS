@@ -14,6 +14,16 @@
 #define IOBUFFER_TRY_TIMEOUT                                (uint32_t) 2000
 #endif
 
+#ifdef FEATURE_MTHREAD
+#define SB_RD_LOCK(sbp)     {tch_Mtx_lockt(&sbp->b_rlock,TRUE);}
+#define SB_WR_LOCK(sbp)     {tch_Mtx_lockt(&sbp->b_wlock,TRUE);}
+#define SB_RD_UNLOCK(sbp)   {tch_Mtx_unlockt(&sbp->b_rlock);}
+#define SB_WR_UNLOCK(sbp)   {tch_Mtx_unlockt(&sbp->b_wlock);}
+#else
+#define SB_RD_LOCK(sbp)     {}
+#define SB_WR_LOCK(sbp)     {}
+#endif
+
 
 #define STR_BUFFER_FLAG_OPEN                                (uint16_t) (1 << 0)
 #define STR_BUFFER_FLAG_ICHANNEL_OPEN                       (uint16_t) (1 << 1)
@@ -154,14 +164,14 @@ BOOL tch_ostream_write_ts(tch_ostream* stream,const uint8_t* wb,uint32_t size,ui
 			}
 			// check stream is closed
 		}
-		tch_Mtx_lockt(&iostr->b_wlock,MTX_TRYMODE_WAIT);
+		SB_WR_LOCK(iostr);
 		if(!STR_BUFFER_IS_OCHANNEL_OPENED(iostr)){
-			tch_Mtx_unlockt(&iostr->b_wlock);
+			SB_WR_UNLOCK(iostr);
 			return FALSE;
 		}
 		// check stream is closed
 		STR_BUFFER_SET_WRBUSY(iostr);                      //   set write busy
-		tch_Mtx_unlockt(&iostr->b_wlock);
+		SB_WR_UNLOCK(iostr);
 		while(size--){
 			while(iostr->b_wrIdx == (iostr->b_rdIdx - 1)){   //   check updated data is consumed
 				tchThread_wait(&iostr->b_wrQue);            //   or wait in write queue
@@ -216,14 +226,15 @@ BOOL tch_ostream_putc_ts(tch_ostream* stream,const uint8_t c,uint8_t* err){
 			}
 			//return FALSE;
 		}
-		tch_Mtx_lockt(&iostr->b_wlock,MTX_TRYMODE_WAIT);
+		SB_WR_LOCK(iostr);
 		if(!STR_BUFFER_IS_OCHANNEL_OPENED(iostr)){
-			tch_Mtx_unlockt(&iostr->b_wlock);
+			SB_WR_UNLOCK(iostr);
 			return FALSE;
 		}
 		// check stream is closed
 		STR_BUFFER_SET_WRBUSY(iostr);
-		tch_Mtx_unlockt(&iostr->b_wlock);
+		SB_WR_UNLOCK(iostr);
+
 		while(iostr->b_wrIdx == (iostr->b_rdIdx - 1)){
 			tchThread_wait(&iostr->b_wrQue);
 			if(!STR_BUFFER_IS_OCHANNEL_OPENED(iostr)){
@@ -270,10 +281,10 @@ void tch_ostream_close(tch_ostream* stream){
 	while(STR_BUFFER_IS_WRBUSY(iostr)){
 		tchThread_sleep(0);
 	}
-	tch_Mtx_lockt(&iostr->b_wlock,MTX_TRYMODE_WAIT);
+	SB_WR_LOCK(iostr);
 	STR_BUFFER_SET_WRBUSY(iostr);
 	STR_BUFFER_CLR_OCHANNEL_OPENED(iostr);
-	tch_Mtx_unlockt(&iostr->b_wlock);
+	SB_WR_UNLOCK(iostr);
 	while(iostr->b_wrQue.entry){
 		tchThread_wake(&iostr->b_wrQue);
 	}
@@ -294,13 +305,13 @@ BOOL tch_istream_read_ts(tch_istream* stream,uint8_t* rb,uint32_t size,uint8_t* 
 			}
 			//	return FALSE;
 		}
-		tch_Mtx_lockt(&iostr->b_rlock,MTX_TRYMODE_WAIT);                                          ///  thread check istream is valid after lock mtx, so that threads waiting in mtx queue can be guaranteed
+		SB_RD_LOCK(iostr);///  thread check istream is valid after lock mtx, so that threads waiting in mtx queue can be guaranteed
 		if(!STR_BUFFER_IS_ICHANNEL_OPENED(iostr)){
-			tch_Mtx_unlockt(&iostr->b_rlock);
+			SB_RD_UNLOCK(iostr);
 			return FALSE;
 		}
 		STR_BUFFER_SET_RDBUSY(iostr);
-		tch_Mtx_unlockt(&iostr->b_rlock);
+		SB_RD_UNLOCK(iostr);
 		while(size--){
 			while(iostr->b_rdIdx == iostr->b_wrIdx){
 				tchThread_wait(&iostr->b_rdQue);
@@ -352,13 +363,13 @@ BOOL tch_istream_getc_ts(tch_istream* stream,uint8_t* rb,uint8_t* err){
 			}
 			//return FALSE;
 		}
-		tch_Mtx_lockt(&iostr->b_rlock,MTX_TRYMODE_WAIT);
+		SB_RD_LOCK(iostr);
 		if(!STR_BUFFER_IS_ICHANNEL_OPENED(iostr)){
-			tch_Mtx_unlockt(&iostr->b_rlock);
+			SB_RD_UNLOCK(iostr);
 			return FALSE;
 		}
 		STR_BUFFER_SET_RDBUSY(iostr);
-		tch_Mtx_unlockt(&iostr->b_rlock);
+		SB_RD_UNLOCK(iostr);
 		while(iostr->b_rdIdx == iostr->b_wrIdx){
 			tchThread_wait(&iostr->b_rdQue);
 			if(!STR_BUFFER_IS_ICHANNEL_OPENED(iostr)){
@@ -402,10 +413,10 @@ void tch_istream_close(tch_istream* stream){
 	while(STR_BUFFER_IS_RDBUSY(iostr)){
 		tchThread_sleep(0);
 	}
-	tch_Mtx_lockt(&iostr->b_rlock,MTX_TRYMODE_WAIT);
+	SB_RD_LOCK(iostr);
 	STR_BUFFER_SET_RDBUSY(iostr);
 	STR_BUFFER_CLR_ICHANNEL_OPENED(iostr);
-	tch_Mtx_unlockt(&iostr->b_rlock);
+	SB_RD_UNLOCK(iostr);
 	while(iostr->b_rdQue.entry){
 		tchThread_wake(&iostr->b_rdQue);
 	}

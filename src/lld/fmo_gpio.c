@@ -49,7 +49,7 @@ static void tch_gpio_free(tch_gpio_instance* self,uint16_t pin);
 	                             x,\
 	                             MTX_INIT\
                                  }
-#define LOCK_INS(ins_p)         {tch_Mtx_lockt(&ins_p->lock,MTX_TRYMODE_WAIT);}
+#define LOCK_INS(ins_p)         {tch_Mtx_lockt(&ins_p->lock,TRUE);}
 #define UNLOCK_INS(ins_p)       {tch_Mtx_unlockt(&ins_p->lock);}
 #else
 #define _GPIO_PROTOTYPE_INTI(x) {\
@@ -58,8 +58,8 @@ static void tch_gpio_free(tch_gpio_instance* self,uint16_t pin);
 	                             0,\
 	                             x\
                                  }
-#define LOCK_INS(ins_p)
-#define UNLOCK_INS(ins_p)
+#define LOCK_INS(ins_p)          {}
+#define UNLOCK_INS(ins_p)        {}
 #endif
 
 /*CLEAR_GPIO_MODE(_hw_desc_p,pos);\*/
@@ -101,7 +101,7 @@ struct _tch_gpio_prototype{
 	uint16_t                evt_flag;
 	const uint8_t           self_idx;
 #ifdef FEATURE_MTHREAD
-	mtx_lock                lock;
+	tch_mtx_lock                lock;
 #endif
 };
 
@@ -389,7 +389,7 @@ int tch_gpio_registerIoEvent(tch_gpio_instance* self,uint16_t pin,tch_gpio_evt_c
 	while(pin){
 		if(pin & ((uint16_t) 1)){
 			exti_hwp = &EXTI_HWs[pos];
-			tch_Mtx_lockt(&exti_hwp->acc_mtx,MTX_TRYMODE_WAIT);                           /// lock mutex of exti instance which is relavant to given gpio pin
+			tch_Mtx_lockt(&exti_hwp->acc_mtx,TRUE);                           /// lock mutex of exti instance which is relavant to given gpio pin
 			if(exti_hwp->ev_handler == NULL){
 				exti_hwp->ev_handler = (generic_handler) listener;
 				exti_hwp->ev_ioport = ins->self_idx;
@@ -431,7 +431,7 @@ int tch_gpio_unregisterIoEvent(tch_gpio_instance* self,uint16_t pin){
 	while(pin){
 		if(pin & ((uint16_t) 1)){
 			exti_hwp = &EXTI_HWs[pos];
-			tch_Mtx_lockt(&exti_hwp->acc_mtx,MTX_TRYMODE_WAIT);
+			tch_Mtx_lockt(&exti_hwp->acc_mtx,TRUE);
 			if(exti_hwp->ev_ioport == ins->self_idx){
 				if((exti_hwp->ev_handler != NULL) && (EXTI_OCP_GET_GPIO_IDX(exti_hwp) == pos)){
 					exti_hwp->ev_handler =  NULL;

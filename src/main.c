@@ -21,7 +21,7 @@
 
 static uint32_t child_Stack[1 << 8];
 static uint32_t child_Stack1[1 << 8];
-static mtx_lock tlock;
+static tch_mtx_lock tlock;
 
 static tchThread_t* childThread;
 static THREAD_ROUTINE(childRoutine);
@@ -38,7 +38,7 @@ static tch_gptimer_instance* time_evt_handler;
 static void btn_eventListener(tch_gpio_instance* gpio);
 static DECLARE_TASK_FN(ledTask);
 
-static mtx_lock time_eventLock;
+static tch_mtx_lock time_eventLock;
 static GPT_TIMEOUT_LISTENER(time_eventListener);
 static void postTimeEvent(void);
 float a = 1.f;
@@ -47,11 +47,9 @@ float b = 2.f;
  * Test Only Purpose
  */
 
-int btn_cnt;
 uint16_t ana_val[256];
 void* main(void* arg){
 
-	btn_cnt = 0;
 	tch_Mtx_init(&tlock);
 	task.t_arg = NULL;
 	task.t_prior = 1;
@@ -64,19 +62,12 @@ void* main(void* arg){
 
 
 
-	tch_usart_cfg ucfg;
-	ucfg.USART_Parity = USART_Parity_NON;
-	ucfg.USART_StopBit = USART_StopBit_1B;
-	usart3->open(usart3,115200,ActOnSleep,&ucfg);
-	usart3->writeCstr(usart3,"USART3 Initialized\n",NULL);
-
 	tch_gpio_cfg io_cfg;
 	tch_lld_gpio_cfgInit(&io_cfg);
 	io_cfg.GPIO_Mode = GPIO_Mode_OUT;
 	io_cfg.GPIO_Otype = GPIO_OType_PP;
 	io_cfg.GPIO_PuPd = GPIO_PuPd_UP;
 	ledIo = tch_lld_gpio_init(GPIO_F,led_pin,&io_cfg,ActOnSleep);
-	usart3->writeCstr(usart3,"LED GPIO Initialized\n",NULL);
 
 	tch_lld_gpio_cfgInit(&io_cfg);
 	io_cfg.GPIO_Mode = GPIO_Mode_IN;
@@ -87,7 +78,6 @@ void* main(void* arg){
 	tch_gpio_evt_cfg ev_cfg;
 	ev_cfg.GPIO_Evt_Edge_Mode = GPIO_Evt_Edge_Fall;
 	ev_cfg.GPIO_Evt_Type = GPIO_Evt_Interrupt;
-
 	evt_io->registerIoEvent(evt_io,ev_pin,&ev_cfg,btn_eventListener);
 
 
@@ -105,34 +95,28 @@ void* main(void* arg){
 	if(ledIo != NULL){
 		ledIo->out(ledIo,led_pin,bClear);
 	}
-	usart3->writeCstr(usart3,"Device Initailized Complete\n",NULL);
 
 	tch_adc_cfg acfg;
 	tch_lld_adc_initCfg(&acfg);
 	acfg.ADC_Resolution = ADC_Resolution_12B;
 	acfg.ADC_SampleHold = ADC_SampleHold_3Cycle;
-	acfg.ADC_SampleFreqInHz = 100000;
+	acfg.ADC_SampleFreqInHz = 200000;
 	adc1->open(adc1,&acfg,ActOnSleep);
 	adc1->read(adc1,ana_val,200,4);
 	adc1->close(adc1);
 
 
 	adc1->open(adc1,&acfg,ActOnSleep);
-//	usart3->close(usart3);
-//	usart3->open(usart3,115200,ActOnSleep,&ucfg);
-	uint8_t c;
-	uint16_t av = 0;
 
 	tch_spi_cfg spicfg;
 	tch_lld_spi_cfginit(&spicfg);
 	spi1->open(spi1,&spicfg,ActOnSleep);
+
+	tch_hld_atcmdBt_openServer("SPP_Device",115200,NULL,ActOnSleep);
 	while(1){
-		a += 0.0001f;
 		spi1->transceive(spi1,'A',NULL);
 		adc1->read(adc1,ana_val,200,10);
-//		usart3->putc(usart3,'A');
-		usart3->writeCstr(usart3,"ADC Conversion Completed\n",NULL);
-//		usart3->write(usart3,"123",3,NULL);
+		tch_print("ADC Complete\n");
 
 	}
 	return 0;
@@ -145,12 +129,10 @@ void device_Init(void){
 
 DECLARE_TASK_FN(ledTask){
 	ledIo->out(ledIo,led_pin,bClear);
-	usart3->writeCstr(usart3,"Btn Pressed\n",NULL);
-	btn_cnt = 0;
+	tch_print("Btn Pressed\n");
 }
 
 GPT_TIMEOUT_LISTENER(time_eventListener){
-	btn_cnt++;
 }
 
 void postTimeEvent(void){
@@ -158,7 +140,6 @@ void postTimeEvent(void){
 }
 
 void btn_eventListener(tch_gpio_instance* gpio){
-//	btn_cnt++;
 	tch_postSysTask(ledTask,NULL,1);
 }
 
@@ -168,10 +149,7 @@ THREAD_ROUTINE(childRoutine){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
 		tchThread_sleep(0);
-//		usart3->putc(usart3,'B');
-		usart3->writeCstr(usart3,"This is Child0 Loop\n",NULL);
-//		usart3->write(usart3,"456",3,NULL);
-
+		tch_print("This is Child Thread Loop 0\n");
 	}
 	return NULL;
 }
@@ -180,12 +158,9 @@ THREAD_ROUTINE(childRoutine1){
 	uint32_t cnt = 0;
 	while(1){
 		cnt++;
-//		fv += 0.001f;
 		b += 0.001f;
 		tchThread_sleep(0);
-//		usart3->putc(usart3,'C');
-		usart3->writeCstr(usart3,"This is Child1 Loop\n",NULL);
-//		usart3->write(usart3,"789",3,NULL);
+		tch_print("This is Child Thread Loop 1\n");
 	}
 	return NULL;
 }

@@ -15,11 +15,12 @@
 
 
 #define MTX_INIT                   {0,GENERIC_LIST_QUEUE_INIT}
-#define MTX_TRYMODE_WAIT           (uint16_t) (1 << 1)
+
 
 
 typedef struct _mtx_wait_queue_t mtx_wait_queue;
-typedef struct _tch_mtx_t mtx_lock;
+typedef struct _tch_mtx_t tch_mtx_lock;
+typedef struct _tch_sem_t tch_sem_lock;
 
 typedef struct _tch_async_iobuffer_t tch_async_iobuffer;
 
@@ -33,12 +34,16 @@ struct _tch_mtx_t{
 	mtx_wait_queue w_q;
 };
 
+struct _tch_sem_lock_t {
+	uint32_t cnt;
+	mtx_wait_queue w_q;
+};
 
 
 struct _tch_async_iobuffer_t {
 	void*                   _bp;
-	mtx_lock                 bwlock;
-	mtx_lock                 brlock;
+	tch_mtx_lock                 bwlock;
+	tch_mtx_lock                 brlock;
 	tch_genericList_queue_t   bRdQue;
 	tch_genericList_queue_t   bWrQue;
 	uint16_t                 flag;
@@ -48,9 +53,18 @@ struct _tch_async_iobuffer_t {
 	uint32_t                 wsize;
 };
 
-void tch_Mtx_init(mtx_lock* lock);
-void tch_Mtx_lockt(mtx_lock* lock,uint16_t try_mode);
-void tch_Mtx_unlockt(mtx_lock* lock);
+void tch_Mtx_init(tch_mtx_lock* lock);
+BOOL tch_Mtx_lockt(tch_mtx_lock* lock,BOOL wait);
+void tch_Mtx_unlockt(tch_mtx_lock* lock);
+void tch_Mtx_deinit(tch_mtx_lock* lock);
+
+void tch_Sem_init(tch_sem_lock* sem,uint32_t maxcnt);
+BOOL tch_Sem_up(tch_sem_lock* sem, BOOL wait);
+BOOL tch_Sem_down(tch_sem_lock* sem, BOOL wait);
+void tch_Sem_deinit(tch_sem_lock* sem);
+
+
+
 
 
 void tch_async_iobuffer_init(tch_async_iobuffer* ins,void* bp,uint32_t size,BOOL th_safe);

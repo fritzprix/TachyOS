@@ -76,7 +76,7 @@ struct _gpio_hw_desc_t {
 
 struct _exti_hw_desc_t {
 #ifdef FEATURE_MTHREAD
-	mtx_lock            acc_mtx;
+	tch_mtx_lock            acc_mtx;
 #endif
 	uint16_t            flag;
 	tch_gpio_t           ev_ioport;

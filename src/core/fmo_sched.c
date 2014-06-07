@@ -91,6 +91,7 @@ static int preemptCnt;
 
 
 
+
 int sched_Init(){
 	KERNEL_LOCK();
 	cthread = NULL;
@@ -236,6 +237,19 @@ void sv_startCurrentThread(void){
 	__set_PSP((uint32_t)cthread->t_tctx.R13);            ///            load stack pointer of current thread
 	__DMB();
 	__ISB();
+#ifdef FEATURE_HFLOAT
+	asm volatile("vldr s0,=%0" : : "i"(0) :);            ///           intentionally create floating point context
+	                                                     /***
+	                                                      *            this floating point instruction guarantees that every context of thread
+	                                                      *            is floating point mode. it means that identical exception stack
+	                                                      *            can be assumed. it's not best way to optimize context switching performance
+	                                                      *            of kernel though, it's quite simple in structure of the code.
+	                                                      *
+	                                                      *            Cortex M4F series support lazy save feature for floating point
+	                                                      *            context switching performance. so overhead from making all the thread
+	                                                      *            have floating point mode is not too significant	                                                      *
+	                                                      */
+#endif
 	KERNEL_UNLOCK();                                     ///            unlock privililedged operation return to noraml(user) mode
 	cthread->t_fn(NULL);                                 ///            start thread routine
 	sched_terminateCThread();                            ///            invoked when thread is done
@@ -432,10 +446,9 @@ void PendSV_Handler(void){
 		}
 		break;
 	case SVC_MTX_LOCK:                                                               /// try lock mutex : Arg1 (Mutex)
-		switch(arg2){
-		case MTX_TRYMODE_WAIT:                                                       /// if try has failed current thread will put on the mtx wait queue and new thread will be active
-			if(!((mtx_lock*)arg1)->key){
-				((mtx_lock*) arg1)->key = (uint32_t) cthread;
+		if(arg2){
+			if(!((tch_mtx_lock*)arg1)->key){
+				((tch_mtx_lock*) arg1)->key = (uint32_t) cthread;
 				if(!cthread->t_lckCnt++){
 					cthread->t_svd_prior = cthread->t_prior;                             /// to prevent thread being preemted critical section
 					cthread->t_prior = THREAD_PRIORITY_KERNEL;
@@ -445,7 +458,7 @@ void PendSV_Handler(void){
 				nth = AS_THREAD(tch_genericQue_dequeue(&th_rq));
 				((tch_genericList_node_t*)nth)->prev = AS_LIST_NODE(cthread);
 				cthread = nth;
-				PUT_THREAD_TO_QUEUE((tch_genericList_queue_t*)&((mtx_lock*) arg1)->w_q,PREV_THREAD(cthread));
+				PUT_THREAD_TO_QUEUE((tch_genericList_queue_t*)&((tch_mtx_lock*) arg1)->w_q,PREV_THREAD(cthread));
 				if(IS_THREAD_STARTED(nth)){
 					sv_returnToKernelRoutine(sched_switchContext);
 				}else{
@@ -454,21 +467,33 @@ void PendSV_Handler(void){
 				KERNEL_LOCK();
 				break;
 			}
+		}else{
+			//no wait mtx lock
+			if(!((tch_mtx_lock*)arg1)->key){
+				((tch_mtx_lock*) arg1)->key = (uint32_t) cthread;
+				if(!cthread->t_lckCnt++){
+					cthread->t_svd_prior = cthread->t_prior;                             /// to prevent thread being preemted critical section
+					cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				}
+				stack->R0 = TRUE;
+			}else{
+				stack->R0 = FALSE;
+			}
 		}
 		break;
-		case SVC_MTX_UNLOCK:                                                          /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
-			if(!(--cthread->t_lckCnt)){
-				cthread->t_prior = cthread->t_svd_prior;
-			}
-			((mtx_lock*) arg1)->key = 0;
-			if(((mtx_lock*)arg1)->w_q.entry != NULL){
-				nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((mtx_lock*)arg1)->w_q);
-				SET_THREAD_STATUS(nth,THREAD_STATUS_READY);
-				PUT_THREAD_TO_QUEUE(&th_rq,nth);
-			}
-			KERNEL_UNLOCK();
-			break;
+	case SVC_MTX_UNLOCK:                                                          /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
+		if(!(--cthread->t_lckCnt)){
+			cthread->t_prior = cthread->t_svd_prior;
 		}
+		((tch_mtx_lock*) arg1)->key = 0;
+		if(((tch_mtx_lock*)arg1)->w_q.entry != NULL){
+			nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx_lock*)arg1)->w_q);
+			SET_THREAD_STATUS(nth,THREAD_STATUS_READY);
+			PUT_THREAD_TO_QUEUE(&th_rq,nth);
+		}
+		KERNEL_UNLOCK();
+		break;
+	}
 #ifdef THR_TRACE_ENABLE
 	recordHandlerReturn();
 #endif
@@ -581,10 +606,9 @@ void SVC_Handler(void){                                                         
 		}
 		break;
 	case SVC_MTX_LOCK:                                                               /// try lock mutex : Arg1 (Mutex)
-		switch(stack->R2){
-		case MTX_TRYMODE_WAIT:                                                       /// if try has failed current thread will put on the mtx wait queue and new thread will be active
-			if(!((mtx_lock*)stack->R1)->key){
-				((mtx_lock*) stack->R1)->key = (uint32_t) cthread;
+		if(stack->R2){
+			if(!((tch_mtx_lock*)stack->R1)->key){
+				((tch_mtx_lock*) stack->R1)->key = (uint32_t) cthread;
 				if(!cthread->t_lckCnt++){
 					cthread->t_svd_prior = cthread->t_prior;                             /// save original priority of thread
 					cthread->t_prior = THREAD_PRIORITY_KERNEL;
@@ -594,7 +618,7 @@ void SVC_Handler(void){                                                         
 				nth = AS_THREAD(tch_genericQue_dequeue(&th_rq));
 				((tch_genericList_node_t*)nth)->prev = AS_LIST_NODE(cthread);
 				cthread = nth;
-				PUT_THREAD_TO_QUEUE((tch_genericList_queue_t*)&((mtx_lock*) stack->R1)->w_q,PREV_THREAD(cthread));
+				PUT_THREAD_TO_QUEUE((tch_genericList_queue_t*)&((tch_mtx_lock*) stack->R1)->w_q,PREV_THREAD(cthread));
 				if(IS_THREAD_STARTED(nth)){
 					sv_returnToKernelRoutine(sched_switchContext);
 				}else{
@@ -603,20 +627,32 @@ void SVC_Handler(void){                                                         
 				KERNEL_LOCK();
 				break;
 			}
+		}else{
+			// no wait mode mtx lock
+			if(!((tch_mtx_lock*) stack->R1)->key){
+				((tch_mtx_lock*)stack->R1)->key = (uint32_t) cthread;
+				if(!cthread->t_lckCnt++){
+					cthread->t_svd_prior = cthread->t_prior;
+					cthread->t_prior = THREAD_PRIORITY_KERNEL;
+				}
+				stack->R0 = TRUE;
+			}else{
+				stack->R0 = FALSE;
+			}
 		}
 		break;
-		case SVC_MTX_UNLOCK:                                                          /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
-			((mtx_lock*) stack->R1)->key = 0;
-			if(!(--cthread->t_lckCnt)){
-				cthread->t_prior = cthread->t_svd_prior;
-			}
-			if(((mtx_lock*)stack->R1)->w_q.entry != NULL){
-				nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((mtx_lock*)stack->R1)->w_q);
-				SET_THREAD_STATUS(nth,THREAD_STATUS_READY);
-				PUT_THREAD_TO_QUEUE(&th_rq,nth);
-			}
-			break;
+	case SVC_MTX_UNLOCK:                                                         /// unlock mutex and give the key to most prior thread in the wait queue of this mutex
+		((tch_mtx_lock*) stack->R1)->key = 0;
+		if(!(--cthread->t_lckCnt)){
+			cthread->t_prior = cthread->t_svd_prior;
 		}
+		if(((tch_mtx_lock*)stack->R1)->w_q.entry != NULL){
+			nth = (tchThread_t*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx_lock*)stack->R1)->w_q);
+			SET_THREAD_STATUS(nth,THREAD_STATUS_READY);
+			PUT_THREAD_TO_QUEUE(&th_rq,nth);
+		}
+		break;
+	}
 #ifdef THR_TRACE_ENABLE
 	recordHandlerReturn();
 #endif

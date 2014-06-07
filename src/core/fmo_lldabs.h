@@ -13,6 +13,24 @@
 #include "fmo_synch.h"
 
 
+#define ISTREAM_INIT                    {NULL,NULL,NULL,NULL,NULL}
+#define OSTREAM_INIT                    {NULL,NULL,NULL,NULL,NULL}
+
+#define IOSTREAM_INIT                   {\
+	                                      NULL,\
+	                                      MTX_INIT,\
+	                                      MTX_INIT,\
+	                                      0,\
+	                                      0,\
+	                                      0,\
+	                                      0,\
+	                                      ISTREAM_INIT,\
+	                                      OSTREAM_INIT,\
+	                                      GENERIC_LIST_QUEUE_INIT,\
+	                                      GENERIC_LIST_QUEUE_INIT}
+
+
+
 typedef struct _tch_ostream_t tch_ostream;
 typedef struct _tch_istream_t tch_istream;
 typedef struct _tch_iostream_buffer_t tch_iostream_buffer;
@@ -40,17 +58,17 @@ struct _tch_istream_t {
 
 struct _tch_iostream_buffer_t{
 	void*                        _bp;
-	mtx_lock                      b_rlock;
-	mtx_lock                      b_wlock;
+	tch_mtx_lock                      b_rlock;
+	tch_mtx_lock                      b_wlock;
 	uint16_t                      b_flag;
 	uint32_t                      b_size;
 	uint32_t                      b_wrIdx;
 	uint32_t                      b_rdIdx;
 //	uint32_t                      b_updateSize;
-	tch_istream                    b_istream;
-	tch_ostream                    b_ostream;
-	tch_genericList_queue_t        b_rdQue;
-	tch_genericList_queue_t        b_wrQue;
+	tch_istream                   b_istream;
+	tch_ostream                   b_ostream;
+	tch_genericList_queue_t       b_rdQue;
+	tch_genericList_queue_t       b_wrQue;
 };
 
 

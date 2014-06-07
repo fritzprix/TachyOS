@@ -19,7 +19,7 @@ typedef struct _sys_time_prototype vt_prototype;
 #define GET_TIMER_COUNT(stp)     (stp->p_flag & TIMER_COUNT_MASK)
 struct _sys_time_prototype{
 	struct _system_time_t               p_ins;
-	mtx_lock                            p_lock;
+	tch_mtx_lock                            p_lock;
 	uint32_t                            p_flag;
 	tch_gptimer_instance*                     p_timers[4];
 	timeEventListener                   p_listener;

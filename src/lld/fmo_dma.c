@@ -27,10 +27,19 @@
                                                  }
 
 
+#ifdef FEATURE_MTHREAD
+#define DMA_LOCK(ins_p) {tch_Mtx_lockt(&ins_p->acc_lock,TRUE);}
+#else
+#define DMA_LOCK(ins_p) {}
+#endif
 
 
+#ifdef FEATURE_MTHREAD
+#define DMA_UNLOCK(ins_p) {tch_Mtx_unlockt(&ins_p->acc_lock);}
+#else
+#define DMA_UNLOCK(ins_p) {}
+#endif
 
-typedef struct _tch_dma_prototype tch_dma_prototype;
 
 #define DMA_FLAG_OPEN                          (uint16_t) (1 << 0)
 #define DMA_FLAG_BUSY                          (uint16_t) (1 << 1)
@@ -54,11 +63,12 @@ typedef struct _tch_dma_prototype tch_dma_prototype;
 #define DMA_GET_ISR(dhw_p)                    ((*dhw_p->_isr) >> dhw_p->ipos)
 #define DMA_CLR_ISR(dhw_p,isr)                (*dhw_p->_icr |= (isr << dhw_p->ipos))
 
+typedef struct _tch_dma_prototype tch_dma_prototype;
 
 
 struct _tch_dma_prototype {
 	tch_dma_instance            __public__;
-	mtx_lock                    acc_lock;
+	tch_mtx_lock                    acc_lock;
 	uint8_t                     idx;
 	uint16_t                    flag;
 	tch_dma_eventListener       listener;
@@ -242,10 +252,9 @@ tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_dma_cfg* dmacfg,tch_pwrMgrCfg c
 		return NULL;
 	}
 
-	tch_Mtx_lockt(&ins->acc_lock,MTX_TRYMODE_WAIT);
+	DMA_LOCK(ins);
 	DMA_SET_OPENED(ins);
-	tch_Mtx_unlockt(&ins->acc_lock);
-
+	DMA_UNLOCK(ins);
 	if(dma < 8){
 		DMA_COM_HWs.occup_flag[0] |= (1 << dma);
 		if((RCC->AHB1ENR & RCC_AHB1ENR_DMA1EN) == 0){
@@ -286,13 +295,13 @@ BOOL tch_lld_dma_beginXfer(tch_dma_instance* self,uint32_t size){
 	if(DMA_IS_BUSY(ins)){
 		return FALSE;
 	}
-	tch_Mtx_lockt(&ins->acc_lock,MTX_TRYMODE_WAIT);
+	DMA_LOCK(ins);
 	DMA_SET_BUSY(ins);
 	dhw->_hw->NDTR = size;
 	__DMB();
 	__ISB();
 	dhw->_hw->CR |= DMA_SxCR_EN;
-	tch_Mtx_unlockt(&ins->acc_lock);
+	DMA_UNLOCK(ins);
 	return TRUE;
 
 }

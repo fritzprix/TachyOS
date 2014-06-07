@@ -11,6 +11,10 @@
 #include "fmo_thread.h"
 #include "../util/generic_data_types.h"
 
+#define TASK_PRIOR_EMERGENT     ((uint8_t) 4)
+#define TASK_PRIOR_HIGH         ((uint8_t) 3)
+#define TASK_PRIOR_NORMAL       ((uint8_t) 2)
+#define TASK_PRIOR_LOW          ((uint8_t) 1)
 
 typedef struct _tch_task_t tch_sysTask;
 typedef struct _tch_sys tch_sys;
@@ -43,6 +47,7 @@ struct _tch_sys {
 
 tchThread_t* sysThread;
 BOOL tch_postSysTask(tch_systaskRoutin_t t_routine,void* arg, uint8_t priority);
+void tch_print(const char* str);
 
 
 #endif /* FMO_SYS_H_ */

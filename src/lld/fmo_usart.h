@@ -50,6 +50,7 @@ const tch_usart_instance* usart1;
 const tch_usart_instance* usart2;
 const tch_usart_instance* usart3;
 
+void tch_lld_usart_initCfg(tch_usart_cfg* cfg);
 
 
 

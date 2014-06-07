@@ -54,7 +54,7 @@
 
 #ifdef FEATURE_MTHREAD
 #define ADC_LOCK(ins){\
-	tch_Mtx_lockt(&ins->lock,MTX_TRYMODE_WAIT);\
+	tch_Mtx_lockt(&ins->lock,TRUE);\
 }
 #else
 #define ADC_LOCK(ins){}
@@ -90,7 +90,7 @@ struct _tch_adc_prototype {
 	tch_pwm_instance*               _tim_handle;
 	tch_adc_evQue                    evqueue;
 #ifdef FEATURE_MTHREAD
-	mtx_lock                         lock;
+	tch_mtx_lock                         lock;
 #endif
 	tch_adc_iohandle                 io_handles[19];
 };
@@ -245,13 +245,9 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 	if(ADC_IS_OPEN(ins)){
 		return FALSE;
 	}
-#ifdef FEATURE_MTHREAD
-	tch_Mtx_lockt(&ins->lock,MTX_TRYMODE_WAIT);
-#endif
+	ADC_LOCK(ins);
 	ADC_SET_OPEN(ins);
-#ifdef FEATURE_MTHREAD
-	tch_Mtx_unlockt(&ins->lock);
-#endif
+	ADC_UNLOCK(ins);
 
 	if(!(*ahw->_clkenr & ahw->clkmsk)){                                /// check whether clock is enabled or not
 		*ahw->_clkenr |= ahw->clkmsk;

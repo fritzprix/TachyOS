@@ -19,6 +19,20 @@
 #endif
 
 
+#ifdef FEATURE_MTHREAD
+#define USART_RXLOCK(ins_p)   {tch_Mtx_lockt(&ins_p->racc_lock,TRUE);}
+#define USART_TXLOCK(ins_p)   {tch_Mtx_lockt(&ins_p->wacc_lock,TRUE);}
+#define USART_RXUNLOCK(ins_p) {tch_Mtx_unlockt(&ins_p->racc_lock);}
+#define USART_TXUNLOCK(ins_p) {tch_Mtx_unlockt(&ins_p->wacc_lock);}
+
+
+#else
+#define USART_RXLOCK(ins_p)    {}
+#define USART_TXLOCK(ins_p)    {}
+#define USART_RXUNLOCK(ins_p)  {}
+#define USART_TXUNLOCK(ins_p)  {}
+#endif
+
 #define PUBLIC_INTERFACE                     {\
 	                                           lld_usart_open,\
 	                                           lld_usart_close,\
@@ -100,8 +114,8 @@ struct _tch_usart_stream_t {
 
 struct _tch_usart_prototype_t{
 	tch_usart_instance            _public_;
-	mtx_lock                       wacc_lock;
-	mtx_lock                       racc_lock;
+	tch_mtx_lock                       wacc_lock;
+	tch_mtx_lock                       racc_lock;
 	uint16_t                       flag;
 	uint8_t                        idx;
 	tch_dma_instance*              tx_dma_handle;
@@ -254,6 +268,10 @@ const tch_usart_instance* usart2 = (tch_usart_instance*)&USART_StaticInstances[1
 const tch_usart_instance* usart3 = (tch_usart_instance*)&USART_StaticInstances[2];
 
 
+void tch_lld_usart_initCfg(tch_usart_cfg* cfg){
+	cfg->USART_Parity = USART_Parity_No;
+	cfg->USART_StopBit = USART_StopBit_0dot5B;
+}
 
 
 BOOL lld_usart_open(const tch_usart_instance* self,uint32_t brate,tch_pwrMgrCfg pmopt,tch_usart_cfg* cfg){
@@ -263,9 +281,9 @@ BOOL lld_usart_open(const tch_usart_instance* self,uint32_t brate,tch_pwrMgrCfg 
 	if(USART_IS_OPENED(ins)){                                                                  //// if usart is opened, return
 		return FALSE;
 	}
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);                                             //// otherwise try open it
+	USART_TXLOCK(ins);
 	USART_SET_OPENED(ins);
-	tch_Mtx_unlockt(&ins->wacc_lock);
+	USART_TXUNLOCK(ins);
 
 	*uhw->_clkenr |= uhw->clkmsk;                                                              //// enable clock source
 
@@ -349,9 +367,9 @@ BOOL lld_usart_close(const tch_usart_instance* self){
 	tch_usart_stream* rx_str = &USART_RX_Stream[ins->idx];
 	tch_bdc_usart* ucf = &USART_BD_CFGs[ins->idx];
 	while(USART_IS_RXBUSY(ins) || USART_IS_TXBUSY(ins));                /// wait for complete on going communication
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
+	USART_TXLOCK(ins);
 	USART_CLR_OPENED(ins);
-	tch_Mtx_unlockt(&ins->wacc_lock);
+	USART_TXUNLOCK(ins);
 	NVIC_DisableIRQ(uhw->irq);
 	__DMB();
 	__ISB();
@@ -385,9 +403,9 @@ BOOL lld_usart_putc(const tch_usart_instance* self,uint8_t c){
 	if(!USART_IS_OPENED(ins)){
 		return FALSE;
 	}
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
+	USART_TXLOCK(ins);
 	if(!USART_IS_OPENED(ins)){
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
@@ -407,10 +425,10 @@ BOOL lld_usart_putc(const tch_usart_instance* self,uint8_t c){
 		uhw->_hw->CR1 |= USART_EVType_TC;
 		if(USART_GET_TXERR(ins)){
 			USART_CLR_TXERR(ins);
-			tch_Mtx_unlockt(&ins->wacc_lock);
+			USART_TXUNLOCK(ins);
 			return FALSE;
 		}
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		return TRUE;
 	}else{
 		while(!(uhw->_hw->SR & USART_SR_TXE)){
@@ -422,10 +440,10 @@ BOOL lld_usart_putc(const tch_usart_instance* self,uint8_t c){
 		}
 		if(USART_GET_TXERR(ins)){
 			USART_CLR_TXERR(ins);
-			tch_Mtx_unlockt(&ins->wacc_lock);
+			USART_TXUNLOCK(ins);
 			return FALSE;
 		}
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		return TRUE;
 	}
 	return FALSE;
@@ -450,9 +468,9 @@ BOOL lld_usart_write(const tch_usart_instance* self,const uint8_t* bp,uint32_t s
 		return FALSE;
 	}                                                                               /// check whether tx busy,if it is thread will be put on wait state and wake up by hw interrupt
 
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
+	USART_TXLOCK(ins);
 	if(!USART_IS_OPENED(ins)){
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
@@ -473,11 +491,10 @@ BOOL lld_usart_write(const tch_usart_instance* self,const uint8_t* bp,uint32_t s
 			USART_CLR_TXERR(ins);
 			uhw->_hw->CR1 |= USART_EVType_TC;
 			if(*err){
-				tch_Mtx_unlockt(&ins->wacc_lock);
+				USART_TXUNLOCK(ins);
 				return FALSE;
 			}
-
-			tch_Mtx_unlockt(&ins->wacc_lock);
+			USART_TXUNLOCK(ins);
 			return TRUE;
 		}
 	}else{
@@ -495,13 +512,13 @@ BOOL lld_usart_write(const tch_usart_instance* self,const uint8_t* bp,uint32_t s
 		*err = USART_GET_TXERR(ins);
 		USART_CLR_TXERR(ins);
 		USART_CLR_TXBUSY(ins);
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		if(*err){
 			return FALSE;
 		}
 		return TRUE;
 	}
-	tch_Mtx_unlockt(&ins->wacc_lock);
+	USART_TXUNLOCK(ins);
 	return FALSE;
 }
 
@@ -531,9 +548,9 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 		*(mp + size) = *(cstr + size++);
 	}
 	*(mp + size++) = '\r';
-	tch_Mtx_lockt(&ins->wacc_lock,MTX_TRYMODE_WAIT);
+	USART_TXLOCK(ins);
 	if(!USART_IS_OPENED(ins)){
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		return FALSE;
 	}
 	USART_SET_TXBUSY(ins);
@@ -554,11 +571,10 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 			USART_CLR_TXERR(ins);
 			uhw->_hw->CR1 |= USART_EVType_TC;
 			if(*err){
-				tch_Mtx_unlockt(&ins->wacc_lock);
+				USART_TXUNLOCK(ins);
 				return FALSE;
 			}
-
-			tch_Mtx_unlockt(&ins->wacc_lock);
+			USART_TXUNLOCK(ins);
 			return TRUE;
 		}
 	}else{
@@ -576,13 +592,13 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 		*err = USART_GET_TXERR(ins);
 		USART_CLR_TXERR(ins);
 		USART_CLR_TXBUSY(ins);
-		tch_Mtx_unlockt(&ins->wacc_lock);
+		USART_TXUNLOCK(ins);
 		if(*err){
 			return FALSE;
 		}
 		return TRUE;
 	}
-	tch_Mtx_unlockt(&ins->wacc_lock);
+	USART_TXUNLOCK(ins);
 	return FALSE;
 }
 

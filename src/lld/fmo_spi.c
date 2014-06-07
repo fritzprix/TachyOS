@@ -46,7 +46,7 @@
 
 #ifdef FEATURE_MTHREAD
 #define SPI_LOCK(ins_p){\
-	tch_Mtx_lockt(&ins_p->lock,MTX_TRYMODE_WAIT);\
+	tch_Mtx_lockt(&ins_p->lock,TRUE);\
 }
 #define SPI_UNLOCK(ins_p){\
 	tch_Mtx_unlockt(&ins_p->lock);\
@@ -105,7 +105,7 @@ struct _tch_spi_prototype_t {
 	tch_ostream*           rx_buffer_ostream;
 	tch_spi_eventlistener _listener;
 #ifdef FEATURE_MTHREAD
-	mtx_lock               lock;
+	tch_mtx_lock               lock;
 #endif
 	tch_spi_evque          evque;
 } __attribute__((packed));

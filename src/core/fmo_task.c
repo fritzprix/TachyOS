@@ -11,6 +11,7 @@
 #include "fmo_thread.h"
 #include "fmo_synch.h"
 #include "fmo_sched.h"
+#include "../lld/fmo_usart.h"
 #include "port/tch_stdtypes.h"
 
 
@@ -38,6 +39,11 @@ struct sys_thread {
 
 
 
+
+
+/**
+ * private function
+ */
 static void* system_threadRoutine(void* arg);
 static LIST_COMPARE_FN(task_prioritize_policy);
 static BOOL tch_task_isAvailable(tch_sysTask* task);
@@ -51,8 +57,8 @@ static __attribute__((section(".data"))) tch_sysTask SYS_INIT_TASK = {
 		tch_task_bootStrap
 };
 static __attribute__((section(".data")))tch_genericList_queue_t sys_taskQ = {
-		&SYS_INIT_TASK,
-		&SYS_INIT_TASK
+		(tch_genericList_node_t*)&SYS_INIT_TASK,
+		(tch_genericList_node_t*)&SYS_INIT_TASK
 };
 
 static __attribute__((section(".data")))tch_genericList_queue_t sys_threadHolder = {
@@ -61,7 +67,6 @@ static __attribute__((section(".data")))tch_genericList_queue_t sys_threadHolder
 };
 
 
-static const char* sysThreadName = "sysThread";
 
 /**
  * 	tch_genericList_node_t      t_listNode;
@@ -131,6 +136,10 @@ BOOL tch_postSysTask(tch_systaskRoutin_t t_routine,void* arg, uint8_t priority){
 	return TRUE;
 }
 
+void tch_print(const char* str){
+	usart3->writeCstr(usart3,str,NULL);
+}
+
 void tch_task_bootStrap(void* arg){
 	tch_genericQue_Init((tch_genericList_queue_t*)&sys_taskQ);
 	tch_genericQue_Init((tch_genericList_queue_t*)&sys_threadHolder);
@@ -153,6 +162,13 @@ void*   tch_task_freeTask   (tch_sysTask* task){
 
 void* system_threadRoutine(void* arg){
 	tch_sysTask* task = NULL;
+	/**
+	 * Initialize serial port to print debug message
+	 */
+	tch_usart_cfg ucfg;
+	ucfg.USART_Parity = USART_Parity_NON;
+	ucfg.USART_StopBit = USART_StopBit_1B;
+	usart3->open(usart3,115200,ActOnSleep,&ucfg);
 	void* rVal_p = NULL;
 	while(1){
 		while(sys_taskQ.entry != NULL){

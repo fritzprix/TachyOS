@@ -162,7 +162,7 @@ static inline void __handle_gpt_interrupt(tch_gptimer_prototype* ins,timer_hw_de
 
 struct _tch_pwm_prototype_t {
 	tch_pwm_instance                   p_ins;
-	mtx_lock                           p_lock;
+	tch_mtx_lock                           p_lock;
 	tch_timer                          p_timer;
 	uint16_t                           p_status;
 	uint16_t                           p_periodIn_us;
@@ -170,7 +170,7 @@ struct _tch_pwm_prototype_t {
 };
 
 struct _tch_gpt_request_t {
-	mtx_lock               r_lock;
+	tch_mtx_lock               r_lock;
 	uint32_t               r_id;
 	volatile uint32_t*    _r_time;
 };
@@ -191,7 +191,7 @@ struct _tch_gpt_request_t {
 
 struct _tch_gpt_prototype_t {
 	tch_gptimer_instance                P_ins;
-	mtx_lock                            p_lock;
+	tch_mtx_lock                            p_lock;
 	tch_timer                           p_timer;
 	uint16_t                            p_status;
 	tch_gptimer_listener                p_listener;
@@ -383,7 +383,7 @@ tch_pwm_instance* lld_timer_openTimerAsPulseOut(tch_timer timer,uint32_t periodI
 	if(PWM_IS_INIT(ins)){
 		return NULL;
 	}
-	tch_Mtx_lockt(&ins->p_lock,MTX_TRYMODE_WAIT);
+	tch_Mtx_lockt(&ins->p_lock,TRUE);
 	PWM_SET_INIT(ins);
 
 
@@ -452,7 +452,7 @@ tch_gptimer_instance* lld_timer_openGPTimer(tch_timer timer,uint32_t unitTimeInu
 	timer_hw_descriptor* thw = &TIMER_Hw_Desc[timer];
 	tch_gptimer_prototype* sp = &GpTimer_Instances[timer];
 	if(!GPT_IS_INIT(sp)){
-		tch_Mtx_lockt(&sp->p_lock,MTX_TRYMODE_WAIT);
+		tch_Mtx_lockt(&sp->p_lock,TRUE);
 		GPT_SET_INIT(sp);
 		tch_Mtx_unlockt(&sp->p_lock);
 	}else{
@@ -596,7 +596,7 @@ BOOL lld_timer_pwm_close(tch_pwm_instance* self){
 	if(!PWM_IS_INIT(ins)){
 		return FALSE;
 	}
-	tch_Mtx_lockt(&ins->p_lock,MTX_TRYMODE_WAIT);
+	tch_Mtx_lockt(&ins->p_lock,TRUE);
 	PWM_CLR_INIT(ins);
 	tch_Mtx_unlockt(&ins->p_lock);
 	PWM_CLR_CHCNT(ins);
@@ -626,7 +626,7 @@ int tch_GptSetTimeout(tch_gptimer_instance* self,uint32_t id,uint32_t timeIn_tu)
 	while(cc_ch < GPT_GET_MAXREQ(sp)){                                            // iterate channels
 		if(!sp->p_req[cc_ch].r_id){
 			if(!__get_IPSR()){
-				tch_Mtx_lockt(&sp->p_req[cc_ch].r_lock,MTX_TRYMODE_WAIT);
+				tch_Mtx_lockt(&sp->p_req[cc_ch].r_lock,TRUE);
 			}
 			sp->p_req[cc_ch].r_id = id;
 			if(!__get_IPSR()){
