@@ -42,8 +42,10 @@
 	                                           lld_usart_read,\
 	                                           lld_usart_available,\
 	                                           lld_usart_writeCstr,\
-	                                           lld_usart_readCstr\
-                                              }
+	                                           lld_usart_readCstr,\
+	                                           lld_usart_openInputStream,\
+	                                           lld_usart_openOutputStream\
+	                                          }
 
 #define USART_EVType_RXNE                     (uint16_t) (1 << 5)
 #define USART_EVType_TC                       (uint16_t) (1 << 6)
@@ -122,6 +124,8 @@ struct _tch_usart_prototype_t{
 	tch_dma_instance*              rx_dma_handle;
 	tch_gpio_instance*             gpiov_handle;
 	tch_usart_evQue                evQue;
+	tch_istream                    istr_wrapper;
+	tch_ostream                    ostr_wrapper;
 }__attribute__((packed));
 
 
@@ -136,6 +140,25 @@ static BOOL lld_usart_read(const tch_usart_instance* self,uint8_t* bp,uint32_t s
 uint32_t lld_usart_available(const tch_usart_instance* self);
 static BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_t* err);
 static BOOL lld_usart_readCstr(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err);
+static tch_istream* lld_usart_openInputStream(const tch_usart_instance* self);
+static tch_ostream* lld_usart_openOutputStream(const tch_usart_instance* self);
+
+/***
+ *  Output Stream Wrapper
+ */
+static BOOL lld_usart_ostr_wrapper_write(tch_ostream* stream,const uint8_t* wb,uint32_t size,uint8_t* err);
+static BOOL lld_usart_ostr_wrapper_putc(tch_ostream* stream,const uint8_t c,uint8_t* err);
+static uint32_t lld_usart_ostr_wrapper_available(tch_ostream* stream);
+static void lld_usart_ostr_wrapper_close(tch_ostream* stream);
+
+
+/***
+ *  Input stream Wrapper
+ */
+static BOOL lld_usart_istr_wrapper_read(tch_istream* stream,uint8_t* rb,uint32_t size,uint8_t* err);
+static BOOL lld_usart_istr_wrapper_getc(tch_istream* stream,uint8_t* rb,uint8_t* err);
+static uint32_t lld_usart_istr_wrapper_available(tch_istream* stream);
+static void lld_usart_istr_wrapper_close(tch_istream* stream);
 
 __attribute__((always_inline)) static BOOL lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType);
 
@@ -234,7 +257,9 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				NULL,
 				NULL,
 				NULL,
-				INIT_USART_EVQ
+				INIT_USART_EVQ,
+				ISTREAM_INIT,
+				OSTREAM_INIT
 		}
 		,{
 				PUBLIC_INTERFACE,
@@ -245,7 +270,9 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				NULL,
 				NULL,
 				NULL,
-				INIT_USART_EVQ
+				INIT_USART_EVQ,
+				ISTREAM_INIT,
+				OSTREAM_INIT
 		}
 		,{
 				PUBLIC_INTERFACE,
@@ -256,7 +283,9 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				NULL,
 				NULL,
 				NULL,
-				INIT_USART_EVQ
+				INIT_USART_EVQ,
+				ISTREAM_INIT,
+				OSTREAM_INIT
 		}
 };
 
@@ -604,6 +633,82 @@ BOOL lld_usart_writeCstr(const tch_usart_instance* self,const char* cstr,uint16_
 
 BOOL lld_usart_readCstr(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err){
 	return TRUE;
+}
+
+tch_istream* lld_usart_openInputStream(const tch_usart_instance* self){
+	tch_usart_prototype* ins = (tch_usart_prototype*) self;
+	ins->istr_wrapper._bp = ins;
+	ins->istr_wrapper.close = lld_usart_istr_wrapper_close;
+	ins->istr_wrapper.getc = lld_usart_istr_wrapper_getc;
+	ins->istr_wrapper.read = lld_usart_istr_wrapper_read;
+	ins->istr_wrapper.available = lld_usart_istr_wrapper_available;
+	return &ins->istr_wrapper;
+}
+
+tch_ostream* lld_usart_openOutputStream(const tch_usart_instance* self){
+	tch_usart_prototype* ins = (tch_usart_prototype*) self;
+	ins->ostr_wrapper._bp = ins;
+	ins->ostr_wrapper.close = lld_usart_ostr_wrapper_close;
+	ins->ostr_wrapper.available = lld_usart_ostr_wrapper_available;
+	ins->ostr_wrapper.write = lld_usart_ostr_wrapper_write;
+	ins->ostr_wrapper.putc = lld_usart_ostr_wrapper_putc;
+	return &ins->ostr_wrapper;
+}
+
+
+/***
+ *  Output Stream Wrapper
+ */
+BOOL lld_usart_ostr_wrapper_write(tch_ostream* stream,const uint8_t* wb,uint32_t size,uint8_t* err){
+	tch_usart_prototype* ins = (tch_usart_prototype*)stream->_bp;
+	if(ins == NULL){
+		return FALSE;
+	}
+	return lld_usart_write((const tch_usart_instance*)ins,wb,size,(uint16_t*)err);
+}
+
+BOOL lld_usart_ostr_wrapper_putc(tch_ostream* stream,const uint8_t c,uint8_t* err){
+	tch_usart_prototype* ins = (tch_usart_prototype*)stream->_bp;
+	if(ins == NULL){
+		return FALSE;
+	}
+	return lld_usart_putc((const tch_usart_instance*)ins,c);
+}
+
+
+uint32_t lld_usart_ostr_wrapper_available(tch_ostream* stream){
+	return 0xFFFFFFFF;
+}
+
+void lld_usart_ostr_wrapper_close(tch_ostream* stream){
+	stream->_bp = NULL;
+}
+
+
+/***
+ *  Input stream Wrapper
+ */
+BOOL lld_usart_istr_wrapper_read(tch_istream* stream,uint8_t* rb,uint32_t size,uint8_t* err){
+	tch_usart_prototype* ins = (tch_usart_prototype*) stream->_bp;
+	tch_istream* str = USART_RX_Stream[ins->idx].istr;
+	return str->read(str,rb,size,err);
+}
+
+BOOL lld_usart_istr_wrapper_getc(tch_istream* stream,uint8_t* rb,uint8_t* err){
+	tch_usart_prototype* ins = (tch_usart_prototype*) stream->_bp;
+	tch_istream* str = USART_RX_Stream[ins->idx].istr;
+	return str->getc(str,rb,err);
+}
+
+uint32_t lld_usart_istr_wrapper_available(tch_istream* stream){
+	tch_usart_prototype* ins = (tch_usart_prototype*) stream->_bp;
+	tch_istream* str = USART_RX_Stream[ins->idx].istr;
+	return str->available(str);
+
+}
+
+void lld_usart_istr_wrapper_close(tch_istream* stream){
+	stream->_bp = NULL;
 }
 
 BOOL inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType){

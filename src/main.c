@@ -50,6 +50,7 @@ float b = 2.f;
 uint16_t ana_val[256];
 void* main(void* arg){
 
+
 	tch_Mtx_init(&tlock);
 	task.t_arg = NULL;
 	task.t_prior = 1;
@@ -116,7 +117,7 @@ void* main(void* arg){
 	while(1){
 		spi1->transceive(spi1,'A',NULL);
 		adc1->read(adc1,ana_val,200,10);
-	//	tch_printCstr("ADC Complete\n");
+//		tch_printCstr("ADC Complete\n");
 
 	}
 	return 0;
@@ -148,8 +149,8 @@ THREAD_ROUTINE(childRoutine){
 	while(1){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
-		tchThread_sleep(0);
-	//	tch_printCstr("This is Child Thread Loop 0\n");
+		tchThread_sleep(100);
+//		tch_printCstr("This is Child Thread Loop 0\n");
 	}
 	return NULL;
 }
@@ -159,8 +160,8 @@ THREAD_ROUTINE(childRoutine1){
 	while(1){
 		cnt++;
 		b += 0.001f;
-		tchThread_sleep(0);
-	//	tch_printCstr("This is Child Thread Loop 1\n");
+		tchThread_sleep(100);
+//		tch_printCstr("This is Child Thread Loop 1\n");
 	}
 	return NULL;
 }

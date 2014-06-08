@@ -13,11 +13,10 @@
 #include "../lld/fmo_gpio.h"
 
 typedef struct _atcmd_bt_bdc_t atcmd_bt_bdc;
-typedef struct _atcmd_bt_server_instance_t atcmd_bt_server_instance;
-typedef struct _atcmd_bt_client_instance_t atcmd_bt_client_instance;
 typedef enum {STANDBY,PEND,CONNECT} atcmd_bt_status;
 typedef uint32_t atcmd_bt_addr;
 typedef struct _atcmd_bt_device_t atcmd_bt_device;
+typedef struct _atcmd_bt_server_instance_t atcmd_bt_server_instance;
 typedef struct _atcmd_bt_server_adapter_t atcmd_bt_server_adapter;
 
 
@@ -36,25 +35,15 @@ struct _atcmd_bt_device_t {
 	tch_ostream* (*openOutputStream)(atcmd_bt_device* device);
 };
 
+
 struct _atcmd_bt_server_adapter_t {
-
+	BOOL (*onConnected)(atcmd_bt_device* device);
+	BOOL (*onDisconnected)(atcmd_bt_device* device);
 };
-
-struct _atcmd_bt_client_instance_t {
-
-};
-
 
 struct _atcmd_bt_server_instance_t {
-	BOOL (*setDeviceName)(const char* name);
-	const char* (*getDeviceName)();
-	atcmd_bt_status (*getStatus)();
-	atcmd_bt_addr (*getRecentTargetAddr)();
-	BOOL (*startListenToTarget)(atcmd_bt_addr baddr,uint32_t to);
-	BOOL (*startListen)(uint32_t to);
 	void (*close)();
 };
-
 
 
 atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint32_t baudrate,atcmd_bt_server_adapter* adapter,tch_pwrMgrCfg pcfg);

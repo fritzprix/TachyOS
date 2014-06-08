@@ -9,7 +9,7 @@
 #define FMO_USART_H_
 
 #include "hw_descriptor_types.h"
-
+#include "../core/fmo_lldabs.h"
 
 typedef struct _tch_usart_instance_t tch_usart_instance;
 typedef struct _tch_usart_cfg_t tch_usart_cfg;
@@ -43,6 +43,8 @@ struct _tch_usart_instance_t {
 	uint32_t (*available)(const tch_usart_instance* self);
 	BOOL (*writeCstr)(const tch_usart_instance* self,const char* cstr,uint16_t* err);
 	BOOL (*readCstr)(const tch_usart_instance* self,char* cstr,uint32_t timeout,uint16_t* err);
+	tch_istream* (*openInputStream)(const tch_usart_instance* self);
+	tch_ostream* (*openOutputStream)(const tch_usart_instance* self);
 };
 
 

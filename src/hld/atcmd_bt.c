@@ -15,8 +15,35 @@
 #include "../core/fmo_thread.h"
 //#include "../lld/fmo_gpio.h"
 #include "../lld/fmo_usart.h"
-#include "../util/mem.h"
+#include "../util/tch_stdlib.h"
 
+
+
+/**
+ * static atcmd_bt_addr tch_hld_bt_device_getAddress(atcmd_bt_device* device);
+static const char* tch_hld_bt_device_getName(atcmd_bt_device* device);
+static uint16_t tch_hld_bt_device_getRssi(atcmd_bt_device* device);
+static BOOL tch_hld_bt_device_connect(atcmd_bt_device* device);
+static BOOL tch_hld_bt_device_disconnect(atcmd_bt_device* device);
+static tch_istream* tch_hld_bt_device_openInputStream(atcmd_bt_device* device);
+static tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device);
+ */
+
+#ifndef BT_BUFFER_SIZE
+#define BT_BUFFER_SIZE 256
+#endif
+#define BTDEVICE_INTERFACE           {\
+	                                   tch_hld_bt_device_getAddress,\
+	                                   tch_hld_bt_device_getName,\
+	                                   tch_hld_bt_device_getRssi,\
+	                                   tch_hld_bt_device_connect,\
+	                                   tch_hld_bt_device_disconnect,\
+	                                   tch_hld_bt_device_openInputStream,\
+	                                   tch_hld_bt_device_openOutputStream}
+
+
+#define BTSERVER_INTERFACE           {\
+	                                   tch_hld_bt_server_close}
 
 
 #define BT_RES_OK                    ((const char*) "OK")
@@ -33,7 +60,8 @@
 #define BT_ATCMD_SETBTNAME           ((const char*) "AT+BTNAME=")
 #define BT_ATCMD_SETBTKEY            ((const char*) "AT+BTKEY=")
 #define BT_ATCMD_SETBTROLE           ((const char*) "AT+BTROLE=")
-#define BT_ATCMD_SETUART            ((const char*) "AT+BTUART,")
+#define BT_ATCMD_SETUART             ((const char*) "AT+BTUART,")
+#define BT_ATCMD_WAIT_SCAN           ((const char*) "AT+BTSCAN")
 
 
 #define BT_PARITY_NONE              ((const char*) "N")
@@ -46,6 +74,9 @@
 /***
  *  public function
  */
+/**
+ * Remote BT device Handle Interface
+ */
 static atcmd_bt_addr tch_hld_bt_device_getAddress(atcmd_bt_device* device);
 static const char* tch_hld_bt_device_getName(atcmd_bt_device* device);
 static uint16_t tch_hld_bt_device_getRssi(atcmd_bt_device* device);
@@ -55,12 +86,10 @@ static tch_istream* tch_hld_bt_device_openInputStream(atcmd_bt_device* device);
 static tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device);
 
 
-static BOOL tch_hld_bt_server_setDeviceName(const char* ame);
-static uint32_t tch_hld_bt_server_getDeviceName(char* rb);
-static atcmd_bt_status tch_hld_bt_server_getStatus();
-static atcmd_bt_addr tch_hld_bt_server_getRecentTargetAddr();
-static BOOL tch_hld_bt_server_startListenToTarget(atcmd_bt_addr baddr,uint32_t to);
-static BOOL tch_hld_bt_server_startListen(uint32_t to);
+
+/**
+ * Local BT server Handle Interface
+ */
 static void tch_hld_bt_server_close();
 
 
@@ -69,23 +98,48 @@ static void tch_hld_bt_server_close();
  *
  *  private function
  */
-static void tch_hld_btc_reset();
+typedef struct _atcmd_bt_prototype_t atcmd_bt_prototype;
+typedef struct _atcmd_btdevice_prototype_t atcmd_btdevice_prototype;
+
+static BOOL tch_hld_btc_setDeviceName(const char* name);
+static BOOL tch_hld_btc_hreset();
+static BOOL tch_hld_btc_sreset();
 static void tch_hld_btc_sendcmd(const char* cmdStr);
 static uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to);
 static BOOL tch_hld_btc_nextMatch(const char* pattern,uint32_t to);
 static BOOL tch_hld_btc_setUsart(uint32_t brate,const char* p,uint8_t sb);
 static BOOL tch_hld_btc_setMode(uint8_t mode);
 static BOOL tch_hld_btc_quitBypass();
+static BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device);
+static THREAD_ROUTINE(tch_hld_btc_looper);
 
 typedef struct _atcmd_bt_prototype_t atcmd_bt_prototype;
+typedef struct _atcmd_btdevice_prototype_t atcmd_btdevice_prototype;
+typedef struct _atcmd_btstream_buffer_t atcmd_btstream_buffer;
+
+struct _atcmd_btdevice_prototype_t {
+	atcmd_bt_device   _pix;
+	char              _addr[20];
+	uint32_t           status;
+	uint64_t           addri;
+	tch_istream*       instr;
+	tch_ostream*       outstr;
+
+};
 
 struct _atcmd_bt_prototype_t {
-	uint16_t              status;
-	tch_gpio_instance*    res_handle;
-	tch_mtx_lock          lock;
-	tch_iostream_buffer   istream_buffer;
-	atcmd_bt_server_adapter* adapter;
+	uint16_t                  status;
+	tch_gpio_instance*        res_handle;
+	tch_mtx_lock              lock;
+	tch_iostream_buffer       istream_buffer;
+	atcmd_bt_server_adapter*  adapter;
+	tchThread_t*              bt_thread;
+	atcmd_bt_server_instance  server_interface;
 };
+
+uint8_t BT_InputBuffer[BT_BUFFER_SIZE];
+
+
 
 
 
@@ -94,11 +148,25 @@ static atcmd_bt_bdc BT_BDC = {
 		1
 };
 
-static atcmd_bt_prototype BT_StaticInstance = {
+static uint32_t BTLooperStack[1 << 9];
+static BOOL BTLooperActive;
+
+__attribute__((section(".data")))  static atcmd_bt_prototype BT_StaticInstance = {
 		0,
 		NULL,
 		MTX_INIT,
-		IOSTREAM_INIT
+		IOSTREAM_INIT,
+		NULL,
+		NULL,
+		BTSERVER_INTERFACE
+};
+
+
+__attribute__((section(".data"))) static atcmd_btdevice_prototype BTDevice_StaticInstance = {
+		BTDEVICE_INTERFACE,
+		{0,},
+		{0,},
+		0
 };
 
 
@@ -129,41 +197,62 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 	tch_lld_usart_initCfg(&ucfg);
 	ucfg.USART_StopBit = USART_StopBit_1B;
 	usart2->open(usart2,115200,pcfg,&ucfg);         /// open usart port : 115200 , stop 1b , no parity
-	tch_printCstr("BT Reset...\n");
-	tch_hld_btc_reset();                            /// bt reset 2800ms pulse
-
-
-	if(tch_hld_btc_nextMatch(BT_RES_BTSLAVE,1000)){  /// check 'BTWIN SPP Slave mode start' string match
-		tch_printCstr("BT Slave Mode start...\n");
-	}
-	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
-		tch_printCstr("BT OK\n");
-	}else{
-		tch_printCstr("BT Not OK\n");
-		return NULL;
-	}
-
-
-
+	tch_hld_btc_hreset();                            /// bt reset 2800ms pulse
 	tch_hld_btc_sendcmd("AT");
 	if(tch_hld_btc_nextMatch("OK",1000)){
 		tch_printCstr("BT Host Interface OK! \n");
 	}else{
 		tch_printCstr("BT Host Interface Error!\n");
 	}
+
+	BTLooperActive = TRUE;
+	ins->bt_thread = tchThread_create(BTLooperStack,1 << 9,tch_hld_btc_looper,THREAD_PRIORITY_HIGH,"BTlooper");
+
+
 	tch_hld_btc_setUsart(baudrate,BT_PARITY_NONE,1);
-	tch_hld_bt_server_setDeviceName(deviceName);
-
-
+	tch_hld_btc_setDeviceName(deviceName);
+	tch_hld_btc_sreset();
+	tch_hld_btc_setMode(2);
+	tchThread_start(ins->bt_thread);
+	return &ins->server_interface;
 }
 
 
 
-void tch_hld_btc_reset(){
+BOOL tch_hld_btc_hreset(){
+	tch_printCstr("BT Hard Reset\n");
 	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
 	ins->res_handle->out(ins->res_handle,1 << BT_BDC.ctrl_pin,bSet);
 	tchThread_sleep(250);
 	ins->res_handle->out(ins->res_handle,1 << BT_BDC.ctrl_pin,bClear);
+	if(!tch_hld_btc_nextMatch(BT_RES_BTSLAVE,1000)){  /// check 'BTWIN SPP Slave mode start' string match
+		return FALSE;
+	}
+	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
+		tch_printCstr("OK\n");
+		return TRUE;
+	}
+	tch_printCstr("Not OK\n");
+	return FALSE;
+
+}
+
+BOOL tch_hld_btc_sreset(){
+	tch_hld_btc_sendcmd(BT_ATCMD_SOFTRST);
+	if(!tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
+		return FALSE;
+	}
+	tch_printCstr("BT Soft Reset\n");
+	if(!tch_hld_btc_nextMatch(BT_RES_BTSLAVE,1000)){  /// check 'BTWIN SPP Slave mode start' string match
+		return FALSE;
+	}
+	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
+		tch_printCstr("OK\n");
+		return TRUE;
+	}
+	tch_printCstr("Not OK\n");
+	return FALSE;
+
 }
 
 void tch_hld_btc_sendcmd(const char* cmdStr){
@@ -191,6 +280,7 @@ uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to){
 			return 0;
 		}
 	}
+	*(tbuf - 1) = '\0';
 	return tbuf - buf - 1;
 }
 
@@ -214,10 +304,8 @@ BOOL tch_hld_btc_setUsart(uint32_t brate,const char* parity,uint8_t sb){
 	if(tch_hld_btc_nextMatch("OK",100)){
 		tch_printCstr("BT Usart Baudrate is Configured Successfully..\n");
 		return TRUE;
-	}else{
-		tch_printCstr("BT Usart Baudrate configuration failed\n");
-		return FALSE;
 	}
+	tch_printCstr("BT Usart Baudrate configuration failed\n");
 	return FALSE;
 
 }
@@ -227,12 +315,35 @@ BOOL tch_hld_btc_setMode(uint8_t mode){
 	tch_strconcat(buf,BT_ATCMD_SETBTMODE,tch_itoa(mode,cbuf,10));
 	tch_hld_btc_sendcmd(buf);
 	if(tch_hld_btc_nextMatch("OK",100)){
-		tch_printCstr("Mode Changed\n");
+		tch_printCstr("Mode Change Successful!\n");
 		return TRUE;
+	}
+	tch_printCstr("Mode Change Failed");
+	return FALSE;
+}
+
+BOOL tch_hld_btc_quitBypass(){
+	return TRUE;
+}
+
+BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device){
+	uint8_t buf[50];
+	char mbuf[50];
+	tch_hld_btc_sendcmd(BT_ATCMD_WAIT_SCAN);
+	if(tch_hld_btc_nextMatch("OK",100)){
+		tch_printCstr("Wait Connection Request...\n");
+	}
+	tch_hld_btc_getNextAT(buf,100);
+	char* spltlist[5];
+	tch_strSplit(buf,buf,' ',spltlist);
+	if(tch_strcmp(spltlist[0],"CONNECT")){
+		tch_strconcat(mbuf,"BT Connected from ",spltlist[1]);
+		tch_strconcat(mbuf,mbuf,"\n");
+		tch_printCstr(mbuf);
+		tch_strcpy(BTDevice_StaticInstance._addr,spltlist[1]);
 	}
 }
 
-BOOL tch_hld_btc_quitBypass();
 
 atcmd_bt_addr tch_hld_bt_device_getAddress(atcmd_bt_device* device){
 
@@ -262,12 +373,17 @@ tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device){
 
 }
 
-BOOL tch_hld_bt_server_setDeviceName(const char* name){
+
+
+void tch_hld_bt_server_close(){
+
+}
+
+
+BOOL tch_hld_btc_setDeviceName(const char* name){
 	uint8_t buf[100];
 	tch_strconcat(buf,"AT+BTNAME=",name);
-	int size = tch_strconcat(buf,buf,"\r");
-	usart3->write(usart3,buf,size,NULL);
-	usart2->write(usart2,buf,size,NULL);
+	tch_hld_btc_sendcmd(buf);
 	if(tch_hld_btc_nextMatch("OK",1000)){
 		tch_printCstr("BT Name Changed\n");
 	}else{
@@ -275,28 +391,21 @@ BOOL tch_hld_bt_server_setDeviceName(const char* name){
 	}
 }
 
-uint32_t tch_hld_bt_server_getDeviceName(char* rb){
-	uint8_t buf[100];
-	int size = tch_strconcat(buf,"\bt+?0","");
-	usart2->write(usart2,buf,size,NULL);
 
+
+THREAD_ROUTINE(tch_hld_btc_looper){
+	atcmd_bt_prototype* ins = &BT_StaticInstance;
+	if(tch_hld_btc_waitScan(&BTDevice_StaticInstance)){
+		if(ins->adapter){
+			ins->adapter->onConnected(&BTDevice_StaticInstance);
+		}
+	}
+	tch_iostreamBuffer_init(&ins->istream_buffer,BT_InputBuffer,BT_BUFFER_SIZE);
+	// register io event for detect disconnect
+	// init shared buffer
+	while(BTLooperActive){
+		tch_printCstr("This is bt looper\n");
+		tchThread_sleep(100);
+	}
 }
 
-atcmd_bt_status tch_hld_bt_server_getStatus(){
-
-}
-
-atcmd_bt_addr tch_hld_bt_server_getRecentTargetAddr(){
-
-}
-
-BOOL tch_hld_bt_server_startListenToTarget(atcmd_bt_addr baddr,uint32_t to){
-
-}
-
-BOOL tch_hld_bt_server_startListen(uint32_t to){
-
-}
-void tch_hld_bt_server_close(){
-
-}
