@@ -136,7 +136,7 @@ BOOL tch_postSysTask(tch_systaskRoutin_t t_routine,void* arg, uint8_t priority){
 	return TRUE;
 }
 
-void tch_print(const char* str){
+void tch_printCstr(const char* str){
 	usart3->writeCstr(usart3,str,NULL);
 }
 

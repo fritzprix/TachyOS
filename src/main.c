@@ -116,7 +116,7 @@ void* main(void* arg){
 	while(1){
 		spi1->transceive(spi1,'A',NULL);
 		adc1->read(adc1,ana_val,200,10);
-		tch_print("ADC Complete\n");
+	//	tch_printCstr("ADC Complete\n");
 
 	}
 	return 0;
@@ -129,7 +129,7 @@ void device_Init(void){
 
 DECLARE_TASK_FN(ledTask){
 	ledIo->out(ledIo,led_pin,bClear);
-	tch_print("Btn Pressed\n");
+	tch_printCstr("Btn Pressed\n");
 }
 
 GPT_TIMEOUT_LISTENER(time_eventListener){
@@ -149,7 +149,7 @@ THREAD_ROUTINE(childRoutine){
 		cnt++;
 		ledIo->out(ledIo,led_pin,bClear);
 		tchThread_sleep(0);
-		tch_print("This is Child Thread Loop 0\n");
+	//	tch_printCstr("This is Child Thread Loop 0\n");
 	}
 	return NULL;
 }
@@ -160,7 +160,7 @@ THREAD_ROUTINE(childRoutine1){
 		cnt++;
 		b += 0.001f;
 		tchThread_sleep(0);
-		tch_print("This is Child Thread Loop 1\n");
+	//	tch_printCstr("This is Child Thread Loop 1\n");
 	}
 	return NULL;
 }
