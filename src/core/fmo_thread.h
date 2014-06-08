@@ -137,7 +137,7 @@ struct _tchthread_t{
 }__attribute__((aligned (4)));
 
 
-tchThread_t* tchThread_create(uint32_t* th_spb,uint32_t size,void* (*fn)(void*),uint32_t t_prior,const char* tname);
+tchThread_t* tchThread_create(uint32_t* th_spb,uint32_t size,void* (*fn)(void*),uint32_t t_prior,void* arg,const char* tname);
 BOOL tchThread_start(tchThread_t* thread);
 BOOL tchThread_sleep(uint32_t milliSec);
 BOOL tchThread_wait(tch_genericList_queue_t* queue);

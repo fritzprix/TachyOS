@@ -425,7 +425,7 @@ tch_pwm_instance* lld_timer_openTimerAsPulseOut(tch_timer timer,uint32_t periodI
 	PWM_SET_CHCNT(ins,cnt);
 
 	thw->_hw->CR1 |= (TIM_CR1_URS);
-	uint8_t tclk_div = thw->clken == &RCC->APB1ENR? 2 : 1;
+	uint8_t tclk_div = thw->clken == &RCC->APB1ENR? 4 : 2;
 	uint64_t tmp_arr = 0;
 	uint32_t tmp_psc  = 1;
 	if(thw->feature_flags & TIMER_FEATURE_RES32B){

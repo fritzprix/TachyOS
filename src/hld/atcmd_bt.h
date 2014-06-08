@@ -14,7 +14,7 @@
 
 typedef struct _atcmd_bt_bdc_t atcmd_bt_bdc;
 typedef enum {STANDBY,PEND,CONNECT} atcmd_bt_status;
-typedef uint32_t atcmd_bt_addr;
+typedef uint64_t atcmd_bt_addr;
 typedef struct _atcmd_bt_device_t atcmd_bt_device;
 typedef struct _atcmd_bt_server_instance_t atcmd_bt_server_instance;
 typedef struct _atcmd_bt_server_adapter_t atcmd_bt_server_adapter;
@@ -22,11 +22,13 @@ typedef struct _atcmd_bt_server_adapter_t atcmd_bt_server_adapter;
 
 struct _atcmd_bt_bdc_t {
 	tch_gpio_t    ctrl_port;
+	tch_gpio_t    ev_port;
 	uint8_t       ctrl_pin;
+	uint8_t       ev_pin;
 };
 
 struct _atcmd_bt_device_t {
-	atcmd_bt_addr (*getAddress)(atcmd_bt_device* device);
+	const char* (*getAddress)(atcmd_bt_device* device);
 	const char* (*getName)(atcmd_bt_device* device);
 	uint16_t (*getRssi)(atcmd_bt_device* device);
 	BOOL (*connect)(atcmd_bt_device* device);

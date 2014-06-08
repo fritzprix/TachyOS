@@ -63,6 +63,8 @@
 	                                      GPIO_LP_Mode_OFF\
 	                                     }
 
+#define DECLARE_IO_EVLISTENER(fn)     void fn(tch_gpio_instance* ins)
+
 
 typedef struct _tch_gpio_instance_t tch_gpio_instance;
 typedef struct _tch_gpio_cfg_t tch_gpio_cfg;

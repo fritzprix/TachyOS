@@ -168,7 +168,7 @@ void* system_threadRoutine(void* arg){
 	tch_usart_cfg ucfg;
 	ucfg.USART_Parity = USART_Parity_NON;
 	ucfg.USART_StopBit = USART_StopBit_1B;
-	usart3->open(usart3,115200,ActOnSleep,&ucfg);
+	usart3->open(usart3,921600,ActOnSleep,&ucfg);
 	void* rVal_p = NULL;
 	while(1){
 		while(sys_taskQ.entry != NULL){

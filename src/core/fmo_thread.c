@@ -168,7 +168,7 @@ int tch_thQue_remove(tchThread_queue* queue,tchThread_t* thread){
 /**
  * tchthread function
  */
-tchThread_t* tchThread_create(uint32_t* th_spb,uint32_t size,void* (*fn)(void*) ,uint32_t t_prior,const char* name){
+tchThread_t* tchThread_create(uint32_t* th_spb,uint32_t size,void* (*fn)(void*) ,uint32_t t_prior,void* arg,const char* name){
 	uint32_t* spt = ((uint32_t*)th_spb + size);
 	tchThread_t* thread = ((tchThread_t*)spt - 1);
 	thread->t_id = (uint32_t)thread;                   // allocate thread structure from the stack top
@@ -177,6 +177,7 @@ tchThread_t* tchThread_create(uint32_t* th_spb,uint32_t size,void* (*fn)(void*) 
 	thread->t_svd_prior = t_prior;
 	thread->t_fn = fn;
 	thread->t_id = (uint32_t) thread;
+	thread->t_arg = arg;
 #ifdef THR_TRACE_ENABLE
 	thread->t_traceIdx = 0;
 #endif
@@ -228,6 +229,7 @@ BOOL tchThread_wake(tch_genericList_queue_t* queue){
 }
 
 BOOL tchThread_join(tchThread_t* jtarget){
+	sched_pendCurrentJoinThread(jtarget);
 	return TRUE;
 }
 

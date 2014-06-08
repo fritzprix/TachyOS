@@ -8,7 +8,7 @@
 
 #include "fmo_sched.h"
 #include "mmap.h"
-#include "../util/mem.h"
+#include "../util/tch_lib.h"
 #include "../util/generic_data_types.h"
 #include "fmo_synch.h"
 #include "fmo_time.h"
@@ -131,8 +131,8 @@ int sched_Init(){
 
 	sys_timeTick = 0;
 
-	idleThread = tchThread_create(idleStack,IDLE_STACK_SIZE,idle,THREAD_PRIORITY_IDLE,"Idle");
-	mainThread = tchThread_create((uint32_t*)mainStack,MAIN_STACK_SIZE,(void* (*)(void*))main,THREAD_PRIORITY_NORMAL,"main");
+	idleThread = tchThread_create(idleStack,IDLE_STACK_SIZE,idle,THREAD_PRIORITY_IDLE,NULL,"Idle");
+	mainThread = tchThread_create((uint32_t*)mainStack,MAIN_STACK_SIZE,(void* (*)(void*))main,THREAD_PRIORITY_NORMAL,NULL,"main");
 
 
 	SET_THREAD_STATUS(mainThread,THREAD_STATUS_READY);
@@ -251,7 +251,7 @@ void sv_startCurrentThread(void){
 	                                                      */
 #endif
 	KERNEL_UNLOCK();                                     ///            unlock privililedged operation return to noraml(user) mode
-	cthread->t_fn(NULL);                                 ///            start thread routine
+	cthread->t_fn(cthread->t_arg);                                 ///            start thread routine
 	sched_terminateCThread();                            ///            invoked when thread is done
 }
 

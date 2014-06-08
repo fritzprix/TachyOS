@@ -6,162 +6,79 @@
  */
 
 #include "main.h"
-#include "core/port/tch_stdtypes.h"
-#include "core/fmo_sched.h"
-#include "core_cm4.h"
-#include "lld/fmo_timer.h"
-#include "core/fmo_time.h"
-#include "lld/fmo_gpio.h"
-#include "core/fmo_task.h"
 #include "lld/fmo_adc.h"
+#include "util/tch_lib.h"
+#include "core/fmo_task.h"
+#include "hld/atcmd_bt.h"
 
-#include "lld/fmo_usart.h"
-#include "lld/fmo_spi.h"
+static uint16_t als_buffer[256];
+static atcmd_bt_server_adapter btadapter;
 
+static tchThread_t* adcReader;
+static volatile BOOL btActive;
+static uint32_t adcReaderStack[1 << 9];
 
-static uint32_t child_Stack[1 << 8];
-static uint32_t child_Stack1[1 << 8];
-static tch_mtx_lock tlock;
+static BOOL onConnect(atcmd_bt_device* device);
+static BOOL onDisconnect(atcmd_bt_device* device);
+static THREAD_ROUTINE(adcReadLoop);
 
-static tchThread_t* childThread;
-static THREAD_ROUTINE(childRoutine);
+void* main(void* arg) {
 
-static tchThread_t* childThread1;
-static THREAD_ROUTINE(childRoutine1);
+	btadapter.onConnected = onConnect;
+	btadapter.onDisconnected = onDisconnect;
+	tch_hld_atcmdBt_openServer("STM32F_Dev", 115200, &btadapter, ActOnSleep);
 
-static tch_gpio_instance* ledIo;
-static uint16_t led_pin = (uint16_t) (1 << 9);
-static uint16_t ev_pin = (uint16_t) (1 << 10);
-static tch_sysTask task;
-static tch_gptimer_instance* time_evt_handler;
+	char reportcb[100];
+	char convBuffer[100];
+	int cnt = 0;
 
-static void btn_eventListener(tch_gpio_instance* gpio);
-static DECLARE_TASK_FN(ledTask);
-
-static tch_mtx_lock time_eventLock;
-static GPT_TIMEOUT_LISTENER(time_eventListener);
-static void postTimeEvent(void);
-float a = 1.f;
-float b = 2.f;
-/**
- * Test Only Purpose
- */
-
-uint16_t ana_val[256];
-void* main(void* arg){
-
-
-	tch_Mtx_init(&tlock);
-	task.t_arg = NULL;
-	task.t_prior = 1;
-	task.t_qnode.next = NULL;
-	task.t_qnode.prev = NULL;
-	task.t_routin = ledTask;
-
-	tch_Mtx_init(&time_eventLock);
-	time_evt_handler = lld_timer_openGPTimer(Timer4,1000,time_eventListener,DeactOnSleep);
-
-
-
-	tch_gpio_cfg io_cfg;
-	tch_lld_gpio_cfgInit(&io_cfg);
-	io_cfg.GPIO_Mode = GPIO_Mode_OUT;
-	io_cfg.GPIO_Otype = GPIO_OType_PP;
-	io_cfg.GPIO_PuPd = GPIO_PuPd_UP;
-	ledIo = tch_lld_gpio_init(GPIO_F,led_pin,&io_cfg,ActOnSleep);
-
-	tch_lld_gpio_cfgInit(&io_cfg);
-	io_cfg.GPIO_Mode = GPIO_Mode_IN;
-	io_cfg.GPIO_Otype = GPIO_OType_OD;
-	io_cfg.GPIO_PuPd = GPIO_PuPd_PU;
-	tch_gpio_instance* evt_io = tch_lld_gpio_init(GPIO_F,ev_pin,&io_cfg,ActOnSleep);
-
-	tch_gpio_evt_cfg ev_cfg;
-	ev_cfg.GPIO_Evt_Edge_Mode = GPIO_Evt_Edge_Fall;
-	ev_cfg.GPIO_Evt_Type = GPIO_Evt_Interrupt;
-	evt_io->registerIoEvent(evt_io,ev_pin,&ev_cfg,btn_eventListener);
-
-
-	uint32_t inc = 3;
-	uint32_t x = 0;
-	childThread = tchThread_create(child_Stack,256,childRoutine,THREAD_PRIORITY_NORMAL,"child1");
-	childThread1 = tchThread_create(child_Stack1,256,childRoutine1,THREAD_PRIORITY_NORMAL,"child2");
-	tchThread_start(childThread);
-	tchThread_sleep(200);
-	if(ledIo != NULL){
-			ledIo->out(ledIo,led_pin,bSet);
-	}
-	tchThread_start(childThread1);
-	tchThread_sleep(200);
-	if(ledIo != NULL){
-		ledIo->out(ledIo,led_pin,bClear);
-	}
-
-	tch_adc_cfg acfg;
-	tch_lld_adc_initCfg(&acfg);
-	acfg.ADC_Resolution = ADC_Resolution_12B;
-	acfg.ADC_SampleHold = ADC_SampleHold_3Cycle;
-	acfg.ADC_SampleFreqInHz = 200000;
-	adc1->open(adc1,&acfg,ActOnSleep);
-	adc1->read(adc1,ana_val,200,4);
-	adc1->close(adc1);
-
-
-	adc1->open(adc1,&acfg,ActOnSleep);
-
-	tch_spi_cfg spicfg;
-	tch_lld_spi_cfginit(&spicfg);
-	spi1->open(spi1,&spicfg,ActOnSleep);
-
-	tch_hld_atcmdBt_openServer("SPP_Device",115200,NULL,ActOnSleep);
-	while(1){
-		spi1->transceive(spi1,'A',NULL);
-		adc1->read(adc1,ana_val,200,10);
-//		tch_printCstr("ADC Complete\n");
-
+	while (1) {
+		//	adc1->read(adc1,als_buffer,20,10);
+		tchThread_sleep(1);
 	}
 	return 0;
 }
 
-
-void device_Init(void){
-
+BOOL onConnect(atcmd_bt_device* device) {
+	char cbuf[100];
+	adcReader = tchThread_create(adcReaderStack, 1 << 8, adcReadLoop,
+			THREAD_PRIORITY_NORMAL, device, "adcreader");
+	btActive = TRUE;
+	tchThread_start(adcReader);
+	return TRUE;
 }
 
-DECLARE_TASK_FN(ledTask){
-	ledIo->out(ledIo,led_pin,bClear);
-	tch_printCstr("Btn Pressed\n");
+BOOL onDisconnect(atcmd_bt_device* device) {
+	btActive = FALSE;
+	tchThread_join(adcReader);
+	return TRUE;
 }
 
-GPT_TIMEOUT_LISTENER(time_eventListener){
-}
+THREAD_ROUTINE(adcReadLoop) {
+	atcmd_bt_device* btdevice = (atcmd_bt_device*) arg;
+	tch_adc_cfg acfg;
+	tch_lld_adc_initCfg(&acfg);
+	acfg.ADC_SampleFreqInHz = 100;
+	acfg.ADC_ChCnt = 0;
+	acfg.ADC_ChCfg_List = NULL;
+	acfg.ADC_Resolution = ADC_Resolution_12b;
+	acfg.ADC_SampleHold = ADC_SampleTime_3Cycles;
+	adc1->open(adc1, &acfg, ActOnSleep);
+	tch_printCstr("ADC Thread Start\n");
 
-void postTimeEvent(void){
-	time_evt_handler->setTimeout(time_evt_handler,2,25);
-}
-
-void btn_eventListener(tch_gpio_instance* gpio){
-	tch_postSysTask(ledTask,NULL,1);
-}
-
-THREAD_ROUTINE(childRoutine){
-	uint32_t cnt = 0;
-	while(1){
-		cnt++;
-		ledIo->out(ledIo,led_pin,bClear);
-		tchThread_sleep(100);
-//		tch_printCstr("This is Child Thread Loop 0\n");
+	tch_ostream* btostream = btdevice->openOutputStream(btdevice);
+	char cbuf[20];
+	while (btActive) {
+		uint8_t idx = 0;
+		int len = 0;
+		adc1->read(adc1, als_buffer, 10, 10);
+		while (idx < 10) {
+			tch_strconcat(cbuf, "V : ", tch_itoa(als_buffer[idx++], cbuf + 5, 10));
+			len = tch_strconcat(cbuf, cbuf, "\n\r");
+			btostream->write(btostream, cbuf, len, NULL);
+		}
 	}
-	return NULL;
-}
-
-THREAD_ROUTINE(childRoutine1){
-	uint32_t cnt = 0;
-	while(1){
-		cnt++;
-		b += 0.001f;
-		tchThread_sleep(100);
-//		tch_printCstr("This is Child Thread Loop 1\n");
-	}
-	return NULL;
+	adc1->close(adc1);
+	tch_printCstr("ADC Looper Finished\n");
+	return NULL ;
 }
