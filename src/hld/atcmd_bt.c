@@ -112,9 +112,13 @@ static BOOL tch_hld_btc_setUsart(uint32_t brate,const char* p,uint8_t sb);
 static BOOL tch_hld_btc_setMode(uint8_t mode);
 static BOOL tch_hld_btc_quitBypass();
 static BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device);
+static int tch_hld_btc_getRssi();
+static BOOL tch_hld_btc_exitBypass();
+static BOOL tch_hld_btc_enterBypass();
+
+
 static THREAD_ROUTINE(tch_hld_btc_serverLooper);
 static DECLARE_IO_EVLISTENER(tch_hld_btc_iev_listener);
-static DECLARE_TASK_FN(tch_hld_btc_disconnect_handler);
 
 typedef struct _atcmd_bt_prototype_t atcmd_bt_prototype;
 typedef struct _atcmd_btdevice_prototype_t atcmd_btdevice_prototype;
@@ -123,6 +127,7 @@ typedef struct _atcmd_btstream_buffer_t atcmd_btstream_buffer;
 struct _atcmd_btdevice_prototype_t {
 	atcmd_bt_device   _pix;
 	char              _addr[20];
+	int                rssi;
 	uint32_t           status;
 	uint64_t           addri;
 	tch_istream*       instr;
@@ -178,6 +183,7 @@ __attribute__((section(".data"))) static atcmd_btdevice_prototype BTDevice_Stati
 		{0,},
 		0,
 		0,
+		0,
 		NULL,
 		NULL
 };
@@ -218,13 +224,8 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 	ucfg.USART_StopBit = USART_StopBit_1B;
 	usart2->open(usart2,115200,pcfg,&ucfg);         /// open usart port : 115200 , stop 1b , no parity
 	tch_hld_btc_hreset();                            /// bt reset 2800ms pulse
-	tch_hld_btc_sendcmd("AT");
-	if(tch_hld_btc_nextMatch("OK",0)){
-		tch_printCstr("BT Host Interface OK! \n");
-	}else{
-		tch_printCstr("BT Host Interface Error!\n");
-	}
-
+	if(!tch_hld_btc_diag())
+		return NULL;
 	ins->server_active = TRUE;
 	ins->server_thread = tchThread_create(BTLooperStack,1 << 9,tch_hld_btc_serverLooper,THREAD_PRIORITY_HIGH,NULL,"BTlooper");
 
@@ -232,7 +233,6 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 	tch_hld_btc_setUsart(baudrate,BT_PARITY_NONE,1);
 	tch_hld_btc_setDeviceName(deviceName);
 	tch_hld_btc_sreset(TRUE);
-	tch_hld_btc_setMode(2);
 	tchThread_start(ins->server_thread);
 	return &ins->server_interface;
 }
@@ -286,7 +286,6 @@ BOOL tch_hld_btc_sreset(BOOL change){
 void tch_hld_btc_sendcmd(const char* cmdStr){
 	uint8_t buf[100];
 	char cbuf[30];
-	tchThread_sleep(10);
 	int len = tch_strconcat(buf,cmdStr,"\r");
 	usart2->write(usart2,buf,(uint32_t)len,NULL);
 	tch_strconcat(cbuf,"ATCMD : ",buf);
@@ -378,6 +377,31 @@ BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device){
 	return FALSE;
 }
 
+int tch_hld_btc_getRssi(){
+	uint8_t buf[50];
+	tch_hld_btc_exitBypass();
+	tch_hld_btc_sendcmd(BT_ATCMD_GETRSSI);
+	tch_hld_btc_getNextAT(buf,0);
+	tch_hld_btc_enterBypass();
+	return (int)tch_atoi(buf);
+}
+
+
+BOOL tch_hld_btc_exitBypass(){
+	usart2->write(usart2,"+++",3,NULL);
+	if(tch_hld_btc_nextMatch(BT_RES_OK,0))
+		return TRUE;
+	return FALSE;
+}
+
+BOOL tch_hld_btc_enterBypass(){
+	tch_hld_btc_sendcmd("ATO");
+	if(tch_hld_btc_nextMatch(BT_RES_OK,0))
+		return TRUE;
+	return FALSE;
+}
+
+
 
 const char* tch_hld_bt_device_getAddress(atcmd_bt_device* device){
 	atcmd_btdevice_prototype* ins = (atcmd_btdevice_prototype*) device;
@@ -390,30 +414,36 @@ const char* tch_hld_bt_device_getName(atcmd_bt_device* device){
 }
 
 uint16_t tch_hld_bt_device_getRssi(atcmd_bt_device* device){
-
+	return tch_hld_btc_getRssi();
 }
 
 BOOL tch_hld_bt_device_connect(atcmd_bt_device* device){
-
+	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) device;
+	if(dev->instr && dev->outstr){
+		return FALSE;
+	}
+	dev->instr = usart2->openInputStream(usart2);
+	dev->outstr = usart2->openOutputStream(usart2);
+	return TRUE;
 }
 
 BOOL tch_hld_bt_device_disconnect(atcmd_bt_device* device){
-
+	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) device;
+	if(dev->instr || dev->outstr){
+		return FALSE;
+	}
+	dev->instr = NULL;
+	dev->outstr = NULL;
+	return TRUE;
 }
 
 tch_istream* tch_hld_bt_device_openInputStream(atcmd_bt_device* device){
 	atcmd_btdevice_prototype* dev = &BTDevice_StaticInstance;
-	dev->instr = usart2->openInputStream(usart2);
-	__DMB();
-	__ISB();
 	return dev->instr;
 }
 
 tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device){
 	atcmd_btdevice_prototype* dev = &BTDevice_StaticInstance;
-	dev->outstr = usart2->openOutputStream(usart2);
-	__DMB();
-	__ISB();
 	return dev->outstr;
 }
 
@@ -464,7 +494,6 @@ THREAD_ROUTINE(tch_hld_btc_serverLooper){
 }
 
 DECLARE_IO_EVLISTENER(tch_hld_btc_iev_listener){
-	//tch_postSysTask(tch_hld_btc_disconnect_handler,NULL,TASK_PRIOR_NORMAL);
 	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
 	if(dev->outstr){
 				dev->outstr->close(dev->outstr);
@@ -475,17 +504,3 @@ DECLARE_IO_EVLISTENER(tch_hld_btc_iev_listener){
 	tchThread_wake(&BT_StaticInstance.server_evQue);
 }
 
-DECLARE_TASK_FN(tch_hld_btc_disconnect_handler){
-	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
-	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
-	dev->outstr->close(dev->outstr);
-	dev->instr->close(dev->instr);
-	ins->ev_handle->unregisterIoEvent(ins->ev_handle,1 << BT_BDC.ev_pin);
-	if(ins->server_evQue.entry){
-		if(ins->adapter){
-			ins->adapter->onDisconnected((atcmd_bt_device*) &BTDevice_StaticInstance);
-		}
-		tchThread_wake(&ins->server_evQue);
-		tch_printCstr("BT Disconnected\n");
-	}
-}

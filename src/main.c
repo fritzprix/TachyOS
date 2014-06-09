@@ -54,7 +54,7 @@ BOOL onDisconnect(atcmd_bt_device* device) {
 }
 
 THREAD_ROUTINE(adcReadLoop) {
-	atcmd_bt_device* btdevice = (atcmd_bt_device*) arg;
+	struct _atcmd_bt_device_t* btdevice = (atcmd_bt_device*) arg;
 	tch_adc_cfg acfg;
 	btActive = TRUE;
 	tch_lld_adc_initCfg(&acfg);
@@ -66,6 +66,12 @@ THREAD_ROUTINE(adcReadLoop) {
 	adc1->open(adc1, &acfg, ActOnSleep);
 	tch_printCstr("ADC Thread Start\n");
 
+	if(btdevice->connect(btdevice)){
+		tch_printCstr("Device Connected\n");
+	}else{
+		tch_printCstr("Device already Connected\n");
+	}
+
 	tch_ostream* btostream = btdevice->openOutputStream(btdevice);
 	tchThread_sleep(10);
 	char cbuf[20];
@@ -76,10 +82,13 @@ THREAD_ROUTINE(adcReadLoop) {
 		while (idx < 100) {
 			tch_strconcat(cbuf, "V : ", tch_itoa(als_buffer[idx++], cbuf + 5, 10));
 			len = tch_strconcat(cbuf, cbuf, "\n\r");
-			if(!btostream->write(btostream, cbuf, len, NULL))
+			if(!btostream->write(btostream, cbuf, len, NULL)){
+				idx = 100;
 				btActive = FALSE;
+			}
 		}
 	}
+
 	adc1->close(adc1);
 	tch_printCstr("ADC Looper Finished\n");
 	return NULL ;
