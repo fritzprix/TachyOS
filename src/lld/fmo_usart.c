@@ -160,6 +160,8 @@ static BOOL lld_usart_istr_wrapper_getc(tch_istream* stream,uint8_t* rb,uint8_t*
 static uint32_t lld_usart_istr_wrapper_available(tch_istream* stream);
 static void lld_usart_istr_wrapper_close(tch_istream* stream);
 
+
+
 __attribute__((always_inline)) static BOOL lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType);
 
 static DMA_EVENTLISTENER(usart1_txdma_listener);
@@ -288,6 +290,17 @@ __attribute__((section(".data"))) static tch_usart_prototype USART_StaticInstanc
 				OSTREAM_INIT
 		}
 };
+/***
+ * static BOOL lld_usart_ostr_wrapper_write(tch_ostream* stream,const uint8_t* wb,uint32_t size,uint8_t* err);
+ * static BOOL lld_usart_ostr_wrapper_putc(tch_ostream* stream,const uint8_t c,uint8_t* err);
+ * static uint32_t lld_usart_ostr_wrapper_available(tch_ostream* stream);
+ * static void lld_usart_ostr_wrapper_close(tch_ostream* stream);
+ * static BOOL lld_usart_istr_wrapper_read(tch_istream* stream,uint8_t* rb,uint32_t size,uint8_t* err);
+ * static BOOL lld_usart_istr_wrapper_getc(tch_istream* stream,uint8_t* rb,uint8_t* err);
+ * static uint32_t lld_usart_istr_wrapper_available(tch_istream* stream);
+ * static void lld_usart_istr_wrapper_close(tch_istream* stream);
+ * */
+
 
 static tch_usart_stream USART_TX_Stream[3];
 static tch_usart_stream USART_RX_Stream[3];
@@ -682,6 +695,8 @@ uint32_t lld_usart_ostr_wrapper_available(tch_ostream* stream){
 
 void lld_usart_ostr_wrapper_close(tch_ostream* stream){
 	stream->_bp = NULL;
+	__DMB();
+	__ISB();
 }
 
 
@@ -709,7 +724,11 @@ uint32_t lld_usart_istr_wrapper_available(tch_istream* stream){
 
 void lld_usart_istr_wrapper_close(tch_istream* stream){
 	stream->_bp = NULL;
+	__DMB();
+	__ISB();
 }
+
+
 
 BOOL inline lld_usart_monitorEvent(const tch_usart_instance* self,uint16_t evType){
 	tch_usart_prototype* ins = (tch_usart_prototype*)self;

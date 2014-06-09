@@ -102,8 +102,9 @@ typedef struct _atcmd_bt_prototype_t atcmd_bt_prototype;
 typedef struct _atcmd_btdevice_prototype_t atcmd_btdevice_prototype;
 
 static BOOL tch_hld_btc_setDeviceName(const char* name);
+static BOOL tch_hld_btc_diag();
 static BOOL tch_hld_btc_hreset();
-static BOOL tch_hld_btc_sreset();
+static BOOL tch_hld_btc_sreset(BOOL change);
 static void tch_hld_btc_sendcmd(const char* cmdStr);
 static uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to);
 static BOOL tch_hld_btc_nextMatch(const char* pattern,uint32_t to);
@@ -171,12 +172,6 @@ __attribute__((section(".data")))  static atcmd_bt_prototype BT_StaticInstance =
 };
 
 /**
- * 	atcmd_bt_device   _pix;
-	char              _addr[20];
-	uint32_t           status;
-	uint64_t           addri;
-	tch_istream*       instr;
-	tch_ostream*       outstr;
  */
 __attribute__((section(".data"))) static atcmd_btdevice_prototype BTDevice_StaticInstance = {
 		BTDEVICE_INTERFACE,
@@ -224,7 +219,7 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 	usart2->open(usart2,115200,pcfg,&ucfg);         /// open usart port : 115200 , stop 1b , no parity
 	tch_hld_btc_hreset();                            /// bt reset 2800ms pulse
 	tch_hld_btc_sendcmd("AT");
-	if(tch_hld_btc_nextMatch("OK",1000)){
+	if(tch_hld_btc_nextMatch("OK",0)){
 		tch_printCstr("BT Host Interface OK! \n");
 	}else{
 		tch_printCstr("BT Host Interface Error!\n");
@@ -236,12 +231,20 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 
 	tch_hld_btc_setUsart(baudrate,BT_PARITY_NONE,1);
 	tch_hld_btc_setDeviceName(deviceName);
-	tch_hld_btc_sreset();
+	tch_hld_btc_sreset(TRUE);
 	tch_hld_btc_setMode(2);
 	tchThread_start(ins->server_thread);
 	return &ins->server_interface;
 }
 
+BOOL tch_hld_btc_diag(){
+	atcmd_bt_prototype* ins =(atcmd_bt_prototype*) &BT_StaticInstance;
+	tch_hld_btc_sendcmd("AT");
+	if(tch_hld_btc_nextMatch(BT_RES_OK,0)){
+		return TRUE;
+	}
+	return FALSE;
+}
 
 
 BOOL tch_hld_btc_hreset(){
@@ -254,15 +257,14 @@ BOOL tch_hld_btc_hreset(){
 		return FALSE;
 	}
 	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
-		tch_printCstr("OK\n");
 		return TRUE;
 	}
-	tch_printCstr("Not OK\n");
 	return FALSE;
 
 }
 
-BOOL tch_hld_btc_sreset(){
+BOOL tch_hld_btc_sreset(BOOL change){
+	tchThread_sleep(10);
 	tch_hld_btc_sendcmd(BT_ATCMD_SOFTRST);
 	if(!tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
 		return FALSE;
@@ -271,20 +273,25 @@ BOOL tch_hld_btc_sreset(){
 	if(!tch_hld_btc_nextMatch(BT_RES_BTSLAVE,1000)){  /// check 'BTWIN SPP Slave mode start' string match
 		return FALSE;
 	}
-	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
-		tch_printCstr("OK\n");
-		return TRUE;
+	if(change){
+		if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
+			return TRUE;
+		}
+		return FALSE;
 	}
-	tch_printCstr("Not OK\n");
-	return FALSE;
+	return TRUE;
 
 }
 
 void tch_hld_btc_sendcmd(const char* cmdStr){
 	uint8_t buf[100];
+	char cbuf[30];
+	tchThread_sleep(10);
 	int len = tch_strconcat(buf,cmdStr,"\r");
 	usart2->write(usart2,buf,(uint32_t)len,NULL);
-}
+	tch_strconcat(cbuf,"ATCMD : ",buf);
+	tch_strconcat(cbuf,cbuf,"\n\r");
+	tch_printCstr(cbuf);}
 
 
 uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to){
@@ -311,8 +318,12 @@ uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to){
 
 
 BOOL tch_hld_btc_nextMatch(const char* pattern,uint32_t to){
-	uint8_t buf[1 << 8];
+	uint8_t buf[1 << 7];
+	char cbuf[50];
 	uint32_t size = tch_hld_btc_getNextAT(buf,200);
+	tch_strconcat(cbuf,"AT RES : ",buf);
+	tch_strconcat(cbuf,cbuf,"\n\r");
+	tch_printCstr(cbuf);
 	return tch_memcmp(pattern,buf,size);
 }
 
@@ -327,10 +338,8 @@ BOOL tch_hld_btc_setUsart(uint32_t brate,const char* parity,uint8_t sb){
 	tch_strconcat(buf,buf,tch_itoa(sb,cbuf,10));
 	tch_hld_btc_sendcmd(buf);
 	if(tch_hld_btc_nextMatch("OK",100)){
-		tch_printCstr("BT Usart Baudrate is Configured Successfully..\n");
 		return TRUE;
 	}
-	tch_printCstr("BT Usart Baudrate configuration failed\n");
 	return FALSE;
 
 }
@@ -340,10 +349,8 @@ BOOL tch_hld_btc_setMode(uint8_t mode){
 	tch_strconcat(buf,BT_ATCMD_SETBTMODE,tch_itoa(mode,cbuf,10));
 	tch_hld_btc_sendcmd(buf);
 	if(tch_hld_btc_nextMatch("OK",100)){
-		tch_printCstr("Mode Change Successful!\n");
 		return TRUE;
 	}
-	tch_printCstr("Mode Change Failed");
 	return FALSE;
 }
 
@@ -395,11 +402,19 @@ BOOL tch_hld_bt_device_disconnect(atcmd_bt_device* device){
 }
 
 tch_istream* tch_hld_bt_device_openInputStream(atcmd_bt_device* device){
-	return usart2->openInputStream(usart2);
+	atcmd_btdevice_prototype* dev = &BTDevice_StaticInstance;
+	dev->instr = usart2->openInputStream(usart2);
+	__DMB();
+	__ISB();
+	return dev->instr;
 }
 
 tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device){
-	return usart2->openOutputStream(usart2);
+	atcmd_btdevice_prototype* dev = &BTDevice_StaticInstance;
+	dev->outstr = usart2->openOutputStream(usart2);
+	__DMB();
+	__ISB();
+	return dev->outstr;
 }
 
 
@@ -414,10 +429,8 @@ BOOL tch_hld_btc_setDeviceName(const char* name){
 	tch_strconcat(buf,"AT+BTNAME=",name);
 	tch_hld_btc_sendcmd(buf);
 	if(tch_hld_btc_nextMatch("OK",1000)){
-		tch_printCstr("BT Name Changed\n");
 		return TRUE;
 	}
-	tch_printCstr("BT Name Not Ok");
 	return FALSE;
 }
 
@@ -425,33 +438,48 @@ BOOL tch_hld_btc_setDeviceName(const char* name){
 
 THREAD_ROUTINE(tch_hld_btc_serverLooper){
 	atcmd_bt_prototype* ins = &BT_StaticInstance;
+	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
 	while(ins->server_active){
+		if(!tch_hld_btc_setMode(2)){tchThread_sleep(1);}
 		if(tch_hld_btc_waitScan(&BTDevice_StaticInstance)){
 			if(ins->adapter){
 				ins->adapter->onConnected((atcmd_bt_device*)&BTDevice_StaticInstance);
 			}
-		}
-		tch_gpio_evt_cfg evcfg;
-		evcfg.GPIO_Evt_Edge_Mode = GPIO_Evt_Edge_Rise;
-		evcfg.GPIO_Evt_Type = GPIO_Evt_Interrupt;
-		ins->ev_handle->registerIoEvent(ins->ev_handle,1 << BT_BDC.ev_pin,&evcfg,tch_hld_btc_iev_listener);
-		tchThread_wait(&ins->server_evQue);
-		if(tch_hld_btc_nextMatch("DISCONNECT",100)){
-			if(ins->adapter){
-				ins->adapter->onDisconnected((atcmd_bt_device*) &BTDevice_StaticInstance);
+			tch_gpio_evt_cfg evcfg;
+			evcfg.GPIO_Evt_Edge_Mode = GPIO_Evt_Edge_Rise;
+			evcfg.GPIO_Evt_Type = GPIO_Evt_Interrupt;
+			ins->ev_handle->registerIoEvent(ins->ev_handle,1 << BT_BDC.ev_pin,&evcfg,tch_hld_btc_iev_listener);
+			tchThread_wait(&ins->server_evQue);
+			if(tch_hld_btc_nextMatch("DISCONNECT",0)){
+				if(ins->adapter){
+					ins->adapter->onDisconnected((atcmd_bt_device*) &BTDevice_StaticInstance);
+				}
 			}
 		}
-
+		int dlen = usart2->available(usart2);
+		usart2->read(usart2,NULL,dlen,0,NULL); // flush
+		while(!tch_hld_btc_diag()){ tchThread_sleep(20);}           // diag
 	}
 	return NULL;
 }
 
 DECLARE_IO_EVLISTENER(tch_hld_btc_iev_listener){
-	tch_postSysTask(tch_hld_btc_disconnect_handler,NULL,TASK_PRIOR_NORMAL);
+	//tch_postSysTask(tch_hld_btc_disconnect_handler,NULL,TASK_PRIOR_NORMAL);
+	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
+	if(dev->outstr){
+				dev->outstr->close(dev->outstr);
+			}
+			if(dev->instr){
+				dev->instr->close(dev->instr);
+			}
+	tchThread_wake(&BT_StaticInstance.server_evQue);
 }
 
 DECLARE_TASK_FN(tch_hld_btc_disconnect_handler){
 	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
+	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
+	dev->outstr->close(dev->outstr);
+	dev->instr->close(dev->instr);
 	ins->ev_handle->unregisterIoEvent(ins->ev_handle,1 << BT_BDC.ev_pin);
 	if(ins->server_evQue.entry){
 		if(ins->adapter){

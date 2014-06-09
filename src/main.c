@@ -15,7 +15,7 @@ static uint16_t als_buffer[256];
 static atcmd_bt_server_adapter btadapter;
 
 static tchThread_t* adcReader;
-static volatile BOOL btActive;
+volatile BOOL btActive;
 static uint32_t adcReaderStack[1 << 9];
 
 static BOOL onConnect(atcmd_bt_device* device);
@@ -43,22 +43,22 @@ BOOL onConnect(atcmd_bt_device* device) {
 	char cbuf[100];
 	adcReader = tchThread_create(adcReaderStack, 1 << 8, adcReadLoop,
 			THREAD_PRIORITY_NORMAL, device, "adcreader");
-	btActive = TRUE;
 	tchThread_start(adcReader);
 	return TRUE;
 }
 
 BOOL onDisconnect(atcmd_bt_device* device) {
 	btActive = FALSE;
-	tchThread_join(adcReader);
+//	tchThread_join(adcReader);
 	return TRUE;
 }
 
 THREAD_ROUTINE(adcReadLoop) {
 	atcmd_bt_device* btdevice = (atcmd_bt_device*) arg;
 	tch_adc_cfg acfg;
+	btActive = TRUE;
 	tch_lld_adc_initCfg(&acfg);
-	acfg.ADC_SampleFreqInHz = 100;
+	acfg.ADC_SampleFreqInHz = 10000;
 	acfg.ADC_ChCnt = 0;
 	acfg.ADC_ChCfg_List = NULL;
 	acfg.ADC_Resolution = ADC_Resolution_12b;
@@ -67,15 +67,17 @@ THREAD_ROUTINE(adcReadLoop) {
 	tch_printCstr("ADC Thread Start\n");
 
 	tch_ostream* btostream = btdevice->openOutputStream(btdevice);
+	tchThread_sleep(10);
 	char cbuf[20];
 	while (btActive) {
 		uint8_t idx = 0;
 		int len = 0;
-		adc1->read(adc1, als_buffer, 10, 10);
-		while (idx < 10) {
+		adc1->read(adc1, als_buffer, 100, 10);
+		while (idx < 100) {
 			tch_strconcat(cbuf, "V : ", tch_itoa(als_buffer[idx++], cbuf + 5, 10));
 			len = tch_strconcat(cbuf, cbuf, "\n\r");
-			btostream->write(btostream, cbuf, len, NULL);
+			if(!btostream->write(btostream, cbuf, len, NULL))
+				btActive = FALSE;
 		}
 	}
 	adc1->close(adc1);
