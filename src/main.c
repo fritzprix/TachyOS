@@ -83,12 +83,14 @@ THREAD_ROUTINE(adcReadLoop) {
 			tch_strconcat(cbuf, "V : ", tch_itoa(als_buffer[idx++], cbuf + 5, 10));
 			len = tch_strconcat(cbuf, cbuf, "\n\r");
 			if(!btostream->write(btostream, cbuf, len, NULL)){
+				tch_printCstr("write fail!\n");
 				idx = 100;
 				btActive = FALSE;
 			}
 		}
 	}
-
+	btostream->close(btostream);
+	btdevice->disconnect(btdevice);
 	adc1->close(adc1);
 	tch_printCstr("ADC Looper Finished\n");
 	return NULL ;

@@ -9,6 +9,10 @@
 
 #include <stdint.h>
 
+
+//#define BT_DBG
+
+
 //#include "../core/fmo_lldabs.h"
 #include "../core/fmo_synch.h"
 #include "../core/fmo_task.h"
@@ -62,6 +66,7 @@ static tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device);
 #define BT_ATCMD_SETBTROLE           ((const char*) "AT+BTROLE=")
 #define BT_ATCMD_SETUART             ((const char*) "AT+BTUART,")
 #define BT_ATCMD_WAIT_SCAN           ((const char*) "AT+BTSCAN")
+#define BT_ATCMD_WAIT_CANCEL         ((const char*) "AT+BTCANCEL")
 
 
 #define BT_PARITY_NONE              ((const char*) "N")
@@ -71,6 +76,23 @@ static tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device);
 #define BT_STOPBIT_1B               ((uint8_t) 1)
 #define BT_STOPBIT_2B               ((uint8_t) 2)
 
+
+
+
+#define BT_STATUS_OPEN              ((uint16_t) 1 << 0)
+#define BT_SET_OPEN(ins_p)          (ins_p->status |= BT_STATUS_OPEN)
+#define BT_CLR_OPEN(ins_p)          (ins_p->status &= ~BT_STATUS_OPEN)
+#define BT_IS_OPEN(ins_p)           (ins_p->status & BT_STATUS_OPEN)
+
+
+#ifdef FEATURE_MTHREAD
+#define BT_LOCK(ins_p)              {tch_Mtx_lockt(&ins_p->lock,TRUE);}
+#define BT_UNLOCK(ins_p)            {tch_Mtx_unlockt(&ins_p->lock);}
+
+#else
+#define BT_LOCK(ins_p)              {}
+#define BT_UNLOCK(ins_p)            {}
+#endif
 /***
  *  public function
  */
@@ -106,12 +128,12 @@ static BOOL tch_hld_btc_diag();
 static BOOL tch_hld_btc_hreset();
 static BOOL tch_hld_btc_sreset(BOOL change);
 static void tch_hld_btc_sendcmd(const char* cmdStr);
-static uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to);
+static uint32_t tch_hld_btc_getNextAT(uint8_t* buf);
 static BOOL tch_hld_btc_nextMatch(const char* pattern,uint32_t to);
 static BOOL tch_hld_btc_setUsart(uint32_t brate,const char* p,uint8_t sb);
 static BOOL tch_hld_btc_setMode(uint8_t mode);
 static BOOL tch_hld_btc_quitBypass();
-static BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device);
+static BOOL tch_hld_btc_waitConnection(atcmd_btdevice_prototype* device);
 static int tch_hld_btc_getRssi();
 static BOOL tch_hld_btc_exitBypass();
 static BOOL tch_hld_btc_enterBypass();
@@ -197,6 +219,14 @@ atcmd_bt_server_instance* tch_hld_atcmdBt_openServer(const char* deviceName,uint
 	/**
 	 * Initialize Ctrl IO
 	 */
+
+	if(BT_IS_OPEN(ins)){
+		return NULL;
+	}
+
+	BT_LOCK(ins);
+	BT_SET_OPEN(ins);
+	BT_UNLOCK(ins);
 	tch_printCstr("BT Initailize Start..\n");
 	tch_gpio_cfg iocfg;
 	tch_lld_gpio_cfgInit(&iocfg);
@@ -250,13 +280,18 @@ BOOL tch_hld_btc_diag(){
 BOOL tch_hld_btc_hreset(){
 	tch_printCstr("BT Hard Reset\n");
 	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
+	BT_LOCK(ins);
 	ins->res_handle->out(ins->res_handle,1 << BT_BDC.ctrl_pin,bSet);
-	tchThread_sleep(250);
+	tchThread_sleep(200);
 	ins->res_handle->out(ins->res_handle,1 << BT_BDC.ctrl_pin,bClear);
+	BT_UNLOCK(ins);
+
 	if(!tch_hld_btc_nextMatch(BT_RES_BTSLAVE,1000)){  /// check 'BTWIN SPP Slave mode start' string match
+		BT_UNLOCK(ins);
 		return FALSE;
 	}
 	if(tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
+		BT_UNLOCK(ins);
 		return TRUE;
 	}
 	return FALSE;
@@ -264,6 +299,7 @@ BOOL tch_hld_btc_hreset(){
 }
 
 BOOL tch_hld_btc_sreset(BOOL change){
+	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
 	tchThread_sleep(10);
 	tch_hld_btc_sendcmd(BT_ATCMD_SOFTRST);
 	if(!tch_hld_btc_nextMatch(BT_RES_OK,1000)){       /// check 'OK' string match
@@ -283,46 +319,49 @@ BOOL tch_hld_btc_sreset(BOOL change){
 
 }
 
-void tch_hld_btc_sendcmd(const char* cmdStr){
+void tch_hld_btc_sendcmd(const char* cmdStr){\
+	atcmd_bt_prototype* ins = &BT_StaticInstance;
+	BT_LOCK(ins);
+	tchThread_sleep(20);
 	uint8_t buf[100];
 	char cbuf[30];
 	int len = tch_strconcat(buf,cmdStr,"\r");
 	usart2->write(usart2,buf,(uint32_t)len,NULL);
+#ifdef BT_DBG
 	tch_strconcat(cbuf,"ATCMD : ",buf);
 	tch_strconcat(cbuf,cbuf,"\n\r");
-	tch_printCstr(cbuf);}
+	tch_printCstr(cbuf);
+#endif
+	BT_UNLOCK(ins);
+}
 
 
-uint32_t tch_hld_btc_getNextAT(uint8_t* buf,uint32_t to){
+uint32_t tch_hld_btc_getNextAT(uint8_t* buf){
 	atcmd_bt_prototype* ins = (atcmd_bt_prototype*) &BT_StaticInstance;
+	char cbuf[60];
 	uint8_t* tbuf = buf;
 	uint8_t c = 0;
+	BT_LOCK(ins);
 	while((c = usart2->getc(usart2)) != '\n'){
 		tchThread_sleep(1);
-		to--;
-		if(!to){
-			return 0;
-		}
 	};
 	while((c = usart2->getc(usart2)) != '\n'){
 		*tbuf++ = c;
-		to--;
-		if(!to){
-			return 0;
-		}
 	}
 	*(tbuf - 1) = '\0';
+#ifdef BT_DBG
+	tch_strconcat(cbuf,"AT RES : ",buf);
+	tch_strconcat(cbuf,cbuf,"\n");
+	tch_printCstr(cbuf);
+#endif
+	BT_UNLOCK(ins);
 	return tbuf - buf - 1;
 }
 
 
 BOOL tch_hld_btc_nextMatch(const char* pattern,uint32_t to){
 	uint8_t buf[1 << 7];
-	char cbuf[50];
-	uint32_t size = tch_hld_btc_getNextAT(buf,200);
-	tch_strconcat(cbuf,"AT RES : ",buf);
-	tch_strconcat(cbuf,cbuf,"\n\r");
-	tch_printCstr(cbuf);
+	uint32_t size = tch_hld_btc_getNextAT(buf);
 	return tch_memcmp(pattern,buf,size);
 }
 
@@ -357,14 +396,19 @@ BOOL tch_hld_btc_quitBypass(){
 	return TRUE;
 }
 
-BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device){
+BOOL tch_hld_btc_waitConnection(atcmd_btdevice_prototype* device){
 	uint8_t buf[50];
 	char mbuf[50];
 	tch_hld_btc_sendcmd(BT_ATCMD_WAIT_SCAN);
-	if(tch_hld_btc_nextMatch("OK",100)){
-		tch_printCstr("Wait Connection Request...\n");
+	while(!tch_hld_btc_nextMatch("OK",100)){
+		tch_hld_btc_sendcmd(BT_ATCMD_WAIT_CANCEL);
+		if(tch_hld_btc_nextMatch("OK",100)){
+			tch_printCstr("Wait Canceled...\n");
+		}
+		tch_hld_btc_sendcmd(BT_ATCMD_WAIT_SCAN);
 	}
-	tch_hld_btc_getNextAT(buf,100);
+	tch_printCstr("Wait Incomming Connection...\n");
+	tch_hld_btc_getNextAT(buf);
 	char* spltlist[5];
 	tch_strSplit(buf,buf,' ',spltlist);
 	if(tch_strcmp(spltlist[0],"CONNECT")){
@@ -374,6 +418,7 @@ BOOL tch_hld_btc_waitScan(atcmd_btdevice_prototype* device){
 		tch_strcpy(device->_addr,spltlist[1]);
 		return TRUE;
 	}
+	tch_printCstr("Wait Connect Failed\n");
 	return FALSE;
 }
 
@@ -381,7 +426,7 @@ int tch_hld_btc_getRssi(){
 	uint8_t buf[50];
 	tch_hld_btc_exitBypass();
 	tch_hld_btc_sendcmd(BT_ATCMD_GETRSSI);
-	tch_hld_btc_getNextAT(buf,0);
+	tch_hld_btc_getNextAT(buf);
 	tch_hld_btc_enterBypass();
 	return (int)tch_atoi(buf);
 }
@@ -419,9 +464,6 @@ uint16_t tch_hld_bt_device_getRssi(atcmd_bt_device* device){
 
 BOOL tch_hld_bt_device_connect(atcmd_bt_device* device){
 	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) device;
-	if(dev->instr && dev->outstr){
-		return FALSE;
-	}
 	dev->instr = usart2->openInputStream(usart2);
 	dev->outstr = usart2->openOutputStream(usart2);
 	return TRUE;
@@ -429,11 +471,8 @@ BOOL tch_hld_bt_device_connect(atcmd_bt_device* device){
 
 BOOL tch_hld_bt_device_disconnect(atcmd_bt_device* device){
 	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) device;
-	if(dev->instr || dev->outstr){
-		return FALSE;
-	}
-	dev->instr = NULL;
-	dev->outstr = NULL;
+	dev->instr->close(dev->instr);
+	dev->outstr->close(dev->outstr);
 	return TRUE;
 }
 
@@ -450,7 +489,7 @@ tch_ostream* tch_hld_bt_device_openOutputStream(atcmd_bt_device* device){
 
 
 void tch_hld_bt_server_close(){
-
+	atcmd_bt_prototype* ins = &BT_StaticInstance;
 }
 
 
@@ -470,8 +509,7 @@ THREAD_ROUTINE(tch_hld_btc_serverLooper){
 	atcmd_bt_prototype* ins = &BT_StaticInstance;
 	atcmd_btdevice_prototype* dev = (atcmd_btdevice_prototype*) &BTDevice_StaticInstance;
 	while(ins->server_active){
-		if(!tch_hld_btc_setMode(2)){tchThread_sleep(1);}
-		if(tch_hld_btc_waitScan(&BTDevice_StaticInstance)){
+		if(tch_hld_btc_waitConnection(&BTDevice_StaticInstance)){
 			if(ins->adapter){
 				ins->adapter->onConnected((atcmd_bt_device*)&BTDevice_StaticInstance);
 			}
@@ -488,7 +526,7 @@ THREAD_ROUTINE(tch_hld_btc_serverLooper){
 		}
 		int dlen = usart2->available(usart2);
 		usart2->read(usart2,NULL,dlen,0,NULL); // flush
-		while(!tch_hld_btc_diag()){ tchThread_sleep(20);}           // diag
+		while(!tch_hld_btc_diag()){ tchThread_sleep(20);}
 	}
 	return NULL;
 }
