@@ -5,7 +5,6 @@ Tachyos
    - Portable through all of STM32F4x series
    - easily built on eclipse based environment
      (because I'm developing it based on eclipse arm cross compile environment)
-   - documentation is 
 
 
 
