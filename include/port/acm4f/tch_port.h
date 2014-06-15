@@ -8,7 +8,7 @@
 #ifndef TCH_PORT_H_
 #define TCH_PORT_H_
 
-
+#include "tch_portcfg.h"
 
 /****
  *  define exception entry / exit stack data structure
@@ -27,17 +27,14 @@ typedef struct _tch_port_ix tch_port_ix;
 struct _tch_port_ix {
 	void (*_kernel_lock)(void);
 	void (*_kernel_unlock)(void);
-	void (*_switchContext)(void* nth,void* cth) __attribute__((always_naked));
-	void (*_saveContext)(void* cth) __attribute__((always_naked));
-	void (*_restoreContext)(void* cth) __attribute__((always_naked));
-	void (*_enterSvFromUsr)(int sv_id,void* arg1,void* arg2);
-	void (*_enterSvFromIsr)(int sv_id,void* arg1,void* arg2);
+	void (*_switchContext)(void* nth,void* cth);
+	void (*_saveContext)(void* cth);
+	void (*_restoreContext)(void* cth);
+	int (*_enterSvFromUsr)(int sv_id,void* arg1,void* arg2);
+	int (*_enterSvFromIsr)(int sv_id,void* arg1,void* arg2);
 };
 
-const tch_port_ix* PORT_OBJ;
-
-
-
+const tch_port_ix* tch_port_init();
 
 
 

@@ -6,6 +6,7 @@
  */
 
 #include "main.h"
+#include "tch.h"
 
 void* main(void* arg) {
 

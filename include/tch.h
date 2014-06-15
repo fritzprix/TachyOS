@@ -10,13 +10,13 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-
 #include "stm32f4xx.h"
+#include "cmsis_os.h"
+#include "hal/STM_CMx/tch_hal.h"
 
 /****
  *  general macro type
  */
-#define NULL                           ((void*) 0 )
 
 
 /****
@@ -36,32 +36,106 @@
 
 
 /***
- *  tachos data structure
+ *  tachyos data structure table
+ *
  */
-typedef void* tch_thread_id;
-typedef struct _tch_thread_cfg_t tch_thread_cfg;
-typedef void* (*tch_thread_routine)(void* arg);
-typedef void* tch_mtx;
-typedef struct _tch_condv_t tch_condv;
-typedef enum { Kernel = 5, High = 4, Normal = 3, Low = 2, Idle = 1} tch_thread_prior;
+
+
+typedef enum {
+	true = 1,false = !true
+} BOOL;
 
 
 
 /***
- *  tachos kernel interface
+ *  thread  types
+ */
+typedef void* tch_thread_id;
+typedef struct _tch_thread_cfg_t tch_thread_cfg;
+typedef void* (*tch_thread_routine)(void* arg);
+typedef enum { Kernel = 6, Realtime = 5, High = 4, Normal = 3, Low = 2, Idle = 1} tch_thread_prior;
+
+
+
+/***
+ *  mutex  types
+ */
+typedef void* tch_mtx_id;
+typedef struct _tch_mtx_t tch_mtx;
+
+/***
+ *  semaphore  types
+ */
+typedef void* tch_sem_id;
+typedef struct _tch_sem_t tch_sem;
+
+
+/***
+ *  condition variable types
+ */
+typedef void* tch_condv_id;
+typedef struct _tch_condv_t tch_condv;
+
+
+
+
+/**
+ *  mempool tpyes
+ */
+typedef struct _tch_mpool_def_t tch_mpoolDef_t;
+typedef void* tch_mpool_id;
+
+/***
+ *  message type
+ */
+typedef struct _tch_msgQue_def_t tch_msgQueDef_t;
+typedef void* tch_msgQue_id;
+
+/***
+ * mail type
+ */
+typedef struct _tch_mailQue_def_t tch_mailQueDef_t;
+typedef void* tch_mailQue_id;
+
+
+
+/***
+ *  tachyos kernel interface
  */
 typedef struct _tch_thread_ix_t tch_thread_ix;
 typedef struct _tch_condvar_ix_t tch_condv_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
 typedef struct _tch_semaph_ix_t tch_semaph_ix;
+typedef struct _tch_signal_ix_t tch_signal_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mbox_ix;
-
-typedef enum {
-	true = 1,false = !1
-} BOOL;
+typedef struct _tch_mpool_ix_t tch_mpool_ix;
 
 
+
+typedef struct _tch_t tch;
+struct _tch_t {
+	const tch_thread_ix* Thread;
+	const tch_signal_ix* Sig;
+	const tch_condv_ix* Condv;
+	const tch_mtx_ix* Mtx;
+	const tch_semaph_ix* Sem;
+	const tch_msgq_ix* MsgQ;
+	const tch_mbox_ix* MailQ;
+	const tch_mpool_ix* Mempool;
+	const tch_hal* hal;
+};
+
+
+extern const tch_thread_ix* Thread;
+extern const tch_signal_ix* Sig;
+extern const tch_condv_ix* Condv;
+extern const tch_mtx_ix* Mtx;
+extern const tch_semaph_ix* Sem;
+extern const tch_msgq_ix* MsgQ;
+extern const tch_mbox_ix* MailQ;
+extern const tch_mpool_ix* Mempool;
+extern const tch_hal* hal;
 
 /**
  * 1. Kernel Interface
@@ -72,6 +146,17 @@ typedef enum {
 extern BOOL tch_kernelInit(void* arg);
 extern BOOL tch_kernelStart(void* arg);
 extern void tch_kernelSysTick(void);
+
+
+/***
+ * tachyos generic data interface
+ */
+
+typedef struct _tch_streambuffer_t tch_streamBuffer;
+typedef struct _tch_istream_t tch_istream;
+typedef struct _tch_ostream_t tch_ostream;
+
+
 
 
 struct _tch_thread_cfg_t {
@@ -94,30 +179,69 @@ struct _tch_thread_ix_t {
 	 *  Start New Thread
 	 */
 	void (*start)(tch_thread_id thread);
-	void (*terminate)(tch_thread_id thread);
+	osStatus (*terminate)(tch_thread_id thread);
 	tch_thread_id (*getCurrent)(void);
-	void (*sleep)(int millisec);
-	void (*join)(tch_thread_id thread);
+	osStatus (*sleep)(int millisec);
+	osStatus (*join)(tch_thread_id thread);
 	void (*setPriority)(tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)();
 };
 
 
+struct _tch_signal_ix_t {
+	int32_t (*set)(tch_thread_id thread,int32_t signals);
+	int32_t (*clear)(tch_thread_id thread,int32_t signals);
+	int32_t (*wait)(tch_thread_id thread,uint32_t millisec);
+};
+
+
 struct _tch_mutex_ix_t {
-	void (*initMutex)(tch_mtx* mtx);
-	BOOL (*lock)(tch_mtx* mtx,uint32_t timeout);
-	void (*unlock)(tch_mtx* mtx);
+	tch_mtx_id (*create)(tch_mtx* mtx);
+	osStatus (*lock)(tch_mtx_id mtx,uint32_t timeout);
+	osStatus (*unlock)(tch_mtx_id mtx);
+	osStatus (*destroy)(tch_mtx_id mtx);
+};
+
+struct _tch_semaph_ix_t {
+	tch_sem_id (*create)(tch_sem* sem);
+	osStatus (*lock)(tch_sem_id sid,uint32_t timeout);
+	osStatus (*unlock)(tch_sem_id sid);
+	osStatus (*destroy)(tch_sem_id sid);
 };
 
 struct _tch_condvar_ix_t {
-	void (*initCondv)(tch_condv* condv);
+	tch_condv_id (*create)(tch_condv* condv);
 	BOOL (*wait)(tch_condv* condv,uint32_t timeout);
-	void (*wake)(tch_condv* condv);
-	void (*wakeAll)(tch_condv* condv);
+	osStatus (*wake)(tch_condv* condv);
+	osStatus (*wakeAll)(tch_condv* condv);
+	osStatus (*destroy)(tch_condv* condv);
+};
+
+
+/**
+ *    CMSIS RTOS Compatible message queue
+ */
+
+struct _tch_mpool_ix_t {
+	tch_mpool_id (*create)(const tch_mpoolDef_t* pool);
+	void* (*alloc)(tch_mpool_id mpool);
+	void* (*calloc)(tch_mpool_id mpool);
+	osStatus (*free)(tch_mpool_id mpool,void* block);
 };
 
 struct _tch_msgque_ix_t {
-	void (*initMsgQ)();
+	tch_msgQue_id (*initMsgQ)(const tch_msgQueDef_t* que);
+	osStatus (*put)(tch_msgQue_id,uint32_t msg,uint32_t millisec);
+	osEvent (*get)(tch_msgQue_id,uint32_t millisec);
+};
+
+struct _tch_mailbox_ix_t {
+	tch_mailQue_id (*create)(const tch_mailQueDef_t* que);
+	void* (*alloc)(tch_mailQue_id qid,uint32_t millisec);
+	void* (*calloc)(tch_mailQue_id qid,uint32_t millisec);
+	osStatus (*put)(tch_mailQue_id qid);
+	osEvent (*get)(tch_mailQue_id qid,uint32_t millisec);
+	osStatus (*free)(tch_mailQue_id qid,void* mail);
 };
 
 
