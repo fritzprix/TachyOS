@@ -10,13 +10,15 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-#include "stm32f4xx.h"
 #include "cmsis_os.h"
 #include "hal/STM_CMx/tch_hal.h"
 
 /****
  *  general macro type
  */
+
+
+
 
 
 /****
@@ -40,7 +42,6 @@
  *
  */
 
-
 typedef enum {
 	true = 1,false = !true
 } BOOL;
@@ -53,7 +54,14 @@ typedef enum {
 typedef void* tch_thread_id;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
 typedef void* (*tch_thread_routine)(void* arg);
-typedef enum { Kernel = 6, Realtime = 5, High = 4, Normal = 3, Low = 2, Idle = 1} tch_thread_prior;
+typedef enum {
+	Kernel = 6,
+	Realtime = 5,
+	High = 4,
+	Normal = 3,
+	Low = 2,
+	Idle = 1
+} tch_thread_prior;
 
 
 
@@ -99,6 +107,7 @@ typedef void* tch_mailQue_id;
 
 
 
+
 /***
  *  tachyos kernel interface
  */
@@ -127,15 +136,6 @@ struct _tch_t {
 };
 
 
-extern const tch_thread_ix* Thread;
-extern const tch_signal_ix* Sig;
-extern const tch_condv_ix* Condv;
-extern const tch_mtx_ix* Mtx;
-extern const tch_semaph_ix* Sem;
-extern const tch_msgq_ix* MsgQ;
-extern const tch_mbox_ix* MailQ;
-extern const tch_mpool_ix* Mempool;
-extern const tch_hal* hal;
 
 /**
  * 1. Kernel Interface
@@ -160,10 +160,11 @@ typedef struct _tch_ostream_t tch_ostream;
 
 
 struct _tch_thread_cfg_t {
-	void*               _t_stack;
 	uint32_t             t_stackSize;
 	tch_thread_routine  _t_routine;
 	tch_thread_prior     t_proior;
+	void*               _t_stack;
+	const char*         _t_name;
 };
 
 /**
@@ -244,5 +245,21 @@ struct _tch_mailbox_ix_t {
 	osStatus (*free)(tch_mailQue_id qid,void* mail);
 };
 
+
+
+extern const tch_thread_ix* Thread;
+extern const tch_signal_ix* Sig;
+extern const tch_condv_ix* Condv;
+extern const tch_mtx_ix* Mtx;
+extern const tch_semaph_ix* Sem;
+extern const tch_msgq_ix* MsgQ;
+extern const tch_mbox_ix* MailQ;
+extern const tch_mpool_ix* Mempool;
+extern const tch_hal* hal;
+
+/****
+ * global accessible error handling routine
+ */
+void tch_error_handler(BOOL dump,osStatus status) __attribute__((naked));
 
 #endif /* TCH_H_ */

@@ -12,5 +12,7 @@ struct _tch_lld_spi_t {
 
 };
 
+const struct _tch_lld_spi_t* _TCH_SPI_Instance;
+
 
 #endif /* TCH_SPI_H_ */

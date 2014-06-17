@@ -12,5 +12,6 @@ struct _tch_lld_gpio_t {
 
 };
 
+const tch_lld_gpio* _TCH_GPIO_Instance;
 
 #endif /* TCH_GPIO_H_ */

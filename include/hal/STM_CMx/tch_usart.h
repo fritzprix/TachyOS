@@ -12,4 +12,6 @@ struct _tch_lld_usart_t {
 
 };
 
+const struct _tch_lld_usart_t* _TCH_USART_Instance;
+
 #endif /* TCH_USART_H_ */

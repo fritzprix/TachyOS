@@ -12,4 +12,7 @@ struct _tch_lld_i2c_t {
 
 };
 
+const struct _tch_lld_i2c_t* _TCH_I2C_Instance;
+
+
 #endif /* TCH_I2C_H_ */

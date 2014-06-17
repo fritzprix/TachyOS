@@ -11,5 +11,6 @@
 struct _tch_lld_adc_t {
 
 };
+const struct _tch_lld_adc_t* _TCH_ADC_Instance;
 
 #endif /* TCH_ADC_H_ */
