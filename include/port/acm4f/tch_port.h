@@ -45,6 +45,7 @@ struct _tch_port_ix {
 	void (*_switchContext)(void* nth,void* cth);
 	void (*_saveContext)(void* cth);
 	void (*_restoreContext)(void* cth);
+	void (*_returnToKernelModeThread)(void* routine,void* arg1,void* arg2);
 	int (*_enterSvFromUsr)(int sv_id,void* arg1,void* arg2);
 	int (*_enterSvFromIsr)(int sv_id,void* arg1,void* arg2);
 };

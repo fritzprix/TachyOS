@@ -132,7 +132,7 @@ struct _tch_t {
 	const tch_msgq_ix* MsgQ;
 	const tch_mbox_ix* MailQ;
 	const tch_mpool_ix* Mempool;
-	const tch_hal* hal;
+	const tch_hal* Hal;
 };
 
 
@@ -142,11 +142,13 @@ struct _tch_t {
  *   -> implemented in 'tch_kernel.c'
  *
  */
-
+/**
+ *
+ */
 extern BOOL tch_kernelInit(void* arg);
 extern BOOL tch_kernelStart(void* arg);
 extern void tch_kernelSysTick(void);
-
+extern void tch_kernelSvCall(uint32_t sv_id,void* arg1, void* arg2);
 
 /***
  * tachyos generic data interface
@@ -255,7 +257,7 @@ extern const tch_semaph_ix* Sem;
 extern const tch_msgq_ix* MsgQ;
 extern const tch_mbox_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
-extern const tch_hal* hal;
+extern const tch_hal* Hal;
 
 /****
  * global accessible error handling routine

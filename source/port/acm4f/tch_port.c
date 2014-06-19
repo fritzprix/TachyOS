@@ -6,6 +6,7 @@
  */
 
 #include "port/acm4f/tch_port.h"
+#include "tch.h"
 #include "core_cm4.h"
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -23,15 +24,16 @@
 #define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
 
 
-#define CTRL_PSTACK_FLAG           (uint32_t) (1 << 1)
-#define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
-#define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 
 #define IDLE_STACK_SIZE            (uint32_t) (1 << 9)
 #define MAIN_STACK_SIZE            (uint32_t) (1 << 11)
 
 #define SCB_AIRCR_KEY              (uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos)
+#define EPSR_THUMB_MODE            (uint32_t) (1 << 24)
+
+#define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
+#define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 
 
@@ -42,21 +44,14 @@ void tch_acm4_disableISR(void);
 static void tch_acm4_switchContext(void* nth,void* cth) __attribute__((naked));
 static void tch_acm4_saveContext(void* cth) __attribute__((naked));
 static void tch_acm4_restoreContext(void* cth) __attribute__((naked));
+static void tch_acm4_returnToKernelModeThread(void* routine,void* arg1,void* arg2);
 static int tch_acm4_enterSvFromUsr(int sv_id,void* arg1,void* arg2);
 static int tch_acm4_enterSvFromIsr(int sv_id,void* arg1,void* arg2);
 
+static void __pend_loop(void) __attribute__((naked));
+
 
 /**
- *  	void (*_enableISR)(void);
-	void (*_disableISR)(void);
-	void (*_kernel_lock)(void);
-	void (*_kernel_unlock)(void);
-
-	void (*_switchContext)(void* nth,void* cth);
-	void (*_saveContext)(void* cth);
-	void (*_restoreContext)(void* cth);
-	int (*_enterSvFromUsr)(int sv_id,void* arg1,void* arg2);
-	int (*_enterSvFromIsr)(int sv_id,void* arg1,void* arg2);
  */
 __attribute__((section(".data"))) static tch_port_ix _PORT_OBJ = {
 		tch_acm4_kernel_lock,
@@ -136,11 +131,70 @@ void tch_acm4_restoreContext(void* cth){
 
 }
 
+
+/***
+ *  this function redirect execution to thread mode for thread context manipulation
+ */
+void tch_acm4_returnToKernelModeThread(void* routine,void* arg1,void* arg2){
+	arm_exc_stack* org_sp = (arm_exc_stack*)__get_PSP();         /***
+	                                                              *   prepare fake exception stack
+	                                                              *    - passing arguement to kernel mode thread
+	                                                              *    - redirect kernel routine
+	                                                              **/
+	org_sp--;                                                     // 1. push stack
+	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
+	org_sp->R1 = arg2;
+	org_sp->Return = routine;                                     // 3. modify return address of exc entry stack
+	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
+	__set_PSP(org_sp);                                            // 5. set manpulated exception stack as thread stack pointer
+	tch_acm4_kernel_lock();                                       // 6. finally lock as kernel execution
+}
+
+
 int tch_acm4_enterSvFromUsr(int sv_id,void* arg1,void* arg2){
-
+	int result = 0;
+	asm volatile(
+			"svc #0\n"                                // raise sv interrupt
+			"str r0,[%0]" : : "r"(&result) :);        // return from sv interrupt and get result from register #0
+	return result;
 }
 
+/***
+ */
 int tch_acm4_enterSvFromIsr(int sv_id,void* arg1,void* arg2){
-
+	arm_exc_stack* org_sp = (arm_exc_stack*) __get_PSP();
+	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
+	org_sp->R0 = sv_id;
+	org_sp->R1 = arg1;
+	org_sp->R2 = arg2;
+	org_sp->Return = __pend_loop;
+	org_sp->xPSR = EPSR_THUMB_MODE;
+	__set_PSP(org_sp);
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+	return 0;
 }
 
+
+void __pend_loop(void){
+	__ISB();
+	__DMB();
+	__WFI();
+}
+
+void SysTick_Handler(void){
+	tch_kernelSysTick();
+}
+
+
+void SVC_Handler(void){
+	arm_exc_stack* exsp = __get_PSP();
+	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+}
+
+
+void PendSV_Handler(void){
+	arm_exc_stack* exsp = __get_PSP();
+	arm_exc_stack* org_sp = exsp + 1;
+	__set_PSP(org_sp);                                       // pop manipulated stack
+	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+}

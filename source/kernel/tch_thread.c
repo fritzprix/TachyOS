@@ -25,7 +25,6 @@ static tch_thread_prior tch_threadGetPriorty();
 struct _tch_thread_header_t {
 	tch_genericList_node_t      t_listNode;
 	tch_genericList_queue_t     t_joinQ;
-	tch_genericList_queue_t*    t_waitQ;
 	tch_thread_routine          t_fn;
 	const char*                 t_name;
 	void*                       t_arg;
@@ -55,7 +54,7 @@ static tch_thread_ix tch_threadix = {
 const tch_thread_ix* Thread = &tch_threadix;
 
 tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
-
+	uint32_t* sptop = (uint32_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 }
 
 void tch_threadStart(tch_thread_id thread){
