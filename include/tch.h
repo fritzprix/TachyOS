@@ -18,13 +18,6 @@
  *  general macro type
  */
 
-/***
- *  Supervisor call table
- */
-#define SV_THREAD_START                   (uint32_t) 0x20
-#define SV_THREAD_TERMINATE               (uint32_t) 0x21
-#define SV_THREAD_SLEEP                   (uint32_t) 0x22
-#define SV_THREAD_JOIN                    (uint32_t) 0x23
 
 
 /***
@@ -39,20 +32,26 @@ typedef enum {
 
 
 /***
+ * kernel type
+ */
+typedef struct _tch_exc_stack_t tch_exc_stack;
+typedef struct _tch_thread_context_t tch_thread_context;
+
+/***
  *  thread  types
  */
 typedef void* tch_thread_id;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
+
+
 typedef void* (*tch_thread_routine)(void* arg);
 typedef enum {
-	Kernel = 6,
 	Realtime = 5,
 	High = 4,
 	Normal = 3,
 	Low = 2,
 	Idle = 1
 } tch_thread_prior;
-
 
 
 /***
@@ -73,6 +72,7 @@ typedef struct _tch_sem_t tch_sem;
  */
 typedef void* tch_condv_id;
 typedef struct _tch_condv_t tch_condv;
+
 
 
 
@@ -132,18 +132,7 @@ typedef struct tch_prototype{
 	tch_port_ix*            tch_port;
 } tch_prototype;
 
-/**
- * 1. Kernel Interface
- *   -> implemented in 'tch_kernel.c'
- *
- */
-/**
- *
- */
-extern void tch_kernelInit(void* arg);
-extern BOOL tch_kernelStart(void* arg);
-extern void tch_kernelSysTick(void);
-extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
+
 
 /***
  * tachyos generic data interface

@@ -11,8 +11,7 @@
  */
 
 
-#include "tch.h"
-#include "port/acm4f/tch_port.h"
+#include "kernel/tch_kernel.h"
 
 
 
@@ -25,8 +24,6 @@
 #ifndef IDLE_STACK_SIZE
 #define IDLE_STACK_SIZE                     (1 << 8)
 #endif
-
-#define SV_RETURN_TO_THREAD                 ((uint8_t) 1)
 
 
 extern void* main(void* arg);
@@ -92,12 +89,14 @@ void tch_kernelInit(void* arg){
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
-	arm_exc_stack* sp = NULL;
-	tch_port_ix* portix = TCH_SYS_Instance.tch_port;
+	tch_exc_stack* sp = NULL;
+	tch_port_ix* tch_port = TCH_SYS_Instance.tch_port;
 	switch(sv_id){
 	case SV_RETURN_TO_THREAD:
 		sp++;
-		portix->_kernel_unlock();
+		tch_port->_kernel_unlock();
+		return;
+	case SV_THREAD_START:             // thread pointer arg1
 		return;
 	}
 }

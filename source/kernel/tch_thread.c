@@ -5,12 +5,10 @@
  *      Author: innocentevil
  */
 
-#include "tch.h"
-#include "lib/tch_absdata.h"
+#include "kernel/tch_kernel.h"
 
 
 
-typedef struct _tch_thread_header_t tch_thread_header;
 
 /**
  *  public accessible function
@@ -40,24 +38,6 @@ static tch_thread_prior tch_threadGetPriorty(tch* _sys);
 static void __tch_threadEntry() __attribute__((naked));
 static void __tch_onTerminated() __attribute__((naked));
 
-
-
-
-struct _tch_thread_header_t {
-	tch_genericList_node_t      t_listNode;
-	tch_genericList_queue_t     t_joinQ;
-	tch_thread_routine          t_fn;
-	const char*                 t_name;
-	void*                       t_arg;
-	uint32_t                    t_lckCnt;
-	uint32_t                    t_tslot;
-	uint32_t                    t_status;
-	uint32_t                    t_prior;
-	uint32_t                    t_svd_prior;
-	uint32_t                    t_id;
-	uint64_t                    t_to;
-	tch_thread_context*         t_ctx;
-} __attribute__((aligned(4)));
 
 
 static tch_thread_ix tch_threadix = {
@@ -109,9 +89,10 @@ void tch_threadStart(tch* _sys,tch_thread_id thread){
 	tch_port_ix* tch_port = ((tch_prototype*) _sys)->tch_port;
 	if(__get_IPSR()){
 		// isr mode
-		tch_port->_enterSvFromIsr();
+		tch_port->_enterSvFromIsr(SV_THREAD_START,(uint32_t)thread,0);
 	}else{
 		// thread mode
+		tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
 	}
 }
 
