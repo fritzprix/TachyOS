@@ -9,6 +9,7 @@
 #define TCH_HAL_H_
 
 
+#include "hal/STM_CMx/stm32f4xx.h"
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"

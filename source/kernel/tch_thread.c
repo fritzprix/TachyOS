@@ -6,14 +6,24 @@
  */
 
 #include "tch.h"
-#include "port/acm4f/tch_port.h"
 #include "lib/tch_absdata.h"
 
 
 
+typedef struct _tch_thread_header_t tch_thread_header;
 
-
-static tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg);
+/**
+ *  public accessible function
+ */
+/***
+ *  create new thread
+ *   - inflate thread header structure onto the very top of thread stack area
+ *   - initialize thread header from thread configuration type
+ *   - inflate thread context for start (R4~LR)
+ *     -> LR point Entry Routine of Thread
+ *
+ */
+static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
 static void tch_threadStart(tch_thread_id thread);
 static osStatus tch_threadTerminate(tch_thread_id thread);
 static tch_thread_id tch_threadGetCurrent(void);
@@ -21,6 +31,17 @@ static osStatus tch_threadSleep(int millisec);
 static osStatus tch_threadJoin(tch_thread_id thread);
 static void tch_threadSetPriority(tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty();
+
+
+/**
+ * private function
+ */
+
+static void __tch_threadEntry() __attribute__((naked));
+static void __tch_onTerminated() __attribute__((naked));
+
+
+
 
 struct _tch_thread_header_t {
 	tch_genericList_node_t      t_listNode;
@@ -35,8 +56,8 @@ struct _tch_thread_header_t {
 	uint32_t                    t_svd_prior;
 	uint32_t                    t_id;
 	uint64_t                    t_to;
-	tch_thread_context          t_ctx;
-};
+	tch_thread_context*         t_ctx;
+} __attribute__((aligned(4)));
 
 
 static tch_thread_ix tch_threadix = {
@@ -53,8 +74,34 @@ static tch_thread_ix tch_threadix = {
 
 const tch_thread_ix* Thread = &tch_threadix;
 
-tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
+tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	uint32_t* sptop = (uint32_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
+	tch_port_ix* port = ((tch_prototype*) _sys)->tch_port;
+
+	/**
+	 * thread initialize from configuration type
+	 */
+	tch_thread_header* thread_p = ((tch_thread_header*) sptop - 1);
+	thread_p->t_arg = arg;
+	thread_p->t_fn = cfg->_t_routine;
+	thread_p->t_name = cfg->_t_name;
+	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
+
+
+	/**
+	 *
+	 */
+	thread_p->t_ctx = ((tch_thread_context*)thread_p - 1);
+	port->_makeInitialContext(thread_p->t_ctx,__tch_threadEntry);
+
+	thread_p->t_to = 0;
+	thread_p->t_id = (uint32_t) thread_p;
+	thread_p->t_lckCnt = 0;
+	thread_p->t_listNode.next = thread_p->t_listNode.prev = NULL;
+	tch_genericQue_Init(&thread_p->t_joinQ);
+
+	return (tch_thread_id) thread_p;
+
 }
 
 void tch_threadStart(tch_thread_id thread){
@@ -82,5 +129,16 @@ void tch_threadSetPriority(tch_thread_prior nprior){
 }
 
 tch_thread_prior tch_threadGetPriorty(){
+
+}
+
+
+static void __tch_threadEntry() {
+	// kernel unlock
+	// invoke thread routine
+	// invoke thread termination callback
+}
+
+static void __tch_onTerminated() {
 
 }

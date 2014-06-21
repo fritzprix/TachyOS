@@ -11,30 +11,12 @@
 #define TCH_H_
 
 #include "cmsis_os.h"
+#include "port/acm4f/tch_port.h"
 #include "hal/STM_CMx/tch_hal.h"
 
 /****
  *  general macro type
  */
-
-
-
-
-
-/****
- *  thread specific macro type
- */
-#define THREAD_MIN_STACK_SIZE          ((uint8_t)  1 << 8)
-#ifndef MAIN_STACK_SIZE
-#define MAIN_STACK_SIZE                ((uint8_t)   1 << 9)
-#endif
-
-#ifndef IDLE_STACK_SIZE
-#define IDLE_STACK_SIZE                (THREAD_MIN_STACK_SIZE)
-#endif
-
-
-
 
 
 /***
@@ -137,6 +119,11 @@ struct _tch_t {
 
 
 
+typedef struct tch_prototype{
+	tch                     tch_api;
+	tch_port_ix*            tch_port;
+} tch_prototype;
+
 /**
  * 1. Kernel Interface
  *   -> implemented in 'tch_kernel.c'
@@ -145,10 +132,10 @@ struct _tch_t {
 /**
  *
  */
-extern BOOL tch_kernelInit(void* arg);
+extern void tch_kernelInit(void* arg);
 extern BOOL tch_kernelStart(void* arg);
 extern void tch_kernelSysTick(void);
-extern void tch_kernelSvCall(uint32_t sv_id,void* arg1, void* arg2);
+extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 
 /***
  * tachyos generic data interface
@@ -177,7 +164,7 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
-	tch_thread_id (*create)(tch_thread_cfg* cfg,void* arg);
+	tch_thread_id (*create)(tch* sys,tch_thread_cfg* cfg,void* arg);
 	/**
 	 *  Start New Thread
 	 */

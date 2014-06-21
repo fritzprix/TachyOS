@@ -8,26 +8,22 @@
 #ifndef TCH_PORT_H_
 #define TCH_PORT_H_
 
+
 #include "tch_portcfg.h"
+#include "core_cm4.h"
 
 /****
  *  define exception entry / exit stack data structure
  */
 typedef struct _tch_exc_stack_t tch_exc_stack;
 typedef struct _tch_thread_context_t tch_thread_context;
-typedef struct _tch_port_ix tch_port_ix;
-
-typedef struct _arm_sbrt_ctx arm_sbrt_ctx;
+//typedef struct _arm_sbrt_ctx arm_sbrt_ctx;
 typedef struct _arm_exc_stack arm_exc_stack;
-
-
-
-
 
 /***
  *  port interface
  */
-struct _tch_port_ix {
+typedef struct tch_port_ix {
 
 	void (*_enableISR)(void);
 	void (*_disableISR)(void);
@@ -41,14 +37,14 @@ struct _tch_port_ix {
 	 *   - to allow interrupt or thread preemption when it's needed
 	 */
 	void (*_kernel_unlock)(void);
-
 	void (*_switchContext)(void* nth,void* cth);
 	void (*_saveContext)(void* cth);
 	void (*_restoreContext)(void* cth);
-	void (*_returnToKernelModeThread)(void* routine,void* arg1,void* arg2);
-	int (*_enterSvFromUsr)(int sv_id,void* arg1,void* arg2);
-	int (*_enterSvFromIsr)(int sv_id,void* arg1,void* arg2);
-};
+	void (*_returnToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
+	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
+	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
+	void (*_makeInitialContext)(void* sp,void* initfn);
+}tch_port_ix;
 
 const tch_port_ix* tch_port_init();
 
@@ -109,7 +105,15 @@ struct _tch_exc_stack_t {
 };
 
 struct _tch_thread_context_t {
-	arm_sbrt_ctx* sp;
+	uint32_t R4;
+	uint32_t R5;
+	uint32_t R6;
+	uint32_t R7;
+	uint32_t R8;
+	uint32_t R9;
+	uint32_t R10;
+	uint32_t R11;
+	uint32_t LR;
 };
 
 

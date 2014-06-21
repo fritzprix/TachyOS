@@ -18,41 +18,35 @@
 
 
 
+#ifndef MAIN_STACK_SIZE
+#define MAIN_STACK_SIZE                     (1 << 10)
+#endif
 
-#define SV_RETURN_TO_THREAD                 ((uint8_t) )
+#ifndef IDLE_STACK_SIZE
+#define IDLE_STACK_SIZE                     (1 << 8)
+#endif
+
+#define SV_RETURN_TO_THREAD                 ((uint8_t) 1)
+
 
 extern void* main(void* arg);
 static void* idle(void* arg);
 
 
-static const tch_hal*     _tch_hal;
-static const tch_port_ix* _tch_port;
-static const tch TCH_API = {
-		Thread,
-		Sig,
-		Condv,
-		Mtx,
-		Sem,
-		MsgQ,
-		MailQ,
-		Mempool,
-		Hal
-};
+static tch_prototype TCH_SYS_Instance;
 
 static tch_thread_id MainThread_id;
 static uint32_t MAIN_STACK[MAIN_STACK_SIZE];
-static tch_thread_id MAIN_THREAD;
 
 
 static tch_thread_id IdleThread_id;
 static uint32_t IDLE_STACK[IDLE_STACK_SIZE];
-static tch_thread_id IDLE_THREAD;
 
 
 
 
 
-BOOL tch_kernelInit(void* arg){
+void tch_kernelInit(void* arg){
 
 	/***
 	 *  Device init hal initailize
@@ -61,16 +55,20 @@ BOOL tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
-	_tch_hal = tch_hal_init();
-	if(!_tch_hal)
+	TCH_SYS_Instance.tch_api.Hal = tch_hal_init();
+	if(!TCH_SYS_Instance.tch_api.Hal)
 		tch_error_handler(false,osErrorValue);
 
 
-	_tch_port = tch_port_init();
-	if(!_tch_port)
+	TCH_SYS_Instance.tch_port = (tch_port_ix*)tch_port_init();
+	if(!TCH_SYS_Instance.tch_port)
 		tch_error_handler(false,osErrorValue);
-	_tch_port->_kernel_lock();
+	tch_port_ix* portix = TCH_SYS_Instance.tch_port;
 
+	portix->_kernel_lock();
+
+	tch* api = &TCH_SYS_Instance.tch_api;
+	api->Thread = Thread;
 
 
 	tch_thread_cfg thcfg;
@@ -79,23 +77,27 @@ BOOL tch_kernelInit(void* arg){
 	thcfg.t_stackSize = MAIN_STACK_SIZE;
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
-	MainThread_id = Thread->create(&thcfg,&TCH_API);
+	MainThread_id = Thread->create((tch*)&TCH_SYS_Instance,&thcfg,&TCH_SYS_Instance);
 
-	tch_thread_cfg thcfg;
 	thcfg._t_routine = idle;
 	thcfg._t_stack = IDLE_STACK;
 	thcfg.t_stackSize = IDLE_STACK_SIZE;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
-	IdleThread_id = Thread->create(&thcfg,&TCH_API);
+	IdleThread_id = Thread->create((tch*)&TCH_SYS_Instance,&thcfg,&TCH_SYS_Instance);
+
+	portix->_enableISR();                   // interrupt enable
+	portix->_kernel_unlock();
+	Thread->start(IdleThread_id);
 }
 
-void tch_kernelSvCall(uint32_t sv_id,void* arg1, void* arg2){
+void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	arm_exc_stack* sp = NULL;
+	tch_port_ix* portix = TCH_SYS_Instance.tch_port;
 	switch(sv_id){
 	case SV_RETURN_TO_THREAD:
 		sp++;
-		_tch_port->_kernel_unlock();
+		portix->_kernel_unlock();
 		return;
 	}
 }
