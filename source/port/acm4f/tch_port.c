@@ -6,6 +6,7 @@
  */
 
 #include "port/acm4f/tch_port.h"
+#include "lib/tch_lib.h"
 #include <tch.h>
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -191,7 +192,13 @@ int tch_acm4_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	return 0;
 }
 
+/**
+ *  prepare initial context for start thread
+ */
 void tch_acm4_makeInitialContext(void* sp,void* initfn){
+	tch_thread_context* _sp = (tch_thread_context*) sp;
+	tch_memset(sp,sizeof(tch_thread_context),0);
+	_sp->LR = (uint32_t) initfn;
 }
 
 

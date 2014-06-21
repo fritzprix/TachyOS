@@ -88,7 +88,7 @@ void tch_kernelInit(void* arg){
 
 	portix->_enableISR();                   // interrupt enable
 	portix->_kernel_unlock();
-	Thread->start(IdleThread_id);
+	Thread->start((tch*)&TCH_SYS_Instance,IdleThread_id);
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){

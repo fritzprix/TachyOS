@@ -18,6 +18,14 @@
  *  general macro type
  */
 
+/***
+ *  Supervisor call table
+ */
+#define SV_THREAD_START                   (uint32_t) 0x20
+#define SV_THREAD_TERMINATE               (uint32_t) 0x21
+#define SV_THREAD_SLEEP                   (uint32_t) 0x22
+#define SV_THREAD_JOIN                    (uint32_t) 0x23
+
 
 /***
  *  tachyos data structure table
@@ -160,6 +168,7 @@ struct _tch_thread_cfg_t {
  * Thread Interface
  */
 
+
 struct _tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
@@ -168,13 +177,13 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Start New Thread
 	 */
-	void (*start)(tch_thread_id thread);
-	osStatus (*terminate)(tch_thread_id thread);
-	tch_thread_id (*getCurrent)(void);
-	osStatus (*sleep)(int millisec);
-	osStatus (*join)(tch_thread_id thread);
-	void (*setPriority)(tch_thread_prior nprior);
-	tch_thread_prior (*getPriorty)();
+	void (*start)(tch* sys,tch_thread_id thread);
+	osStatus (*terminate)(tch* sys,tch_thread_id thread);
+	tch_thread_id (*getCurrent)(tch* sys);
+	osStatus (*sleep)(tch* sys,int millisec);
+	osStatus (*join)(tch* sys,tch_thread_id thread);
+	void (*setPriority)(tch* sys,tch_thread_prior nprior);
+	tch_thread_prior (*getPriorty)(tch* sys);
 };
 
 

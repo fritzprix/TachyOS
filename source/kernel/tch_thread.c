@@ -24,13 +24,13 @@ typedef struct _tch_thread_header_t tch_thread_header;
  *
  */
 static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
-static void tch_threadStart(tch_thread_id thread);
-static osStatus tch_threadTerminate(tch_thread_id thread);
-static tch_thread_id tch_threadGetCurrent(void);
-static osStatus tch_threadSleep(int millisec);
-static osStatus tch_threadJoin(tch_thread_id thread);
-static void tch_threadSetPriority(tch_thread_prior nprior);
-static tch_thread_prior tch_threadGetPriorty();
+static void tch_threadStart(tch* _sys,tch_thread_id thread);
+static osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread);
+static tch_thread_id tch_threadGetCurrent(tch* _sys);
+static osStatus tch_threadSleep(tch* _sys,int millisec);
+static osStatus tch_threadJoin(tch* _sys,tch_thread_id thread);
+static void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior);
+static tch_thread_prior tch_threadGetPriorty(tch* _sys);
 
 
 /**
@@ -88,11 +88,12 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
 
 
-	/**
-	 *
-	 */
-	thread_p->t_ctx = ((tch_thread_context*)thread_p - 1);
-	port->_makeInitialContext(thread_p->t_ctx,__tch_threadEntry);
+	thread_p->t_ctx = ((tch_thread_context*)thread_p - 2);                      /**
+	                                                                             *  thread context will be saved on 't_ctx'
+	                                                                             *  initial sp is located in 2 context table offset below thread pointer
+	                                                                             *  and context is manipulted to direct thread to thread start point
+	                                                                             */
+	port->_makeInitialContext(thread_p->t_ctx,__tch_threadEntry);                // manipulate initial context of thread
 
 	thread_p->t_to = 0;
 	thread_p->t_id = (uint32_t) thread_p;
@@ -104,31 +105,37 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 
 }
 
-void tch_threadStart(tch_thread_id thread){
+void tch_threadStart(tch* _sys,tch_thread_id thread){
+	tch_port_ix* tch_port = ((tch_prototype*) _sys)->tch_port;
+	if(__get_IPSR()){
+		// isr mode
+		tch_port->_enterSvFromIsr();
+	}else{
+		// thread mode
+	}
+}
+
+osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread){
 
 }
 
-osStatus tch_threadTerminate(tch_thread_id thread){
+tch_thread_id tch_threadGetCurrent(tch* _sys){
 
 }
 
-tch_thread_id tch_threadGetCurrent(void){
+osStatus tch_threadSleep(tch* _sys,int millisec){
 
 }
 
-osStatus tch_threadSleep(int millisec){
+osStatus tch_threadJoin(tch* _sys,tch_thread_id thread){
 
 }
 
-osStatus tch_threadJoin(tch_thread_id thread){
+void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior){
 
 }
 
-void tch_threadSetPriority(tch_thread_prior nprior){
-
-}
-
-tch_thread_prior tch_threadGetPriorty(){
+tch_thread_prior tch_threadGetPriorty(tch* _sys){
 
 }
 
