@@ -35,7 +35,7 @@ static tch_thread_prior tch_threadGetPriorty(tch* _sys);
  * private function
  */
 
-static void __tch_threadEntry() __attribute__((naked));
+static void __tch_threadEntry(uint32_t id,tch_thread_id thread) __attribute__((naked));
 static void __tch_onTerminated() __attribute__((naked));
 
 
@@ -68,12 +68,13 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
 
 
-	thread_p->t_ctx = ((tch_thread_context*)thread_p - 2);                      /**
+
+	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
 	                                                                             *  and context is manipulted to direct thread to thread start point
 	                                                                             */
-	port->_makeInitialContext(thread_p->t_ctx,__tch_threadEntry);                // manipulate initial context of thread
+	thread_p->t_ctx = port->_makeInitialContext(thread_p,__tch_threadEntry);                // manipulate initial context of thread
 
 	thread_p->t_to = 0;
 	thread_p->t_id = (uint32_t) thread_p;
@@ -121,12 +122,12 @@ tch_thread_prior tch_threadGetPriorty(tch* _sys){
 }
 
 
-static void __tch_threadEntry() {
+void __tch_threadEntry(uint32_t id,tch_thread_id thread) {
 	// kernel unlock
 	// invoke thread routine
 	// invoke thread termination callback
 }
 
-static void __tch_onTerminated() {
+void __tch_onTerminated() {
 
 }

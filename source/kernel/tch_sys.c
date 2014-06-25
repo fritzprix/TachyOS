@@ -84,8 +84,7 @@ void tch_kernelInit(void* arg){
 	IdleThread_id = Thread->create((tch*)&TCH_SYS_Instance,&thcfg,&TCH_SYS_Instance);
 
 	portix->_enableISR();                   // interrupt enable
-	portix->_kernel_unlock();
-	Thread->start((tch*)&TCH_SYS_Instance,IdleThread_id);
+	tch_kernelStart(&TCH_SYS_Instance);
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
@@ -97,6 +96,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_port->_kernel_unlock();
 		return;
 	case SV_THREAD_START:             // thread pointer arg1
+		// compare current thread to new one
+		tch_port->_jmpToKernelModeThread(tch_port->_restoreContext,arg1,arg2);
 		return;
 	}
 }

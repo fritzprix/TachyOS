@@ -9,6 +9,7 @@
 #define TCH_PORT_H_
 
 
+#include "tch.h"
 #include "tch_portcfg.h"
 #include "core_cm4.h"
 
@@ -32,10 +33,14 @@ typedef struct tch_port_ix {
 	void (*_switchContext)(void* nth,void* cth);
 	void (*_saveContext)(void* cth);
 	void (*_restoreContext)(void* cth);
-	void (*_returnToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
+	void (*_jmpToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
 	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
 	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
-	void (*_makeInitialContext)(void* sp,void* initfn);
+	void* (*_makeInitialContext)(void* sp,void* initfn);
+	void (*_setThreadSP)(uint32_t sp);
+	uint32_t (*_getThreadSP)(void);
+	void (*_setHandlerSP)(uint32_t sp);
+	uint32_t (*_getHandlerSP)(void);
 }tch_port_ix;
 
 const tch_port_ix* tch_port_init();
@@ -80,7 +85,7 @@ struct _tch_exc_stack_t {
 	uint32_t FPSCR;
 	uint32_t RESV;
 #endif
-}__attribute__((aligned(8)));
+}__attribute__((aligned(4)));
 
 struct _tch_thread_context_t {
 	uint32_t R4;
@@ -92,7 +97,7 @@ struct _tch_thread_context_t {
 	uint32_t R10;
 	uint32_t R11;
 	uint32_t LR;
-}__attribute__((aligned(8)));
+}__attribute__((aligned(4)));
 
 
 

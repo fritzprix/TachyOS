@@ -490,7 +490,7 @@ static void SetSysClock(void)
     StartUpCounter++;
   } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
-  if (!(RCC->CR & RCC_CR_HSERDY))
+  if (RCC->CR & RCC_CR_HSERDY)
   {
     HSEStatus = (uint32_t)0x01;
   }

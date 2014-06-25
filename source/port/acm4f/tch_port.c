@@ -37,36 +37,55 @@
 
 
 
-static void tch_acm4_kernel_lock(void);
-static void tch_acm4_kernel_unlock(void);
-void tch_acm4_enableISR(void);
-void tch_acm4_disableISR(void);
-static void tch_acm4_switchContext(uint32_t nxt_svid,void* nth,void* cth) __attribute__((naked));
-static void tch_acm4_saveContext(uint32_t nxt_svid,void* cth) __attribute__((naked));
-static void tch_acm4_restoreContext(uint32_t nxt_svid,void* cth) __attribute__((naked));
-static void tch_acm4_returnToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2);
-static int tch_acm4_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
-static int tch_acm4_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
-static void tch_acm4_makeInitialContext(void* ctx,void* initfn);
-
+static void tch_port_kernel_lock(void);
+static void tch_port_kernel_unlock(void);
+void tch_port_enableISR(void);
+void tch_port_disableISR(void);
+static void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
+static void tch_port_saveContext(void* cth) __attribute__((naked));
+static void tch_port_restoreContext(void* cth) __attribute__((naked));
+static void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2);
+static int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
+static int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
+static void* tch_port_makeInitialContext(void* ctx,void* initfn);
+static void tch_port_setThreadSP(uint32_t sp);
+static uint32_t tch_port_getThreadSP(void);
+static void tch_port_setHandlerSP(uint32_t sp);
+static uint32_t tch_port_getHandlerSP(void);
 
 static void __pend_loop(void) __attribute__((naked));
 
 
 /**
+ *
+	void (*_enableISR)(void);
+	void (*_disableISR)(void);
+	void (*_kernel_lock)(void);
+	void (*_kernel_unlock)(void);
+	void (*_switchContext)(void* nth,void* cth);
+	void (*_saveContext)(void* cth);
+	void (*_restoreContext)(void* cth);
+	void (*_returnToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
+	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
+	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
+	void (*_makeInitialContext)(void* sp,void* initfn);
  */
 __attribute__((section(".data"))) static tch_port_ix _PORT_OBJ = {
-		tch_acm4_kernel_lock,
-		tch_acm4_kernel_unlock,
-		tch_acm4_enableISR,
-		tch_acm4_disableISR,
-		tch_acm4_switchContext,
-		tch_acm4_saveContext,
-		tch_acm4_restoreContext,
-		tch_acm4_returnToKernelModeThread,
-		tch_acm4_enterSvFromUsr,
-		tch_acm4_enterSvFromIsr,
-		tch_acm4_makeInitialContext
+		tch_port_enableISR,
+		tch_port_disableISR,
+		tch_port_kernel_lock,
+		tch_port_kernel_unlock,
+		tch_port_switchContext,
+		tch_port_saveContext,
+		tch_port_restoreContext,
+		tch_port_jmpToKernelModeThread,
+		tch_port_enterSvFromUsr,
+		tch_port_enterSvFromIsr,
+		tch_port_makeInitialContext,
+		tch_port_setThreadSP,
+		tch_port_getThreadSP,
+		tch_port_setHandlerSP,
+		tch_port_getHandlerSP
 };
 
 
@@ -120,60 +139,60 @@ const tch_port_ix* tch_port_init(){
 
 
 
-void tch_acm4_kernel_lock(void){
+void tch_port_kernel_lock(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
 
 
-void tch_acm4_kernel_unlock(void){
+void tch_port_kernel_unlock(void){
 	__set_BASEPRI(MODE_USER);
 }
 
-void tch_acm4_enableISR(void){
+void tch_port_enableISR(void){
 	__enable_irq();
 }
 
-void tch_acm4_disableISR(void){
+void tch_port_disableISR(void){
 	__disable_irq();
 }
 
-void tch_acm4_switchContext(uint32_t svid,void* nth,void* cth){
+void tch_port_switchContext(void* nth,void* cth){
 
 }
 
-void tch_acm4_saveContext(uint32_t svid,void* cth){
+void tch_port_saveContext(void* cth){
 
 }
 
-void tch_acm4_restoreContext(uint32_t svid,void* cth){
+void tch_port_restoreContext(void* cth){
 	asm volatile(
 			"ldr sp,[%0]\n"
 			"pop {r4-r11,lr}\n"
-			"svc #0" : : "r"(((tch_thread_header*) cth)->t_ctx) :);
+			"ldr r0,=%1\n"
+			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"i"(SV_RETURN_TO_THREAD) : "r0","r1");
 }
 
 
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_acm4_returnToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2){
+void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();         /***
 	                                                              *   prepare fake exception stack
 	                                                              *    - passing arguement to kernel mode thread
 	                                                              *    - redirect kernel routine
 	                                                              **/
 	org_sp--;                                                     // 1. push stack
-	org_sp->R0 = SV_RETURN_TO_THREAD;                             // 2. pass arguement into fake stack
-	org_sp->R1 = arg1;
-	org_sp->R2 = arg2;
+	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
+	org_sp->R1 = arg2;
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
 	__set_PSP((uint32_t)org_sp);                                            // 5. set manpulated exception stack as thread stack pointer
-	tch_acm4_kernel_lock();                                       // 6. finally lock as kernel execution
+	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
 }
 
 
-int tch_acm4_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
+int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	int result = 0;
 	asm volatile(
 			"svc #0\n"                                // raise sv interrupt
@@ -183,7 +202,7 @@ int tch_acm4_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
 
 /***
  */
-int tch_acm4_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
+int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
@@ -199,12 +218,31 @@ int tch_acm4_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 /**
  *  prepare initial context for start thread
  */
-void tch_acm4_makeInitialContext(void* sp,void* initfn){
-	tch_thread_context* _sp = (tch_thread_context*) sp;
-	tch_memset(sp,sizeof(tch_thread_context),0);
-	_sp->LR = (uint32_t) initfn;
+void* tch_port_makeInitialContext(void* th_header,void* initfn){
+	tch_thread_context* ctx_nu = (tch_thread_context*) th_header - 1;
+	tch_exc_stack* exc_sf = (tch_exc_stack*) th_header - 1;
+	exc_sf->Return = (uint32_t)initfn;
+	exc_sf->xPSR = EPSR_THUMB_MODE;
+	exc_sf->R0 = SV_RETURN_TO_THREAD;
+	exc_sf->R1 = (uint32_t)th_header;
+	return (tch_thread_context*) ctx_nu;
 }
 
+void tch_port_setThreadSP(uint32_t sp){
+	asm volatile("mrs r0,PSP");
+}
+
+uint32_t tch_port_getThreadSP(void){
+
+}
+
+void tch_port_setHandlerSP(uint32_t sp){
+
+}
+
+uint32_t tch_port_getHandlerSP(void){
+
+}
 
 void __pend_loop(void){
 	__ISB();
