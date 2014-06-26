@@ -8,9 +8,10 @@
 #ifndef TCH_ADC_H_
 #define TCH_ADC_H_
 
-struct _tch_lld_adc_t {
+typedef struct tch_lld_adc {
 
-};
-const struct _tch_lld_adc_t* _TCH_ADC_Instance;
+}tch_lld_adc;
+
+extern const tch_lld_adc* tch_adc_instance;
 
 #endif /* TCH_ADC_H_ */

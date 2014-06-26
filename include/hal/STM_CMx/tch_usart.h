@@ -8,10 +8,10 @@
 #ifndef TCH_USART_H_
 #define TCH_USART_H_
 
-struct _tch_lld_usart_t {
+typedef struct tch_lld_usart {
 
-};
+}tch_lld_usart;
 
-const struct _tch_lld_usart_t* _TCH_USART_Instance;
+extern const tch_lld_usart* tch_usart_instance;
 
 #endif /* TCH_USART_H_ */

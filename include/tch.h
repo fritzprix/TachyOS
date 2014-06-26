@@ -20,31 +20,26 @@
 
 
 
-/***
- *  tachyos data structure table
- *
- */
 
 typedef enum {
 	true = 1,false = !true
 } BOOL;
 
 
-
-/***
- * kernel type
- */
-typedef struct _tch_exc_stack_t tch_exc_stack;
-typedef struct _tch_thread_context_t tch_thread_context;
-
-/***
- *  thread  types
+/**
+ *  Thread relevant type definition
  */
 typedef void* tch_thread_id;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
-
-
 typedef void* (*tch_thread_routine)(void* arg);
+
+typedef struct tch_msg{
+	tch_thread_id thread;
+	uint32_t      msg;
+	void*        _arg;
+} tch_msg;
+
+
 typedef enum {
 	Realtime = 5,
 	High = 4,
@@ -125,12 +120,6 @@ struct _tch_t {
 	const tch_hal* Hal;
 };
 
-
-
-typedef struct tch_prototype{
-	tch                     tch_api;
-	tch_port_ix*            tch_port;
-} tch_prototype;
 
 
 

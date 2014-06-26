@@ -9,18 +9,10 @@
 #define TCH_TIMER_H_
 
 
-struct _tch_lld_pwm_t {
+typedef struct tch_lld_timer {
 
-};
+}tch_lld_timer;
 
-struct _tch_lld_gptimer_t {
-
-};
-
-
-const struct _tch_lld_pwm_t* _TCH_PWM_Instance;
-const struct _tch_lld_gptimer_t* _TCH_GPTIMER_Instance;
-
-
+extern const tch_lld_timer* tch_timer_instance;
 
 #endif /* TCH_TIMER_H_ */

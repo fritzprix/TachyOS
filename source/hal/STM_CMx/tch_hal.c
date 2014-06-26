@@ -5,35 +5,16 @@
  *      Author: innocentevil
  */
 
-#include "tch.h"
 #include "hal/STM_CMx/tch_hal.h"
 #include "hal/STM_CMx/tch_halcfg.h"
 #include "hal/STM_CMx/stm32f4xx.h"
 #include "hal/STM_CMx/system_stm32f4xx.h"
 
-#include "hal/STM_CMx/tch_gpio.h"
-#include "hal/STM_CMx/tch_usart.h"
-#include "hal/STM_CMx/tch_spi.h"
-#include "hal/STM_CMx/tch_i2c.h"
-#include "hal/STM_CMx/tch_rtc.h"
-#include "hal/STM_CMx/tch_adc.h"
-#include "hal/STM_CMx/tch_display.h"
-#include "hal/STM_CMx/tch_timer.h"
 
 
 
 
-extern const tch_lld_gpio* _TCH_GPIO_Instance;
-extern const tch_lld_pwm* _TCH_PWM_Instance;
-extern const tch_lld_gptimer* _TCH_GPTIMER_Instance;
-extern const tch_lld_usart* _TCH_USART_Instance;
-extern const tch_lld_spi* _TCH_SPI_Instance;
-extern const tch_lld_i2c* _TCH_I2C_Instance;
-extern const tch_lld_adc* _TCH_ADC_Instance;
-extern const tch_lld_rtc* _TCH_RTC_Instance;
-extern const tch_lld_dsc* _TCH_DSC_Instance;
-
-tch_hal TCH_HAL_OBJECT;
+tch_hal tch_hal_instance;
 
 const tch_hal* tch_hal_init(){
 	/***
@@ -44,18 +25,16 @@ const tch_hal* tch_hal_init(){
 	/***
 	 *  bind hal interface
 	 */
-	TCH_HAL_OBJECT.adc = _TCH_ADC_Instance;
-	TCH_HAL_OBJECT.gpio  = _TCH_GPIO_Instance;
-	TCH_HAL_OBJECT.usart = _TCH_USART_Instance;
-	TCH_HAL_OBJECT.spi = _TCH_SPI_Instance;
-	TCH_HAL_OBJECT.i2c = _TCH_I2C_Instance;
-	TCH_HAL_OBJECT.gpt = _TCH_GPTIMER_Instance;
-	TCH_HAL_OBJECT.pwm = _TCH_PWM_Instance;
-	TCH_HAL_OBJECT.rtc = _TCH_RTC_Instance;
-	TCH_HAL_OBJECT.dsc = _TCH_DSC_Instance;
+	tch_hal_instance.adc = tch_adc_instance;
+	tch_hal_instance.gpio  = tch_gpio_instance;
+	tch_hal_instance.timer = tch_timer_instance;
+	tch_hal_instance.usart = tch_usart_instance;
+	tch_hal_instance.spi = tch_spi_instance;
+	tch_hal_instance.i2c = tch_i2c_instance;
+	tch_hal_instance.rtc = tch_rtc_instance;
 
 
-	return &TCH_HAL_OBJECT;
+	return &tch_hal_instance;
 }
 
 

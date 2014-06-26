@@ -8,11 +8,11 @@
 #ifndef TCH_I2C_H_
 #define TCH_I2C_H_
 
-struct _tch_lld_i2c_t {
+typedef struct tch_lld_i2c {
 
-};
+}tch_lld_i2c;
 
-const struct _tch_lld_i2c_t* _TCH_I2C_Instance;
+extern const tch_lld_i2c* tch_i2c_instance;
 
 
 #endif /* TCH_I2C_H_ */

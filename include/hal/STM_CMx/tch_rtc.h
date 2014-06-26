@@ -8,9 +8,10 @@
 #ifndef TCH_RTC_H_
 #define TCH_RTC_H_
 
-struct _tch_lld_rtc_t {
+typedef struct tch_lld_rtc {
 
-};
-const struct _tch_lld_rtc_t* _TCH_RTC_Instance;
+}tch_lld_rtc;
+
+extern const tch_lld_rtc* tch_rtc_instance;
 
 #endif /* TCH_RTC_H_ */

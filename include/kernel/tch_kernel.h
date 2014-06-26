@@ -56,7 +56,7 @@ typedef struct tch_thread_header {
 } tch_thread_header   __attribute__((aligned(4)));
 
 extern void tch_kernelInit(void* arg);
-extern void tch_kernelStart(void* arg);
+extern void tch_kernelSchedStart(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 

@@ -13,6 +13,10 @@
 #include "tch_portcfg.h"
 #include "core_cm4.h"
 
+
+
+typedef struct _tch_exc_stack_t tch_exc_stack;
+typedef struct _tch_thread_context_t tch_thread_context;
 /***
  *  port interface
  */

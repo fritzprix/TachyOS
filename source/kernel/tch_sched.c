@@ -13,7 +13,7 @@ static tch_thread_id    tch_currentThread;
 static tch_prototype*   _sys;
 static tch_port_ix*     _port;
 
-void tch_kernelStart(void* arg){
+void tch_kernelSchedStart(void* arg){
 	_sys = (tch_prototype*) arg;
 	_port = _sys->tch_port;
 

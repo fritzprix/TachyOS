@@ -30,7 +30,7 @@ extern void* main(void* arg);
 static void* idle(void* arg);
 
 
-static tch_prototype TCH_SYS_Instance;
+static tch_prototype tch_sys_instance;
 
 static tch_thread_id MainThread_id;
 static uint32_t MAIN_STACK[MAIN_STACK_SIZE];
@@ -52,19 +52,19 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
-	TCH_SYS_Instance.tch_api.Hal = tch_hal_init();
-	if(!TCH_SYS_Instance.tch_api.Hal)
+	tch_sys_instance.tch_api.Hal = tch_hal_init();
+	if(!tch_sys_instance.tch_api.Hal)
 		tch_error_handler(false,osErrorValue);
 
 
-	TCH_SYS_Instance.tch_port = (tch_port_ix*)tch_port_init();
-	if(!TCH_SYS_Instance.tch_port)
+	tch_sys_instance.tch_port = (tch_port_ix*)tch_port_init();
+	if(!tch_sys_instance.tch_port)
 		tch_error_handler(false,osErrorValue);
-	tch_port_ix* portix = TCH_SYS_Instance.tch_port;
+	tch_port_ix* portix = tch_sys_instance.tch_port;
 
 	portix->_kernel_lock();
 
-	tch* api = &TCH_SYS_Instance.tch_api;
+	tch* api = &tch_sys_instance.tch_api;
 	api->Thread = Thread;
 
 
@@ -74,22 +74,27 @@ void tch_kernelInit(void* arg){
 	thcfg.t_stackSize = MAIN_STACK_SIZE;
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
-	MainThread_id = Thread->create((tch*)&TCH_SYS_Instance,&thcfg,&TCH_SYS_Instance);
+	MainThread_id = Thread->create((tch*)&tch_sys_instance,&thcfg,&tch_sys_instance);
 
 	thcfg._t_routine = idle;
 	thcfg._t_stack = IDLE_STACK;
 	thcfg.t_stackSize = IDLE_STACK_SIZE;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
-	IdleThread_id = Thread->create((tch*)&TCH_SYS_Instance,&thcfg,&TCH_SYS_Instance);
+	IdleThread_id = Thread->create((tch*)&tch_sys_instance,&thcfg,&tch_sys_instance);
 
 	portix->_enableISR();                   // interrupt enable
-	tch_kernelStart(&TCH_SYS_Instance);
+	tch_kernelSchedStart(&tch_sys_instance);
+
+	/**
+	 * start idle thread
+	 */
+	tch_sys_instance.tch_api.Thread->start(&tch_sys_instance,IdleThread_id);
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = NULL;
-	tch_port_ix* tch_port = TCH_SYS_Instance.tch_port;
+	tch_port_ix* tch_port = tch_sys_instance.tch_port;
 	switch(sv_id){
 	case SV_RETURN_TO_THREAD:
 		sp++;

@@ -8,11 +8,11 @@
 #ifndef TCH_SPI_H_
 #define TCH_SPI_H_
 
-struct _tch_lld_spi_t {
+typedef struct tch_lld_spi {
 
-};
+}tch_lld_spi;
 
-const struct _tch_lld_spi_t* _TCH_SPI_Instance;
+extern const  tch_lld_spi* tch_spi_instance;
 
 
 #endif /* TCH_SPI_H_ */
