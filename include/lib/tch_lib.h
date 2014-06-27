@@ -5,8 +5,8 @@
  *      Author: innocentevil
  */
 
-#ifndef MEM_H_
-#define MEM_H_
+#ifndef TCH_LIB_H_
+#define TCH_LIB_H_
 #include "../tch.h"
 
 

@@ -42,12 +42,15 @@ static uint32_t IDLE_STACK[IDLE_STACK_SIZE];
 
 
 
-
+/***
+ *  Initialize Kernel including...
+ *  - initailize device driver and bind HAL interface
+ *  - initialize architecture dependent part and bind port interface
+ *  - bind User APIs to API type
+ *  - initialize Idle thread
+ */
 void tch_kernelInit(void* arg){
 
-	/***
-	 *  Device init hal initailize
-	 */
 
 	/**
 	 *  dynamic binding of dependecy
@@ -84,7 +87,7 @@ void tch_kernelInit(void* arg){
 	IdleThread_id = Thread->create((tch*)&tch_sys_instance,&thcfg,&tch_sys_instance);
 
 	portix->_enableISR();                   // interrupt enable
-	tch_kernelSchedStart(&tch_sys_instance);
+	tch_schedInit(&tch_sys_instance);
 
 	/**
 	 * start idle thread

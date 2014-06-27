@@ -6,25 +6,39 @@
  */
 
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_sched.h"
 
-static tch_thread_queue tch_readyQue;        ///< thread queue for ready
-static tch_thread_queue tch_systimeQue;      ///< thread queue for sleep
-static tch_thread_id    tch_currentThread;
+
+/* =================  private internal function declaration   ========================== */
+
+
+
+
+/***
+ *  Invoked when thread complete its task
+ */
+static void tch_schedTerminate(tch_thread_id thread);
+static LIST_COMPARE_FN(tch_schedPolicy);
+
+
+static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
+static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
+
+
+static tch_thread_id     tch_currentThread;
 static tch_prototype*   _sys;
 static tch_port_ix*     _port;
 
-void tch_kernelSchedStart(void* arg){
+
+
+void tch_schedInit(void* arg){
 	_sys = (tch_prototype*) arg;
 	_port = _sys->tch_port;
 
 	tch_genericQue_Init((tch_genericList_queue_t*)&tch_readyQue);
-	tch_genericQue_Init((tch_genericList_queue_t*)&tch_systimeQue);
+	tch_genericQue_Init((tch_genericList_queue_t*)&tch_pendQue);
 }
 
-
-void tch_kernelSysTick(void){
-
-}
 
 
 /**
@@ -32,12 +46,12 @@ void tch_kernelSysTick(void){
  * - kernel lock should be guaranteed
  *
  */
-void tch_schedStart(tch_thread_id nth){
+void tch_schedStartThread(tch_thread_id nth){
 	tch_thread_header* thr_p = nth;
 	if(!_port)
-		tch_error_handler(false,osErrorOS);   ///< ensure portibility
+		tch_error_handler(false,osErrorOS);             ///< ensure portibility
 	_port->_kernel_lock();
-	tch_currentThread = nth;                  ///< set new thread as current thread
+	tch_currentThread = nth;                            ///< set new thread as current thread
 	thr_p->t_state = RUNNING;
 	_port->_setThreadSP((uint32_t)thr_p->t_ctx);        ///< set stack pointer
 	_port->_kernel_unlock();
@@ -45,23 +59,22 @@ void tch_schedStart(tch_thread_id nth){
 	tch_schedTerminate(nth);
 }
 
-void tch_schedReady(tch_thread_id th){
+void tch_schedScheduleThread(tch_thread_id th){
 	tch_thread_header* thr_p = th;
 	if(!_port)
 		tch_error_handler(false,osErrorOS);
+	tch_genericQue_enqueueWithCompare(&tch_readyQue,thr_p,tch_schedPolicy);
 }
 
-void tch_schedSleep(uint32_t timeout){
+
+BOOL tch_schedSuspend(uint32_t timeout){
 
 }
 
-int tch_schedWait(tch_genericList_queue_t* wq,uint32_t timeout){
+BOOL tch_schedJoin(tch_thread_id thr_id){
 
 }
 
-int tch_schedWake(tch_genericList_queue_t* wq){
-
-}
 
 void tch_schedTerminate(tch_thread_id thread){
 

@@ -157,7 +157,7 @@ struct _tch_thread_ix_t {
 	 */
 	void (*start)(tch* sys,tch_thread_id thread);
 	osStatus (*terminate)(tch* sys,tch_thread_id thread);
-	tch_thread_id (*getCurrent)(tch* sys);
+	tch_thread_id (*self)(tch* sys);
 	osStatus (*sleep)(tch* sys,int millisec);
 	osStatus (*join)(tch* sys,tch_thread_id thread);
 	void (*setPriority)(tch* sys,tch_thread_prior nprior);

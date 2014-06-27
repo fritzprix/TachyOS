@@ -24,19 +24,12 @@
 static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
 static void tch_threadStart(tch* _sys,tch_thread_id thread);
 static osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread);
-static tch_thread_id tch_threadGetCurrent(tch* _sys);
+static tch_thread_id tch_threadSelf(tch* _sys);
 static osStatus tch_threadSleep(tch* _sys,int millisec);
 static osStatus tch_threadJoin(tch* _sys,tch_thread_id thread);
 static void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch* _sys);
 
-
-/**
- * private function
- */
-
-static void __tch_threadEntry(uint32_t id,tch_thread_id thread) __attribute__((naked));
-static void __tch_onTerminated() __attribute__((naked));
 
 
 
@@ -44,7 +37,7 @@ static tch_thread_ix tch_threadix = {
 		tch_threadCreate,
 		tch_threadStart,
 		tch_threadTerminate,
-		tch_threadGetCurrent,
+		tch_threadSelf,
 		tch_threadSleep,
 		tch_threadJoin,
 		tch_threadSetPriority,
@@ -89,8 +82,9 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 void tch_threadStart(tch* _sys,tch_thread_id thread){
 	tch_port_ix* tch_port = ((tch_prototype*) _sys)->tch_port;
 	if(__get_IPSR()){
-		// isr mode
-		tch_port->_enterSvFromIsr(SV_THREAD_START,(uint32_t)thread,0);
+		// in isr mode, directly starting thread  is prohibited
+		tch_schedScheduleThread(thread);
+		//    tch_port->_enterSvFromIsr(SV_THREAD_START,(uint32_t)thread,0);
 	}else{
 		// thread mode
 		tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
@@ -98,11 +92,10 @@ void tch_threadStart(tch* _sys,tch_thread_id thread){
 }
 
 osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread){
-
+	// not implemented
 }
 
-tch_thread_id tch_threadGetCurrent(tch* _sys){
-
+tch_thread_id tch_threadSelf(tch* _sys){
 }
 
 osStatus tch_threadSleep(tch* _sys,int millisec){
