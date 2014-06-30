@@ -11,7 +11,6 @@
 #include "hal/STM_CMx/stm32f4xx.h"
 #include "core_cm4.h"
 
-
-
+#define SYS_CLK                        ((uint32_t) 168000000)
 
 #endif /* TCH_PORTCFG_H_ */

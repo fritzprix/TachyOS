@@ -36,7 +36,7 @@
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 
-
+static void tch_port_enableSysTick(void);
 static void tch_port_kernel_lock(void);
 static void tch_port_kernel_unlock(void);
 void tch_port_enableISR(void);
@@ -59,18 +59,9 @@ static void __pend_loop(void) __attribute__((naked));
 /**
  *
 	void (*_enableISR)(void);
-	void (*_disableISR)(void);
-	void (*_kernel_lock)(void);
-	void (*_kernel_unlock)(void);
-	void (*_switchContext)(void* nth,void* cth);
-	void (*_saveContext)(void* cth);
-	void (*_restoreContext)(void* cth);
-	void (*_returnToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
-	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
-	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
-	void (*_makeInitialContext)(void* sp,void* initfn);
  */
 __attribute__((section(".data"))) static tch_port_ix _PORT_OBJ = {
+		tch_port_enableSysTick,
 		tch_port_enableISR,
 		tch_port_disableISR,
 		tch_port_kernel_lock,
@@ -137,6 +128,9 @@ const tch_port_ix* tch_port_init(){
 }
 
 
+void tch_port_enableSysTick(void){
+	SysTick_Config(SYS_CLK / 1000);
+}
 
 
 void tch_port_kernel_lock(void){
@@ -157,7 +151,20 @@ void tch_port_disableISR(void){
 }
 
 void tch_port_switchContext(void* nth,void* cth){
+	asm volatile(
+			"push {r4-r11,lr}\n"
+#ifdef FEATURE_HFLOAT
+			"vpush {s0-s15}\n"
+#endif
+			"str sp,[%0]\n"
 
+			"ldr sp,[%1]\n"
+#ifdef FEATURE_HFLOAT
+			"vpop {s0-s15}\n"
+#endif
+			"pop {r4-r11,lr}\n"
+			"ldr r0,=%2\n"
+			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :);
 }
 
 void tch_port_saveContext(void* cth){
@@ -165,11 +172,7 @@ void tch_port_saveContext(void* cth){
 }
 
 void tch_port_restoreContext(void* cth){
-	asm volatile(
-			"ldr sp,[%0]\n"
-			"pop {r4-r11,lr}\n"
-			"ldr r0,=%1\n"
-			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"i"(SV_RETURN_TO_THREAD) : "r0","r1");
+
 }
 
 
@@ -219,29 +222,31 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
  *  prepare initial context for start thread
  */
 void* tch_port_makeInitialContext(void* th_header,void* initfn){
-	tch_thread_context* ctx_nu = (tch_thread_context*) th_header - 1;
-	tch_exc_stack* exc_sf = (tch_exc_stack*) th_header - 1;
-	exc_sf->Return = (uint32_t)initfn;
-	exc_sf->xPSR = EPSR_THUMB_MODE;
-	exc_sf->R0 = SV_RETURN_TO_THREAD;
-	exc_sf->R1 = (uint32_t)th_header;
-	return (tch_thread_context*) ctx_nu;
+	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;
+	exc_sp->Return = (uint32_t)initfn;
+	exc_sp->xPSR = EPSR_THUMB_MODE;
+	exc_sp->R0 = 0;
+	exc_sp->R1 = (uint32_t)th_header;
+	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
+	th_ctx->R4 = 0;
+	th_ctx->R5 = 0;
+	return th_ctx;
 }
 
 void tch_port_setThreadSP(uint32_t sp){
-	asm volatile("mrs r0,PSP");
+	__set_PSP(sp);
 }
 
 uint32_t tch_port_getThreadSP(void){
-
+	return __get_PSP();
 }
 
 void tch_port_setHandlerSP(uint32_t sp){
-
+	__set_MSP(sp);
 }
 
 uint32_t tch_port_getHandlerSP(void){
-
+	return __get_MSP();
 }
 
 void __pend_loop(void){

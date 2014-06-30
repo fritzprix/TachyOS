@@ -14,6 +14,8 @@
 #include "core_cm4.h"
 
 
+#define _port_setThreadSP(sp){__set_PSP(sp);}
+#define _port_getThreadSP(){__get_PSP()}
 
 typedef struct _tch_exc_stack_t tch_exc_stack;
 typedef struct _tch_thread_context_t tch_thread_context;
@@ -22,6 +24,7 @@ typedef struct _tch_thread_context_t tch_thread_context;
  */
 typedef struct tch_port_ix {
 
+	void (*_enableSysTick)(void);
 	void (*_enableISR)(void);
 	void (*_disableISR)(void);
 	/***

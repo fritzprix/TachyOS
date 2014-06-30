@@ -6,6 +6,7 @@
  */
 
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_sched.h"
 
 
 
@@ -31,7 +32,7 @@ static void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch* _sys);
 
 
-
+static void __tch_thread_entry(void);
 
 static tch_thread_ix tch_threadix = {
 		tch_threadCreate,
@@ -49,7 +50,7 @@ const tch_thread_ix* Thread = &tch_threadix;
 
 tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	uint32_t* sptop = (uint32_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
-	tch_port_ix* port = ((tch_prototype*) _sys)->tch_port;
+	tch_port_ix* port = ((tch_kernel_instance*) _sys)->tch_port;
 
 	/**
 	 * thread initialize from configuration type
@@ -67,7 +68,8 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
 	                                                                             *  and context is manipulted to direct thread to thread start point
 	                                                                             */
-	thread_p->t_ctx = port->_makeInitialContext(thread_p,__tch_threadEntry);                // manipulate initial context of thread
+	thread_p->t_ctx = port->_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
+	thread_p->t_sys = _sys;
 
 	thread_p->t_to = 0;
 	thread_p->t_id = (uint32_t) thread_p;
@@ -80,10 +82,10 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 }
 
 void tch_threadStart(tch* _sys,tch_thread_id thread){
-	tch_port_ix* tch_port = ((tch_prototype*) _sys)->tch_port;
+	tch_port_ix* tch_port = ((tch_kernel_instance*) _sys)->tch_port;
 	if(__get_IPSR()){
 		// in isr mode, directly starting thread  is prohibited
-		tch_schedScheduleThread(thread);
+		tch_schedScheduleToReady(thread);
 		//    tch_port->_enterSvFromIsr(SV_THREAD_START,(uint32_t)thread,0);
 	}else{
 		// thread mode
@@ -114,13 +116,17 @@ tch_thread_prior tch_threadGetPriorty(tch* _sys){
 
 }
 
+void __tch_thread_entry(void){
+	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();
+	tch_kernel_instance* kins = (tch_kernel_instance*)thr_p->t_sys;
 
-void __tch_threadEntry(uint32_t id,tch_thread_id thread) {
-	// kernel unlock
-	// invoke thread routine
-	// invoke thread termination callback
+#ifdef FEATURE_HFLOAT
+	float _force_fctx = 0.1f;
+	_force_fctx += 0.1f;
+#endif
+
+	thr_p->t_state = RUNNING;
+	tch_msg* msg = thr_p->t_fn(thr_p->t_arg);
+	kins->tch_port->_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,0);
 }
 
-void __tch_onTerminated() {
-
-}

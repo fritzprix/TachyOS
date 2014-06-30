@@ -25,7 +25,11 @@
  */
 extern void tch_schedInit(void* arg);
 
-
+/**
+ *   Return true if new thread has higher priority than current one
+ *   @param nth : new thread
+ */
+extern BOOL tch_schedIsPreemtable(tch_thread_id nth);
 
 /***.
  *
@@ -34,18 +38,21 @@ extern void tch_schedInit(void* arg);
 
  */
 extern void tch_schedStartThread(tch_thread_id thr_id);
-
+/***
+ *  return current active thread
+ */
+extern tch_thread_id tch_schedGetRunningThread();
 
 /***
  *  put thread into ready queue of scheduler rather than starting immediately
  *  this can be ivnoked from ISR
  */
-extern void tch_schedScheduleThread(tch_thread_id thr_id);
+extern void tch_schedScheduleToReady(tch_thread_id thr_id);
 
 /**
  *  suspend thread for given amount of time
  */
-extern BOOL tch_schedSuspend(uint32_t timeout);
+extern BOOL tch_schedScheduleToSuspend(uint32_t timeout);
 
 
 /***

@@ -19,17 +19,18 @@
 /***
  *  Supervisor call table
  */
-typedef struct tch_prototype{
-	tch tch_api;
+typedef struct tch_kernel_instance{
+	tch                     tch_api;
 	tch_port_ix*            tch_port;
-} tch_prototype;
+} tch_kernel_instance;
 
 
 typedef enum tch_thread_state {
 	PENDED = 1,                             // state in which thread is created but not started yet (waiting in ready queue)
 	RUNNING = 2,                            // state in which thread occupies cpu
-	WAIT = 3,                               // state in which thread wait for event (wake)
-	SLEEP = 4,                              // state in which thread is yield cpu for given amount of time
+	READY = 3,
+	WAIT = 4,                               // state in which thread wait for event (wake)
+	SLEEP = 5,                              // state in which thread is yield cpu for given amount of time
 	TERMINATED = -1                          // state in which thread has finished its task
 } tch_thread_state;
 
@@ -39,6 +40,7 @@ typedef struct tch_thread_header {
 	tch_thread_routine          t_fn;
 	const char*                 t_name;
 	void*                       t_arg;
+	void*                       t_sys;
 	uint32_t                    t_lckCnt;
 	uint32_t                    t_tslot;
 	tch_thread_state            t_state;
@@ -55,12 +57,16 @@ typedef struct tch_thread_queue{
 
 
 
-#define SV_ROUTE_TO_KTHREAD               ((uint8_t) 1)
+#define SV_RETURN_TO_KTHREAD             ((uint32_t) 1)              /**
+                                                                      *  Return to temporal thread mode in kernel mode
+                                                                      *   - Simplify Thread Context Switching OP.
+                                                                      *
+                                                                      */
+#define SV_EXIT_FROM_SV                  ((uint32_t) 2)
 
 #define SV_THREAD_START                   (uint32_t) 0x20
 #define SV_THREAD_TERMINATE               (uint32_t) 0x21
 #define SV_THREAD_SLEEP                   (uint32_t) 0x22
-#define SV_THREAD_JOIN                    (uint32_t) 0x23
 
 
 extern void tch_kernelInit(void* arg);
