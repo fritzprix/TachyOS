@@ -56,7 +56,7 @@ void tch_kernelInit(void* arg){
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
-	tch_exc_stack* sp = _port_getThreadSP();
+	tch_exc_stack* sp = (tch_exc_stack*)_port_getThreadSP();
 	tch_port_ix* tch_port = tch_sys_instance.tch_port;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
@@ -68,7 +68,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedStartThread((tch_thread_id) arg1);
 		return;
 	case SV_THREAD_SLEEP:
-		tch_schedScheduleToSuspend((tch_thread_id)arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
+		tch_schedScheduleToSuspend(arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
 		return;
@@ -84,7 +84,7 @@ void tch_error_handler(BOOL dump,osStatus status){
 	 *  optional dump register
 	 */
 	while(1){
-		asm volatile("nop");
+		asm volatile("NOP");
 	}
 }
 

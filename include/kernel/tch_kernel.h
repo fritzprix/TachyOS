@@ -75,4 +75,16 @@ extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 
 
+
+extern const tch_thread_ix* Thread;
+extern const tch_signal_ix* Sig;
+extern const tch_timer_ix* Timer;
+extern const tch_condv_ix* Condv;
+extern const tch_mtx_ix* Mtx;
+extern const tch_semaph_ix* Sem;
+extern const tch_msgq_ix* MsgQ;
+extern const tch_mbox_ix* MailQ;
+extern const tch_mpool_ix* Mempool;
+extern const tch_hal* Hal;
+
 #endif /* TCH_KERNEL_H_ */

@@ -5,7 +5,9 @@
  *      Author: innocentevil
  */
 
-#include "kernel/tch_kernel.h"
+#include <kernel/tch_kernel.h>
+#include <lib/tch_absdata.h>
+#include <port/acm4f/tch_port.h>
 #include "kernel/tch_sched.h"
 
 

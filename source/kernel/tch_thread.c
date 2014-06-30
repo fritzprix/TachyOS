@@ -30,8 +30,8 @@ static osStatus tch_threadTerminate(tch_thread_id thread);
 static tch_thread_id tch_threadSelf();
 static osStatus tch_threadSleep(uint32_t millisec);
 static osStatus tch_threadJoin(tch_thread_id thread);
-static void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior);
-static tch_thread_prior tch_threadGetPriorty(tch* _sys);
+static void tch_threadSetPriority(tch_thread_prior nprior);
+static tch_thread_prior tch_threadGetPriorty();
 
 
 static void __tch_thread_entry(void);
@@ -123,11 +123,11 @@ osStatus tch_threadJoin(tch_thread_id thread){
 
 }
 
-void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior){
+void tch_threadSetPriority(tch_thread_prior nprior){
 
 }
 
-tch_thread_prior tch_threadGetPriorty(tch* _sys){
+tch_thread_prior tch_threadGetPriorty(){
 
 }
 

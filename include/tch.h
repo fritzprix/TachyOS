@@ -10,21 +10,23 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-#include "cmsis_os.h"
-#include "port/acm4f/tch_port.h"
-#include "hal/STM_CMx/tch_hal.h"
+#include <cmsis_os.h>
+#include <hal/STM_CMx/tch_hal.h>
+#include <stddef.h>
+//#include "port/acm4f/tch_port.h"
 
 /****
  *  general macro type
  */
 
 
-
-
 typedef enum {
 	true = 1,false = !true
 } BOOL;
 
+typedef enum {
+	ActOnSleep,NoActOnSleep
+}tch_pwr_def;
 
 /**
  *  Thread relevant type definition
@@ -61,6 +63,15 @@ typedef struct _tch_mtx_t tch_mtx;
 typedef void* tch_sem_id;
 typedef struct _tch_sem_t tch_sem;
 
+/***
+ *  timer types
+ */
+typedef void* tch_timer_id;
+typedef struct _tch_timer_def_t tch_timer_def;
+typedef void* (*tch_timer_callback)(void* arg);
+typedef enum {
+	Once,Periodic
+}tch_timer_type;
 
 /***
  *  condition variable types
@@ -70,10 +81,8 @@ typedef struct _tch_condv_t tch_condv;
 
 
 
-
-
 /**
- *  mempool tpyes
+ *  mempool types
  */
 typedef struct _tch_mpool_def_t tch_mpoolDef_t;
 typedef void* tch_mpool_id;
@@ -101,6 +110,7 @@ typedef struct _tch_condvar_ix_t tch_condv_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
 typedef struct _tch_semaph_ix_t tch_semaph_ix;
 typedef struct _tch_signal_ix_t tch_signal_ix;
+typedef struct _tch_timer_ix_t tch_timer_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mbox_ix;
 typedef struct _tch_mpool_ix_t tch_mpool_ix;
@@ -111,6 +121,7 @@ typedef struct _tch_t tch;
 struct _tch_t {
 	const tch_thread_ix* Thread;
 	const tch_signal_ix* Sig;
+	const tch_timer_ix* Timer;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
 	const tch_semaph_ix* Sem;
@@ -160,8 +171,8 @@ struct _tch_thread_ix_t {
 	tch_thread_id (*self)();
 	osStatus (*sleep)(uint32_t millisec);
 	osStatus (*join)(tch_thread_id thread);
-	void (*setPriority)(tch* sys,tch_thread_prior nprior);
-	tch_thread_prior (*getPriorty)(tch* sys);
+	void (*setPriority)(tch_thread_prior nprior);
+	tch_thread_prior (*getPriorty)();
 };
 
 
@@ -171,6 +182,22 @@ struct _tch_signal_ix_t {
 	int32_t (*wait)(tch_thread_id thread,uint32_t millisec);
 };
 
+
+osTimerId osTimerCreate (const osTimerDef_t *timer_def, os_timer_type type, void *argument);
+osStatus osTimerStart (osTimerId timer_id, uint32_t millisec);
+osStatus osTimerStop (osTimerId timer_id);
+osStatus osTimerDelete (osTimerId timer_id);
+
+struct _tch_timer_def_t {
+	tch_timer_callback     fn;
+};
+
+struct _tch_timer_ix_t {
+	tch_timer_id (*create)(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
+	osStatus (*start)(tch_timer_id timer,uint32_t millisec);
+	osStatus (*stop)(tch_timer_id timer);
+	osStatus (*delete)(tch_timer_id timer);
+};
 
 struct _tch_mutex_ix_t {
 	tch_mtx_id (*create)(tch_mtx* mtx);
@@ -222,16 +249,6 @@ struct _tch_mailbox_ix_t {
 };
 
 
-
-extern const tch_thread_ix* Thread;
-extern const tch_signal_ix* Sig;
-extern const tch_condv_ix* Condv;
-extern const tch_mtx_ix* Mtx;
-extern const tch_semaph_ix* Sem;
-extern const tch_msgq_ix* MsgQ;
-extern const tch_mbox_ix* MailQ;
-extern const tch_mpool_ix* Mempool;
-extern const tch_hal* Hal;
 
 /****
  * global accessible error handling routine
