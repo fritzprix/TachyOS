@@ -56,11 +56,12 @@ void tch_kernelInit(void* arg){
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
-	tch_exc_stack* sp = NULL;
+	tch_exc_stack* sp = _port_getThreadSP();
 	tch_port_ix* tch_port = tch_sys_instance.tch_port;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp++;
+		_port_setThreadSP((uint32_t)sp);
 		tch_port->_kernel_unlock();
 		return;
 	case SV_THREAD_START:             // thread pointer arg1

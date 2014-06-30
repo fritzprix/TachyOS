@@ -154,13 +154,13 @@ void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
 			"push {r4-r11,lr}\n"
 #ifdef FEATURE_HFLOAT
-			"vpush {s0-s15}\n"
+			"vpush {s16-s31}\n"
 #endif
 			"str sp,[%0]\n"
 
 			"ldr sp,[%1]\n"
 #ifdef FEATURE_HFLOAT
-			"vpop {s0-s15}\n"
+			"vpop {s16-s31}\n"
 #endif
 			"pop {r4-r11,lr}\n"
 			"ldr r0,=%2\n"
@@ -207,6 +207,7 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
  */
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
+	tch_memset(org_sp,sizeof(tch_exc_stack),0);
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;

@@ -201,10 +201,11 @@ void tch_schedTerminate(tch_thread_id thread){
 }
 
 
-inline void tch_schedInitKernelThread(tch_thread_id init_thr){
+static inline void tch_schedInitKernelThread(tch_thread_id init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_kernel_instance* kins = (tch_kernel_instance*)thr_p->t_sys;
-	kins->tch_port->_setThreadSP(thr_p->t_ctx);
+//	kins->tch_port->_setThreadSP(thr_p->t_ctx);
+	_port_setThreadSP(thr_p->t_ctx);
 	#ifdef FEATURE_HFLOAT
 		float _force_fctx = 0.1f;
 		_force_fctx += 0.1f;

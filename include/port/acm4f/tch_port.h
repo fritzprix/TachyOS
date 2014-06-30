@@ -14,8 +14,10 @@
 #include "core_cm4.h"
 
 
-#define _port_setThreadSP(sp){__set_PSP(sp);}
-#define _port_getThreadSP(){__get_PSP()}
+#define _port_setThreadSP(sp)    __set_PSP(sp)
+#define _port_getThreadSP()      __get_PSP()
+#define _port_setHandlerSP(sp)   __set_MSP(sp)
+#define _port_getHandlerSP()     __get_MSP()
 
 typedef struct _tch_exc_stack_t tch_exc_stack;
 typedef struct _tch_thread_context_t tch_thread_context;
@@ -104,6 +106,24 @@ struct _tch_thread_context_t {
 	uint32_t R10;
 	uint32_t R11;
 	uint32_t LR;
+#ifdef FEATURE_HFLOAT
+	uint32_t S16;
+	uint32_t S17;
+	uint32_t S18;
+	uint32_t S19;
+	uint32_t S20;
+	uint32_t S21;
+	uint32_t S22;
+	uint32_t S23;
+	uint32_t S24;
+	uint32_t S25;
+	uint32_t S26;
+	uint32_t S27;
+	uint32_t S28;
+	uint32_t S29;
+	uint32_t S30;
+	uint32_t S31;
+#endif
 }__attribute__((aligned(4)));
 
 
