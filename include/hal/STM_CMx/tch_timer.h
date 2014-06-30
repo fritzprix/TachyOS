@@ -8,6 +8,8 @@
 #ifndef TCH_TIMER_H_
 #define TCH_TIMER_H_
 
+#include "tch.h"
+
 typedef uint32_t tch_timer;
 
 typedef struct _tch_gptimer_handle_t tch_gptimer_handle;

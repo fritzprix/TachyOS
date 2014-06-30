@@ -16,6 +16,7 @@
 #include "tch.h"
 #include "lib/tch_absdata.h"
 #include "port/acm4f/tch_port.h"
+#include "hal/STM_CMx/tch_hal.h"
 /***
  *  Supervisor call table
  */

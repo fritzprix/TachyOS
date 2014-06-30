@@ -19,8 +19,7 @@
 #include "tch_gpio.h"
 
 
-
-typedef struct tch_hal{
+struct tch_hal{
 	const tch_lld_gpio*  gpio;
 	const tch_lld_timer* timer;
 	const tch_lld_usart* usart;
@@ -28,8 +27,7 @@ typedef struct tch_hal{
 	const tch_lld_i2c*   i2c;
 	const tch_lld_adc*   adc;
 	const tch_lld_rtc*   rtc;
-}tch_hal;
-
+};
 
 
 const tch_hal* tch_hal_init();

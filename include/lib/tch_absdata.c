@@ -96,7 +96,7 @@ tch_genericList_node_t* tch_genericQue_dequeue(tch_genericList_queue_t* queue){
  *
  */
 
-BOOL tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t* element){
+int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t* element){
 	tch_genericList_node_t* ql_node = queue->entry;
 	if(!ql_node){
 		return false;

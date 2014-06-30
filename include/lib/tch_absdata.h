@@ -34,8 +34,8 @@ struct _tch_list_queue_t {
 
 
 struct _tch_generic_ringBuffer_stub_t{
-	BOOL  (*isAvailable)(void*);
-	void*    (*onDealloc)(void*);
+	int  (*isAvailable)(void*);
+	void* (*onDealloc)(void*);
 };
 
 
@@ -54,7 +54,7 @@ void tch_genericQue_enqueueWithCompare(tch_genericList_queue_t* queue,tch_generi
 void tch_genericQue_putAhead(tch_genericList_queue_t* queue,tch_genericList_node_t* element);
 void tch_genericQue_putTail(tch_genericList_queue_t* queue,tch_genericList_node_t* element);
 tch_genericList_node_t* tch_genericQue_dequeue(tch_genericList_queue_t* queue);
-BOOL tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t* element);
+int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t* element);
 
 
 void tch_genericMemPool_init(tch_generic_ringBuffer* mp,void* bp,uint8_t align,uint32_t len);

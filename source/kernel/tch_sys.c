@@ -34,8 +34,8 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
-	tch_sys_instance.tch_api.Hal = tch_hal_init();
-	if(!tch_sys_instance.tch_api.Hal)
+	tch_sys_instance.tch_api.Device = tch_hal_init();
+	if(!tch_sys_instance.tch_api.Device)
 		tch_error_handler(false,osErrorValue);
 
 
