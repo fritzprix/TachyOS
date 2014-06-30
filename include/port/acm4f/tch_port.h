@@ -14,10 +14,10 @@
 #include "core_cm4.h"
 
 
-#define _port_setThreadSP(sp)    __set_PSP(sp)
-#define _port_getThreadSP()      __get_PSP()
-#define _port_setHandlerSP(sp)   __set_MSP(sp)
-#define _port_getHandlerSP()     __get_MSP()
+#define _port_setThreadSP        __set_PSP
+#define _port_getThreadSP        __get_PSP
+#define _port_setHandlerSP       __set_MSP
+#define _port_getHandlerSP       __get_MSP
 
 typedef struct _tch_exc_stack_t tch_exc_stack;
 typedef struct _tch_thread_context_t tch_thread_context;
@@ -40,16 +40,10 @@ typedef struct tch_port_ix {
 	 */
 	void (*_kernel_unlock)(void);
 	void (*_switchContext)(void* nth,void* cth);
-	void (*_saveContext)(void* cth);
-	void (*_restoreContext)(void* cth);
 	void (*_jmpToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
 	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
 	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
 	void* (*_makeInitialContext)(void* sp,void* initfn);
-	void (*_setThreadSP)(uint32_t sp);
-	uint32_t (*_getThreadSP)(void);
-	void (*_setHandlerSP)(uint32_t sp);
-	uint32_t (*_getHandlerSP)(void);
 }tch_port_ix;
 
 const tch_port_ix* tch_port_init();

@@ -64,9 +64,10 @@ typedef struct tch_thread_queue{
                                                                       */
 #define SV_EXIT_FROM_SV                  ((uint32_t) 2)
 
-#define SV_THREAD_START                   (uint32_t) 0x20
-#define SV_THREAD_TERMINATE               (uint32_t) 0x21
-#define SV_THREAD_SLEEP                   (uint32_t) 0x22
+#define SV_THREAD_START                   (uint32_t) 0x20              ///< Supervisor call id for starting thread
+#define SV_THREAD_TERMINATE               (uint32_t) 0x21              ///< Supervisor call id for terminate thread      /* Not Implemented here */
+#define SV_THREAD_SLEEP                   (uint32_t) 0x22              ///< Supervisor call id for yeild cpu for specific  amount of time
+#define SV_THREAD_JOIN                    (uint32_t) 0x23              ///< Supervisor call id for wait another thread is terminated
 
 
 extern void tch_kernelInit(void* arg);

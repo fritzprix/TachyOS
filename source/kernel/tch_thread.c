@@ -10,6 +10,8 @@
 
 
 
+#define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
+
 
 /**
  *  public accessible function
@@ -23,11 +25,11 @@
  *
  */
 static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
-static void tch_threadStart(tch* _sys,tch_thread_id thread);
-static osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread);
-static tch_thread_id tch_threadSelf(tch* _sys);
-static osStatus tch_threadSleep(tch* _sys,int millisec);
-static osStatus tch_threadJoin(tch* _sys,tch_thread_id thread);
+static void tch_threadStart(tch_thread_id thread);
+static osStatus tch_threadTerminate(tch_thread_id thread);
+static tch_thread_id tch_threadSelf();
+static osStatus tch_threadSleep(uint32_t millisec);
+static osStatus tch_threadJoin(tch_thread_id thread);
 static void tch_threadSetPriority(tch* _sys,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch* _sys);
 
@@ -81,8 +83,8 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 
 }
 
-void tch_threadStart(tch* _sys,tch_thread_id thread){
-	tch_port_ix* tch_port = ((tch_kernel_instance*) _sys)->tch_port;
+void tch_threadStart(tch_thread_id thread){
+	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(thread)->t_sys)->tch_port;
 	if(__get_IPSR()){
 		// in isr mode, directly starting thread  is prohibited
 		tch_schedScheduleToReady(thread);
@@ -93,18 +95,31 @@ void tch_threadStart(tch* _sys,tch_thread_id thread){
 	}
 }
 
-osStatus tch_threadTerminate(tch* _sys,tch_thread_id thread){
+/***
+ *  I Think force thread to be terminated directly from other user thread is not good in design perspective
+ *  if there is any good reason comments below
+ */
+osStatus tch_threadTerminate(tch_thread_id thread){
 	// not implemented
+	return osErrorOS;
 }
 
-tch_thread_id tch_threadSelf(tch* _sys){
+tch_thread_id tch_threadSelf(){
+	return tch_schedGetRunningThread();
 }
 
-osStatus tch_threadSleep(tch* _sys,int millisec){
-
+osStatus tch_threadSleep(uint32_t millisec){
+	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(tch_schedGetRunningThread())->t_sys)->tch_port;
+	if(__get_IPSR()){
+		tch_error_handler(false,osErrorOS);
+		return osErrorOS;
+	}else{
+		tch_port->_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
+		return osOK;
+	}
 }
 
-osStatus tch_threadJoin(tch* _sys,tch_thread_id thread){
+osStatus tch_threadJoin(tch_thread_id thread){
 
 }
 

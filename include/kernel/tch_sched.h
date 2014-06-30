@@ -32,10 +32,7 @@ extern void tch_schedInit(void* arg);
 extern BOOL tch_schedIsPreemtable(tch_thread_id nth);
 
 /***.
- *
- *
  *  start new thread immediately
-
  */
 extern void tch_schedStartThread(tch_thread_id thr_id);
 /***

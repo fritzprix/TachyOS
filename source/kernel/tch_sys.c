@@ -70,6 +70,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_THREAD_SLEEP:
 		tch_schedScheduleToSuspend((tch_thread_id)arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
+	case SV_THREAD_JOIN:
+		return;
 	}
 }
 

@@ -113,10 +113,8 @@ void tch_schedInit(void* arg){
 
 
 
-/**
- * this function is only invoked by kernel
- * - should not called any other program except kernel mode program
- *
+/** Note : should not called any other program except kernel mode program
+ *  start thread based on its priority (thread can be started in preempted way)
  */
 void tch_schedStartThread(tch_thread_id nth){
 	tch_thread_header* thr_p = nth;
@@ -133,6 +131,10 @@ void tch_schedStartThread(tch_thread_id nth){
 	}
 }
 
+
+/**
+ * put new thread into ready queue
+ */
 void tch_schedScheduleToReady(tch_thread_id th){
 	tch_thread_header* thr_p = th;
 	if(!_port)
@@ -140,7 +142,9 @@ void tch_schedScheduleToReady(tch_thread_id th){
 	tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*)&tch_readyQue,getListNode(thr_p),tch_schedReadyQPolicy);
 }
 
-
+/** Note : should not called any other program except kernel mode program
+ *  make current thread sleep for specified amount of time (yield cpu time)
+ */
 BOOL tch_schedScheduleToSuspend(uint32_t timeout){
 	tch_thread_id nth = 0;
 	if(!_port)
@@ -158,17 +162,21 @@ BOOL tch_schedJoin(tch_thread_id thr_id){
 
 }
 
+
+/***
+ *  System Timer Handler
+ */
 void tch_kernelSysTick(void){
 	tch_systimeTick++;
 	tch_thread_header* nth = NULL;
-	while(getThreadHeader(tch_pendQue.thque.entry)->t_to >= tch_systimeTick){
+	while(getThreadHeader(tch_pendQue.thque.entry)->t_to <= tch_systimeTick){                      ///< Check timeout value
 		nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&tch_pendQue);
 		nth->t_state = READY;
 		tch_schedScheduleToReady(nth);
 	}
-	if(tch_schedIsPreemtable(tch_readyQue.thque.entry)){
-		// dequeue head from ready queue
+	if(tch_readyQue.thque.entry && tch_schedIsPreemtable(tch_readyQue.thque.entry)){
 		tch_thread_header* nth = (tch_thread_header*)tch_genericQue_dequeue((tch_genericList_queue_t*)&tch_readyQue);
+		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*) &tch_readyQue,tch_currentThread,tch_schedReadyQPolicy);
 		getListNode(nth)->prev = tch_currentThread;
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;
@@ -204,8 +212,7 @@ void tch_schedTerminate(tch_thread_id thread){
 static inline void tch_schedInitKernelThread(tch_thread_id init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_kernel_instance* kins = (tch_kernel_instance*)thr_p->t_sys;
-//	kins->tch_port->_setThreadSP(thr_p->t_ctx);
-	_port_setThreadSP(thr_p->t_ctx);
+	_port_setThreadSP((uint32_t)thr_p->t_ctx);
 	#ifdef FEATURE_HFLOAT
 		float _force_fctx = 0.1f;
 		_force_fctx += 0.1f;
@@ -230,7 +237,7 @@ void* idle(void* arg){
 	 * - idle indicator init
 	 */
 	tch_kernel_instance* _sys = (tch_kernel_instance*) arg;
-	_sys->tch_api.Thread->start(arg,MainThread_id);
+	_sys->tch_api.Thread->start(MainThread_id);
 	while(true){
 		__DMB();
 		__ISB();

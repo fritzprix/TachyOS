@@ -67,16 +67,10 @@ __attribute__((section(".data"))) static tch_port_ix _PORT_OBJ = {
 		tch_port_kernel_lock,
 		tch_port_kernel_unlock,
 		tch_port_switchContext,
-		tch_port_saveContext,
-		tch_port_restoreContext,
 		tch_port_jmpToKernelModeThread,
 		tch_port_enterSvFromUsr,
 		tch_port_enterSvFromIsr,
 		tch_port_makeInitialContext,
-		tch_port_setThreadSP,
-		tch_port_getThreadSP,
-		tch_port_setHandlerSP,
-		tch_port_getHandlerSP
 };
 
 
@@ -224,13 +218,13 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
  */
 void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;
+	tch_memset((uint8_t*)exc_sp,sizeof(tch_exc_stack),0);
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = 0;
 	exc_sp->R1 = (uint32_t)th_header;
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	th_ctx->R4 = 0;
-	th_ctx->R5 = 0;
+	tch_memset((uint8_t*)th_ctx,sizeof(tch_thread_context),0);
 	return th_ctx;
 }
 
