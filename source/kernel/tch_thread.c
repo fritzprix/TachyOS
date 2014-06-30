@@ -74,7 +74,6 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	thread_p->t_sys = _sys;
 
 	thread_p->t_to = 0;
-	thread_p->t_id = (uint32_t) thread_p;
 	thread_p->t_lckCnt = 0;
 	thread_p->t_listNode.next = thread_p->t_listNode.prev = NULL;
 	tch_genericQue_Init(&thread_p->t_joinQ);
@@ -85,25 +84,30 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 
 void tch_threadStart(tch_thread_id thread){
 	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(thread)->t_sys)->tch_port;
-	if(__get_IPSR()){
-		// in isr mode, directly starting thread  is prohibited
-		tch_schedScheduleToReady(thread);
-		//    tch_port->_enterSvFromIsr(SV_THREAD_START,(uint32_t)thread,0);
+	if(__get_IPSR()){          ///< check current execution mode (Thread or Handler)
+		tch_schedScheduleToReady(thread);    ///< if handler mode call, put current thread in ready queue
+		                                     ///< optionally check preemption required or not
 	}else{
-		// thread mode
 		tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
 	}
 }
 
 /***
  *  I Think force thread to be terminated directly from other user thread is not good in design perspective
- *  if there is any good reason comments below
+ *  the only use-case of these kind of functions is when thread has gone wrong.
+ *  but for such a case, those kind of function(termiating thread) should be provided as kernel feature
+ *  not as user program space function. just my thought
+ *
+ *  if there is any new idea, comment below...
  */
 osStatus tch_threadTerminate(tch_thread_id thread){
 	// not implemented
 	return osErrorOS;
 }
 
+/***
+ *
+ */
 tch_thread_id tch_threadSelf(){
 	return tch_schedGetRunningThread();
 }

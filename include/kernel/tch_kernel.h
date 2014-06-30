@@ -46,7 +46,6 @@ typedef struct tch_thread_header {
 	tch_thread_state            t_state;
 	uint32_t                    t_prior;
 	uint32_t                    t_svd_prior;
-	uint32_t                    t_id;
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
 } tch_thread_header   __attribute__((aligned(4)));
