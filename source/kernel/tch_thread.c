@@ -25,7 +25,7 @@
  *
  */
 static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
-static void tch_threadStart(tch_thread_id thread);
+static osStatus tch_threadStart(tch_thread_id thread);
 static osStatus tch_threadTerminate(tch_thread_id thread);
 static tch_thread_id tch_threadSelf();
 static osStatus tch_threadSleep(uint32_t millisec);
@@ -77,18 +77,20 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	thread_p->t_lckCnt = 0;
 	thread_p->t_listNode.next = thread_p->t_listNode.prev = NULL;
 	tch_genericQue_Init(&thread_p->t_joinQ);
+	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn + (uint32_t)thread_p->t_ctx;
 
 	return (tch_thread_id) thread_p;
 
 }
 
-void tch_threadStart(tch_thread_id thread){
+osStatus tch_threadStart(tch_thread_id thread){
 	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(thread)->t_sys)->tch_port;
 	if(__get_IPSR()){          ///< check current execution mode (Thread or Handler)
 		tch_schedScheduleToReady(thread);    ///< if handler mode call, put current thread in ready queue
 		                                     ///< optionally check preemption required or not
+		return osOK;
 	}else{
-		tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
+		return tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
 	}
 }
 
@@ -115,16 +117,21 @@ tch_thread_id tch_threadSelf(){
 osStatus tch_threadSleep(uint32_t millisec){
 	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(tch_schedGetRunningThread())->t_sys)->tch_port;
 	if(__get_IPSR()){
-		tch_error_handler(false,osErrorOS);
-		return osErrorOS;
+		tch_error_handler(false,osErrorISR);
+		return osErrorISR;
 	}else{
-		tch_port->_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
-		return osOK;
+		return tch_port->_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
 	}
 }
 
 osStatus tch_threadJoin(tch_thread_id thread){
-
+	tch_port_ix* tch_port = ((tch_kernel_instance*)getThreadHeader(thread)->t_sys)->tch_port;
+	if(__get_IPSR()){
+		tch_error_handler(false,osErrorISR);
+		return osErrorISR;
+	}else{
+		return tch_port->_enterSvFromUsr(SV_THREAD_JOIN,(uint32_t) thread,0);
+	}
 }
 
 void tch_threadSetPriority(tch_thread_prior nprior){
@@ -134,6 +141,14 @@ void tch_threadSetPriority(tch_thread_prior nprior){
 tch_thread_prior tch_threadGetPriorty(){
 
 }
+
+
+BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
+	tch_thread_header* th_p = (tch_thread_header*) thrtochk;
+	return th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn + (uint32_t)th_p->t_ctx);
+}
+
+
 
 void __tch_thread_entry(void){
 	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();

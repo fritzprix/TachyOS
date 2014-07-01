@@ -18,12 +18,6 @@ static osStatus tch_mtx_destroy(tch_mtx_id mtx);
 
 
 
-
-
-
-
-
-
 __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 		tch_mtx_create,
 		tch_mtx_lock,
@@ -35,7 +29,7 @@ __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 
 tch_mtx_id tch_mtx_create(tch_mtx* mtx){
 	mtx->key = 0;
-	tch_genericQue_Init(&mtx->que);
+	tch_genericQue_Init((tch_genericList_queue_t*)&mtx->que);
 	return (tch_mtx_id) mtx;
 }
 

@@ -13,10 +13,11 @@ void* main(void* arg) {
 	tch_thread_ix* Thread = (tch_thread_ix*) tch_api->Thread;
 	uint32_t val = 0;
 	float hv = 0.1f;
+	osStatus sleeprst = osErrorOS;
 	while (1) {
 		val++;
 		hv += 0.2f;
-		Thread->sleep(500);
+		sleeprst = Thread->sleep(1000);
 	}
 	return 0;
 }

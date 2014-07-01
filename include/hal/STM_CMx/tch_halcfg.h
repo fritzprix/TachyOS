@@ -66,6 +66,11 @@
 
 
 
+#ifndef SYS_CLK
+#define SYS_CLK                   ((uint32_t) 168000000)
+#endif
+
+
 #define SYS_TARGET_CLK_FASTEST     ((uint32_t) 1)
 #define SYS_TARGET_CLK_FAIR        ((uint32_t) 2)
 #define SYS_TARGET_CLK_LOW         ((uint32_t) 4)

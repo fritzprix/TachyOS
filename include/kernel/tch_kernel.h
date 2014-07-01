@@ -27,21 +27,21 @@ typedef struct tch_kernel_instance{
 
 
 typedef enum tch_thread_state {
-	PENDED = 1,                             // state in which thread is created but not started yet (waiting in ready queue)
-	RUNNING = 2,                            // state in which thread occupies cpu
+	PENDED = 1,                              // state in which thread is created but not started yet (waiting in ready queue)
+	RUNNING = 2,                             // state in which thread occupies cpu
 	READY = 3,
-	WAIT = 4,                               // state in which thread wait for event (wake)
-	SLEEP = 5,                              // state in which thread is yield cpu for given amount of time
+	WAIT = 4,                                // state in which thread wait for event (wake)
+	SLEEP = 5,                               // state in which thread is yield cpu for given amount of time
 	TERMINATED = -1                          // state in which thread has finished its task
 } tch_thread_state;
 
 typedef struct tch_thread_header {
-	tch_genericList_node_t      t_listNode;
-	tch_genericList_queue_t     t_joinQ;
-	tch_thread_routine          t_fn;
-	const char*                 t_name;
-	void*                       t_arg;
-	void*                       t_sys;
+	tch_genericList_node_t      t_listNode;   ///<extends genericlist node class
+	tch_genericList_queue_t     t_joinQ;      ///<thread queue to wait for this thread's termination
+	tch_thread_routine          t_fn;         ///<thread function pointer
+	const char*                 t_name;       ///<thread name /* currently not implemented */
+	void*                       t_arg;        ///<thread arg field
+	void*                       t_sys;        ///<reference to kernel handle
 	uint32_t                    t_lckCnt;
 	uint32_t                    t_tslot;
 	tch_thread_state            t_state;
@@ -49,6 +49,7 @@ typedef struct tch_thread_header {
 	uint32_t                    t_svd_prior;
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
+	uint32_t                    t_chks;
 } tch_thread_header   __attribute__((aligned(4)));
 
 typedef struct tch_thread_queue{
@@ -57,22 +58,26 @@ typedef struct tch_thread_queue{
 
 
 
-#define SV_RETURN_TO_KTHREAD             ((uint32_t) 1)              /**
+#define SV_RETURN_TO_KTHREAD             ((uint32_t) 0x01)              /**
                                                                       *  Return to temporal thread mode in kernel mode
                                                                       *   - Simplify Thread Context Switching OP.
                                                                       *
                                                                       */
-#define SV_EXIT_FROM_SV                  ((uint32_t) 2)
+#define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
-#define SV_THREAD_START                   (uint32_t) 0x20              ///< Supervisor call id for starting thread
-#define SV_THREAD_TERMINATE               (uint32_t) 0x21              ///< Supervisor call id for terminate thread      /* Not Implemented here */
-#define SV_THREAD_SLEEP                   (uint32_t) 0x22              ///< Supervisor call id for yeild cpu for specific  amount of time
-#define SV_THREAD_JOIN                    (uint32_t) 0x23              ///< Supervisor call id for wait another thread is terminated
+#define SV_MTX_LOCK                      ((uint32_t) 0x10)
+#define SV_MTX_UNLOCK                    ((uint32_t) 0x11)
+
+#define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
+#define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
+#define SV_THREAD_SLEEP                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
+#define SV_THREAD_JOIN                   ((uint32_t) 0x23)              ///< Supervisor call id for wait another thread is terminated
 
 
 extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
+extern BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk);
 
 
 

@@ -34,7 +34,7 @@ extern BOOL tch_schedIsPreemtable(tch_thread_id nth);
 /***.
  *  start new thread immediately
  */
-extern void tch_schedStartThread(tch_thread_id thr_id);
+extern osStatus tch_schedStartThread(tch_thread_id thr_id);
 /***
  *  return current active thread
  */
@@ -49,7 +49,7 @@ extern void tch_schedScheduleToReady(tch_thread_id thr_id);
 /**
  *  suspend thread for given amount of time
  */
-extern BOOL tch_schedScheduleToSuspend(uint32_t timeout);
+extern osStatus tch_schedScheduleToSuspend(uint32_t timeout);
 
 
 /***

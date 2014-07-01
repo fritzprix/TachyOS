@@ -118,7 +118,7 @@ void tch_schedInit(void* arg){
 /** Note : should not called any other program except kernel mode program
  *  start thread based on its priority (thread can be started in preempted way)
  */
-void tch_schedStartThread(tch_thread_id nth){
+osStatus tch_schedStartThread(tch_thread_id nth){
 	tch_thread_header* thr_p = nth;
 	if(!_port)
 		tch_error_handler(false,osErrorOS);             ///< ensure portibility
@@ -127,10 +127,11 @@ void tch_schedStartThread(tch_thread_id nth){
 		getListNode(nth)->prev = tch_currentThread; 	                                                            ///< set new thread as current thread
 		getThreadHeader(tch_currentThread)->t_state = READY;
 		tch_currentThread = nth;
-		_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev);
+		_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osOK);
 	}else{
 		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*)&tch_readyQue,getListNode(nth),tch_schedReadyQPolicy);
 	}
+	return osOK;
 }
 
 
@@ -147,7 +148,7 @@ void tch_schedScheduleToReady(tch_thread_id th){
 /** Note : should not called any other program except kernel mode program
  *  make current thread sleep for specified amount of time (yield cpu time)
  */
-BOOL tch_schedScheduleToSuspend(uint32_t timeout){
+osStatus tch_schedScheduleToSuspend(uint32_t timeout){
 	tch_thread_id nth = 0;
 	if(!_port)
 		tch_error_handler(false,osErrorOS);
@@ -156,8 +157,8 @@ BOOL tch_schedScheduleToSuspend(uint32_t timeout){
 	nth = tch_genericQue_dequeue((tch_genericList_queue_t*)&tch_readyQue);
 	getListNode(nth)->prev = tch_currentThread;
 	tch_currentThread = nth;
-	_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev);
-	return true;
+	_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osOK);
+	return osOK;
 }
 
 BOOL tch_schedJoin(tch_thread_id thr_id){
@@ -183,7 +184,7 @@ void tch_kernelSysTick(void){
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
-		_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev);
+		_port->_jmpToKernelModeThread(_port->_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,osOK);
 	}
 }
 

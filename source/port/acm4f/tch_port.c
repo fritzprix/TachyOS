@@ -42,16 +42,10 @@ static void tch_port_kernel_unlock(void);
 void tch_port_enableISR(void);
 void tch_port_disableISR(void);
 static void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
-static void tch_port_saveContext(void* cth) __attribute__((naked));
-static void tch_port_restoreContext(void* cth) __attribute__((naked));
-static void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2);
+static void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val);
 static int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
 static int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
 static void* tch_port_makeInitialContext(void* ctx,void* initfn);
-static void tch_port_setThreadSP(uint32_t sp);
-static uint32_t tch_port_getThreadSP(void);
-static void tch_port_setHandlerSP(uint32_t sp);
-static uint32_t tch_port_getHandlerSP(void);
 
 static void __pend_loop(void) __attribute__((naked));
 
@@ -146,34 +140,28 @@ void tch_port_disableISR(void){
 
 void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
-			"push {r4-r11,lr}\n"
+			"push {r12}\n"                       ///< save system call result
+			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
 #ifdef FEATURE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
-			"str sp,[%0]\n"
+			"str sp,[%0]\n"                      ///< store
 
 			"ldr sp,[%1]\n"
 #ifdef FEATURE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
 			"pop {r4-r11,lr}\n"
+			"pop {r1}\n"
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :);
-}
-
-void tch_port_saveContext(void* cth){
-
-}
-
-void tch_port_restoreContext(void* cth){
-
+			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
 }
 
 
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2){
+void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();         /***
 	                                                              *   prepare fake exception stack
 	                                                              *    - passing arguement to kernel mode thread
@@ -182,9 +170,15 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2){
 	org_sp--;                                                     // 1. push stack
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
+	org_sp->R12 = ret_val;                                        ///< kthread result is stored in r12
+	                                                              /***
+	                                                               *  kernel thread function has responsibility to push r12 in stack of thread
+	                                                               *  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
+	                                                               *  more detail could be found in context switch function
+	                                                               */
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
-	__set_PSP((uint32_t)org_sp);                                            // 5. set manpulated exception stack as thread stack pointer
+	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
 }
 
@@ -201,7 +195,7 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
  */
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
-	tch_memset(org_sp,sizeof(tch_exc_stack),0);
+	tch_memset((uint8_t*) org_sp,sizeof(tch_exc_stack),0);
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;
@@ -223,25 +217,10 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = 0;
 	exc_sp->R1 = (uint32_t)th_header;
+	exc_sp->R2 = osOK;
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	tch_memset((uint8_t*)th_ctx,sizeof(tch_thread_context),0);
 	return th_ctx;
-}
-
-void tch_port_setThreadSP(uint32_t sp){
-	__set_PSP(sp);
-}
-
-uint32_t tch_port_getThreadSP(void){
-	return __get_PSP();
-}
-
-void tch_port_setHandlerSP(uint32_t sp){
-	__set_MSP(sp);
-}
-
-uint32_t tch_port_getHandlerSP(void){
-	return __get_MSP();
 }
 
 void __pend_loop(void){

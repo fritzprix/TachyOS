@@ -251,7 +251,7 @@
 
 /************************* PLL Parameters *************************************/
 /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
-#define PLL_M      25
+#define PLL_M      (SYS_MCLK_FREQ / 1000000)
 /* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
 #define PLL_Q      7
 

@@ -62,13 +62,14 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp++;
 		_port_setThreadSP((uint32_t)sp);
+		sp->R0 = arg1;                ///< return kernel call result
 		tch_port->_kernel_unlock();
 		return;
 	case SV_THREAD_START:             // thread pointer arg1
-		tch_schedStartThread((tch_thread_id) arg1);
+		sp->R0 = tch_schedStartThread((tch_thread_id) arg1);
 		return;
 	case SV_THREAD_SLEEP:
-		tch_schedScheduleToSuspend(arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
+		sp->R0 = tch_schedScheduleToSuspend(arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
 		return;

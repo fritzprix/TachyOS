@@ -54,7 +54,7 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Start New Thread
 	 */
-	void (*start)(tch_thread_id thread);
+	osStatus (*start)(tch_thread_id thread);
 	osStatus (*terminate)(tch_thread_id thread);
 	tch_thread_id (*self)();
 	osStatus (*sleep)(uint32_t millisec);

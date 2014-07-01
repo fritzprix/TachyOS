@@ -40,7 +40,7 @@ typedef struct tch_port_ix {
 	 */
 	void (*_kernel_unlock)(void);
 	void (*_switchContext)(void* nth,void* cth);
-	void (*_jmpToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2);
+	void (*_jmpToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2,uint32_t retv);
 	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
 	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
 	void* (*_makeInitialContext)(void* sp,void* initfn);
