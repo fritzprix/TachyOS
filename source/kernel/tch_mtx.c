@@ -8,6 +8,7 @@
 
 
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_sched.h"
 
 
 
@@ -25,22 +26,62 @@ __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 		tch_mtx_destroy,
 };
 
+const tch_mtx_ix* Mtx = &MTX_Instance;
+
 
 
 tch_mtx_id tch_mtx_create(tch_mtx* mtx){
-	mtx->key = 0;
+	mtx->key = MTX_INIT_MARK;
 	tch_genericQue_Init((tch_genericList_queue_t*)&mtx->que);
 	return (tch_mtx_id) mtx;
 }
 
-osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 
+/***
+ *  thread try lock mtx for given amount of time
+ */
+osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
+	if(tch_port_isISR()){
+		tch_error_handler(false,osErrorISR);
+		return osErrorISR;
+	}else{
+		if(getMtxObject(mtx)->key < MTX_INIT_MARK){
+			return osErrorParameter;
+		}
+		while(true){
+			switch(tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout)){
+			case osErrorTimeoutResource:
+				return osErrorTimeoutResource;
+			case osOK:
+				if(getMtxObject(mtx)->key >= (uint32_t)tch_schedGetRunningThread()){
+					return osOK;
+				}
+			}
+		}
+		return osErrorResource;
+	}
 }
 
 osStatus tch_mtx_unlock(tch_mtx_id mtx){
-
+	if(tch_port_isISR()){                               ///< check if in isr mode, then return osErrorISR
+		tch_error_handler(false,osErrorISR);
+		return osErrorISR;
+	}else{
+		if(getMtxObject(mtx)->key < MTX_INIT_MARK){     ///< otherwise ensure this key is locked by any thread
+			return osErrorParameter;                    ///< if not, return osErrorParameter
+		}
+		return tch_port_enterSvFromUsr(SV_MTX_UNLOCK,(uint32_t)mtx,0);   ///< otherwise, invoke system call for unlocking mtx
+	}
 }
 
 osStatus tch_mtx_destroy(tch_mtx_id mtx){
-
+	if(tch_port_isISR()){
+		tch_error_handler(false,osErrorISR);
+		return osErrorISR;
+	}else{
+		if(!(getMtxObject(mtx)->key > MTX_INIT_MARK)){
+			return osErrorResource;
+		}
+		getMtxObject(mtx)->key = 0;
+	}
 }

@@ -105,7 +105,8 @@ int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t*
 		if(element == ql_node){
 			if(ql_node->prev){
 				ql_node->prev->next = ql_node->next;
-				ql_node->next->prev = ql_node->prev;
+				if(ql_node->next)
+					ql_node->next->prev = ql_node->prev;
 			}else{
 				queue->entry = ql_node->next;
 				queue->entry->prev = NULL;

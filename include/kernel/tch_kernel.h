@@ -22,7 +22,6 @@
  */
 typedef struct tch_kernel_instance{
 	tch                     tch_api;
-	tch_port_ix*            tch_port;
 } tch_kernel_instance;
 
 
@@ -36,12 +35,13 @@ typedef enum tch_thread_state {
 } tch_thread_state;
 
 typedef struct tch_thread_header {
-	tch_genericList_node_t      t_listNode;   ///<extends genericlist node class
+	tch_genericList_node_t      t_schedNode;   ///<extends genericlist node class
+	tch_genericList_node_t      t_waitNode;
 	tch_genericList_queue_t     t_joinQ;      ///<thread queue to wait for this thread's termination
+	tch_genericList_queue_t*    t_waitQ;      ///<reference to wait queue in which this thread is waiting
 	tch_thread_routine          t_fn;         ///<thread function pointer
 	const char*                 t_name;       ///<thread name /* currently not implemented */
 	void*                       t_arg;        ///<thread arg field
-	void*                       t_sys;        ///<reference to kernel handle
 	uint32_t                    t_lckCnt;
 	uint32_t                    t_tslot;
 	tch_thread_state            t_state;
@@ -50,7 +50,7 @@ typedef struct tch_thread_header {
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
 	uint32_t                    t_chks;
-} tch_thread_header   __attribute__((aligned(4)));
+} tch_thread_header   __attribute__((aligned(8)));
 
 typedef struct tch_thread_queue{
 	tch_genericList_queue_t                  thque;

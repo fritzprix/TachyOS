@@ -10,6 +10,9 @@
 
 #include "lib/tch_absdata.h"
 
+#define MTX_INIT_MARK                 ((uint32_t) 0x01)
+#define getMtxObject(id)              ((tch_mtx*) id)
+
 /***
  *  mutex  types
  */

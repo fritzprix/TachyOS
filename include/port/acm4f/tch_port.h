@@ -5,8 +5,8 @@
  *      Author: innocentevil
  */
 
-#ifndef TCH_PORT_H_
-#define TCH_PORT_H_
+#ifndef TCHtch_port_H_
+#define TCHtch_port_H_
 
 
 #include "tch.h"
@@ -14,39 +14,38 @@
 #include "core_cm4.h"
 
 
-#define _port_setThreadSP        __set_PSP
-#define _port_getThreadSP        __get_PSP
-#define _port_setHandlerSP       __set_MSP
-#define _port_getHandlerSP       __get_MSP
 
-typedef struct _tch_exc_stack_t tch_exc_stack;
-typedef struct _tch_thread_context_t tch_thread_context;
+#define tch_port_setThreadSP(sp)           __set_PSP(sp)
+#define tch_port_getThreadSP()             __get_PSP()
+#define tch_port_setHandlerSP(sp)          __set_MSP(sp)
+#define tch_port_getHandlerSP()            __get_MSP()
+
+
+extern void tch_port_enableSysTick(void);
+extern void tch_port_enableISR(void);
+extern void tch_port_disableISR(void);
 /***
- *  port interface
+ *  Kernal lock action
+ *   - to guarantee kernel operation not interrupted or preempted
  */
-typedef struct tch_port_ix {
+extern void tch_port_kernel_lock(void);
+/***
+ *  Kernel Unlock action
+ *   - to allow interrupt or thread preemption when it's needed
+ */
+extern void tch_port_kernel_unlock(void);
+extern BOOL tch_port_isISR();
+extern void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
+extern void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t retv);
+extern int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
+extern int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
+extern void* tch_port_makeInitialContext(void* sp,void* initfn);
 
-	void (*_enableSysTick)(void);
-	void (*_enableISR)(void);
-	void (*_disableISR)(void);
-	/***
-	 *  Kernal lock action
-	 *   - to guarantee kernel operation not interrupted or preempted
-	 */
-	void (*_kernel_lock)(void);
-	/***
-	 *  Kernel Unlock action
-	 *   - to allow interrupt or thread preemption when it's needed
-	 */
-	void (*_kernel_unlock)(void);
-	void (*_switchContext)(void* nth,void* cth);
-	void (*_jmpToKernelModeThread)(void* routine,uint32_t arg1,uint32_t arg2,uint32_t retv);
-	int (*_enterSvFromUsr)(int sv_id,uint32_t arg1,uint32_t arg2);
-	int (*_enterSvFromIsr)(int sv_id,uint32_t arg1,uint32_t arg2);
-	void* (*_makeInitialContext)(void* sp,void* initfn);
-}tch_port_ix;
 
-const tch_port_ix* tch_port_init();
+typedef struct _tch_exc_stack tch_exc_stack;
+typedef struct _tch_thread_context tch_thread_context;
+
+BOOL tch_port_init();
 
 
 typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
@@ -59,7 +58,7 @@ typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
  * exception push & pop registers below in the stack at the entry and exit
  */
 
-struct _tch_exc_stack_t {
+struct _tch_exc_stack {
 	uint32_t R0;
 	uint32_t R1;
 	uint32_t R2;
@@ -88,9 +87,9 @@ struct _tch_exc_stack_t {
 	uint32_t FPSCR;
 	uint32_t RESV;
 #endif
-}__attribute__((aligned(4)));
+}__attribute__((aligned(8)));
 
-struct _tch_thread_context_t {
+struct _tch_thread_context {
 	uint32_t R4;
 	uint32_t R5;
 	uint32_t R6;
@@ -118,9 +117,10 @@ struct _tch_thread_context_t {
 	uint32_t S30;
 	uint32_t S31;
 #endif
-}__attribute__((aligned(4)));
+	uint32_t kRetv;
+}__attribute__((aligned(8)));
 
 
 
 
-#endif /* TCH_PORT_H_ */
+#endif /* TCHtch_port_H_ */

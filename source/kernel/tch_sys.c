@@ -39,39 +39,73 @@ void tch_kernelInit(void* arg){
 		tch_error_handler(false,osErrorValue);
 
 
-	tch_sys_instance.tch_port = (tch_port_ix*)tch_port_init();
-	if(!tch_sys_instance.tch_port)
-		tch_error_handler(false,osErrorValue);
-	tch_port_ix* portix = tch_sys_instance.tch_port;
+	if(!tch_port_init()){
+		tch_error_handler(false,osErrorOS);
+	}
 
-	portix->_kernel_lock();
+	tch_port_kernel_lock();
 
 	tch* api = &tch_sys_instance.tch_api;
 	api->Thread = Thread;
+	api->Mtx = Mtx;
 
 
-	portix->_enableISR();                   // interrupt enable
+	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
 
 }
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
-	tch_exc_stack* sp = (tch_exc_stack*)_port_getThreadSP();
-	tch_port_ix* tch_port = tch_sys_instance.tch_port;
+	tch_exc_stack* sp = (tch_exc_stack*)tch_port_getThreadSP();
+	tch_thread_header* cth = NULL;
+	tch_thread_header* nth = NULL;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp++;
-		_port_setThreadSP((uint32_t)sp);
+		tch_port_setThreadSP((uint32_t)sp);
 		sp->R0 = arg1;                ///< return kernel call result
-		tch_port->_kernel_unlock();
+		tch_port_kernel_unlock();
 		return;
 	case SV_THREAD_START:             // thread pointer arg1
 		sp->R0 = tch_schedStartThread((tch_thread_id) arg1);
 		return;
 	case SV_THREAD_SLEEP:
-		sp->R0 = tch_schedScheduleToSuspend(arg1);    ///< put current thread in the pend queue and update timeout value in the thread header
+		sp->R0 = tch_schedScheduleToSuspend(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
+		return;
+	case SV_MTX_LOCK:
+		if(!(((tch_mtx*) arg1)->key > MTX_INIT_MARK)){
+			cth = (tch_thread_header*) tch_schedGetRunningThread();
+			((tch_mtx*) arg1)->key |= (uint32_t) cth;
+			if(!cth->t_lckCnt++){                            ///< ensure priority escalation occurs only once
+				cth->t_svd_prior = cth->t_prior;
+				cth->t_prior = Unpreemtible;
+			}
+			sp->R0 = osOK;
+			return;
+		}else{
+			sp->R0 = tch_schedScheduleToWaitTimeout((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que,arg2);
+		}
+		return;
+	case SV_MTX_UNLOCK:
+		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
+			if(((tch_mtx*) arg1)->que.que.entry){
+				nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
+				nth = (tch_thread_header*)((tch_genericList_node_t*) nth - 1);
+				((tch_mtx*) arg1)->key |= (uint32_t)nth;
+				tch_schedScheduleToReady(nth);
+			}else{
+				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
+			}
+			cth = (tch_thread_header*) tch_schedGetRunningThread();
+			if(!--cth->t_lckCnt){
+				cth->t_prior = cth->t_svd_prior;
+			}
+			sp->R0 = osOK;
+		}else{
+			sp->R0 = osErrorResource;
+		}
 		return;
 	}
 }

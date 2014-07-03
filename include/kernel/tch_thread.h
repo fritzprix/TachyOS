@@ -9,6 +9,10 @@
 #define TCH_THREAD_H_
 
 
+#define DECLARE_THREADROUTINE(fn)                    void* fn(void* arg)
+#define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[sizeinbyte >> 3]
+
+
 /**
  *  Thread relevant type definition
  */
@@ -24,6 +28,7 @@ typedef struct tch_msg{
 
 
 typedef enum {
+	Unpreemtible = 6,
 	Realtime = 5,
 	High = 4,
 	Normal = 3,
@@ -50,7 +55,7 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
-	tch_thread_id (*create)(tch* sys,tch_thread_cfg* cfg,void* arg);
+	tch_thread_id (*create)(tch_thread_cfg* cfg,void* arg);
 	/**
 	 *  Start New Thread
 	 */

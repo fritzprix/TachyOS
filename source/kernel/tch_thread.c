@@ -24,7 +24,7 @@
  *     -> LR point Entry Routine of Thread
  *
  */
-static tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg);
+static tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg);
 static osStatus tch_threadStart(tch_thread_id thread);
 static osStatus tch_threadTerminate(tch_thread_id thread);
 static tch_thread_id tch_threadSelf();
@@ -50,9 +50,8 @@ static tch_thread_ix tch_threadix = {
 
 const tch_thread_ix* Thread = &tch_threadix;
 
-tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
+tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 	uint32_t* sptop = (uint32_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
-	tch_port_ix* port = ((tch_kernel_instance*) _sys)->tch_port;
 
 	/**
 	 * thread initialize from configuration type
@@ -70,12 +69,13 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
 	                                                                             *  and context is manipulted to direct thread to thread start point
 	                                                                             */
-	thread_p->t_ctx = port->_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
-	thread_p->t_sys = _sys;
+	thread_p->t_ctx = tch_port_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
 
 	thread_p->t_to = 0;
 	thread_p->t_lckCnt = 0;
-	thread_p->t_listNode.next = thread_p->t_listNode.prev = NULL;
+	thread_p->t_schedNode.next = thread_p->t_schedNode.prev = NULL;
+	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
+	thread_p->t_waitQ = NULL;
 	tch_genericQue_Init(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn + (uint32_t)thread_p->t_ctx;
 
@@ -84,13 +84,12 @@ tch_thread_id tch_threadCreate(tch* _sys,tch_thread_cfg* cfg,void* arg){
 }
 
 osStatus tch_threadStart(tch_thread_id thread){
-	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(thread)->t_sys)->tch_port;
-	if(__get_IPSR()){          ///< check current execution mode (Thread or Handler)
+	if(tch_port_isISR()){          ///< check current execution mode (Thread or Handler)
 		tch_schedScheduleToReady(thread);    ///< if handler mode call, put current thread in ready queue
 		                                     ///< optionally check preemption required or not
 		return osOK;
 	}else{
-		return tch_port->_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
+		return tch_port_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
 	}
 }
 
@@ -115,31 +114,29 @@ tch_thread_id tch_threadSelf(){
 }
 
 osStatus tch_threadSleep(uint32_t millisec){
-	tch_port_ix* tch_port = ((tch_kernel_instance*) getThreadHeader(tch_schedGetRunningThread())->t_sys)->tch_port;
-	if(__get_IPSR()){
+	if(tch_port_isISR()){
 		tch_error_handler(false,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port->_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
+		return tch_port_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
 	}
 }
 
 osStatus tch_threadJoin(tch_thread_id thread){
-	tch_port_ix* tch_port = ((tch_kernel_instance*)getThreadHeader(thread)->t_sys)->tch_port;
-	if(__get_IPSR()){
+	if(tch_port_isISR()){
 		tch_error_handler(false,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port->_enterSvFromUsr(SV_THREAD_JOIN,(uint32_t) thread,0);
+		return tch_port_enterSvFromUsr(SV_THREAD_JOIN,(uint32_t) thread,0);
 	}
 }
 
 void tch_threadSetPriority(tch_thread_prior nprior){
-
+	getThreadHeader(tch_schedGetRunningThread())->t_prior = nprior;
 }
 
 tch_thread_prior tch_threadGetPriorty(){
-
+	return getThreadHeader(tch_schedGetRunningThread())->t_prior;
 }
 
 
@@ -152,7 +149,6 @@ BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 
 void __tch_thread_entry(void){
 	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();
-	tch_kernel_instance* kins = (tch_kernel_instance*)thr_p->t_sys;
 
 #ifdef FEATURE_HFLOAT
 	float _force_fctx = 0.1f;
@@ -161,6 +157,6 @@ void __tch_thread_entry(void){
 
 	thr_p->t_state = RUNNING;
 	tch_msg* msg = thr_p->t_fn(thr_p->t_arg);
-	kins->tch_port->_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,0);
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,0);
 }
 

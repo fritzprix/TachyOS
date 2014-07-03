@@ -36,41 +36,14 @@
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 
-static void tch_port_enableSysTick(void);
-static void tch_port_kernel_lock(void);
-static void tch_port_kernel_unlock(void);
-void tch_port_enableISR(void);
-void tch_port_disableISR(void);
-static void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
-static void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val);
-static int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
-static int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
-static void* tch_port_makeInitialContext(void* ctx,void* initfn);
 
 static void __pend_loop(void) __attribute__((naked));
 
 
-/**
- *
-	void (*_enableISR)(void);
- */
-__attribute__((section(".data"))) static tch_port_ix _PORT_OBJ = {
-		tch_port_enableSysTick,
-		tch_port_enableISR,
-		tch_port_disableISR,
-		tch_port_kernel_lock,
-		tch_port_kernel_unlock,
-		tch_port_switchContext,
-		tch_port_jmpToKernelModeThread,
-		tch_port_enterSvFromUsr,
-		tch_port_enterSvFromIsr,
-		tch_port_makeInitialContext,
-};
 
 
 
-
-const tch_port_ix* tch_port_init(){
+BOOL tch_port_init(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -112,7 +85,7 @@ const tch_port_ix* tch_port_init(){
 	NVIC_SetPriority(SVCall_IRQn,HANDLER_SVC_PRIOR);
 	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
 
-	return &_PORT_OBJ;
+	return true;
 }
 
 
@@ -130,6 +103,11 @@ void tch_port_kernel_unlock(void){
 	__set_BASEPRI(MODE_USER);
 }
 
+BOOL tch_port_isISR(){
+	return __get_IPSR() > 0;
+}
+
+
 void tch_port_enableISR(void){
 	__enable_irq();
 }
@@ -140,19 +118,19 @@ void tch_port_disableISR(void){
 
 void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
-			"push {r12}\n"                       ///< save system call result
 			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
 #ifdef FEATURE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
+			"push {r12}\n"                       ///< save system call result
 			"str sp,[%0]\n"                      ///< store
 
 			"ldr sp,[%1]\n"
+			"pop {r1}\n"
 #ifdef FEATURE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
 			"pop {r4-r11,lr}\n"
-			"pop {r1}\n"
 			"ldr r0,=%2\n"
 			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
 }
@@ -220,7 +198,9 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	exc_sp->R2 = osOK;
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	tch_memset((uint8_t*)th_ctx,sizeof(tch_thread_context),0);
-	return th_ctx;
+	th_ctx->kRetv = osOK;
+	return (uint32_t*) th_ctx;                                    ///<
+
 }
 
 void __pend_loop(void){

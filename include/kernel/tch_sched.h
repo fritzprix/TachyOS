@@ -49,8 +49,17 @@ extern void tch_schedScheduleToReady(tch_thread_id thr_id);
 /**
  *  suspend thread for given amount of time
  */
-extern osStatus tch_schedScheduleToSuspend(uint32_t timeout);
+extern osStatus tch_schedScheduleToSuspend(uint32_t timeout,tch_thread_state nextState);
 
+/**
+ *
+ */
+extern osStatus tch_schedScheduleToWaitTimeout(tch_genericList_queue_t* wq,uint32_t timeout);
+
+/**
+ *
+ */
+extern osStatus tch_schedCancelTimeout(tch_thread_id thread);
 
 /***
  *  wait other thread is terminated
