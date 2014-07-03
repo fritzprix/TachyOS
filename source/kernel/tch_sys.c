@@ -88,11 +88,16 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			sp->R0 = tch_schedScheduleToWaitTimeout((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que,arg2);
 		}
 		return;
+	case SV_THREAD_TERMINATE:
+		cth = (tch_thread_header*) arg1;
+		tch_schedTerminate(cth);
+		return;
 	case SV_MTX_UNLOCK:
 		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
 			if(((tch_mtx*) arg1)->que.que.entry){
 				nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
 				nth = (tch_thread_header*)((tch_genericList_node_t*) nth - 1);
+				nth->t_waitQ = NULL;
 				((tch_mtx*) arg1)->key |= (uint32_t)nth;
 				tch_schedScheduleToReady(nth);
 			}else{
@@ -105,6 +110,14 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			sp->R0 = osOK;
 		}else{
 			sp->R0 = osErrorResource;
+		}
+		return;
+	case SV_MTX_DESTROY:
+		while(((tch_mtx*)arg1)->que.que.entry){
+			nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
+			nth = (tch_thread_header*) ((tch_genericList_node_t*) nth - 1);
+			nth->t_waitQ = NULL;
+			tch_schedScheduleToReady(nth);
 		}
 		return;
 	}

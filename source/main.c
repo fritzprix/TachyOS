@@ -52,13 +52,15 @@ void* main(void* arg) {
 	childThread2 = Thread->create(&tcfg,arg);
 	Thread->start(childThread2);
 	osStatus result = osOK;
-	while (1) {
-		val++;
-		hv += 0.2f;
-		result = tch_api->Mtx->lock(mtxid,3);
-		tch_api->Thread->sleep(17);
-		tch_api->Mtx->unlock(mtxid);
-		sleeprst = Thread->sleep(1000);
+	val++;
+	hv += 0.2f;
+	result = tch_api->Mtx->lock(mtxid,1);
+	tch_api->Thread->sleep(17);
+	tch_api->Mtx->unlock(mtxid);
+	sleeprst = Thread->sleep(1000);
+	tch_api->Mtx->destroy(mtxid);
+	while(1){
+		tch_api->Thread->sleep(10);
 	}
 	return 0;
 }
@@ -66,22 +68,15 @@ void* main(void* arg) {
 
 DECLARE_THREADROUTINE(childThread1_routine){
 	tch* tch_api = (tch*) arg;
-	osStatus result = tch_api->Mtx->lock(mtxid,3);
-	while(1){
-		result = tch_api->Mtx->lock(mtxid,3);
-		tch_api->Thread->sleep(17);
-		tch_api->Mtx->unlock(mtxid);
-	}
+	osStatus result = tch_api->Mtx->lock(mtxid,0);
 	return 0;
 }
 
 DECLARE_THREADROUTINE(childThread2_routine){
 	tch* tch_api = (tch*) arg;
-	osStatus result = tch_api->Mtx->lock(mtxid,2);
+	osStatus result = tch_api->Mtx->lock(mtxid,0);
 	while(1){
-		result = tch_api->Mtx->lock(mtxid,2);
-		tch_api->Thread->sleep(23);
-		tch_api->Mtx->unlock(mtxid);
+		tch_api->Thread->sleep(10);
 	}
 	return 0;
 }

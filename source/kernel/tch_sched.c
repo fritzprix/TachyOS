@@ -185,7 +185,12 @@ osStatus tch_schedCancelTimeout(tch_thread_id thread){
 
 
 BOOL tch_schedJoin(tch_thread_id thr_id){
-
+	tch_thread_header* tThr = getThreadHeader(thr_id);
+	tch_thread_header* cth = getThreadHeader(tch_currentThread);
+	tch_genericQue_enqueueWithCompare(&tThr->t_joinQ,&cth->t_waitNode,tch_schedReadyQPolicy);
+	tThr = tch_genericQue_dequeue((tch_genericList_queue_t*) &tch_readyQue);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,cth,tThr,osOK);
+	return true;
 }
 
 
@@ -230,9 +235,11 @@ void tch_schedTerminate(tch_thread_id thread){
 	tch_thread_header* cth_p = getThreadHeader(thread);
 	cth_p->t_state = TERMINATED;                          ///< change state of thread to terminated
 	while(cth_p->t_joinQ.entry){
-		jth = tch_genericQue_dequeue(&cth_p->t_joinQ);    ///< dequeue thread(s) waiting for termination of this thread
+		jth = (tch_thread_id)((tch_genericList_node_t*) tch_genericQue_dequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
 		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*)&tch_readyQue,jth,tch_schedReadyQPolicy);
 	}
+	tch_currentThread = tch_genericQue_dequeue((tch_genericList_queue_t*) &tch_readyQue);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,tch_currentThread,cth_p,osOK);
 	///< optional on terminated hook here
 }
 

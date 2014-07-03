@@ -83,5 +83,6 @@ osStatus tch_mtx_destroy(tch_mtx_id mtx){
 			return osErrorResource;
 		}
 		getMtxObject(mtx)->key = 0;
+		return tch_port_enterSvFromUsr(SV_MTX_DESTROY,(uint32_t)mtx,0);
 	}
 }
