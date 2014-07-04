@@ -13,6 +13,19 @@
 #include <cmsis_os.h>
 #include <stddef.h>
 
+
+/***
+ *  General Types
+ */
+typedef enum {
+	true = 1,false = !true
+} BOOL;
+
+typedef enum {
+	ActOnSleep,NoActOnSleep
+}tch_pwr_def;
+
+
 /***
  *  tachyos kernel interface
  */
@@ -25,7 +38,6 @@ typedef struct _tch_timer_ix_t tch_timer_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mbox_ix;
 typedef struct _tch_mpool_ix_t tch_mpool_ix;
-
 
 typedef struct tch_hal tch_hal;
 
@@ -44,13 +56,7 @@ typedef struct _tch_t {
 } tch;
 
 
-typedef enum {
-	true = 1,false = !true
-} BOOL;
 
-typedef enum {
-	ActOnSleep,NoActOnSleep
-}tch_pwr_def;
 
 
 

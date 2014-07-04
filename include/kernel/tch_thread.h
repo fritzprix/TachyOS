@@ -63,7 +63,7 @@ struct _tch_thread_ix_t {
 	osStatus (*terminate)(tch_thread_id thread);
 	tch_thread_id (*self)();
 	osStatus (*sleep)(uint32_t millisec);
-	osStatus (*join)(tch_thread_id thread);
+	osStatus (*join)(tch_thread_id thread,uint32_t timeout);
 	void (*setPriority)(tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)();
 };

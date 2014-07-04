@@ -32,9 +32,9 @@ extern void tch_schedInit(void* arg);
 extern BOOL tch_schedIsPreemtable(tch_thread_id nth);
 
 /***.
- *  start new thread immediately
+ *  start new thread
  */
-extern osStatus tch_schedStartThread(tch_thread_id thr_id);
+extern void tch_schedStartThread(tch_thread_id thr_id);
 /***
  *  return current active thread
  */
@@ -44,22 +44,30 @@ extern tch_thread_id tch_schedGetRunningThread();
  *  put thread into ready queue of scheduler rather than starting immediately
  *  this can be ivnoked from ISR
  */
-extern void tch_schedScheduleToReady(tch_thread_id thr_id);
+extern void tch_schedReady(tch_thread_id thr_id);
 
 /**
  *  suspend thread for given amount of time
  */
-extern osStatus tch_schedScheduleToSuspend(uint32_t timeout,tch_thread_state nextState);
+extern void tch_schedSleep(uint32_t timeout,tch_thread_state nextState);
 
 /**
  *
  */
-extern osStatus tch_schedScheduleToWaitTimeout(tch_genericList_queue_t* wq,uint32_t timeout);
+extern void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout);
+
+/**
+ *
+ */
+extern tch_thread_header* tch_schedResume(tch_thread_queue* wq);
 
 /**
  *
  */
 extern osStatus tch_schedCancelTimeout(tch_thread_id thread);
+
+extern void tch_schedTerminate(tch_thread_id thread);
+
 
 /***
  *  wait other thread is terminated

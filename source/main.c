@@ -32,8 +32,9 @@ void* main(void* arg) {
 	osStatus sleeprst = osErrorOS;
 
 
-
+	osStatus result = osOK;
 	mtxid = Mtx->create(&tMtx);
+	result = tch_api->Mtx->lock(mtxid,0);
 
 	tch_thread_cfg tcfg;
 	tcfg._t_name = "child1";
@@ -51,14 +52,12 @@ void* main(void* arg) {
 	tcfg.t_stackSize = 1 << 8;
 	childThread2 = Thread->create(&tcfg,arg);
 	Thread->start(childThread2);
-	osStatus result = osOK;
 	val++;
 	hv += 0.2f;
-	result = tch_api->Mtx->lock(mtxid,1);
-	tch_api->Thread->sleep(17);
-	tch_api->Mtx->unlock(mtxid);
+
 	sleeprst = Thread->sleep(1000);
 	tch_api->Mtx->destroy(mtxid);
+	sleeprst = Thread->join(childThread1,1000);
 	while(1){
 		tch_api->Thread->sleep(10);
 	}
@@ -69,6 +68,7 @@ void* main(void* arg) {
 DECLARE_THREADROUTINE(childThread1_routine){
 	tch* tch_api = (tch*) arg;
 	osStatus result = tch_api->Mtx->lock(mtxid,0);
+	tch_api->Thread->sleep(2000);
 	return 0;
 }
 

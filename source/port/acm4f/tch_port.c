@@ -118,19 +118,19 @@ void tch_port_disableISR(void){
 
 void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
-			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
+			"push {r12}\n"                       ///< save system call result
 #ifdef FEATURE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
-			"push {r12}\n"                       ///< save system call result
+			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
 			"str sp,[%0]\n"                      ///< store
 
 			"ldr sp,[%1]\n"
-			"pop {r1}\n"
+			"pop {r4-r11,lr}\n"
 #ifdef FEATURE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
-			"pop {r4-r11,lr}\n"
+			"pop {r1}\n"
 			"ldr r0,=%2\n"
 			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
 }

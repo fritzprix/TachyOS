@@ -34,6 +34,13 @@ typedef enum tch_thread_state {
 	TERMINATED = -1                          // state in which thread has finished its task
 } tch_thread_state;
 
+typedef struct tch_signal {
+	int32_t                 match_target;
+	int32_t                 signal;
+	tch_genericList_queue_t sig_wq;
+}tch_signal;
+
+
 typedef struct tch_thread_header {
 	tch_genericList_node_t      t_schedNode;   ///<extends genericlist node class
 	tch_genericList_node_t      t_waitNode;
@@ -50,6 +57,7 @@ typedef struct tch_thread_header {
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
 	uint32_t                    t_chks;
+	tch_signal                  t_sig;
 } tch_thread_header   __attribute__((aligned(8)));
 
 typedef struct tch_thread_queue{
@@ -69,10 +77,15 @@ typedef struct tch_thread_queue{
 #define SV_MTX_UNLOCK                    ((uint32_t) 0x11)
 #define SV_MTX_DESTROY                   ((uint32_t) 0x12)
 
+#define SV_SIG_SET                       ((uint32_t) 0x14)
+#define SV_SIG_CLR                       ((uint32_t) 0x15)
+#define SV_SIG_WAIT                      ((uint32_t) 0x16)
+
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
 #define SV_THREAD_SLEEP                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
 #define SV_THREAD_JOIN                   ((uint32_t) 0x23)              ///< Supervisor call id for wait another thread is terminated
+
 
 
 extern void tch_kernelInit(void* arg);

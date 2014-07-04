@@ -67,58 +67,61 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_port_kernel_unlock();
 		return;
 	case SV_THREAD_START:             // thread pointer arg1
-		sp->R0 = tch_schedStartThread((tch_thread_id) arg1);
+		tch_schedStartThread((tch_thread_id) arg1);
 		return;
 	case SV_THREAD_SLEEP:
-		sp->R0 = tch_schedScheduleToSuspend(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
+		tch_schedSleep(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
+		tch_schedSuspend((tch_thread_queue*)(&((tch_thread_header*)arg1)->t_joinQ),arg2);
 		return;
 	case SV_MTX_LOCK:
-		if(!(((tch_mtx*) arg1)->key > MTX_INIT_MARK)){
-			cth = (tch_thread_header*) tch_schedGetRunningThread();
-			((tch_mtx*) arg1)->key |= (uint32_t) cth;
+		cth = (tch_thread_header*) tch_schedGetRunningThread();
+		if((!(((tch_mtx*) arg1)->key > MTX_INIT_MARK)) || (((tch_mtx*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      ///< check mtx is not locked by any thread
+			((tch_mtx*) arg1)->key |= (uint32_t) cth;        ///< marking mtx key as locked
 			if(!cth->t_lckCnt++){                            ///< ensure priority escalation occurs only once
 				cth->t_svd_prior = cth->t_prior;
-				cth->t_prior = Unpreemtible;
+				cth->t_prior = Unpreemtible;                 ///< if thread owns mtx, its priority is escalated to unpreemptible level
+				                                             /**
+				                                              *  This temporary priority change is to minimize resource allocation time
+				                                              *  of single thread
+				                                              */
 			}
 			sp->R0 = osOK;
 			return;
+		}else{                                                 ///< otherwise, make thread block
+			tch_schedSuspend((tch_thread_queue*)&((tch_mtx*) arg1)->que,arg2);
+		}
+		return;
+	case SV_MTX_UNLOCK:
+		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
+			if(!--cth->t_lckCnt){
+				cth->t_prior = cth->t_svd_prior;
+			}
+			nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que);
+			if(nth){
+				((tch_mtx*) arg1)->key |= (uint32_t)nth;
+				nth->t_ctx->kRetv = osOK;
+			}else{
+				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
+			}
+			sp->R0 = osOK;
 		}else{
-			sp->R0 = tch_schedScheduleToWaitTimeout((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que,arg2);
+			sp->R0 = osErrorResource;    ///< this mutex is not initialized yet.
+		}
+		return;
+	case SV_MTX_DESTROY:
+		while(((tch_mtx*)arg1)->que.que.entry){               ///< check waiting thread in mtx entry
+			nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
+			nth = (tch_thread_header*) ((tch_genericList_node_t*) nth - 1);
+			nth->t_ctx->kRetv = osErrorResource;
+			nth->t_waitQ = NULL;
+			tch_schedReady(nth);                    ///< if there is thread waiting,put it ready state
 		}
 		return;
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
-		tch_schedTerminate(cth);
-		return;
-	case SV_MTX_UNLOCK:
-		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
-			if(((tch_mtx*) arg1)->que.que.entry){
-				nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
-				nth = (tch_thread_header*)((tch_genericList_node_t*) nth - 1);
-				nth->t_waitQ = NULL;
-				((tch_mtx*) arg1)->key |= (uint32_t)nth;
-				tch_schedScheduleToReady(nth);
-			}else{
-				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
-			}
-			cth = (tch_thread_header*) tch_schedGetRunningThread();
-			if(!--cth->t_lckCnt){
-				cth->t_prior = cth->t_svd_prior;
-			}
-			sp->R0 = osOK;
-		}else{
-			sp->R0 = osErrorResource;
-		}
-		return;
-	case SV_MTX_DESTROY:
-		while(((tch_mtx*)arg1)->que.que.entry){
-			nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
-			nth = (tch_thread_header*) ((tch_genericList_node_t*) nth - 1);
-			nth->t_waitQ = NULL;
-			tch_schedScheduleToReady(nth);
-		}
+		tch_schedTerminate((tch_thread_id) cth);
 		return;
 	}
 }

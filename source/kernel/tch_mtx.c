@@ -52,6 +52,8 @@ osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 			switch(tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout)){
 			case osErrorTimeoutResource:
 				return osErrorTimeoutResource;
+			case osErrorResource:
+				return osErrorResource;
 			case osOK:
 				if(getMtxObject(mtx)->key >= (uint32_t)tch_schedGetRunningThread()){
 					return osOK;
