@@ -7,6 +7,7 @@
 
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_thread.h"
+#include "kernel/tch_sched.h"
 
 static int32_t tch_signal_set(tch_thread_id thread,int32_t signals);
 static int32_t tch_signal_clear(tch_thread_id thread,int32_t signals);
@@ -36,9 +37,9 @@ int32_t tch_signal_set(tch_thread_id thread,int32_t signals){
 	th_p->t_sig.signal |= signals;
 	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
 		if(tch_port_isISR())
-			tch_port_enterSvFromIsr(SV_SIG_MATCH,thread,0);
+			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t) thread,0);
 		else
-			tch_port_enterSvFromUsr(SV_SIG_MATCH,thread,0);
+			tch_port_enterSvFromUsr(SV_SIG_MATCH,(uint32_t) thread,0);
 	}
 	return sig;
 
@@ -54,9 +55,9 @@ int32_t tch_signal_clear(tch_thread_id thread,int32_t signals){
 	th_p->t_sig.signal &= ~signals;
 	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
 		if(tch_port_isISR())
-			tch_port_enterSvFromIsr(SV_SIG_MATCH,thread,0);
+			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t)thread,0);
 		else
-			tch_port_enterSvFromUsr(SV_SIG_MATCH,thread,0);
+			tch_port_enterSvFromUsr(SV_SIG_MATCH,(uint32_t)thread,0);
 
 	}
 	return sig;

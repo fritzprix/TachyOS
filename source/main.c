@@ -8,6 +8,7 @@
 #include "main.h"
 #include "tch.h"
 #include "mpool/mpool_test.h"
+#include "msgQ/msgq_test.h"
 static tch_mtx tMtx;
 static tch_mtx_id mtxid;
 
@@ -15,11 +16,11 @@ static tch_mtx_id mtxid;
 
 
 static DECLARE_THREADROUTINE(childThread1_routine);
-static DECLARE_THREADSTACK(childThread1_stack,1 << 10);
+static DECLARE_THREADSTACK(childThread1_stack,1 << 8);
 static tch_thread_id childThread1;
 
 static DECLARE_THREADROUTINE(childThread2_routine);
-static DECLARE_THREADSTACK(childThread2_stack,1 << 10);
+static DECLARE_THREADSTACK(childThread2_stack,1 << 8);
 static tch_thread_id childThread2;
 
 
@@ -47,6 +48,7 @@ void* main(void* arg) {
 	childThread2 = Thread->create(&tcfg,arg);
 	Thread->start(childThread2);
 	osStatus result = do_mpoolBaseTest(tch_api);
+	result = do_msgqBaseTest(tch_api);
 
 	while(1){
 		tch_api->Thread->sleep(10);

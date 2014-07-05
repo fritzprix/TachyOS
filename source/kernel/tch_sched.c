@@ -189,6 +189,28 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq){
 }
 
 
+void tch_schedResumeAll(tch_thread_queue* wq){
+	tch_thread_header* nth = NULL;
+	if(!wq->thque.entry)
+		return;
+	while(wq->thque.entry){
+		tch_thread_header* nth = (tch_thread_header*) ((tch_genericList_node_t*) tch_genericQue_dequeue((tch_genericList_queue_t*) wq) - 1);
+		nth->t_waitQ = NULL;
+		nth->t_state = READY;
+		nth->t_ctx->kRetv = osOK;
+		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*) &tch_readyQue,(tch_genericList_node_t*)nth,tch_schedReadyQPolicy);
+	}
+	if(tch_schedIsPreemtable(nth)){
+		nth->t_state = RUNNING;
+		getThreadHeader(tch_currentThread)->t_state = READY;
+		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)tch_currentThread,osOK);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
+		tch_currentThread = nth;
+	}
+
+}
+
+
+
 osStatus tch_schedCancelTimeout(tch_thread_id thread){
 	tch_genericQue_remove((tch_genericList_queue_t*)&tch_pendQue,(tch_genericList_node_t*)thread);
 	return osOK;

@@ -63,8 +63,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = (tch_exc_stack*)tch_port_getThreadSP();
 	tch_thread_header* cth = NULL;
 	tch_thread_header* nth = NULL;
-	tch_msgq_kreqDef* msg_req = NULL;
-	tch_msgq_instance* msgq = NULL;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp++;
@@ -80,6 +78,16 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_THREAD_JOIN:
 		tch_schedSuspend((tch_thread_queue*)(&((tch_thread_header*)arg1)->t_joinQ),arg2);
+		return;
+	case SV_THREAD_RESUME:
+		nth = tch_schedResume((tch_genericList_queue_t*)arg1);
+		nth->t_ctx->kRetv = osOK;
+		return;
+	case SV_THREAD_RESUMEALL:
+		tch_schedResumeAll((tch_genericList_queue_t*)arg1);
+		return;
+	case SV_THREAD_SUSPEND:
+		tch_schedSuspend((tch_genericList_queue_t*)arg1,arg2);
 		return;
 	case SV_MTX_LOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();

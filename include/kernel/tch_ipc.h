@@ -9,7 +9,7 @@
 #define TCH_IPC_H_
 
 
-#define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 2 + sizeof(void*) + 4 * sizeof(void*))
+#define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 3 + sizeof(void*) + 4 * sizeof(void*))
 #define TCH_MAILQ_HEAD_SIZE
 
 #define tch_msgQDef(name,size)\

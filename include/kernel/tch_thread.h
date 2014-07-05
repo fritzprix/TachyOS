@@ -10,7 +10,7 @@
 
 
 #define DECLARE_THREADROUTINE(fn)                    void* fn(void* arg)
-#define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[sizeinbyte >> 3]
+#define DECLARE_THREADSTACK(name,sizeinword)         uint64_t name[sizeinword >> 1]
 
 
 /**
