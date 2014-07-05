@@ -8,16 +8,39 @@
 #ifndef TCH_IPC_H_
 #define TCH_IPC_H_
 
+
+#define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 2 + sizeof(void*) + 4 * sizeof(void*))
+#define TCH_MAILQ_HEAD_SIZE
+
+#define tch_msgQDef(name,size)\
+uint8_t msgQ_##name_pool[size * sizeof(void*) + TCH_MSGQ_HEAD_SIZE];\
+static tch_msgQueDef_t msgQ_##name = {size,sizeof(void*),msgQ_##name_pool + TCH_MSGQ_HEAD_SIZE}
+
+
+#define tch_mailQDef(name,size,type)\
+uint8_t mailQ_##name_pool[size + sizeof(type) + TCH_MAILQ_HEAD_SIZE];\
+static tch_mailQueDef_t mailQ_##name = {size,sizeof(type),mailQ_##name_pool}
+
 /***
  *  message type
  */
-typedef struct _tch_msgQue_def_t tch_msgQueDef_t;
+typedef struct _tch_msgQue_def_t {
+	uint32_t queue_sz;               ///< number of elements in the queue
+	uint32_t item_sz;                ///< size of item
+	void* pool;                      ///< memory array for msgs
+} tch_msgQueDef_t;
+
 typedef void* tch_msgQue_id;
 
 /***
  * mail type
  */
-typedef struct _tch_mailQue_def_t tch_mailQueDef_t;
+typedef struct _tch_mailQue_def_t{
+	uint32_t queue_sz;               ///< number of elements in the queue
+	uint32_t item_sz;                ///< size of an item
+	void* pool;                      ///< memeory array for mails
+} tch_mailQueDef_t;
+
 typedef void* tch_mailQue_id;
 
 
@@ -26,7 +49,7 @@ typedef void* tch_mailQue_id;
  */
 
 struct _tch_msgque_ix_t {
-	tch_msgQue_id (*initMsgQ)(const tch_msgQueDef_t* que);
+	tch_msgQue_id (*create)(const tch_msgQueDef_t* que);
 	osStatus (*put)(tch_msgQue_id,uint32_t msg,uint32_t millisec);
 	osEvent (*get)(tch_msgQue_id,uint32_t millisec);
 };

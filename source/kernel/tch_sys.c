@@ -50,6 +50,8 @@ void tch_kernelInit(void* arg){
 	api->Mtx = Mtx;
 	api->Sig = Sig;
 	api->Mempool = Mempool;
+	api->MailQ = MailQ;
+	api->MsgQ = MsgQ;
 
 
 	tch_port_enableISR();                   // interrupt enable

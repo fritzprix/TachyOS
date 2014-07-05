@@ -64,7 +64,20 @@ typedef struct tch_thread_queue{
 	tch_genericList_queue_t                  thque;
 } tch_thread_queue;
 
+typedef struct tch_msgq_instance {
+	uint32_t                 pidx;
+	uint32_t                 gidx;
+	uint32_t                 psize;
+	const tch_msgQueDef_t*         msgDef;
+	tch_genericList_queue_t  msgputWq;
+	tch_genericList_queue_t  msggetWq;
+}tch_msgq_instance;
 
+typedef struct tch_msgq_kreq_t {
+	tch_msgq_instance*       msgq;
+	uint32_t                 msg;
+	uint32_t                 timeout;
+}tch_msgq_kreqDef;
 
 #define SV_RETURN_TO_KTHREAD             ((uint32_t) 0x01)              /**
                                                                       *  Return to temporal thread mode in kernel mode
@@ -79,6 +92,9 @@ typedef struct tch_thread_queue{
 
 #define SV_SIG_MATCH                     ((uint32_t) 0x14)
 #define SV_SIG_WAIT                      ((uint32_t) 0x15)
+
+#define SV_MSGQ_PUT                      ((uint32_t) 0x16)
+#define SV_MSGQ_GET                      ((uint32_t) 0x17)
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
@@ -101,7 +117,7 @@ extern const tch_condv_ix* Condv;
 extern const tch_mtx_ix* Mtx;
 extern const tch_semaph_ix* Sem;
 extern const tch_msgq_ix* MsgQ;
-extern const tch_mbox_ix* MailQ;
+extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_hal* Hal;
 
