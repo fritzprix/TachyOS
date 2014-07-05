@@ -43,33 +43,33 @@ const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	tch_memset(que->pool,que->item_sz * que->queue_sz,0);
-	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;
+	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
 	msgq_header->pidx = 0;
 	msgq_header->gidx = 0;
 	msgq_header->psize = 0;
-	msgq_header->msgDef = que;
-	tch_genericQue_Init(&msgq_header->msgputWq);
-	tch_genericQue_Init(&msgq_header->msggetWq);
+	msgq_header->msgDef = que;                                                      ///< initialize msgq header
+	tch_genericQue_Init(&msgq_header->msgputWq);                                    ///< initialize wait queue for thread blocked in put function
+	tch_genericQue_Init(&msgq_header->msggetWq);                                    ///< initialize wait queue for thread blocked in get function
 	return (tch_msgQue_id) msgq_header;
 }
 
 osStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
-	if(tch_port_isISR()){
-		if(millisec)
-			return osErrorParameter;
+	if(tch_port_isISR()){                                                            ///< ISR Mode
+		if(millisec)                                                                 ///< ##Note : in ISR Mode, timeout is taken into error, because isr mode execution can not blocked
+			return osErrorParameter;                                                 ///<          and it generate 'osErrorParameter'
 		if(mq_header->psize >= mq_header->msgDef->queue_sz)
 			return osErrorResource;
-		tch_port_kernel_lock();
+		tch_port_kernel_lock();                                                      ///< ensure not to be preempted
 		mq_header->psize++;
 		*((uint32_t*)mq_header->msgDef->pool + mq_header->pidx++) = msg;
 		if(mq_header->pidx >= mq_header->msgDef->queue_sz)
 			mq_header->pidx = 0;
 		tch_port_kernel_unlock();
 		return osOK;
-	}else{
-		if(mq_header->psize >= mq_header->msgDef->queue_sz){
-			if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mq_header->msgputWq,millisec) != osOK)
+	}else{                                                                            ///< Thread Mode
+		if(mq_header->psize >= mq_header->msgDef->queue_sz){                          ///< check availability of queue
+			if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mq_header->msgputWq,millisec) != osOK)   ///< if there is no memory in the queue, thread will be blocked
 				return osErrorTimeoutResource;
 		}
 		tch_port_kernel_lock();
@@ -98,6 +98,7 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 			return evt;
 		}
 		tch_port_kernel_lock();
+		mq_header->psize--;
 		evt.value.v = *((uint32_t*)mq_header->msgDef->pool + mq_header->gidx++);
 		evt.status = osOK;
 		if(mq_header->gidx >= mq_header->msgDef->queue_sz)
@@ -112,6 +113,7 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 			}
 		}
 		tch_port_kernel_lock();
+		mq_header->psize--;
 		evt.value.v = *((uint32_t*)mq_header->msgDef->pool + mq_header->gidx++);
 		evt.status = osOK;
 		if(mq_header->gidx >= mq_header->msgDef->queue_sz)

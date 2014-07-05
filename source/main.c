@@ -9,8 +9,6 @@
 #include "tch.h"
 #include "mpool/mpool_test.h"
 #include "msgQ/msgq_test.h"
-static tch_mtx tMtx;
-static tch_mtx_id mtxid;
 
 
 
