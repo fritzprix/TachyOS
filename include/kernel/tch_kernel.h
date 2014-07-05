@@ -93,13 +93,14 @@ typedef struct tch_msgq_kreq_t {
 #define SV_SIG_MATCH                     ((uint32_t) 0x14)
 #define SV_SIG_WAIT                      ((uint32_t) 0x15)
 
-#define SV_MSGQ_PUT                      ((uint32_t) 0x16)
-#define SV_MSGQ_GET                      ((uint32_t) 0x17)
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
 #define SV_THREAD_SLEEP                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
 #define SV_THREAD_JOIN                   ((uint32_t) 0x23)              ///< Supervisor call id for wait another thread is terminated
+#define SV_THREAD_SUSPEND                ((uint32_t) 0x24)
+#define SV_THREAD_RESUME                 ((uint32_t) 0x25)
+#define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
 
 
 

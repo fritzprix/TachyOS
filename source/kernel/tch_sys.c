@@ -63,6 +63,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = (tch_exc_stack*)tch_port_getThreadSP();
 	tch_thread_header* cth = NULL;
 	tch_thread_header* nth = NULL;
+	tch_msgq_kreqDef* msg_req = NULL;
+	tch_msgq_instance* msgq = NULL;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp++;

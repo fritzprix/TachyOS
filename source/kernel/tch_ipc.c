@@ -68,11 +68,18 @@ osStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 		tch_port_kernel_unlock();
 		return osOK;
 	}else{
-		tch_msgq_kreqDef sv_arg;
-		sv_arg.msg = msg;
-		sv_arg.msgq = que_id;
-		sv_arg.timeout = millisec;
-		return tch_port_enterSvFromUsr(SV_MSGQ_PUT,(uint32_t)&sv_arg,0);
+		if(mq_header->psize >= mq_header->msgDef->queue_sz){
+			if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mq_header->msgputWq,millisec) != osOK)
+				return osErrorTimeoutResource;
+		}
+		tch_port_kernel_lock();
+		mq_header->psize++;
+		*((uint32_t*)mq_header->msgDef->pool + mq_header->pidx++) = msg;
+		if(mq_header->pidx >= mq_header->msgDef->queue_sz)
+			mq_header->pidx = 0;
+		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&mq_header->msggetWq,0);
+		tch_port_kernel_unlock();
+		return osOK;
 	}
 }
 
@@ -92,17 +99,26 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 		}
 		tch_port_kernel_lock();
 		evt.value.v = *((uint32_t*)mq_header->msgDef->pool + mq_header->gidx++);
-		evt.def.mail_id = que_id;
 		evt.status = osOK;
 		if(mq_header->gidx >= mq_header->msgDef->queue_sz)
 			mq_header->gidx = 0;
 		tch_port_kernel_unlock();
 		return evt;
 	}else{
-		tch_msgq_kreqDef sv_arg;
-		sv_arg.msgq = que_id;
-		sv_arg.timeout = millisec;
-		return tch_port_enterSvFromUsr(SV_MSGQ_GET,(uint32_t)&sv_arg,0);
+		if(!mq_header->psize){
+			if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mq_header->msggetWq,millisec) != osOK){
+				evt.status = osEventTimeout;
+				return evt;
+			}
+		}
+		tch_port_kernel_lock();
+		evt.value.v = *((uint32_t*)mq_header->msgDef->pool + mq_header->gidx++);
+		evt.status = osOK;
+		if(mq_header->gidx >= mq_header->msgDef->queue_sz)
+			mq_header->gidx = 0;
+		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&mq_header->msggetWq,0);
+		tch_port_kernel_unlock();
+		return evt;
 	}
 }
 
