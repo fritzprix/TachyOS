@@ -36,10 +36,6 @@ extern void* main(void* arg);
  *  idle thread routine
  */
 static void* idle(void* arg);
-/***
- *  Invoked when thread complete its task
- */
-static void tch_schedThreadExit(tch_thread_id thr);
 
 
 /***
@@ -169,7 +165,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getListNode(nth)->prev = tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
-	getThreadHeader(tch_currentThread)->t_waitQ = wq;
+	getThreadHeader(tch_currentThread)->t_waitQ = (tch_genericList_queue_t*)wq;
 	tch_currentThread = nth;
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osErrorTimeoutResource);
 }
@@ -183,11 +179,11 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq){
 	if(tch_schedIsPreemtable(nth)){
 		nth->t_state = RUNNING;
 		getThreadHeader(tch_currentThread)->t_state = READY;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,nth,tch_currentThread,osOK);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
+		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)tch_currentThread,osOK);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
 		tch_currentThread = nth;
 	}else{
 		nth->t_state = READY;
-		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*) &tch_readyQue,nth,tch_schedReadyQPolicy);
+		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*) &tch_readyQue,(tch_genericList_node_t*)nth,tch_schedReadyQPolicy);
 	}
 	return nth;
 }

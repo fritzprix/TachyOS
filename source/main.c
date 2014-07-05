@@ -7,9 +7,11 @@
 
 #include "main.h"
 #include "tch.h"
-
+#include "mpool/mpool_test.h"
 static tch_mtx tMtx;
 static tch_mtx_id mtxid;
+
+
 
 
 static DECLARE_THREADROUTINE(childThread1_routine);
@@ -19,8 +21,6 @@ static tch_thread_id childThread1;
 static DECLARE_THREADROUTINE(childThread2_routine);
 static DECLARE_THREADSTACK(childThread2_stack,1 << 10);
 static tch_thread_id childThread2;
-
-
 
 
 void* main(void* arg) {
@@ -46,26 +46,21 @@ void* main(void* arg) {
 	tcfg.t_stackSize = 1 << 8;
 	childThread2 = Thread->create(&tcfg,arg);
 	Thread->start(childThread2);
+	osStatus result = do_mpoolBaseTest(tch_api);
 
-	Thread->sleep(1000);
-	Sig->set(childThread1,1);
-	Sig->set(childThread2,1);
 	while(1){
 		tch_api->Thread->sleep(10);
 	}
 	return 0;
 }
 
-
 DECLARE_THREADROUTINE(childThread1_routine){
 	tch* api = (tch*) arg;
-	osStatus result = api->Sig->wait(1,osWaitForever);
 	return 0;
 }
 
 DECLARE_THREADROUTINE(childThread2_routine){
 	tch* api = (tch*) arg;
-	osStatus result = api->Sig->wait((1 << 5) | (1 << 3),3000);
 	return 0;
 }
 
