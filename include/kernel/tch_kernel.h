@@ -77,9 +77,8 @@ typedef struct tch_thread_queue{
 #define SV_MTX_UNLOCK                    ((uint32_t) 0x11)
 #define SV_MTX_DESTROY                   ((uint32_t) 0x12)
 
-#define SV_SIG_SET                       ((uint32_t) 0x14)
-#define SV_SIG_CLR                       ((uint32_t) 0x15)
-#define SV_SIG_WAIT                      ((uint32_t) 0x16)
+#define SV_SIG_MATCH                     ((uint32_t) 0x14)
+#define SV_SIG_WAIT                      ((uint32_t) 0x15)
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */

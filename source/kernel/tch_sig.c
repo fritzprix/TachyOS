@@ -15,35 +15,64 @@ static osStatus tch_signal_wait(int32_t signals,uint32_t millisec);
 
 
 
-__attribute__((section(".data"))) static tch_signal_ix Signa_StaticInstance = {
+__attribute__((section(".data"))) static tch_signal_ix Signal_StaticInstance = {
 		tch_signal_set,
 		tch_signal_clear,
 		tch_signal_wait
 };
 
+const tch_signal_ix* Sig = &Signal_StaticInstance;
+
+
 
 
 
 int32_t tch_signal_set(tch_thread_id thread,int32_t signals){
-	if(!(tch_kernelThreadIntegrityCheck(thread) && (signals < (1 << (osFeature_Signals + 1))))){
+	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
 		return 0x80000000;
 	}
-	int32_t sig = ((tch_thread_header*) thread)->t_sig.signal;
+	tch_thread_header* th_p = (tch_thread_header*) thread;
+	int32_t sig = th_p->t_sig.signal;
+	th_p->t_sig.signal |= signals;
+	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
+		if(tch_port_isISR())
+			tch_port_enterSvFromIsr(SV_SIG_MATCH,thread,0);
+		else
+			tch_port_enterSvFromUsr(SV_SIG_MATCH,thread,0);
+	}
+	return sig;
+
 
 }
 
 int32_t tch_signal_clear(tch_thread_id thread,int32_t signals){
+	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
+		return 0x80000000;
+	}
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	int32_t sig = th_p->t_sig.signal;
+	th_p->t_sig.signal &= ~signals;
+	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
+		if(tch_port_isISR())
+			tch_port_enterSvFromIsr(SV_SIG_MATCH,thread,0);
+		else
+			tch_port_enterSvFromUsr(SV_SIG_MATCH,thread,0);
 
+	}
 	return sig;
 }
 
 osStatus tch_signal_wait(int32_t signals,uint32_t millisec){
 	tch_thread_header* th_p = tch_schedGetRunningThread();
-
+	if(!signals > (1 << (osFeature_Signals + 1))){
+		return osErrorParameter;
+	}
+	if(tch_port_isISR()){
+		return osErrorISR;
+	}
 	if((th_p->t_sig.match_target = signals) == th_p->t_sig.signal){
 		return osOK;
 	}else{
+		return tch_port_enterSvFromUsr(SV_SIG_WAIT,signals,millisec);
 	}
 }

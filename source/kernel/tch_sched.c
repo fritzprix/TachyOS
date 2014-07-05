@@ -159,7 +159,7 @@ void tch_schedSleep(uint32_t timeout,tch_thread_state nextState){
 
 void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	tch_thread_id nth = 0;
-	if(timeout == osWaitForever){
+	if(timeout != osWaitForever){
 		getThreadHeader(tch_currentThread)->t_to = tch_systimeTick + timeout;
 		tch_genericQue_enqueueWithCompare((tch_genericList_queue_t*) &tch_pendQue,getListNode(tch_currentThread),tch_schedPendQPolicy);
 
