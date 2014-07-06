@@ -35,18 +35,30 @@
 /*                                                                              */
 /********************************************************************************/
 
-
+/**
+ * 	tch_mpool_id                  mpool_id;
+	tch_msgQue_id                 msgq_id;
+	tch_mailQueDef_t*             mailqDef;
+ */
 #define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 3 + sizeof(void*) + 4 * sizeof(void*))
-#define TCH_MAILQ_HEAD_SIZE
+#define TCH_MAILQ_HEAD_SIZE            (5 * sizeof(uint32_t) + 5 * sizeof(void*))
 
 #define tch_msgQDef(name,size)\
 uint8_t msgQ_##name_pool[size * sizeof(void*) + TCH_MSGQ_HEAD_SIZE];\
 static tch_msgQueDef_t msgQ_##name = {size,sizeof(void*),msgQ_##name_pool + TCH_MSGQ_HEAD_SIZE}
 
+#define tch_access_msgq(name)\
+&msgQ_##name
+
+
 
 #define tch_mailQDef(name,size,type)\
-uint8_t mailQ_##name_pool[size + sizeof(type) + TCH_MAILQ_HEAD_SIZE];\
-static tch_mailQueDef_t mailQ_##name = {size,sizeof(type),mailQ_##name_pool}
+uint8_t mailQ_##name_pool[TCH_MAILQ_HEAD_SIZE + size * sizeof(type) + size * sizeof(void*)];\
+static tch_mailQueDef_t mailQ_##name = {size,sizeof(type),mailQ_##name_pool + TCH_MAILQ_HEAD_SIZE,mailQ_##name_pool + TCH_MAILQ_HEAD_SIZE + size * sizeof(type)}
+
+
+#define tch_access_mailq(name)\
+&mailQ_##name
 
 /***
  *  message type
@@ -66,6 +78,7 @@ typedef struct _tch_mailQue_def_t{
 	uint32_t queue_sz;               ///< number of elements in the queue
 	uint32_t item_sz;                ///< size of an item
 	void* pool;                      ///< memeory array for mails
+	void* queue;
 } tch_mailQueDef_t;
 
 typedef void* tch_mailQue_id;
@@ -119,7 +132,7 @@ struct _tch_mailbox_ix_t {
 	tch_mailQue_id (*create)(const tch_mailQueDef_t* que);
 	void* (*alloc)(tch_mailQue_id qid,uint32_t millisec);
 	void* (*calloc)(tch_mailQue_id qid,uint32_t millisec);
-	osStatus (*put)(tch_mailQue_id qid);
+	osStatus (*put)(tch_mailQue_id qid,void* mail);
 	osEvent (*get)(tch_mailQue_id qid,uint32_t millisec);
 	osStatus (*free)(tch_mailQue_id qid,void* mail);
 };

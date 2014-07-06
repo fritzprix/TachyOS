@@ -21,7 +21,7 @@ tch_mpool_id person_mpool;
 person* ps[10];
 
 osStatus do_mpoolBaseTest(tch* api){
-	person_mpool = api->Mempool->create(&person_mp);
+	person_mpool = api->Mempool->create(tch_access_mpool(person_mp));
 	uint32_t i = 0;
 	/***
 	 *  allocation / free repeat test

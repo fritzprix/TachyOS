@@ -16,6 +16,7 @@
 typedef struct tch_mpool_header_t {
 	uint32_t             blastIdx;
 	uint32_t             ballocCnt;
+	uint32_t             blength;
 	tch_mpoolDef_t*      bDef;
 }tch_mpool_header_t;
 
@@ -40,6 +41,7 @@ tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	mpheader->bDef = pool;
 	mpheader->ballocCnt = 0;
 	mpheader->blastIdx = 0;
+	mpheader->blength = pool->align * pool->count;
 	return (tch_mpool_id) mpheader;
 }
 
@@ -49,8 +51,9 @@ void* tch_mpool_alloc(tch_mpool_id mpool){
 		return NULL;
 	tch_port_kernel_lock();
 	mp_header->ballocCnt++;
-	uint8_t* bp = mp_header->bDef->pool + (mp_header->bDef->align * mp_header->blastIdx++);
-	if(mp_header->blastIdx == mp_header->bDef->count){
+	uint8_t* bp = mp_header->bDef->pool + mp_header->blastIdx;
+	mp_header->blastIdx += mp_header->bDef->align;
+	if(mp_header->blastIdx == mp_header->blength){
 		mp_header->blastIdx = 0;
 	}
 	tch_port_kernel_unlock();
@@ -63,8 +66,9 @@ void* tch_mpool_calloc(tch_mpool_id mpool){
 		return NULL;
 	tch_port_kernel_lock();
 	mp_header->ballocCnt++;
-	uint8_t* bp = mp_header->bDef->pool + (mp_header->bDef->align * mp_header->blastIdx++);
-	if(mp_header->blastIdx == mp_header->bDef->count){
+	uint8_t* bp = mp_header->bDef->pool + mp_header->blastIdx;
+	mp_header->blastIdx += mp_header->bDef->align;
+	if(mp_header->blastIdx == mp_header->blength){
 		mp_header->blastIdx = 0;
 	}
 	tch_port_kernel_unlock();

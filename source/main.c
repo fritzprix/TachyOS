@@ -22,6 +22,8 @@ static DECLARE_THREADSTACK(childThread2_stack,1 << 8);
 static tch_thread_id childThread2;
 
 
+
+
 void* main(void* arg) {
 	tch* tch_api = (tch*)arg;
 	tch_thread_ix* Thread = (tch_thread_ix*) tch_api->Thread;

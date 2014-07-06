@@ -17,6 +17,7 @@
 #include "lib/tch_absdata.h"
 #include "port/acm4f/tch_port.h"
 #include "hal/STM_CMx/tch_hal.h"
+
 /***
  *  Supervisor call table
  */
@@ -64,20 +65,7 @@ typedef struct tch_thread_queue{
 	tch_genericList_queue_t                  thque;
 } tch_thread_queue;
 
-typedef struct tch_msgq_instance {
-	uint32_t                 pidx;
-	uint32_t                 gidx;
-	uint32_t                 psize;
-	const tch_msgQueDef_t*         msgDef;
-	tch_genericList_queue_t  msgputWq;
-	tch_genericList_queue_t  msggetWq;
-}tch_msgq_instance;
 
-typedef struct tch_msgq_kreq_t {
-	tch_msgq_instance*       msgq;
-	uint32_t                 msg;
-	uint32_t                 timeout;
-}tch_msgq_kreqDef;
 
 #define SV_RETURN_TO_KTHREAD             ((uint32_t) 0x01)              /**
                                                                       *  Return to temporal thread mode in kernel mode

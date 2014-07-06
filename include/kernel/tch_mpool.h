@@ -19,7 +19,10 @@
  */
 #define tch_mpoolDef(name,no,type)\
 uint8_t pool_##name[no * sizeof(type) + TCH_MPOOL_HEAD_SIZE]; \
-__attribute__((section(".data"))) static tch_mpoolDef_t  name = {no,sizeof(type),pool_##name + TCH_MPOOL_HEAD_SIZE}
+__attribute__((section(".data"))) static tch_mpoolDef_t  mempool_##name = {no,sizeof(type),pool_##name + TCH_MPOOL_HEAD_SIZE}
+
+#define tch_access_mpool(name)\
+&mempool_##name
 
 
 /**
