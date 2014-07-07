@@ -9,7 +9,7 @@
 #include "tch.h"
 #include "mpool/mpool_test.h"
 #include "msgQ/msgq_test.h"
-
+#include "mailQ/mailq_test.h"
 
 
 
@@ -49,6 +49,7 @@ void* main(void* arg) {
 	Thread->start(childThread2);
 	osStatus result = do_mpoolBaseTest(tch_api);
 	result = do_msgqBaseTest(tch_api);
+	result = do_mailQBaseTest(tch_api);
 
 	while(1){
 		tch_api->Thread->sleep(10);

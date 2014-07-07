@@ -13,7 +13,7 @@
  * Macro Function
  */
 
-#define TCH_MPOOL_HEAD_SIZE                    (2 * sizeof(uint32_t) + sizeof(void*))
+#define TCH_MPOOL_HEAD_SIZE                    (3 * sizeof(uint32_t) + 3 * sizeof(void*))
 /***
  *
  */

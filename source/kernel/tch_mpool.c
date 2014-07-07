@@ -10,6 +10,8 @@
 
 
 #include "kernel/tch_kernel.h"
+#include "lib/tch_lib.h"
+
 
 
 
@@ -17,6 +19,8 @@ typedef struct tch_mpool_header_t {
 	uint32_t             blastIdx;
 	uint32_t             ballocCnt;
 	uint32_t             blength;
+	void*                bend;
+	void*                bfree;
 	tch_mpoolDef_t*      bDef;
 }tch_mpool_header_t;
 
@@ -34,17 +38,38 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
-
+/*
 tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	tch_memset(pool->pool,pool->align * pool->align,0);
 	tch_mpool_header_t* mpheader = (tch_mpool_header_t*) pool->pool - 1;
-	mpheader->bDef = pool;
+	mpheader->bDef = (tch_mpoolDef_t*) pool;
 	mpheader->ballocCnt = 0;
 	mpheader->blastIdx = 0;
 	mpheader->blength = pool->align * pool->count;
+	mpheader->bfree = pool->pool;
 	return (tch_mpool_id) mpheader;
 }
+*/
 
+tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
+	tch_mpool_header_t* mp = (tch_mpool_header_t*) pool->pool - 1;
+	tch_memset(pool->pool,pool->align * pool->align,0);
+	void* next = NULL;
+	uint8_t* blk = pool->pool;
+	uint8_t* end = blk + pool->align * pool->count;
+	mp->bend = end;
+	mp->bfree = blk;
+	end = end - pool->align;
+	while(1){
+		next = blk + pool->align;
+		if(next > end) break;
+		*((void**)blk) = next;
+		blk = next;
+	}
+	*((void**)blk) = 0;
+	return mp;
+}
+/*
 void* tch_mpool_alloc(tch_mpool_id mpool){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
 	if(mp_header->ballocCnt >= mp_header->bDef->count)
@@ -59,7 +84,20 @@ void* tch_mpool_alloc(tch_mpool_id mpool){
 	tch_port_kernel_unlock();
 	return bp;
 }
+*/
 
+void* tch_mpool_alloc(tch_mpool_id mpool){
+	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
+	tch_port_kernel_lock();
+	void** free = mp_header->bfree;
+	if(free){
+		mp_header->bfree = *free;
+	}
+	tch_port_kernel_unlock();
+	return free;
+}
+
+/*
 void* tch_mpool_calloc(tch_mpool_id mpool){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
 	if(mp_header->ballocCnt >= mp_header->bDef->count)
@@ -74,8 +112,19 @@ void* tch_mpool_calloc(tch_mpool_id mpool){
 	tch_port_kernel_unlock();
 	tch_memset(bp,mp_header->bDef->align,0);
 	return bp;
-}
+}*/
 
+void* tch_mpool_calloc(tch_mpool_id mpool){
+	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
+	tch_port_kernel_lock();
+	void* free = tch_mpool_alloc(mpool);
+	tch_port_kernel_unlock();
+	if(free){
+		tch_memset(free,mp_header->bDef->align,0);
+	}
+	return free;
+}
+/*
 osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
 	if(mp_header->ballocCnt <= 0)
@@ -85,4 +134,15 @@ osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
 		return osOK;
 	}
 	return osErrorParameter;
+}*/
+
+osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
+	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
+	if((block < mp_header->bDef->pool) || (block > mp_header->bend))
+		return osErrorParameter;
+	tch_port_kernel_lock();
+	*((void**)block) = mp_header->bfree;
+	mp_header->bfree = block;
+	tch_port_kernel_unlock();
+	return osOK;
 }

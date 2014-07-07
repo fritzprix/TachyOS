@@ -261,6 +261,11 @@ osStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
 	*((uint32_t*) mailq->mailqDef->queue + mailq->pidx++) = (uint32_t) mail;
 	if(mailq->pidx >= mailq->mailqDef->queue_sz)
 		mailq->pidx = 0;
+	if(tch_port_isISR()){
+		tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&mailq->mailGetWq,0);
+	}else{
+		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&mailq->mailGetWq,0);
+	}
 	tch_port_kernel_unlock();
 	return osOK;
 }
