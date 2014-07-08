@@ -27,14 +27,15 @@ typedef struct tch_msgq_instance {
 	tch_genericList_queue_t       msggetWq;
 }tch_msgq_instance;
 
-
+/***
+ *  MailQueue
+ */
 typedef struct tch_mailq_instance {
 	uint32_t                      pidx;
 	uint32_t                      gidx;
 	uint32_t                      psize;
-	uint32_t                      blastIdx;
-	uint32_t                      ballocCnt;
-	uint32_t                      blength;
+	void*                         bfree;
+	void*                         bend;
 	tch_genericList_queue_t       mailGetWq;
 	tch_genericList_queue_t       mailAllocWq;
 	tch_mailQueDef_t*             mailqDef;
@@ -173,10 +174,21 @@ tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 }*/
 
 tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
+	tch_memset(que->pool,que->item_sz * que->queue_sz,0);
 	tch_mailq_instance* mailq = (tch_mailq_instance*) que->pool - 1;
-	mailq->ballocCnt = 0;
-	mailq->blastIdx = 0;
-	mailq->blength = que->item_sz * que->queue_sz;
+	mailq->bfree = que->pool;
+	mailq->bend = ((uint8_t*) que->pool + que->item_sz * que->queue_sz);          ///< assign end of pool
+	uint8_t* end = mailq->bend - que->item_sz;                                       ///< temporal end to initiate list
+	void* next = NULL;
+	uint8_t* blk = mailq->bfree;
+	while(1){
+		next = blk + que->item_sz;
+		if(next > end) break;
+		*blk = next;                      ///< assign vector for next block
+		blk = next;                       ///< move index to next
+	}
+	*blk = 0;                             ///< mempool for mailQ initialized
+
 	mailq->gidx = 0;
 	mailq->pidx = 0;
 	mailq->psize = 0;
@@ -214,19 +226,18 @@ void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	}
 	osStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
-	if((mailq->ballocCnt >= mailq->mailqDef->queue_sz) && millisec){
+	if(mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
-	if(res == osErrorTimeoutResource)
+	if((res == osErrorTimeoutResource))      //< check kernel call result
 		return NULL;
 	tch_port_kernel_lock();
-	mailq->ballocCnt++;
-	uint8_t* bp = mailq->mailqDef->pool + mailq->blastIdx;
-	mailq->blastIdx += mailq->mailqDef->item_sz;
-	if(mailq->blastIdx == mailq->blength)
-		mailq->blastIdx = 0;
+	void** free = mailq->bfree;
+	if(free){
+		mailq->bfree = *free;
+	}
 	tch_port_kernel_unlock();
-	return bp;
+	return free;
 }
 
 /*
@@ -252,26 +263,25 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 	return bp;
 }
 */
-oid* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
+void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
 	osStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
-	if((mailq->ballocCnt >= mailq->mailqDef->queue_sz) && millisec){
+	if(!mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
-	if(res == osErrorTimeoutResource)
+	if((res == osErrorTimeoutResource))      //< check kernel call result
 		return NULL;
 	tch_port_kernel_lock();
-	mailq->ballocCnt++;
-	uint8_t* bp = mailq->mailqDef->pool + mailq->blastIdx;
-	mailq->blastIdx += mailq->mailqDef->item_sz;
-	if(mailq->blastIdx == mailq->blength)
-		mailq->blastIdx = 0;
+	void** free = mailq->bfree;
+	if(free){
+		mailq->bfree = *free;
+	}
 	tch_port_kernel_unlock();
-	tch_memset(bp,mailq->mailqDef->item_sz,0);
-	return bp;
+	tch_memset(free,mailq->mailqDef->item_sz,0);
+	return free;
 }
 
 /*
@@ -295,12 +305,11 @@ osStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 
 osStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
-	if(mailq->ballocCnt <= 0)
-		return osErrorParameter;
-	if((mailq->mailqDef->pool > mail) && ((mailq->mailqDef->pool + mailq->blength) < mail))
+	if((mailq->mailqDef->pool > mail) && (mailq->bend <= mail))
 		return osErrorValue;
 	tch_port_kernel_lock();
-	mailq->ballocCnt--;
+	*(void**)mail = mailq->bfree;
+	mailq->bfree = mail;
 	if(tch_port_isISR()){
 		tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&mailq->mailAllocWq,0);
 	}else{

@@ -32,7 +32,7 @@
 
 
 #define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 3 + sizeof(void*) + 4 * sizeof(void*))
-#define TCH_MAILQ_HEAD_SIZE            (6 * sizeof(uint32_t) + 5 * sizeof(void*))
+#define TCH_MAILQ_HEAD_SIZE            (3 * sizeof(uint32_t) + 7 * sizeof(void*))
 
 #define tch_msgQDef(name,size)\
 uint8_t msgQ_##name_pool[size * sizeof(void*) + TCH_MSGQ_HEAD_SIZE];\
