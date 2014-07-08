@@ -1,8 +1,10 @@
-/*
- * tch_adc.h
+/* tch_adc.h
  *
- *  Created on: 2014. 6. 15.
- *      Author: innocentevil
+ * Copyright (C) 2014 doowoong,lee
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the LGPL v3 license.  See the LICENSE file for details.
  */
 
 #ifndef TCH_ADC_H_

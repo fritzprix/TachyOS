@@ -1,5 +1,17 @@
 /*
  * tch_ipc.h
+ *
+ *
+ * Copyright (C) 2014 doowoong,lee
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the LGPL v3 license.  See the LICENSE file for details.
+ *
+ *  Created on: 2014. 7. 1.
+ *      Author: innocentevil
+ *
+ *
  * This Module Contains IPC Component for Tachyos. Basic IPC Features are
  *   listed below.
  *
@@ -12,34 +24,13 @@
  *                               allocated from its memory pool
  *
  *
- *  Created on: 2014. 7. 1.
- *      Author: innocentevil
  */
 
 #ifndef TCH_IPC_H_
 #define TCH_IPC_H_
 
 
-/********************************************************************************/
-/*   This Module Contains IPC Component for Tachyos. Basic IPC Features are     */
-/*   listed below.                                                              */
-/*                                                                              */
-/*             Message Queue  : Uni Directional communication channel           */
-/*                              which enables thread communicated to other      */
-/*                              thread or ISR handler                           */
-/*                                                                              */
-/*             Mail Queue : similar to message queue but mail queue has its     */
-/*                          own mem pool and typically transfer memory pointer  */
-/*                          allocated from its memory pool                      */
-/*                                                                              */
-/*                                                                              */
-/********************************************************************************/
 
-/**
- * 	tch_mpool_id                  mpool_id;
-	tch_msgQue_id                 msgq_id;
-	tch_mailQueDef_t*             mailqDef;
- */
 #define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 3 + sizeof(void*) + 4 * sizeof(void*))
 #define TCH_MAILQ_HEAD_SIZE            (6 * sizeof(uint32_t) + 5 * sizeof(void*))
 

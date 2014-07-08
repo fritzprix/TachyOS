@@ -1,6 +1,13 @@
 /*
  * msgq_test.c
  *
+ *  Copyright (C) 2014 doowoong,lee
+ *  All rights reserved.
+ *
+ *  This software may be modified and distributed under the terms
+ *  of the LGPL v3 license.  See the LICENSE file for details.
+ *
+ *
  *  Created on: 2014. 7. 6.
  *      Author: innocentevil
  */
@@ -24,10 +31,10 @@ static tch_msgQue_id mid;
 
 osStatus do_msgqBaseTest(tch* api){
 
-	tch_msgq_ix* MsgQ = api->MsgQ;
+	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(&msgQ_test);
 
-	tch_thread_ix* Thread = api->Thread;
+	const tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg tcfg;
 	tcfg._t_name = "sender";
 	tcfg._t_routine = sender;
