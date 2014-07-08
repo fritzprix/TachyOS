@@ -16,9 +16,6 @@
 
 
 typedef struct tch_mpool_header_t {
-	uint32_t             blastIdx;
-	uint32_t             ballocCnt;
-	uint32_t             blength;
 	void*                bend;
 	void*                bfree;
 	tch_mpoolDef_t*      bDef;
@@ -38,18 +35,6 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
-/*
-tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
-	tch_memset(pool->pool,pool->align * pool->align,0);
-	tch_mpool_header_t* mpheader = (tch_mpool_header_t*) pool->pool - 1;
-	mpheader->bDef = (tch_mpoolDef_t*) pool;
-	mpheader->ballocCnt = 0;
-	mpheader->blastIdx = 0;
-	mpheader->blength = pool->align * pool->count;
-	mpheader->bfree = pool->pool;
-	return (tch_mpool_id) mpheader;
-}
-*/
 
 tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	tch_mpool_header_t* mp = (tch_mpool_header_t*) pool->pool - 1;
@@ -59,6 +44,7 @@ tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	uint8_t* end = blk + pool->align * pool->count;
 	mp->bend = end;
 	mp->bfree = blk;
+	mp->bDef = (tch_mpoolDef_t*) pool;
 	end = end - pool->align;
 	while(1){
 		next = blk + pool->align;
@@ -69,22 +55,6 @@ tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	*((void**)blk) = 0;
 	return mp;
 }
-/*
-void* tch_mpool_alloc(tch_mpool_id mpool){
-	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
-	if(mp_header->ballocCnt >= mp_header->bDef->count)
-		return NULL;
-	tch_port_kernel_lock();
-	mp_header->ballocCnt++;
-	uint8_t* bp = mp_header->bDef->pool + mp_header->blastIdx;
-	mp_header->blastIdx += mp_header->bDef->align;
-	if(mp_header->blastIdx == mp_header->blength){
-		mp_header->blastIdx = 0;
-	}
-	tch_port_kernel_unlock();
-	return bp;
-}
-*/
 
 void* tch_mpool_alloc(tch_mpool_id mpool){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
@@ -97,44 +67,15 @@ void* tch_mpool_alloc(tch_mpool_id mpool){
 	return free;
 }
 
-/*
-void* tch_mpool_calloc(tch_mpool_id mpool){
-	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
-	if(mp_header->ballocCnt >= mp_header->bDef->count)
-		return NULL;
-	tch_port_kernel_lock();
-	mp_header->ballocCnt++;
-	uint8_t* bp = mp_header->bDef->pool + mp_header->blastIdx;
-	mp_header->blastIdx += mp_header->bDef->align;
-	if(mp_header->blastIdx == mp_header->blength){
-		mp_header->blastIdx = 0;
-	}
-	tch_port_kernel_unlock();
-	tch_memset(bp,mp_header->bDef->align,0);
-	return bp;
-}*/
 
 void* tch_mpool_calloc(tch_mpool_id mpool){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
-	tch_port_kernel_lock();
 	void* free = tch_mpool_alloc(mpool);
-	tch_port_kernel_unlock();
 	if(free){
 		tch_memset(free,mp_header->bDef->align,0);
 	}
 	return free;
 }
-/*
-osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
-	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
-	if(mp_header->ballocCnt <= 0)
-		return osErrorValue;
-	if((mp_header->bDef->pool <= block) && ((mp_header->bDef->pool + mp_header->bDef->align * mp_header->bDef->count) > mpool)){
-		mp_header->ballocCnt--;
-		return osOK;
-	}
-	return osErrorParameter;
-}*/
 
 osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
