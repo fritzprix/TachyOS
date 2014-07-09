@@ -13,7 +13,7 @@
  */
 
 
-#include "hal/STM_CMx/tch_hal.h"
+#include "hal/tch_hal.h"
 
 
 typedef struct tch_lld_gpio_prototype {

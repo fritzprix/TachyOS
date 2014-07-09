@@ -43,11 +43,11 @@ void tch_kernelInit(void* arg){
 	 */
 	tch_sys_instance.tch_api.Device = tch_hal_init();
 	if(!tch_sys_instance.tch_api.Device)
-		tch_error_handler(false,osErrorValue);
+		tch_kernel_errorHandler(false,osErrorValue);
 
 
 	if(!tch_port_init()){
-		tch_error_handler(false,osErrorOS);
+		tch_kernel_errorHandler(false,osErrorOS);
 	}
 
 	tch_port_kernel_lock();
@@ -160,7 +160,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 
 
 
-void tch_error_handler(BOOL dump,osStatus status){
+void tch_kernel_errorHandler(BOOL dump,osStatus status){
 
 	/**
 	 *  optional dump register

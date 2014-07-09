@@ -13,7 +13,7 @@
  */
 
 #include "kernel/tch_kernel.h"
-#include "port/acm4f/tch_port.h"
+#include "port/ARM/acm4f/tch_port.h"
 #include "lib/tch_lib.h"
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -180,7 +180,7 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
  */
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
-		tch_error_handler(false,osErrorISRRecursive);
+		tch_kernel_errorHandler(false,osErrorISRRecursive);
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
 	tch_memset((uint8_t*) org_sp,sizeof(tch_exc_stack),0);
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)

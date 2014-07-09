@@ -14,7 +14,6 @@
 
 #include "kernel/tch_kernel.h"
 #include "lib/tch_lib.h"
-#include "stdio.h"
 
 
 

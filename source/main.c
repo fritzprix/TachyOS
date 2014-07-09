@@ -14,9 +14,9 @@
 
 #include "main.h"
 #include "tch.h"
-#include "mpool/mpool_test.h"
-#include "msgQ/msgq_test.h"
-#include "mailQ/mailq_test.h"
+#include "../test/mpool/mpool_test.h"
+#include "../test/msgQ/msgq_test.h"
+#include "../test/mailQ/mailq_test.h"
 
 
 

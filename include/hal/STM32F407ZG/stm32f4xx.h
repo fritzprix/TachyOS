@@ -53,7 +53,7 @@
 #ifndef __STM32F4xx_H
 #define __STM32F4xx_H
 
-#include "tch_halcfg.h"
+#include "hal/tch_halcfg.h"
 
 #ifdef __cplusplus
  extern "C" {
@@ -462,7 +462,7 @@ typedef enum IRQn
   * @}
   */
 
-#include "core_cm4.h"             /* Cortex-M4 processor and core peripherals */
+#include <port/ARM/acm4f/core_cm4.h>             /* Cortex-M4 processor and core peripherals */
 #include "system_stm32f4xx.h"
 #include <stdint.h>
 

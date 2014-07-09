@@ -124,7 +124,7 @@ tch_thread_id tch_threadSelf(){
 
 osStatus tch_threadSleep(uint32_t millisec){
 	if(tch_port_isISR()){
-		tch_error_handler(false,osErrorISR);
+		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
 	}else{
 		return tch_port_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
@@ -133,7 +133,7 @@ osStatus tch_threadSleep(uint32_t millisec){
 
 osStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 	if(tch_port_isISR()){
-		tch_error_handler(false,osErrorISR);
+		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
 	}else{
 		if(getThreadHeader(thread)->t_state == TERMINATED){

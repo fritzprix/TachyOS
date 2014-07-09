@@ -212,7 +212,7 @@
   * @{
   */
 #include "tch.h"
-#include "hal/STM_CMx/stm32f4xx.h"
+#include "hal/STM32F407ZG/stm32f4xx.h"
 
 /**
   * @}
@@ -590,7 +590,7 @@ static void SetSysClock(void)
   else
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
-	  tch_error_handler(false,osErrorTimeoutResource);
+	  tch_kernel_errorHandler(false,osErrorTimeoutResource);
   }
 
 }

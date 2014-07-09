@@ -49,7 +49,7 @@ tch_mtx_id tch_mtx_create(tch_mtx* mtx){
  */
 osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 	if(tch_port_isISR()){
-		tch_error_handler(false,osErrorISR);
+		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
 	}else{
 		if(getMtxObject(mtx)->key < MTX_INIT_MARK){
@@ -73,7 +73,7 @@ osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 
 osStatus tch_mtx_unlock(tch_mtx_id mtx){
 	if(tch_port_isISR()){                               ///< check if in isr mode, then return osErrorISR
-		tch_error_handler(false,osErrorISR);
+		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
 	}else{
 		if(getMtxObject(mtx)->key < MTX_INIT_MARK){     ///< otherwise ensure this key is locked by any thread
@@ -85,7 +85,7 @@ osStatus tch_mtx_unlock(tch_mtx_id mtx){
 
 osStatus tch_mtx_destroy(tch_mtx_id mtx){
 	if(tch_port_isISR()){
-		tch_error_handler(false,osErrorISR);
+		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
 	}else{
 		if(!(getMtxObject(mtx)->key > MTX_INIT_MARK)){

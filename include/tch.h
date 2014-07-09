@@ -17,8 +17,7 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-#include <cmsis_os.h>
-#include <stddef.h>
+#include "port/ARM/cmsis_os.h"
 
 
 /***
@@ -83,17 +82,5 @@ typedef struct _tch_t {
  * tachyos generic data interface
  */
 
-typedef struct _tch_streambuffer_t tch_streamBuffer;
-typedef struct _tch_istream_t tch_istream;
-typedef struct _tch_ostream_t tch_ostream;
-
-
-
-
-
-/****
- * global accessible error handling routine
- */
-void tch_error_handler(BOOL dump,osStatus status) __attribute__((naked));
 
 #endif /* TCH_H_ */

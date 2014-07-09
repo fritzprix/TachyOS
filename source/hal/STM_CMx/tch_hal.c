@@ -12,10 +12,9 @@
  *      Author: innocentevil
  */
 
-#include "hal/STM_CMx/tch_hal.h"
-#include "hal/STM_CMx/tch_halcfg.h"
-#include "hal/STM_CMx/stm32f4xx.h"
-#include "hal/STM_CMx/system_stm32f4xx.h"
+#include "hal/tch_hal.h"
+#include "hal/tch_halcfg.h"
+#include "hal/STM32F407ZG/system_stm32f4xx.h"
 
 
 

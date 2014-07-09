@@ -13,7 +13,7 @@
  */
 
 
-#include "hal/STM_CMx/tch_hal.h"
+#include "hal/tch_hal.h"
 
 
 

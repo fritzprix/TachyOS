@@ -22,8 +22,8 @@
  */
 #include "tch.h"
 #include "lib/tch_absdata.h"
-#include "port/acm4f/tch_port.h"
-#include "hal/STM_CMx/tch_hal.h"
+#include "port/ARM/acm4f/tch_port.h"
+#include "hal/tch_hal.h"
 
 /***
  *  Supervisor call table
@@ -103,6 +103,7 @@ extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk);
+void tch_kernel_errorHandler(BOOL dump,osStatus status) __attribute__((naked));
 
 
 
