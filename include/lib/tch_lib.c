@@ -31,7 +31,7 @@ int tch_memcmp(const uint8_t* dest,const uint8_t* src,int size){
 }
 
 
-BOOL tch_memset(uint8_t* dest,uint32_t size,const uint8_t v){
+BOOL tch_memset(uint8_t* dest,const uint8_t v,uint32_t size){
 	while(size--){
 		*dest++ = v;
 	}

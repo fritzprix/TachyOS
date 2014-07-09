@@ -19,7 +19,7 @@
 
 int tch_memcpy(uint8_t* dest,const uint8_t* src,int l);
 int tch_memcmp(const uint8_t* dest,const uint8_t* src,int size);
-BOOL tch_memset(uint8_t* bp,uint32_t size,const uint8_t v);
+BOOL tch_memset(uint8_t* bp,const uint8_t v,uint32_t size);
 int tch_strconcat(char* dest,const char* str1,const char* str2);
 int tch_strlen(char* str);
 int tch_strSplit(char* dest,char* src,char delmit,char** splt_result);
