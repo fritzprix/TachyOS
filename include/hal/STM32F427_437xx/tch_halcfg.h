@@ -16,6 +16,9 @@
 #define TCH_HALCFG_H_
 
 
+#include "stm32f4xx.h"
+
+
 
 #define TACHYOS_HAL_VENDOR               "ST_Micro"                      // vendor name field
 #define TACHYOS_HAL_PLATFORM_NAME        "STM32F4xx"                     // hw platform name (product name of mcu / mpu ic)
@@ -94,8 +97,11 @@
 #define SYS_TARGET_CLK_SPEED       SYS_TARGET_CLK_FASTEST
 #endif
 
-#ifndef SYS_SLEEPCLK_ENABLE
-#define SYS_SLEEPCLK                0                   /// default system sleep clock disable
+#define SYS_SLEEPCLK_ENABLE         0
+#define SYS_SLEEPCLK                0
+
+#if (SYS_SLEEPCLK_ENABLE && (!SYS_SLEEPCLK))
+#error "You should Define SYS_SLEEPCLK"
 #endif
 
 

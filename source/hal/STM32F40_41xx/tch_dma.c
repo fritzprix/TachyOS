@@ -1,5 +1,5 @@
 /*
- * tch_portcfg.h
+ * tch_dma.c
  *
  *  Copyright (C) 2014 doowoong,lee
  *  All rights reserved.
@@ -8,15 +8,11 @@
  *  of the LGPL v3 license.  See the LICENSE file for details.
  *
  *
- *  Created on: 2014. 6. 15.
+ *  Created on: 2014. 7. 7.
  *      Author: innocentevil
  */
 
-#ifndef TCH_PORTCFG_H_
-#define TCH_PORTCFG_H_
+
+#include "hal/tch_hal.h"
 
 
-#include "hal/STM_CMx/stm32f4xx.h"
-#include "core_cm4.h"
-
-#endif /* TCH_PORTCFG_H_ */

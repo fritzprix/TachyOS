@@ -53,7 +53,6 @@
 #ifndef __STM32F4xx_H
 #define __STM32F4xx_H
 
-#include "hal/tch_halcfg.h"
 
 #ifdef __cplusplus
  extern "C" {

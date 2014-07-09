@@ -17,7 +17,6 @@
 
 
 #include "tch.h"
-#include "tch_portcfg.h"
 
 
 

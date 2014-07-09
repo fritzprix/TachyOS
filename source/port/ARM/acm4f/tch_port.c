@@ -13,7 +13,10 @@
  */
 
 #include "kernel/tch_kernel.h"
+#include "hal/tch_hal.h"
+#include "port/tch_portcfg.h"
 #include "port/ARM/acm4f/tch_port.h"
+#include "port/ARM/acm4f/core_cm4.h"
 #include "lib/tch_lib.h"
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
