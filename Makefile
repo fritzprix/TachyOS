@@ -10,7 +10,7 @@
 include tchConfig.mk
 
 # Tachyos Src Tree Structure
-ROOT_DIR=$(shell pwd)
+ROOT_DIR= $(CURDIR)
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_PLF)
@@ -22,9 +22,13 @@ HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_PLF)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
 
 
+-include $(PORT_SRC_DIR)/port.mk
+-include $(KERNEL_SRC_DIR)/kernel.mk
+-include $(HAL_SRC_DIR)/hal.mk
+
 TARGET=tachyos.elf
-SRCS=
-OBJS=
+SRCS+=
+OBJS+=
 
 
 
@@ -54,24 +58,21 @@ ifeq ($(CFLAG),)
 		-ffunction-sections\
 		-fdata-sections\
 		-ffreestanding\
-		-T$(LDSCRIPT)\
+		-T$(LDSCRIPT)
 endif
 
-
-
-. SUFFIX: .o.c
-
-include $(PORT_SRC_DIR)/port.mk
-include $(KERNEL_SRC_DIR)/kernel.mk
-include $(HAL_SRC_DIR)/hal.m
 
 
 all : $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAG) $(INC) -o $@
+	$(CC) $(CFLAG) $(INC) $< -o $@
+	
+	
+%.o:%.c
+	$(CC) $(CFLAG) $(INC) $< -o $@
+
 
 clean:
 	rm -rf $(OBJS) $(TARGET)
-
-
+	

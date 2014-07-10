@@ -15,6 +15,7 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
+#include "stm32f4xx.h"
 
 
 #define TACHYOS_HAL_VENDOR               "ST_Micro"                      // vendor name field
@@ -115,7 +116,9 @@
 #endif
 
 
-#include "stm32f4xx.h"
+
+
+
 
 
 #endif /* TCH_HALCFG_H_ */

@@ -8,10 +8,6 @@ KERNEL_SRCS=\
 	    tch_thread.c\
 	    tch_vtimer.c
 
-KERNEL_OBJS=$(KERNEL_SRCS.%c=.%o)
+KERNEL_OBJS=$(KERNEL_SRCS:%.c=%.o)
 
-$(KERNEL_OBJS): $(KERNEL_SRCS)
-	$(CC) $(CFLAG) $(INC) -o $@
 
-clean:
-	rm -rf $(KERNEL_OBJS)
