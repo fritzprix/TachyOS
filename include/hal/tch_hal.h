@@ -27,7 +27,7 @@
 #include "STM32F40_41xx/tch_halcfg.h"
 #elif STM32F401xx
 #include "STM32F40_41xx/tch_halcfg.h"
-
+#endif
 
 #include "tch_usart.h"
 #include "tch_spi.h"
