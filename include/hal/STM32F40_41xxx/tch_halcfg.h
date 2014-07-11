@@ -15,9 +15,6 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
-#include "stm32f4xx.h"
-
-
 #define TACHYOS_HAL_VENDOR               "ST_Micro"                      // vendor name field
 #define TACHYOS_HAL_PLATFORM_NAME        "STM32F4xx"                     // hw platform name (product name of mcu / mpu ic)
 #define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              // hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
@@ -117,8 +114,7 @@
 
 
 
-
-
+#include "stm32f4xx.h"
 
 
 #endif /* TCH_HALCFG_H_ */

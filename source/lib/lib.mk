@@ -1,0 +1,4 @@
+LIB_SRCS=$(CUR_DIR)/%.c
+LIB_OBJS=$(LIB_SRCS:%.c=%.o)
+
+OBJS += $(LIB_OBJS)

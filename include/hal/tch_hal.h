@@ -19,15 +19,7 @@
  * #if !defined (STM32F40_41xxx) && !defined (STM32F427_437xx) && !defined (STM32F429_439xx) && !defined (STM32F401xx)
  *
  */
-#ifdef STM32F40_41xxx
-#include "STM32F40_41xx/tch_halcfg.h"
-#elif STM32F427_437xx
-#include "STM32F40_41xx/tch_halcfg.h"
-#elif STM32F429_439xx
-#include "STM32F40_41xx/tch_halcfg.h"
-#elif STM32F401xx
-#include "STM32F40_41xx/tch_halcfg.h"
-#endif
+#include "tch_halcfg.h"
 
 #include "tch_usart.h"
 #include "tch_spi.h"
