@@ -15,8 +15,12 @@
 #ifndef TCH_HAL_H_
 #define TCH_HAL_H_
 
+/**
+ * #if !defined (STM32F40_41xxx) && !defined (STM32F427_437xx) && !defined (STM32F429_439xx) && !defined (STM32F401xx)
+ *
+ */
+#include "tch_halcfg.h"
 
-#include "STM32F407ZG/stm32f4xx.h"
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"
