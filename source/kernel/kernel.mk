@@ -17,7 +17,7 @@ OBJS += $(KERNEL_OBJS)
 
 $(GEN_DIR)/kernel/%.o:$(KERNEL_SRC_DIR)/%.c
 	@echo 'Building file: $<'
-	@echo 'Invoking: Cross ARM C Compilere'
+	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '

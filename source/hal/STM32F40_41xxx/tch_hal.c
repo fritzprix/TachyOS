@@ -13,8 +13,8 @@
  */
 
 #include "hal/tch_hal.h"
-#include "hal/tch_halcfg.h"
-#include "hal/STM32F407ZG/system_stm32f4xx.h"
+#include "tch_halcfg.h"
+#include "system_stm32f4xx.h"
 
 
 

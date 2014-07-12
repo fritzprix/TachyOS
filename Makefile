@@ -8,11 +8,11 @@
 # C Compiler preprocessor option
 include COMMON.mk
 
-#include $(PORT_SRC_DIR)/port.mk
-#include $(KERNEL_SRC_DIR)/kernel.mk
+include $(PORT_SRC_DIR)/port.mk
 include $(HAL_SRC_DIR)/hal.mk
-#include $(LIB_SRC_DIR)/lib.mk
-
+include $(LIB_SRC_DIR)/lib.mk
+include $(KERNEL_SRC_DIR)/kernel.mk
+include $(USR_SRC_DIR)/usr.mk
 
 
 TARGET=$(GEN_DIR)/tachyos.elf
@@ -35,4 +35,3 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -rf $(OBJS) $(TARGET)
-	

@@ -212,7 +212,7 @@
   * @{
   */
 #include "tch.h"
-#include "hal/STM32F407ZG/stm32f4xx.h"
+#include "tch_halcfg.h"
 
 /**
   * @}
@@ -233,7 +233,6 @@
 /************************* Miscellaneous Configuration ************************/
 /*!< Uncomment the following line if you need to use external SRAM or SDRAM mounted
      on STM324xG_EVAL/STM324x7I_EVAL/STM324x9I_EVAL boards as data memory  */
-     
 #if defined (STM32F40_41xxx) || defined (STM32F427_437xx) || defined (STM32F429_439xx)
 /* #define DATA_IN_ExtSRAM */
 #endif /* STM32F40_41xxx || STM32F427_437x || STM32F429_439xx */

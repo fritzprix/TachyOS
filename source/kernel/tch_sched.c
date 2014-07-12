@@ -113,9 +113,6 @@ void tch_schedInit(void* arg){
 }
 
 
-
-
-
 /** Note : should not called any other program except kernel mode program
  *  start thread based on its priority (thread can be started in preempted way)
  */
