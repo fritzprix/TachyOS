@@ -15,7 +15,7 @@ GEN_DIR=$(ROOT_DIR)/Debug
 ifeq (%,RELEASE)
 	GEN_DIR=$(ROOT_DIR)/Release
 endif
-KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
+KERNEL_SRC_DIR=$(ROOT_DIR)/source/sys
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_PLF)
 
@@ -23,7 +23,7 @@ HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_PLF)
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include
-KERNEL_HDR_DIR=$(ROOT_DIR)/include/kernel
+KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
 PORT_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)/$(CPU)
 PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_PLF)
