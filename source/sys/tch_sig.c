@@ -12,9 +12,9 @@
  *      Author: innocentevil
  */
 
-#include "kernel/tch_kernel.h"
-#include "kernel/tch_thread.h"
-#include "kernel/tch_sched.h"
+#include "tch_kernel.h"
+#include "tch_thread.h"
+#include "tch_sched.h"
 
 static int32_t tch_signal_set(tch_thread_id thread,int32_t signals);
 static int32_t tch_signal_clear(tch_thread_id thread,int32_t signals);

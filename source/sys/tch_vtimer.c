@@ -13,7 +13,7 @@
  */
 
 
-#include "kernel/tch_kernel.h"
+#include "tch_kernel.h"
 
 
 

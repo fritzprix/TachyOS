@@ -17,8 +17,10 @@
 
 
 void* main(void* arg) {
+	tch* api = (tch*) arg;
 
 	while(1){
+		api->Thread->sleep(1000);
 	}
 	return 0;
 }
