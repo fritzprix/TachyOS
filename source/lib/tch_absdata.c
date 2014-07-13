@@ -106,7 +106,7 @@ tch_genericList_node_t* tch_genericQue_dequeue(tch_genericList_queue_t* queue){
 int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t* element){
 	tch_genericList_node_t* ql_node = queue->entry;
 	if(!ql_node){
-		return false;
+		return FALSE;
 	}
 	while(ql_node){
 		if(element == ql_node){
@@ -118,11 +118,11 @@ int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t*
 				queue->entry = ql_node->next;
 				queue->entry->prev = NULL;
 			}
-			return true;
+			return TRUE;
 		}
 		ql_node = ql_node->next;
 	}
-	return false;
+	return FALSE;
 }
 
 

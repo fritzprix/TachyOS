@@ -35,7 +35,7 @@ BOOL tch_memset(uint8_t* dest,const uint8_t v,uint32_t size){
 	while(size--){
 		*dest++ = v;
 	}
-	return true;
+	return TRUE;
 }
 
 
@@ -78,10 +78,10 @@ BOOL tch_strcmp(const char* str1,const char* str2){
 	char* tstr2 = (char*) str2;
 	while(*tstr1 != '\0'){
 		if(*tstr1++ != *tstr2++){
-			return false;
+			return FALSE;
 		}
 	}
-	return true;
+	return TRUE;
 }
 
 void tch_strcpy(char* dest,char* src){

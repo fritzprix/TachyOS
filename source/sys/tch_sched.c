@@ -106,7 +106,7 @@ void tch_schedInit(void* arg){
 
 	tch_currentThread = IdleThread_id;
 	tch_schedInitKernelThread(IdleThread_id);
-	while(true){
+	while(TRUE){
 		__WFI();
 	}
 
@@ -300,7 +300,7 @@ void* idle(void* arg){
 	 */
 	tch_kernel_instance* _sys = (tch_kernel_instance*) arg;
 	_sys->tch_api.Thread->start(MainThread_id);
-	while(true){
+	while(TRUE){
 		__DMB();
 		__ISB();
 		__WFI();

@@ -66,6 +66,8 @@ ifeq ($(CFLAG),)
 		-nostdlib\
 		-Xlinker\
 		--gc-sections\
-		-T$(LDSCRIPT)
+		-T$(LDSCRIPT)\
+		-O0\
+		-g3
 endif
 

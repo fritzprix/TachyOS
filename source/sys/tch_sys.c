@@ -43,17 +43,17 @@ void tch_kernelInit(void* arg){
 	 */
 	tch_sys_instance.tch_api.Device = tch_hal_init();
 	if(!tch_sys_instance.tch_api.Device)
-		tch_kernel_errorHandler(false,osErrorValue);
+		tch_kernel_errorHandler(FALSE,osErrorValue);
 
 
 	if(!tch_port_init()){
-		tch_kernel_errorHandler(false,osErrorOS);
+		tch_kernel_errorHandler(FALSE,osErrorOS);
 	}
 
 
 	tch_port_kernel_lock();
 
-	tch* api = &tch_sys_instance.tch_api;
+	tch* api = (tch*) &tch_sys_instance;
 	api->Thread = Thread;
 	api->Mtx = Mtx;
 	api->Sig = Sig;
