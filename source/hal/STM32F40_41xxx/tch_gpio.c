@@ -21,8 +21,30 @@ typedef struct tch_lld_gpio_prototype {
 }tch_lld_gpio_prototype;
 
 
+
+static tch_gpio_handle* tch_gpio_allocIo();
+static void tch_gpio_freeIo(tch_gpio_handle* IoHandle);
+
 __attribute__((section(".data")))  static tch_lld_gpio GPIO_StaticInstance = {
 
 };
 
 const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticInstance;
+
+
+
+
+
+
+
+
+
+
+
+tch_gpio_handle* tch_gpio_allocIo(){
+
+}
+
+void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
+
+}

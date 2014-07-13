@@ -32,11 +32,11 @@
  *
  */
 static tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg);
-static osStatus tch_threadStart(tch_thread_id thread);
-static osStatus tch_threadTerminate(tch_thread_id thread);
+static tchStatus tch_threadStart(tch_thread_id thread);
+static tchStatus tch_threadTerminate(tch_thread_id thread);
 static tch_thread_id tch_threadSelf();
-static osStatus tch_threadSleep(uint32_t millisec);
-static osStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout);
+static tchStatus tch_threadSleep(uint32_t millisec);
+static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty();
 
@@ -92,7 +92,7 @@ tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 
 }
 
-osStatus tch_threadStart(tch_thread_id thread){
+tchStatus tch_threadStart(tch_thread_id thread){
 	if(tch_port_isISR()){          ///< check current execution mode (Thread or Handler)
 		tch_schedReady(thread);    ///< if handler mode call, put current thread in ready queue
 		                                     ///< optionally check preemption required or not
@@ -110,7 +110,7 @@ osStatus tch_threadStart(tch_thread_id thread){
  *
  *  if there is any new idea, comment below...
  */
-osStatus tch_threadTerminate(tch_thread_id thread){
+tchStatus tch_threadTerminate(tch_thread_id thread){
 	// not implemented
 	return osErrorOS;
 }
@@ -122,7 +122,7 @@ tch_thread_id tch_threadSelf(){
 	return tch_schedGetRunningThread();
 }
 
-osStatus tch_threadSleep(uint32_t millisec){
+tchStatus tch_threadSleep(uint32_t millisec){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
@@ -131,7 +131,7 @@ osStatus tch_threadSleep(uint32_t millisec){
 	}
 }
 
-osStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
+tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;

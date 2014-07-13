@@ -215,7 +215,7 @@ void tch_schedResumeAll(tch_thread_queue* wq){
 
 
 
-osStatus tch_schedCancelTimeout(tch_thread_id thread){
+tchStatus tch_schedCancelTimeout(tch_thread_id thread){
 	tch_genericQue_remove((tch_genericList_queue_t*)&tch_pendQue,(tch_genericList_node_t*)thread);
 	return osOK;
 }

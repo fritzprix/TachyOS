@@ -16,11 +16,24 @@
 #include "tch.h"
 
 
+typedef struct person{
+	enum {male,female}sex;
+	int age;
+}person;
+
+typedef struct classroom {
+	person students[50];
+}classroom;
+
 void* main(void* arg) {
 	tch* api = (tch*) arg;
-
+	person* p = api->Mem->alloc(sizeof(person));
+	api->Mem->free(p);
 	while(1){
 		api->Thread->sleep(1000);
+		person* p = api->Mem->alloc(sizeof(person));
+		classroom* class = api->Mem->alloc(sizeof(classroom));
+		api->Mem->free(class);
 	}
 	return 0;
 }

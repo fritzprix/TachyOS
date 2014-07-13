@@ -19,9 +19,9 @@
 
 
 static tch_timer_id tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
-static osStatus tch_timer_start(tch_timer_id timer,uint32_t millisec);
-static osStatus tch_timer_stop(tch_timer_id timer);
-static osStatus tch_timer_delete(tch_timer_id timer);
+static tchStatus tch_timer_start(tch_timer_id timer,uint32_t millisec);
+static tchStatus tch_timer_stop(tch_timer_id timer);
+static tchStatus tch_timer_delete(tch_timer_id timer);
 
 
 
@@ -41,14 +41,14 @@ tch_timer_id tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type
 
 }
 
-osStatus tch_timer_start(tch_timer_id timer,uint32_t millisec){
+tchStatus tch_timer_start(tch_timer_id timer,uint32_t millisec){
 
 }
 
-osStatus tch_timer_stop(tch_timer_id timer){
+tchStatus tch_timer_stop(tch_timer_id timer){
 
 }
 
-osStatus tch_timer_delete(tch_timer_id timer){
+tchStatus tch_timer_delete(tch_timer_id timer){
 
 }

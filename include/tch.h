@@ -18,15 +18,10 @@
 #define TCH_H_
 
 #include <stdint.h>
-
-
-
-
-#define NULL                ((void*) 0)
+#include "tch_TypeDef.h"
 
 
 /***            Macro Definition From CMSIS RTOS                  ***/
-
 
 #define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
 #define osFeature_Pool         1       ///< Memory Pools:    1=available, 0=not available
@@ -39,48 +34,6 @@
 /// Timeout value.
 /// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
-
-/// Status code values returned by CMSIS-RTOS functions.
-/// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
-typedef enum  {
-  osOK                    =     0,       ///< function completed; no error or event occurred.
-  osEventSignal           =  0x08,       ///< function completed; signal event occurred.
-  osEventMessage          =  0x10,       ///< function completed; message event occurred.
-  osEventMail             =  0x20,       ///< function completed; mail event occurred.
-  osEventTimeout          =  0x40,       ///< function completed; timeout occurred.
-  osErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
-  osErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
-  osErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.
-  osErrorISR              =  0x82,       ///< not allowed in ISR context: the function cannot be called from interrupt service routines.
-  osErrorISRRecursive     =  0x83,       ///< function called multiple times from ISR with same object.
-  osErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
-  osErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
-  osErrorValue            =  0x86,       ///< value of a parameter is out of range.
-  osErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
-  os_status_reserved      =  0x7FFFFFFF  ///< prevent from enum down-size compiler optimization.
-} osStatus;
-
-
-typedef struct  {
-  osStatus                 status;     ///< status code: event or error information
-  union  {
-    uint32_t                    v;     ///< message as 32-bit value
-    void                       *p;     ///< message or mail as void pointer
-    int32_t               signals;     ///< signal flags
-  } value;                             ///< event value
-  void* def;
-} osEvent;
-
-/***
- *  General Types
- */
-typedef enum {
-	true = 1,false = !true
-} BOOL;
-
-typedef enum {
-	ActOnSleep,NoActOnSleep
-}tch_pwr_def;
 
 
 /***
@@ -95,6 +48,8 @@ typedef struct _tch_timer_ix_t tch_timer_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mailq_ix;
 typedef struct _tch_mpool_ix_t tch_mpool_ix;
+typedef struct _tch_mem_ix_t tch_mem_ix;
+typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 
 typedef struct tch_hal tch_hal;
 
@@ -108,11 +63,11 @@ typedef struct _tch_t {
 	const tch_semaph_ix* Sem;
 	const tch_msgq_ix* MsgQ;
 	const tch_mailq_ix* MailQ;
-	const tch_mpool_ix* Mempool;
-	const tch_hal* Device;
+	const tch_mpool_ix* Mempool;                ///< Operating System
+	const tch_hal* Device;                      ///< Entry of Device Driver Handles
+	const tch_mem_ix* Mem;
+	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
 } tch;
-
-
 
 
 
@@ -125,6 +80,8 @@ typedef struct _tch_t {
 #include "sys/tch_condv.h"
 #include "sys/tch_mpool.h"
 #include "sys/tch_ipc.h"
+#include "sys/tch_mem.h"
+#include "lib/tch_uclib.h"
 
 
 

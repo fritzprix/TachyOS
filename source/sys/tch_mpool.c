@@ -31,7 +31,7 @@ typedef struct tch_mpool_header_t {
 static tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool);
 static void* tch_mpool_alloc(tch_mpool_id mpool);
 static void* tch_mpool_calloc(tch_mpool_id mpool);
-static osStatus tch_mpool_free(tch_mpool_id mpool,void* block);
+static tchStatus tch_mpool_free(tch_mpool_id mpool,void* block);
 
 __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 		tch_mpool_create,
@@ -84,7 +84,7 @@ void* tch_mpool_calloc(tch_mpool_id mpool){
 	return free;
 }
 
-osStatus tch_mpool_free(tch_mpool_id mpool,void* block){
+tchStatus tch_mpool_free(tch_mpool_id mpool,void* block){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
 	if((block < mp_header->bDef->pool) || (block > mp_header->bend))
 		return osErrorParameter;

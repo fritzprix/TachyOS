@@ -26,7 +26,7 @@
 
 
 static tch_kernel_instance tch_sys_instance;
-
+static uint8_t HEAP[1 << 12];
 
 
 /***
@@ -50,6 +50,7 @@ void tch_kernelInit(void* arg){
 		tch_kernel_errorHandler(false,osErrorOS);
 	}
 
+
 	tch_port_kernel_lock();
 
 	tch* api = &tch_sys_instance.tch_api;
@@ -59,6 +60,7 @@ void tch_kernelInit(void* arg){
 	api->Mempool = Mempool;
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
+	api->Mem = tch_kernelHeapInit(HEAP,1 << 12);
 
 
 	tch_port_enableISR();                   // interrupt enable
@@ -160,7 +162,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 
 
 
-void tch_kernel_errorHandler(BOOL dump,osStatus status){
+void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 
 	/**
 	 *  optional dump register

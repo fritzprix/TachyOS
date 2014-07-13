@@ -25,9 +25,9 @@ typedef struct _tch_sem_t tch_sem;
 
 struct _tch_semaph_ix_t {
 	tch_sem_id (*create)(tch_sem* sem);
-	osStatus (*lock)(tch_sem_id sid,uint32_t timeout);
-	osStatus (*unlock)(tch_sem_id sid);
-	osStatus (*destroy)(tch_sem_id sid);
+	tchStatus (*lock)(tch_sem_id sid,uint32_t timeout);
+	tchStatus (*unlock)(tch_sem_id sid);
+	tchStatus (*destroy)(tch_sem_id sid);
 };
 
 

@@ -103,7 +103,7 @@ struct _tch_msgque_ix_t {
 	 *          osErrorTimeoutResource  : no memory in the queue was available during the given time limit.
 	 *          osErrorParameter  : a parameter is invalid or outside of a permitted
 	 */
-	osStatus (*put)(tch_msgQue_id,uint32_t msg,uint32_t millisec);
+	tchStatus (*put)(tch_msgQue_id,uint32_t msg,uint32_t millisec);
 
 	/**
 	 * Get a Message or Wait for a Message from a Queue
@@ -123,9 +123,9 @@ struct _tch_mailbox_ix_t {
 	tch_mailQue_id (*create)(const tch_mailQueDef_t* que);
 	void* (*alloc)(tch_mailQue_id qid,uint32_t millisec);
 	void* (*calloc)(tch_mailQue_id qid,uint32_t millisec);
-	osStatus (*put)(tch_mailQue_id qid,void* mail);
+	tchStatus (*put)(tch_mailQue_id qid,void* mail);
 	osEvent (*get)(tch_mailQue_id qid,uint32_t millisec);
-	osStatus (*free)(tch_mailQue_id qid,void* mail);
+	tchStatus (*free)(tch_mailQue_id qid,void* mail);
 };
 
 
