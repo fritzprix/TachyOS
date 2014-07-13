@@ -10,12 +10,12 @@ KERNEL_SRCS=\
 	    tch_thread.c\
 	    tch_vtimer.c
 
-KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(GEN_DIR)/kernel/%.o)
+KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(GEN_DIR)/sys/%.o)
            
 OBJS += $(KERNEL_OBJS)
 
 
-$(GEN_DIR)/kernel/%.o:$(KERNEL_SRC_DIR)/%.c
+$(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(INC) -o $@

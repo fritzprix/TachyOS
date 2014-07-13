@@ -17,8 +17,59 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-#include "port/ARM/cmsis_os.h"
+#include <stdint.h>
 
+
+
+
+#define NULL                ((void*) 0)
+
+
+/***            Macro Definition From CMSIS RTOS                  ***/
+
+
+#define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
+#define osFeature_Pool         1       ///< Memory Pools:    1=available, 0=not available
+#define osFeature_MailQ        1       ///< Mail Queues:     1=available, 0=not available
+#define osFeature_MessageQ     1       ///< Message Queues:  1=available, 0=not available
+#define osFeature_Signals      8       ///< maximum number of Signal Flags available per thread
+#define osFeature_Semaphore    30      ///< maximum count for \ref osSemaphoreCreate function
+#define osFeature_Wait         1       ///< osWait function: 1=available, 0=not available
+#define osFeature_SysTick      1       ///< osKernelSysTick functions: 1=available, 0=not available
+/// Timeout value.
+/// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
+#define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
+
+/// Status code values returned by CMSIS-RTOS functions.
+/// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
+typedef enum  {
+  osOK                    =     0,       ///< function completed; no error or event occurred.
+  osEventSignal           =  0x08,       ///< function completed; signal event occurred.
+  osEventMessage          =  0x10,       ///< function completed; message event occurred.
+  osEventMail             =  0x20,       ///< function completed; mail event occurred.
+  osEventTimeout          =  0x40,       ///< function completed; timeout occurred.
+  osErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
+  osErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
+  osErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.
+  osErrorISR              =  0x82,       ///< not allowed in ISR context: the function cannot be called from interrupt service routines.
+  osErrorISRRecursive     =  0x83,       ///< function called multiple times from ISR with same object.
+  osErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
+  osErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
+  osErrorValue            =  0x86,       ///< value of a parameter is out of range.
+  osErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
+  os_status_reserved      =  0x7FFFFFFF  ///< prevent from enum down-size compiler optimization.
+} osStatus;
+
+
+typedef struct  {
+  osStatus                 status;     ///< status code: event or error information
+  union  {
+    uint32_t                    v;     ///< message as 32-bit value
+    void                       *p;     ///< message or mail as void pointer
+    int32_t               signals;     ///< signal flags
+  } value;                             ///< event value
+  void* def;
+} osEvent;
 
 /***
  *  General Types
@@ -66,14 +117,14 @@ typedef struct _tch_t {
 
 
 
-#include "kernel/tch_mtx.h"
-#include "kernel/tch_sem.h"
-#include "kernel/tch_thread.h"
-#include "kernel/tch_sig.h"
-#include "kernel/tch_vtimer.h"
-#include "kernel/tch_condv.h"
-#include "kernel/tch_mpool.h"
-#include "kernel/tch_ipc.h"
+#include "sys/tch_mtx.h"
+#include "sys/tch_sem.h"
+#include "sys/tch_thread.h"
+#include "sys/tch_sig.h"
+#include "sys/tch_vtimer.h"
+#include "sys/tch_condv.h"
+#include "sys/tch_mpool.h"
+#include "sys/tch_ipc.h"
 
 
 

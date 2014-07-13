@@ -14,8 +14,8 @@
 
 
 
-#include "kernel/tch_kernel.h"
-#include "kernel/tch_sched.h"
+#include "tch_kernel.h"
+#include "tch_sched.h"
 
 
 

@@ -12,8 +12,8 @@
  *      Author: innocentevil
  */
 
-#include "kernel/tch_kernel.h"
-#include "lib/tch_lib.h"
+#include "tch_kernel.h"
+#include "tch_lib.h"
 
 
 
@@ -118,7 +118,7 @@ osStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
 	osEvent evt;
-	evt.def.message_id = que_id;
+	evt.def = que_id;
 	evt.value.v = 0;
 	if(tch_port_isISR()){
 		if(millisec){
@@ -245,7 +245,7 @@ osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	osEvent evt;
 	evt.status = osOK;
-	evt.def.mail_id = qid;
+	evt.def = qid;
 	evt.value.v = 0;
 	if(tch_port_isISR())
 		millisec = 0;
