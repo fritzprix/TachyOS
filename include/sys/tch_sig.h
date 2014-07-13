@@ -19,7 +19,7 @@
 struct _tch_signal_ix_t {
 	int32_t (*set)(tch_thread_id thread,int32_t signals);
 	int32_t (*clear)(tch_thread_id thread,int32_t signals);
-	osStatus (*wait)(int32_t signals,uint32_t millisec);
+	tchStatus (*wait)(int32_t signals,uint32_t millisec);
 };
 
 #endif

@@ -25,9 +25,9 @@ typedef struct _tch_condv_t tch_condv;
 struct _tch_condvar_ix_t {
 	tch_condv_id (*create)(tch_condv* condv);
 	BOOL (*wait)(tch_condv* condv,uint32_t timeout);
-	osStatus (*wake)(tch_condv* condv);
-	osStatus (*wakeAll)(tch_condv* condv);
-	osStatus (*destroy)(tch_condv* condv);
+	tchStatus (*wake)(tch_condv* condv);
+	tchStatus (*wakeAll)(tch_condv* condv);
+	tchStatus (*destroy)(tch_condv* condv);
 };
 
 

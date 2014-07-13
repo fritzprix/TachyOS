@@ -20,9 +20,9 @@
 
 
 static tch_mtx_id tch_mtx_create(tch_mtx* mtx);
-static osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout);
-static osStatus tch_mtx_unlock(tch_mtx_id mtx);
-static osStatus tch_mtx_destroy(tch_mtx_id mtx);
+static tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout);
+static tchStatus tch_mtx_unlock(tch_mtx_id mtx);
+static tchStatus tch_mtx_destroy(tch_mtx_id mtx);
 
 
 
@@ -47,7 +47,7 @@ tch_mtx_id tch_mtx_create(tch_mtx* mtx){
 /***
  *  thread try lock mtx for given amount of time
  */
-osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
+tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
@@ -71,7 +71,7 @@ osStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 	}
 }
 
-osStatus tch_mtx_unlock(tch_mtx_id mtx){
+tchStatus tch_mtx_unlock(tch_mtx_id mtx){
 	if(tch_port_isISR()){                               ///< check if in isr mode, then return osErrorISR
 		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;
@@ -83,7 +83,7 @@ osStatus tch_mtx_unlock(tch_mtx_id mtx){
 	}
 }
 
-osStatus tch_mtx_destroy(tch_mtx_id mtx){
+tchStatus tch_mtx_destroy(tch_mtx_id mtx){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(false,osErrorISR);
 		return osErrorISR;

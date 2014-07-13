@@ -42,16 +42,16 @@ typedef struct tch_mailq_instance {
 
 
 static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que);
-static osStatus tch_msgQ_put(tch_msgQue_id,uint32_t msg,uint32_t millisec);
+static tchStatus tch_msgQ_put(tch_msgQue_id,uint32_t msg,uint32_t millisec);
 static osEvent tch_msgQ_get(tch_msgQue_id,uint32_t millisec);
 
 
 static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que);
 static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec);
 static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec);
-static osStatus tch_mailQ_put(tch_mailQue_id qid,void* mail);
+static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail);
 static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec);
-static osStatus tch_mailQ_free(tch_mailQue_id qid,void* mail);
+static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail);
 
 
 
@@ -85,7 +85,7 @@ tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	return (tch_msgQue_id) msgq_header;
 }
 
-osStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
+tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
 	if(tch_port_isISR()){                                                            ///< ISR Mode
 		if(millisec)                                                                 ///< ##Note : in ISR Mode, timeout is taken into error, because isr mode execution can not blocked
@@ -186,7 +186,7 @@ void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
-	osStatus res = osOK;
+	tchStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if(mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
@@ -206,7 +206,7 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
-	osStatus res = osOK;
+	tchStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if(!mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
@@ -225,7 +225,7 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 
 
 
-osStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
+tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if((mailq->mailqDef->pool > mail) && (mailq->bend <= mail))
 		return osErrorValue;
@@ -267,7 +267,7 @@ osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 }
 
 
-osStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
+tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	tch_port_kernel_lock();
 	mailq->psize++;

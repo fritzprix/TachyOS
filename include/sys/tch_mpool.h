@@ -48,7 +48,7 @@ struct _tch_mpool_ix_t {
 	tch_mpool_id (*create)(const tch_mpoolDef_t* pool);
 	void* (*alloc)(tch_mpool_id mpool);
 	void* (*calloc)(tch_mpool_id mpool);
-	osStatus (*free)(tch_mpool_id mpool,void* block);
+	tchStatus (*free)(tch_mpool_id mpool,void* block);
 };
 
 

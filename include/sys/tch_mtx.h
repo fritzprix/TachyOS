@@ -37,9 +37,9 @@ struct _tch_mtx_t {
 
 struct _tch_mutex_ix_t {
 	tch_mtx_id (*create)(tch_mtx* mtx);
-	osStatus (*lock)(tch_mtx_id mtx,uint32_t timeout);
-	osStatus (*unlock)(tch_mtx_id mtx);
-	osStatus (*destroy)(tch_mtx_id mtx);
+	tchStatus (*lock)(tch_mtx_id mtx,uint32_t timeout);
+	tchStatus (*unlock)(tch_mtx_id mtx);
+	tchStatus (*destroy)(tch_mtx_id mtx);
 };
 
 

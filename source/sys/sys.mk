@@ -8,7 +8,8 @@ KERNEL_SRCS=\
 	    tch_sig.c\
 	    tch_sys.c\
 	    tch_thread.c\
-	    tch_vtimer.c
+	    tch_vtimer.c\
+	    tch_mem.c
 
 KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(GEN_DIR)/sys/%.o)
            

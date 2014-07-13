@@ -18,7 +18,7 @@
 
 static int32_t tch_signal_set(tch_thread_id thread,int32_t signals);
 static int32_t tch_signal_clear(tch_thread_id thread,int32_t signals);
-static osStatus tch_signal_wait(int32_t signals,uint32_t millisec);
+static tchStatus tch_signal_wait(int32_t signals,uint32_t millisec);
 
 
 
@@ -70,7 +70,7 @@ int32_t tch_signal_clear(tch_thread_id thread,int32_t signals){
 	return sig;
 }
 
-osStatus tch_signal_wait(int32_t signals,uint32_t millisec){
+tchStatus tch_signal_wait(int32_t signals,uint32_t millisec){
 	tch_thread_header* th_p = tch_schedGetRunningThread();
 	if(!signals > (1 << (osFeature_Signals + 1))){
 		return osErrorParameter;
