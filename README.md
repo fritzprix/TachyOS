@@ -1,10 +1,10 @@
 Tachyos
 =======
-   - Tachyos is RTOS Project for low power application. 
-   - Initial port is based on STM32F4x series (especially STM32F407ZG)
-   - Portable through all of STM32F4x series
-   - easily built on eclipse based environment
-     (because I'm developing it based on eclipse arm cross compile environment)
+####An Low Profile Operating System optimized for low power IoT Application
+####Note : This Project is under incubation stage, only the basic kernel functions are implemented as draft
+####       But you can freely hack this project under its license term.
+###### - first port is for cortex-m4 arch. 
+###### - HAL will be ported into stm32f4 series first
 
 
 
