@@ -1,0 +1,4 @@
+install: "sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded"
+language: c
+compilre: gcc
+script: make
