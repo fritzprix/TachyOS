@@ -1,4 +1,4 @@
-install: "sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded"
+install: "sudo $TRAVIS_BUID_DIR/install_dep.sh > /dev/null"
 language: c
 compilre: gcc
 script: make
