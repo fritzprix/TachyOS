@@ -44,6 +44,7 @@ LIB_SRC_DIR=$(ROOT_DIR)/source/lib
 LDSCRIPT=$(HAL_VND_HDR_DIR)/ld/flash.ld
 TOOL_CHAIN=arm-none-eabi-
 CC=$(TOOL_CHAIN)gcc
+CPP=$(TOOL_CHAIN)g++
 
 ifeq ($(INC),)
 	INC = -I$(PORT_HDR_DIR)\
@@ -70,4 +71,25 @@ ifeq ($(CFLAG),)
 		-O0\
 		-g3
 endif
+
+ifeq ($(CPFLAG),)
+	CPFLAG = -g -gdwarf-2 -c\
+	         -mlong-calls\
+	         -ffunction-sections\
+	         -ffreestanding\
+	         -nodefaultlibs\
+	         -nostdlib\
+	         -O\
+	         -fno-rtti\
+	         -fno-exceptions\
+	         -Wall\
+	         -fpermissive\
+	         -T$(LDSCRIPT)\
+	         -O0\
+	         -g3
+endif
+
+
+
+
 

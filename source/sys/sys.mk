@@ -10,10 +10,14 @@ KERNEL_SRCS=\
 	    tch_thread.c\
 	    tch_vtimer.c\
 	    tch_mem.c
+	    
+KERNEL_CPP_SRCS=tch_crtb.cpp
 
 KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(GEN_DIR)/sys/%.o)
+KERNEL_CPPOBJS=$(KERNEL_CPP_SRCS:%.cpp=$(GEN_DIR)/sys/%.o)
            
 OBJS += $(KERNEL_OBJS)
+OBJS += $(KERNEL_CPPOBJS)
 
 
 $(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.c
@@ -22,3 +26,12 @@ $(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.c
 	$(CC) $< -c $(CFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
+	
+	
+$(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: Cross ARM g++'
+	$(CPP) $< -c $(CPFLAG) $(INC) -o $@
+	@echo 'Finishing building: $<'
+	@echo ' '
+	

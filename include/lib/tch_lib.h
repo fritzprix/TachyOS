@@ -14,7 +14,7 @@
 
 #ifndef TCH_LIB_H_
 #define TCH_LIB_H_
-#include "../tch.h"
+#include "tch.h"
 
 
 int tch_memcpy(uint8_t* dest,const uint8_t* src,int l);

@@ -74,7 +74,7 @@ const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
-	tch_memset(que->pool,que->item_sz * que->queue_sz,0);
+	tch_memset((uint8_t*)que->pool,que->item_sz * que->queue_sz,0);
 	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
 	msgq_header->pidx = 0;
 	msgq_header->gidx = 0;
@@ -158,15 +158,15 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 
 
 tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
-	tch_memset(que->pool,que->item_sz * que->queue_sz,0);
+	tch_memset((uint8_t*)que->pool,que->item_sz * que->queue_sz,0);
 	tch_mailq_instance* mailq = (tch_mailq_instance*) que->pool - 1;
 	mailq->bfree = que->pool;
 	mailq->bend = ((uint8_t*) que->pool + que->item_sz * que->queue_sz);          ///< assign end of pool
-	void* end = mailq->bend - que->item_sz;                                       ///< temporal end to initiate list
+	void* end = ((uint8_t*)mailq->bend - que->item_sz);                            ///< temporal end to initiate list
 	void* next = NULL;
 	void* blk = mailq->bfree;
 	while(1){
-		next = blk + que->item_sz;
+		next = ((uint8_t*)blk + que->item_sz);
 		if(next > end) break;
 		*(void**)blk = next;                      ///< assign vector for next block
 		blk = next;                       ///< move index to next
@@ -176,7 +176,7 @@ tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	mailq->gidx = 0;
 	mailq->pidx = 0;
 	mailq->psize = 0;
-	mailq->mailqDef = que;
+	mailq->mailqDef = (tch_mailQueDef_t*)que;
 	tch_genericQue_Init(&mailq->mailAllocWq);
 	tch_genericQue_Init(&mailq->mailGetWq);
 	return mailq;
@@ -189,12 +189,12 @@ void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	tchStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if(mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
-		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
+		res = (tchStatus)tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
 	if((res == osErrorTimeoutResource))      //< check kernel call result
 		return NULL;
 	tch_port_kernel_lock();
-	void** free = mailq->bfree;
+	void** free = (void**) mailq->bfree;
 	if(free){
 		mailq->bfree = *free;
 	}
@@ -209,12 +209,12 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 	tchStatus res = osOK;
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if(!mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
-		res = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
+		res = (tchStatus)tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
 	if((res == osErrorTimeoutResource))      //< check kernel call result
 		return NULL;
 	tch_port_kernel_lock();
-	void** free = mailq->bfree;
+	void** free = (void**)mailq->bfree;
 	if(free){
 		mailq->bfree = *free;
 	}
@@ -250,7 +250,7 @@ osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR())
 		millisec = 0;
 	if((!mailq->psize) && millisec){
-		evt.status = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailGetWq,millisec);
+		evt.status = (tchStatus) tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailGetWq,millisec);
 	}
 	if(evt.status == osErrorTimeoutResource){
 		evt.status = osEventTimeout;

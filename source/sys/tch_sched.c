@@ -37,7 +37,7 @@
 /***
  *  main thread routine
  */
-extern void* main(void* arg);
+extern int main(void* arg);
 
 /***
  *  idle thread routine
@@ -90,7 +90,7 @@ void tch_schedInit(void* arg){
 	tch_port_enableSysTick();                    ///< enable system timer tick
 
 	tch_thread_cfg thcfg;
-	thcfg._t_routine = main;
+	thcfg._t_routine = (void* (*)(void*))main;
 	thcfg._t_stack = MAIN_STACK;
 	thcfg.t_stackSize = MAIN_STACK_SIZE;
 	thcfg.t_proior = Normal;

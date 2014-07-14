@@ -79,7 +79,7 @@ tchStatus tch_mtx_unlock(tch_mtx_id mtx){
 		if(getMtxObject(mtx)->key < MTX_INIT_MARK){     ///< otherwise ensure this key is locked by any thread
 			return osErrorParameter;                    ///< if not, return osErrorParameter
 		}
-		return tch_port_enterSvFromUsr(SV_MTX_UNLOCK,(uint32_t)mtx,0);   ///< otherwise, invoke system call for unlocking mtx
+		return (tchStatus)tch_port_enterSvFromUsr(SV_MTX_UNLOCK,(uint32_t)mtx,0);   ///< otherwise, invoke system call for unlocking mtx
 	}
 }
 
@@ -92,6 +92,6 @@ tchStatus tch_mtx_destroy(tch_mtx_id mtx){
 			return osErrorResource;
 		}
 		getMtxObject(mtx)->key = 0;
-		return tch_port_enterSvFromUsr(SV_MTX_DESTROY,(uint32_t)mtx,0);
+		return (tchStatus)tch_port_enterSvFromUsr(SV_MTX_DESTROY,(uint32_t)mtx,0);
 	}
 }

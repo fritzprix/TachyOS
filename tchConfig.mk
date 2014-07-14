@@ -12,6 +12,11 @@ ifeq ($(CPU),)
 	CPU = cortex-m4
 endif
 
+# Instruction Set Option
+ifeq ($(INSTR),)
+	INSTR = thumb
+endif
+
 # FPU Option   HARD | SOFT | NO
 ifeq ($(FPU),)
 	FPU = HARD

@@ -27,6 +27,7 @@
 
 static tch_kernel_instance tch_sys_instance;
 static uint8_t HEAP[1 << 12];
+const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
 
 
 /***
@@ -89,14 +90,14 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSuspend((tch_thread_queue*)(&((tch_thread_header*)arg1)->t_joinQ),arg2);
 		return;
 	case SV_THREAD_RESUME:
-		nth = tch_schedResume((tch_genericList_queue_t*)arg1);
+		nth = tch_schedResume((tch_thread_queue*)arg1);
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_genericList_queue_t*)arg1);
+		tch_schedResumeAll((tch_thread_queue*)arg1);
 		return;
 	case SV_THREAD_SUSPEND:
-		tch_schedSuspend((tch_genericList_queue_t*)arg1,arg2);
+		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
 		return;
 	case SV_MTX_LOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();

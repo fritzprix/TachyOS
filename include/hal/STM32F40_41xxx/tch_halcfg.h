@@ -1,3 +1,11 @@
+/**
+ * @file tch_halcfg.h
+ * @brief this file contains Macro definition for Hal Configuration
+ *
+ * @author doowoong,lee
+ * @bug    No Known Bug
+ */
+
 /*
  * tch_halcfg.h
  *
@@ -21,25 +29,40 @@
 #define TACHYOS_HAL_MAIN_VERSION          0
 #define TACHYOS_HAR_SUB_VERSION           0
 
-
-
-
-
+///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
+/**
+ *  @brief Us External Crystal, so that internal inverter is enabled for generating main clock
+ */
 #define SYS_MCLK_TYPE_CRYSTAL     0
+
+/**
+ *  @brief Use External Osc. which has its own driver and High Q resonating node so internal crystal driver is by-passed
+ */
 #define SYS_MCLK_TYPE_EXTOSC      1
+
+/**
+ *  @brief Use Internal Osc. so there is no need for additional component (but usually show less quality than the others)
+ */
 #define SYS_MCLK_TYPE_INTERNAL    2
 
 
-
-#ifndef USE_EXTMEM
-#define USE_EXTMEM                0
-#endif
-
+/**
+ *  @brief Type of Ext. Mem
+ */
 #define EXTMEM_TYPE_SDRAM         0
 #define EXTMEM_TYPE_SRAM          1
 
 
 
+///////////////////////////////////////////¡é Configuration Block ¡é/////////////////////////////////////////////
+
+
+/**
+ *  @brief Use Ext. Mem or Not
+ */
+#ifndef USE_EXTMEM
+#define USE_EXTMEM                0
+#endif
 
 #if (USE_EXTMEM == 1)
 #ifndef EXTMEM_TYPE
@@ -75,12 +98,6 @@
 #define SYS_CLK                   ((uint32_t) 168000000)
 #endif
 
-
-#define SYS_TARGET_CLK_FASTEST     ((uint32_t) 1)
-#define SYS_TARGET_CLK_FAIR        ((uint32_t) 2)
-#define SYS_TARGET_CLK_LOW         ((uint32_t) 4)
-
-
 /****
  *    config system clock speed
  *     - Fastest  :  possible Highest Clock is set as system clock
@@ -112,8 +129,7 @@
 #define HSE_VALUE                SYS_INTERNAL_CLK_FREQ
 #endif
 
-
-
+#include "tch_memcfg.h"
 #include "stm32f4xx.h"
 
 

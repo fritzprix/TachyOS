@@ -14,3 +14,9 @@ $(GEN_DIR)/usr/%.o:$(USR_SRC_DIR)/%.c
 	@echo 'Finished building: $<'
 	@echo ' '
            
+$(GEN_DIR)/usr/%.o:$(USR_SRC_DIR)/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: Cross ARM g++'
+	$(CPP) $< -c $(CPFLAG) $(INC) -o $@
+	@echo 'Finishing building: $<'
+	@echo ' '

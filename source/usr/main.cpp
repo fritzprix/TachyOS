@@ -25,15 +25,16 @@ typedef struct classroom {
 	person students[50];
 }classroom;
 
-void* main(void* arg) {
+int main(void* arg) {
 	tch* api = (tch*) arg;
-	person* p = api->Mem->alloc(sizeof(person));
+	person* p = new person();
 	api->Mem->free(p);
+	classroom* cp = new classroom();
 	while(1){
 		api->Thread->sleep(1000);
 		person* p = api->Mem->alloc(sizeof(person));
-		classroom* class = api->Mem->alloc(sizeof(classroom));
-		api->Mem->free(class);
+		classroom* clp = api->Mem->alloc(sizeof(classroom));
+		api->Mem->free(clp);
 	}
 	return 0;
 }

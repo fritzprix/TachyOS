@@ -119,4 +119,6 @@ extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_hal* Hal;
 
+extern const tch_kernel_instance* Sys;
+
 #endif /* TCH_KERNEL_H_ */

@@ -36,7 +36,7 @@ struct _tch_timer_ix_t {
 	tch_timer_id (*create)(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
 	tchStatus (*start)(tch_timer_id timer,uint32_t millisec);
 	tchStatus (*stop)(tch_timer_id timer);
-	tchStatus (*delete)(tch_timer_id timer);
+	tchStatus (*destroy)(tch_timer_id timer);
 };
 
 
