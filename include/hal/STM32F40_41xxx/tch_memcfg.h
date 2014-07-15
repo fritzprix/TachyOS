@@ -20,7 +20,7 @@
  * @brief Main Stack Size : 8 KB
  */
 #ifndef __tch_Main_Stack_Size
-#define __tch_Main_Stack_Size        ((uint32_t) 1 << 13)
+#define __tch_Main_Stack_Size        1024
 #endif
 
 
@@ -30,7 +30,7 @@
  *        So 2KB is enough for short ISR routine
  */
 #ifndef __tch_ISR_Stack_Size
-#define __tch_ISR_Stack_Size          ((uint32_t) 1 << 11)
+#define __tch_ISR_Stack_Size          (1 << 11)
 #endif
 
 /**
@@ -38,14 +38,14 @@
  *
  */
 #ifndef __tch_Heap_Size
-#define __tch_Heap_Size               ((uint32_t) 1 << 16)
+#define __tch_Heap_Size               ( 1 << 16)
 #endif
 
 /**
  *
  */
 #ifndef __tch_Idle_Stack_Size
-#define __tch_Idle_Stack_Size         ((uint32_t) 1 << 10)
+#define __tch_Idle_Stack_Size         ( 1 << 10)
 #endif
 
 #endif /* TCH_MEMCFG_H_ */

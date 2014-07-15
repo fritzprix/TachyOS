@@ -26,8 +26,10 @@
 
 
 static tch_kernel_instance tch_sys_instance;
-static uint8_t HEAP[1 << 12];
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
+const void* Sys_Stack_Top asm("sys_stack_top");
+const void* Heap_Base asm("heap_base");
+const void* Heap_Limit asm("heap_limit");
 
 
 /***
@@ -42,6 +44,7 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
+	tch_port_setHandlerSP((uint32_t)Sys_Stack_Top);
 	tch_sys_instance.tch_api.Device = tch_hal_init();
 	if(!tch_sys_instance.tch_api.Device)
 		tch_kernel_errorHandler(FALSE,osErrorValue);
@@ -61,7 +64,7 @@ void tch_kernelInit(void* arg){
 	api->Mempool = Mempool;
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
-	api->Mem = tch_kernelHeapInit(HEAP,1 << 12);
+	api->Mem = tch_kernelHeapInit((uint8_t*)Heap_Base,(uint32_t)Heap_Limit - (uint32_t)Heap_Base);
 
 
 	tch_port_enableISR();                   // interrupt enable

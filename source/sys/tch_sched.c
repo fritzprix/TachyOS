@@ -21,13 +21,6 @@
 /* =================  private internal function declaration   ========================== */
 
 
-#ifndef MAIN_STACK_SIZE
-#define MAIN_STACK_SIZE                    (1 << 10)
-#endif
-
-#ifndef IDLE_STACK_SIZE
-#define IDLE_STACK_SIZE                    (1 << 8)
-#endif
 
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
 #define getListNode(th_id)    ((tch_genericList_node_t*) th_id)
@@ -57,12 +50,13 @@ static LIST_COMPARE_FN(tch_schedPendQPolicy);
 static inline void tch_schedInitKernelThread(tch_thread_id thr)__attribute__((always_inline));
 
 static tch_thread_id MainThread_id;
-static DECLARE_THREADSTACK(MAIN_STACK,MAIN_STACK_SIZE << 4);
-
-
 static tch_thread_id IdleThread_id;
-static DECLARE_THREADSTACK(IDLE_STACK,IDLE_STACK_SIZE << 4);
 
+static const void* Main_Stack_Top asm("main_stack_top");
+static const void* Main_Stack_Limit asm("main_stack_limit");
+
+static const void* Idle_Stack_Top asm("idle_stack_top");
+static const void* Idle_Stack_Limit asm("idle_stack_limit");
 
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
@@ -91,15 +85,15 @@ void tch_schedInit(void* arg){
 
 	tch_thread_cfg thcfg;
 	thcfg._t_routine = (void* (*)(void*))main;
-	thcfg._t_stack = MAIN_STACK;
-	thcfg.t_stackSize = MAIN_STACK_SIZE;
+	thcfg._t_stack = Main_Stack_Top;
+	thcfg.t_stackSize = (uint32_t) Main_Stack_Top - (uint32_t) Main_Stack_Limit;
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
 	MainThread_id = Thread->create(&thcfg,_sys);
 
 	thcfg._t_routine = idle;
-	thcfg._t_stack = IDLE_STACK;
-	thcfg.t_stackSize = IDLE_STACK_SIZE;
+	thcfg._t_stack = Idle_Stack_Top;
+	thcfg.t_stackSize = (uint32_t)Idle_Stack_Top - (uint32_t)Idle_Stack_Limit;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
 	IdleThread_id = Thread->create(&thcfg,_sys);

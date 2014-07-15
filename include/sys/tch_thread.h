@@ -49,7 +49,7 @@ struct _tch_thread_cfg_t {
 	uint32_t             t_stackSize;
 	tch_thread_routine  _t_routine;
 	tch_thread_prior     t_proior;
-	void*               _t_stack;
+	const void*               _t_stack;
 	const char*         _t_name;
 };
 

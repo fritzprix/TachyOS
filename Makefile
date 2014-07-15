@@ -46,11 +46,13 @@ CPFLAG+=\
        -mcpu=$(CPU)\
        -m$(INSTR)
 
+MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
+
 all : $(TARGET)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
-	$(CC) -o $@ $(CFLAG) $(INC) $(OBJS)
+	$(CC) -o $@ $(CFLAG) $(MMAP_FLAG) $(INC) $(OBJS)
 	
 
 

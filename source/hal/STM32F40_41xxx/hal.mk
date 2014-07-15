@@ -22,18 +22,9 @@ ASM_OPT=-x assembler-with-cpp\
 HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(GEN_DIR)/hal/%.o)
 HAL_OBJS=$(HAL_SRCS:%.c=$(GEN_DIR)/hal/%.o)
 
-
-OBJS += $(HAL_ASM_OBJS)
 OBJS += $(HAL_OBJS) 
+OBJS += $(HAL_ASM_OBJS)
 
-
-
-$(GEN_DIR)/hal/%.o: $(HAL_SRC_DIR)/%.S
-	@echo 'Building file: $<'
-	@echo 'Invoking: Cross ARM GNU Assembler'
-	$(CC) $< -c $(CFLAG) $(INC) $(ASM_OPT) -o $@
-	@echo 'Finished building: $<'
-	@echo ' '
 
 
 
@@ -44,6 +35,12 @@ $(GEN_DIR)/hal/%.o: $(HAL_SRC_DIR)/%.c
 	@echo 'Finished building: $<'
 	@echo ' '
 
+$(GEN_DIR)/hal/%.o: $(HAL_SRC_DIR)/%.S
+	@echo 'Building file: $<'
+	@echo 'Invoking: Cross ARM GNU Assembler'
+	$(CC) $< -c $(CFLAG) $(INC) $(ASM_OPT) -o $@
+	@echo 'Finished building: $<'
+	@echo ' '
 
 
 

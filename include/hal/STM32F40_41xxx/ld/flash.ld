@@ -21,6 +21,7 @@ __Stack_Init = _estack  - __Stack_Size ;
 /*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
 PROVIDE ( _Stack_Init = __Stack_Init ) ;
 
+
 /*
 There will be a link error if there is not this amount of RAM free at the end.
 */
@@ -137,22 +138,30 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
-    /* This is the user stack section 
-    This is just to check that there is enough RAM left for the User mode stack
-    It should generate an error if it's full.
-     */
-    ._usrstack :
+    /* 
+      Heap Section start at the end of bss      
+    */
+    .heap :
     {
-	    . = ALIGN(4);
-        _susrstack = . ;
-        
-        . = . + _Minimum_Stack_Size ;
-        
-	    . = ALIGN(4);
-        _eusrstack = . ;
+    	. = ALIGN(4);
+    	_sheap = .;
+    	*(.heap)
+    	. = ALIGN(4);
+    	_eheap = .;
     } >RAM
     
-
+    .mstack :
+    {
+        . = ALIGN(4);
+        _smstack = .;
+        *(.mbarrier)
+        *(.istack)
+        *(.mstack)
+        *(.sysstack)
+    } >RAM
+    
+    
+    
    
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there
