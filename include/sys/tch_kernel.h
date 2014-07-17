@@ -24,12 +24,14 @@
 #include "lib/tch_absdata.h"
 #include "tch_port.h"
 #include "hal/tch_hal.h"
+#include "tch_mem.h"
 
 /***
  *  Supervisor call table
  */
 typedef struct tch_kernel_instance{
 	tch                     tch_api;
+	tch_mem_handle*         tch_heap_handle;
 } tch_kernel_instance;
 
 
@@ -97,11 +99,13 @@ typedef struct tch_thread_queue{
 #define SV_THREAD_RESUME                 ((uint32_t) 0x25)
 #define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
 
+#define SV_MEM_MALLOC                    ((uint32_t) 0x27)
+#define SV_MEM_FREE                      ((uint32_t) 0x28)
+
 
 
 extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
-extern tch_mem_ix* tch_kernelHeapInit(void* pool,size_t size);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk);
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
@@ -117,6 +121,7 @@ extern const tch_semaph_ix* Sem;
 extern const tch_msgq_ix* MsgQ;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
+extern const tch_mem_ix* Mem;
 extern const tch_hal* Hal;
 
 extern const tch_kernel_instance* Sys;

@@ -19,6 +19,7 @@
 
 
 #include "tch_kernel.h"
+#include "tch_mem.h"
 #include "tch_sched.h"
 
 
@@ -56,6 +57,7 @@ void tch_kernelInit(void* arg){
 
 
 	tch_port_kernel_lock();
+	tch_sys_instance.tch_heap_handle = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
 
 	tch* api = (tch*) &tch_sys_instance;
 	api->Thread = Thread;
@@ -64,8 +66,7 @@ void tch_kernelInit(void* arg){
 	api->Mempool = Mempool;
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
-	api->Mem = tch_kernelHeapInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
-
+	api->Mem = Mem;
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
@@ -159,6 +160,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq);
 		nth->t_ctx->kRetv = osOK;
+		return;
+	case SV_MEM_MALLOC:
+		sp->R0 = Sys->tch_heap_handle->alloc(Sys->tch_heap_handle,arg1);
+		return;
+	case SV_MEM_FREE:
+		sp->R0 = Sys->tch_heap_handle->free(Sys->tch_heap_handle,arg1);
 		return;
 	}
 }
