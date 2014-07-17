@@ -132,7 +132,7 @@ SECTIONS
         
 	    . = ALIGN(4);
 	    /* This is used by the startup in order to initialize the .bss secion */
-   	 _ebss = . ;
+	    _ebss = . ;
     } >RAM
     
     PROVIDE ( end = _ebss );
@@ -150,19 +150,54 @@ SECTIONS
     	_eheap = .;
     } >RAM
     
-    .mstack :
+    .mbarrier :
     {
-        . = ALIGN(4);
-        _smstack = .;
-        *(.mbarrier)
-        *(.istack)
-        *(.mstack)
-        *(.sysstack)
+    	. = ALIGN(8);
+    	_smb = .;
+    	*(.mbarrier)
+    	. = ALIGN(8);
+    	_emb = .;
     } >RAM
     
+    .istack :
+    {
+     	. = _emb;
+     	. = ALIGN(8);
+    	_sistk = .;
+    	*(.istack)
+    	. = ALIGN(8);
+    	_eistk = .;
+    } >RAM
     
+    .mstack :
+    {
+    	. = _eistk;
+   		. = ALIGN(8);
+    	_smstk = .;
+    	*(.mstack)
+    	. = ALIGN(8);
+    	_emstk = .;
+    } >RAM
     
-   
+    .sysstack :
+    {
+    	. = _emstk;
+    	. = ALIGN(8);
+    	_ssstk = .;
+    	*(.sysstack)
+    	. = ALIGN(8);
+    	_esstk = .;
+    } > RAM
+
+    sys_stack_top = _estack;
+    sys_stack_limit = sys_stack_top - SIZEOF(.sysstack);
+    main_stack_top = sys_stack_limit;
+    main_stack_limit = main_stack_top - SIZEOF(.mstack);    
+    idle_stack_top = main_stack_limit;
+    idle_stack_limit = idle_stack_top - SIZEOF(.istack);
+    mbarrier_upperLimit = idle_stack_limit;
+    mbarrier_lowerLimit = mbarrier_upperLimit - SIZEOF(.mbarrier);
+    
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there
     using the "section" attribute */

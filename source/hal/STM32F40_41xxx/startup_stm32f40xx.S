@@ -75,14 +75,14 @@ defined in linker script */
 .globl mbarrier_lowerLimit
 
 #ifdef __HEAP_SIZE
-.globl Heap_Size, __HEAP_SIZE
+.equ Heap_Size, __HEAP_SIZE
 #else
 .equ Heap_Size, 0x8000
 #endif
 
 # Set Main Stack Size (Default Size = 1K)**
 #ifdef __MAIN_STACK_SIZE
-.equ Main_Stack_Size, __MSTACK_SIZE
+.equ Main_Stack_Size, __MAIN_STACK_SIZE
 #else
 .equ Main_Stack_Size, 0x800
 #endif
@@ -90,7 +90,7 @@ defined in linker script */
 
 # set System Stack (ISR / Sv Mode / Sys Init) size
 #ifdef __SYS_STACK_SIZE
-.equ Sys_Stack_Size, __SSTACK_SIZE
+.equ Sys_Stack_Size, __SYS_STACK_SIZE
 #else
 .equ Sys_Stack_Size, 0x800
 #endif
@@ -102,39 +102,42 @@ defined in linker script */
 .equ Idle_Stack_Size, 0x400
 #endif
 
-.equ mBarrier_Size, 0x10
+#ifdef __MBARRIER_SIZE
+.equ mBarrier_Size, __MBARRIER_SIZE
+#else
+.equ mBarrier_Size, 0x60
+#endif
 
 
 .section .heap
 heap_base:
 	.align 4
 	.space Heap_Size
-#	.size heap_base, .-heap_base
 heap_limit:
 
 .section .mstack
 .align(4)
 main_stack_limit:
-	.align 4
+	.align 8
 	.space Main_Stack_Size
 main_stack_top:
 
 
 .section .sysstack
 sys_stack_limit:
-	.align 4
+	.align 8
 	.space Sys_Stack_Size
 sys_stack_top:
 
 .section .istack
-isr_stack_limit:
-	.align 4
+idle_stack_limit:
+	.align 8
 	.space Idle_Stack_Size
-isr_stack_top:
+idle_stack_top:
 
 .section .mbarrier
 mbarrier_lowerLimit:
-	.align 4
+	.align 8
 	.space mBarrier_Size
 mbarrier_upperLimit:
 

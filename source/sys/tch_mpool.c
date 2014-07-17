@@ -45,7 +45,7 @@ const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
 tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	tch_mpool_header_t* mp = (tch_mpool_header_t*) pool->pool - 1;
-	tch_memset((uint8_t*)pool->pool,pool->align * pool->align,0);
+	tch_memset((uint8_t*)pool->pool,0,pool->align * pool->align);
 	void* next = NULL;
 	uint8_t* blk = (uint8_t*)pool->pool;
 	uint8_t* end = blk + pool->align * pool->count;
@@ -79,7 +79,7 @@ void* tch_mpool_calloc(tch_mpool_id mpool){
 	tch_mpool_header_t* mp_header = (tch_mpool_header_t*) mpool;
 	void* free = tch_mpool_alloc(mpool);
 	if(free){
-		tch_memset((uint8_t*)free,mp_header->bDef->align,0);
+		tch_memset((uint8_t*)free,0,mp_header->bDef->align);
 	}
 	return free;
 }

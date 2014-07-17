@@ -58,7 +58,7 @@ static tch_thread_ix tch_threadix = {
 const tch_thread_ix* Thread = &tch_threadix;
 
 tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
-	uint32_t* sptop = (uint32_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
+	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 
 	/**
 	 * thread initialize from configuration type
