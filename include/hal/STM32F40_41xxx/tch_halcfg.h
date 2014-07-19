@@ -140,7 +140,6 @@
 
 
 
-#include "tch_memcfg.h"
 #include "stm32f4xx.h"
 
 

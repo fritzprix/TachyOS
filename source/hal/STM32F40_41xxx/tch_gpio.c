@@ -40,6 +40,10 @@ const tch_lld_gpio* tch_gpio_instance = NULL;
 
 tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg){
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
+	if(!gpio->_clkenr){                     /// given GPIO port is not supported in this H/W
+		return NULL;
+	}
+
 }
 
 uint16_t tch_gpio_getPortCount(){
