@@ -20,9 +20,9 @@
 
 
 
-tch_hal tch_hal_instance;
+tch_hal_t tch_hal_instance;
 
-const tch_hal* tch_hal_init(){
+const tch_hal_t* tch_hal_init(){
 	/***
 	 *  initialize clock subsystem
 	 */

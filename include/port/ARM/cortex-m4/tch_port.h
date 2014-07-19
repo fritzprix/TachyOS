@@ -15,8 +15,6 @@
 #ifndef TCHtch_port_H_
 #define TCHtch_port_H_
 
-
-
 #include "tch.h"
 
 
@@ -73,7 +71,7 @@ struct _tch_exc_stack {
 	uint32_t LR14;
 	uint32_t Return;
 	uint32_t xPSR;
-#ifdef FEATURE_HFLOAT
+#ifdef MFEAUTRE_HFLOAT
 	uint32_t S0;
 	uint32_t S1;
 	uint32_t S2;
@@ -105,7 +103,7 @@ struct _tch_thread_context {
 	uint32_t R10;
 	uint32_t R11;
 	uint32_t LR;
-#ifdef FEATURE_HFLOAT
+#ifdef MFEAUTRE_HFLOAT
 	uint32_t S16;
 	uint32_t S17;
 	uint32_t S18;

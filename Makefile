@@ -14,8 +14,11 @@ ifeq ($(CPU),cortex-m4)
 	CPFLAG += -mfpu=fpv4-sp-d16
 endif
 ifeq ($(FPU),HARD)
-	CFLAG += -mfloat-abi=hard
-	CPFLAG += -mfloat-abi=hard
+	CFLAG += -mfloat-abi=softfp
+	CPFLAG += -mfloat-abi=softfp
+	CFLAG += -DMFEAUTRE_HFLOAT
+	CPFLAG += -DMFEAUTRE_HFLOAT
+	
 endif
 ifeq ($(FPU),SOFT)
 	## Soft Float 

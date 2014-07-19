@@ -25,7 +25,7 @@
  */
 typedef void* tch_thread_id;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
-typedef void* (*tch_thread_routine)(void* arg);
+typedef int (*tch_thread_routine)(void* arg);
 
 typedef struct tch_msg{
 	tch_thread_id thread;

@@ -12,10 +12,10 @@
  *      Author: innocentevil
  */
 
+
+#include "tch_port.h"
 #include "tch_kernel.h"
 #include "tch_hal.h"
-#include "tch_portcfg.h"
-#include "tch_port.h"
 #include "core_cm4.h"
 #include "tch_lib.h"
 
@@ -76,7 +76,7 @@ BOOL tch_port_init(){
 	                                                 *
 	                                                 **/
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
-#ifdef FEATURE_HFLOAT
+#ifdef MFEATURE_HFLOAT
 	/***
 	 *   FPU Activation
 	 */
@@ -129,7 +129,7 @@ void tch_port_disableISR(void){
 void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
 			"push {r12}\n"                       ///< save system call result
-#ifdef FEATURE_HFLOAT
+#ifdef MFEAUTRE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
 			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
@@ -137,7 +137,7 @@ void tch_port_switchContext(void* nth,void* cth){
 
 			"ldr sp,[%1]\n"
 			"pop {r4-r11,lr}\n"
-#ifdef FEATURE_HFLOAT
+#ifdef MFEAUTRE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
 			"pop {r1}\n"
@@ -208,6 +208,10 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	exc_sp->R0 = 0;
 	exc_sp->R1 = (uint32_t)th_header;
 	exc_sp->R2 = osOK;
+#ifdef MFEATURE_HFLOAT
+	exc_sp->S0 = 0.1f;
+#endif
+
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	tch_memset((uint8_t*)th_ctx,0,sizeof(tch_thread_context));
 	th_ctx->kRetv = osOK;

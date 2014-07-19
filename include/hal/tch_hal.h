@@ -30,7 +30,7 @@
 #include "tch_gpio.h"
 
 
-struct tch_hal{
+struct tch_hal_t{
 	const tch_lld_gpio*  gpio;
 	const tch_lld_timer* timer;
 	const tch_lld_usart* usart;

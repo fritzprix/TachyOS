@@ -29,7 +29,9 @@ int main(void* arg) {
 	tch* api = (tch*) arg;
 	person* p = new person();
 	api->Mem->free(p);
+	float fVal = 0.1f;
 	while(1){
+		fVal += 0.02f;
 		api->Thread->sleep(1000);
 		classroom* clp = new classroom();
 		delete clp;

@@ -51,7 +51,7 @@ typedef struct _tch_mpool_ix_t tch_mpool_ix;
 typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 
-typedef struct tch_hal tch_hal;
+typedef struct tch_hal_t tch_hal;
 
 
 typedef struct _tch_t {

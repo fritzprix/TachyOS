@@ -18,7 +18,13 @@
 #include "tch.h"
 #include "tch_gpio.h"
 
-typedef uint8_t ioport_t;
+
+typedef enum {GPIO_1,GPIO_2,GPIO_3,GPIO_4,GPIO_5,GPIO_6,GPIO_7,GPIO_8,GPIO_9,GPIO_10,GPIO_11} ioport_Num;
+typedef enum {GPIO_A,GPIO_B} ioport_Alph;
+typedef union {
+	ioport_Num;
+	ioport_Alph;
+} ioport_t;
 typedef struct tch_gpio_handle tch_gpio_handle;
 
 /**
@@ -53,15 +59,6 @@ typedef struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
-	const ioport_t gpioA;
-	const ioport_t gpioB;
-	const ioport_t gpioC;
-	const ioport_t gpioD;
-	const ioport_t gpioE;
-	const ioport_t gpioF;
-	const ioport_t gpioG;
-	const ioport_t gpioH;
-	const ioport_t gpioI;
 	tch_gpio_handle* (*allocIo)(const ioport_t port,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
 	void (*freeIo)(tch_gpio_handle* IoHandle);
 }tch_lld_gpio;

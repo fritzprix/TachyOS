@@ -74,7 +74,7 @@ extern void tch_schedResumeAll(tch_thread_queue* wq);
  */
 extern tchStatus tch_schedCancelTimeout(tch_thread_id thread);
 
-extern void tch_schedTerminate(tch_thread_id thread);
+extern void tch_schedTerminate(tch_thread_id thread, int result);
 
 
 /***

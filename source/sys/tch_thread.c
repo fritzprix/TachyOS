@@ -162,13 +162,13 @@ BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 void __tch_thread_entry(void){
 	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();
 
-#ifdef FEATURE_HFLOAT
+#ifdef MFEAUTRE_HFLOAT
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;
 #endif
 
 	thr_p->t_state = RUNNING;
-	tch_msg* msg = thr_p->t_fn(thr_p->t_arg);
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,0);
+	int result = thr_p->t_fn(thr_p->t_arg);
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 

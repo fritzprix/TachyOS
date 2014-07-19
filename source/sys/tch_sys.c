@@ -28,9 +28,6 @@
 
 static tch_kernel_instance tch_sys_instance;
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
-extern int Sys_Stack_Top asm("sys_stack_top");
-extern int Heap_Base asm("heap_base");
-extern int Heap_Limit asm("heap_limit");
 
 
 /***
@@ -77,6 +74,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = (tch_exc_stack*)tch_port_getThreadSP();
 	tch_thread_header* cth = NULL;
 	tch_thread_header* nth = NULL;
+
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp++;
@@ -102,6 +100,10 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
+		return;
+	case SV_THREAD_TERMINATE:
+		cth = (tch_thread_header*) arg1;
+		tch_schedTerminate((tch_thread_id) cth,arg2);
 		return;
 	case SV_MTX_LOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
@@ -147,10 +149,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			tch_schedReady(nth);                    ///< if there is thread waiting,put it ready state
 		}
 		return;
-	case SV_THREAD_TERMINATE:
-		cth = (tch_thread_header*) arg1;
-		tch_schedTerminate((tch_thread_id) cth);
-		return;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
 		cth->t_sig.match_target = arg1;                         ///< update thread signal pattern
@@ -162,10 +160,10 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_MEM_MALLOC:
-		sp->R0 = Sys->tch_heap_handle->alloc(Sys->tch_heap_handle,arg1);
+		sp->R0 = (uint32_t)Sys->tch_heap_handle->alloc(Sys->tch_heap_handle,arg1);
 		return;
 	case SV_MEM_FREE:
-		sp->R0 = Sys->tch_heap_handle->free(Sys->tch_heap_handle,arg1);
+		sp->R0 = Sys->tch_heap_handle->free(Sys->tch_heap_handle,(void*)arg1);
 		return;
 	}
 }

@@ -35,7 +35,7 @@ typedef struct tch_kernel_instance{
 } tch_kernel_instance;
 
 
-typedef enum tch_thread_state {
+typedef enum tch_thread_state_t {
 	PENDED = 1,                              // state in which thread is created but not started yet (waiting in ready queue)
 	RUNNING = 2,                             // state in which thread occupies cpu
 	READY = 3,
@@ -44,7 +44,7 @@ typedef enum tch_thread_state {
 	TERMINATED = -1                          // state in which thread has finished its task
 } tch_thread_state;
 
-typedef struct tch_signal {
+typedef struct tch_signal_t {
 	int32_t                 match_target;
 	int32_t                 signal;
 	tch_genericList_queue_t sig_wq;
@@ -108,6 +108,19 @@ extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk);
+
+
+extern int Sys_Stack_Top asm("sys_stack_top");
+extern int Heap_Base asm("heap_base");
+extern int Heap_Limit asm("heap_limit");
+
+extern int Main_Stack_Top asm("main_stack_top");
+extern int Main_Stack_Limit asm("main_stack_limit");
+
+extern int Idle_Stack_Top asm("idle_stack_top");
+extern int Idle_Stack_Limit asm("idle_stack_limit");
+
+
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
 
