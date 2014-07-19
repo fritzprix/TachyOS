@@ -45,6 +45,8 @@ LDSCRIPT=$(HAL_VND_HDR_DIR)/ld/flash.ld
 TOOL_CHAIN=arm-none-eabi-
 CC=$(TOOL_CHAIN)gcc
 CPP=$(TOOL_CHAIN)g++
+OBJCP=$(TOOL_CHAIN)objcopy
+SIZEPrt=$(TOOL_CHAIN)size
 
 ifeq ($(INC),)
 	INC = -I$(PORT_HDR_DIR)\

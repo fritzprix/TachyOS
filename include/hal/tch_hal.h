@@ -19,8 +19,6 @@
  * #if !defined (STM32F40_41xxx) && !defined (STM32F427_437xx) && !defined (STM32F429_439xx) && !defined (STM32F401xx)
  *
  */
-#include "tch_halcfg.h"
-
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"
@@ -39,6 +37,9 @@ struct tch_hal_t{
 	const tch_lld_adc*   adc;
 	const tch_lld_rtc*   rtc;
 };
+
+
+#include "tch_halcfg.h"
 
 
 

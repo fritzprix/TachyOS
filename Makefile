@@ -31,13 +31,28 @@ CPFLAG+=\
 
 MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
 
-all : $(TARGET)
+TARGET_SIZE = $(TARGET:%.elf=%.siz)
+TARGET_FLASH = $(TARGET:%.elf=%.hex) 
+
+all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE)  
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
 	$(CC) -o $@ $(CFLAG) $(MMAP_FLAG) $(INC) $(OBJS)
-	
+	@echo ' '
 
+$(TARGET_FLASH): $(TARGET)
+	@echo 'Invoking: Cross ARM GNU Create Flash Image'
+	$(OBJCP) -O ihex $<  $@
+	@echo 'Finished building: $@'
+	@echo ' '
+
+
+$(TARGET_SIZE): $(TARGET)
+	@echo 'Invoking: Cross ARM GNU Print Size'
+	$(SIZEPrt) --format=berkeley $<
+	@echo 'Finished building: $@'
+	@echo 
 
 clean:
 	rm -rf $(OBJS) $(TARGET)
