@@ -48,10 +48,6 @@ extern void* tch_port_makeInitialContext(void* sp,void* initfn);
 
 typedef struct _tch_exc_stack tch_exc_stack;
 typedef struct _tch_thread_context tch_thread_context;
-
-BOOL tch_port_init();
-
-
 typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
 
 
@@ -71,7 +67,7 @@ struct _tch_exc_stack {
 	uint32_t LR14;
 	uint32_t Return;
 	uint32_t xPSR;
-#ifdef MFEAUTRE_HFLOAT
+#if MFEATURE_HFLOAT
 	uint32_t S0;
 	uint32_t S1;
 	uint32_t S2;
@@ -103,7 +99,7 @@ struct _tch_thread_context {
 	uint32_t R10;
 	uint32_t R11;
 	uint32_t LR;
-#ifdef MFEAUTRE_HFLOAT
+#if MFEATURE_HFLOAT
 	uint32_t S16;
 	uint32_t S17;
 	uint32_t S18;

@@ -265,7 +265,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 static inline void tch_schedInitKernelThread(tch_thread_id init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_port_setThreadSP((uint32_t)thr_p->t_ctx);
-#ifdef MFEAUTRE_HFLOAT
+#ifdef MFEATURE_HFLOAT
 		float _force_fctx = 0.1f;
 		_force_fctx += 0.1f;
 #endif

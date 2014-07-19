@@ -1,7 +1,7 @@
 
 
 
-include $(CURDIR)/COMMON.mk
+##include $(CURDIR)/COMMON.mk
 LIB_SRCS=\
            tch_absdata.c\
            tch_lib.c

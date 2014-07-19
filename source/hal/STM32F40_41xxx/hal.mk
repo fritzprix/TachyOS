@@ -1,5 +1,5 @@
 
-include $(CURDIR)/COMMON.mk
+##include $(CURDIR)/COMMON.mk
 .SUFFIXES : .c .o
 HAL_SRCS=\
 system_stm32f4xx.c\

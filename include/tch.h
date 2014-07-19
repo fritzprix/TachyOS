@@ -17,7 +17,6 @@
 #ifndef TCH_H_
 #define TCH_H_
 
-#include <stdint.h>
 #include "tch_TypeDef.h"
 
 
@@ -82,6 +81,8 @@ typedef struct _tch_t {
 #include "sys/tch_ipc.h"
 #include "sys/tch_mem.h"
 #include "lib/tch_uclib.h"
+
+#include "hal/tch_hal.h"
 
 
 

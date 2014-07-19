@@ -16,7 +16,6 @@
 #include "tch_port.h"
 #include "tch_kernel.h"
 #include "tch_hal.h"
-#include "core_cm4.h"
 #include "tch_lib.h"
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -53,7 +52,7 @@ static void __pend_loop(void) __attribute__((naked));
 
 
 
-BOOL tch_port_init(){
+BOOL tch_kernel_initPort(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -129,7 +128,7 @@ void tch_port_disableISR(void){
 void tch_port_switchContext(void* nth,void* cth){
 	asm volatile(
 			"push {r12}\n"                       ///< save system call result
-#ifdef MFEAUTRE_HFLOAT
+#ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
 			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
@@ -137,7 +136,7 @@ void tch_port_switchContext(void* nth,void* cth){
 
 			"ldr sp,[%1]\n"
 			"pop {r4-r11,lr}\n"
-#ifdef MFEAUTRE_HFLOAT
+#ifdef MFEATURE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
 			"pop {r1}\n"
@@ -208,7 +207,7 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	exc_sp->R0 = 0;
 	exc_sp->R1 = (uint32_t)th_header;
 	exc_sp->R2 = osOK;
-#ifdef MFEATURE_HFLOAT
+#if MFEATURE_HFLOAT
 	exc_sp->S0 = 0.1f;
 #endif
 

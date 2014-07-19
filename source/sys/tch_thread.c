@@ -162,7 +162,7 @@ BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 void __tch_thread_entry(void){
 	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();
 
-#ifdef MFEAUTRE_HFLOAT
+#ifdef MFEATURE_HFLOAT
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;
 #endif

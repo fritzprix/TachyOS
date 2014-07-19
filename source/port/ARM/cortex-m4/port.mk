@@ -2,7 +2,7 @@
 PORT_SRCS=tch_port.c
 PORT_OBJS=$(PORT_SRCS:%.c=$(GEN_DIR)/port/%.o)
 
-include $(CURDIR)/COMMON.mk
+##include $(CURDIR)/COMMON.mk
 
 OBJS += $(PORT_OBJS)
 

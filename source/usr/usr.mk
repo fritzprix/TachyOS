@@ -2,7 +2,7 @@
 USR_SRCS=main.c
 USR_OBJS=$(USR_SRCS:%.c=$(GEN_DIR)/usr/%.o)
 
-include $(CURDIR)/COMMON.mk
+##include $(CURDIR)/COMMON.mk
 
 OBJS += $(USR_OBJS)
 

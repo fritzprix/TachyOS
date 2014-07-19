@@ -41,8 +41,6 @@ struct tch_hal_t{
 };
 
 
-const tch_hal* tch_hal_init();
-
 
 
 #endif /* TCH_HAL_H_ */

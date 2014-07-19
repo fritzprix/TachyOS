@@ -13,35 +13,39 @@
  */
 
 
-#include "hal/tch_hal.h"
+#include "hal/tch_gpio.h"
 
 
-typedef struct tch_lld_gpio_prototype {
-	tch_lld_gpio                   pix;
-}tch_lld_gpio_prototype;
-
-
-
-static tch_gpio_handle* tch_gpio_allocIo();
+static tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
+static uint16_t tch_gpio_getPortCount();
+static uint16_t tch_gpio_getPincount(const gpIo_x port);
+static uint32_t tch_gpio_getPinAvailable(const gpIo_x port);
 static void tch_gpio_freeIo(tch_gpio_handle* IoHandle);
 
-__attribute__((section(".data")))  static tch_lld_gpio GPIO_StaticInstance = {
-
-};
-
-const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticInstance;
 
 
 
 
 
+const tch_lld_gpio* tch_gpio_instance = NULL;
 
 
 
 
 
+tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg){
 
-tch_gpio_handle* tch_gpio_allocIo(){
+}
+
+uint16_t tch_gpio_getPortCount(){
+
+}
+
+uint16_t tch_gpio_getPincount(const gpIo_x port){
+
+}
+
+uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 }
 

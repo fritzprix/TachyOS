@@ -108,6 +108,8 @@ extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk);
+extern const tch_hal* tch_kernel_initHAL();
+extern BOOL tch_kernel_initPort();
 
 
 extern int Sys_Stack_Top asm("sys_stack_top");

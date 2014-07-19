@@ -27,7 +27,7 @@
 #define TACHYOS_HAL_PLATFORM_NAME        HW_PLF                     // hw platform name (product name of mcu / mpu ic)
 #define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              // hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
 #define TACHYOS_HAL_MAIN_VERSION          0
-#define TACHYOS_HAR_SUB_VERSION           0
+#define TACHYOS_HAL_SUB_VERSION           0
 
 ///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
 /**
@@ -128,6 +128,17 @@
 #else
 #define HSE_VALUE                SYS_INTERNAL_CLK_FREQ
 #endif
+
+
+#ifndef MFEATURE_GPIO
+#define MFEATURE_GPIO               (6)                     ///  define number of gpio port your platform
+#endif
+
+#ifndef MFEATURE_PINCOUNT_pPORT                            ///   define number of pin count per each gpio port
+#define MFEATURE_PINCOUNT_pPort     (16)
+#endif
+
+
 
 #include "tch_memcfg.h"
 #include "stm32f4xx.h"

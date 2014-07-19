@@ -1,4 +1,4 @@
-include $(CURDIR)/COMMON.mk
+##include $(CURDIR)/COMMON.mk
 
 KERNEL_SRCS=\
 	    tch_ipc.c\

@@ -13,16 +13,14 @@
  */
 
 #include "hal/tch_hal.h"
-#include "tch_halcfg.h"
-#include "system_stm32f4xx.h"
-
+#include "tch_kernel.h"
 
 
 
 
 tch_hal tch_hal_instance;
 
-const tch_hal* tch_hal_init(){
+const tch_hal* tch_kernel_initHAL(){
 	/***
 	 *  initialize clock subsystem
 	 */

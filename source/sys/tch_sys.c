@@ -43,12 +43,12 @@ void tch_kernelInit(void* arg){
 	 *  dynamic binding of dependecy
 	 */
 //	tch_port_setHandlerSP((uint32_t)Sys_Stack_Top);
-	tch_sys_instance.tch_api.Device = tch_hal_init();
+	tch_sys_instance.tch_api.Device = tch_kernel_initHAL();
 	if(!tch_sys_instance.tch_api.Device)
 		tch_kernel_errorHandler(FALSE,osErrorValue);
 
 
-	if(!tch_port_init()){
+	if(!tch_kernel_initPort()){
 		tch_kernel_errorHandler(FALSE,osErrorOS);
 	}
 

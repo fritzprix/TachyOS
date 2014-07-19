@@ -8,6 +8,7 @@
 #ifndef TCH_TYPEDEF_H_
 #define TCH_TYPEDEF_H_
 
+#include <stdint.h>
 
 
 #define NULL                ((void*) 0)

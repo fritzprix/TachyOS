@@ -97,12 +97,12 @@ ifeq ($(CPU),cortex-m4)
 	FLOAT_FLAG += -mfpu=fpv4-sp-d16
 endif
 ifeq ($(FPU),HARD)
-	FLOAT_FLAG += -mfloat-abi=hardfp\
-	              -DMFEATURE_HFLOAT
+	FLOAT_FLAG += -mfloat-abi=hard\
+	              -DMFEATURE_HFLOAT=1
 endif
 ifeq ($(FPU),HALFSOFT)
 	FLOAT_FLAG += -mfloat-abi=softfp\
-	              -DMFEATURE_HFLOAT
+	              -DMFEATURE_HFLOAT=1
 endif
 ifeq ($(FPU),SOFT)
 	FLOAT_FLAG += -mfloat-abi=soft
