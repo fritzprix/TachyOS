@@ -1,30 +1,16 @@
 /*
- * tch_haldesc.h
+ * tch_halobjs.h
  *
- *  Created on: 2014. 7. 19.
+ *  Created on: 2014. 7. 20.
  *      Author: innocentevil
  */
 
-#ifndef TCH_HALDESC_H_
-#define TCH_HALDESC_H_
+#ifndef TCH_HALOBJS_H_
+#define TCH_HALOBJS_H_
 
-////////////////////////////////   Device Description Header   ////////////////////////////////////
+#include "stm32f4xx.h"
+#include "tch_haldesc.h"
 
-#include "tch_halcfg.h"
-
-typedef struct _tch_gpio_descriptor {
-	void*                _hw;
-	uint32_t*            _clkenr;
-	const uint32_t        clkmsk;
-	uint32_t*            _lpclkenr;
-	const uint32_t        lpclkmsk;
-	uint32_t              io_ocpstate;
-}tch_gpio_descriptor;
-
-
-
-
-/////////////////////////////  Platform specific mapping  ////////////////////////////
 __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 		{
 				GPIOA,
@@ -108,5 +94,10 @@ __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 		}
 };
 
+__attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 
-#endif /* TCH_HALDESC_H_ */
+};
+
+
+
+#endif /* TCH_HALOBJS_H_ */

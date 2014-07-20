@@ -39,9 +39,6 @@ struct tch_hal_t{
 };
 
 
-#include "tch_halcfg.h"
-
-
 
 
 #endif /* TCH_HAL_H_ */

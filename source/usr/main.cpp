@@ -29,9 +29,16 @@ int main(void* arg) {
 	tch* api = (tch*) arg;
 	person* p = new person();
 	api->Mem->free(p);
+	tch_gpio_cfg iocfg;
+	api->Device->gpio->initCfg(&iocfg);
+	iocfg.Otype = PushPull;
+	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);
 	float fVal = 0.1f;
 	while(1){
 		fVal += 0.02f;
+		led->out(led,bSet);
+		api->Thread->sleep(1000);
+		led->out(led,bClear);
 		api->Thread->sleep(1000);
 		classroom* clp = new classroom();
 		delete clp;

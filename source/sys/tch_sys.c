@@ -21,6 +21,7 @@
 #include "tch_kernel.h"
 #include "tch_mem.h"
 #include "tch_sched.h"
+#include "tch_halcfg.h"
 
 
 

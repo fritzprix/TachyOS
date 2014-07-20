@@ -16,6 +16,7 @@
 #include "tch_absdata.h"
 #include "tch_port.h"
 #include "tch_sched.h"
+#include "tch_halcfg.h"
 
 
 /* =================  private internal function declaration   ========================== */

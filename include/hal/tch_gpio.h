@@ -31,17 +31,24 @@ typedef struct tch_gpio_handle tch_gpio_handle;
 /**
  * gpio handle interface
  */
+
+typedef enum {Rise,Fall,Both}gpio_evEdge;
+typedef enum {Interrupt,Event}gpio_evType;
 typedef struct tch_gpio_evCfg {
-	enum {Rising,Falling,Both}Edge;
-	enum {Intrrupt,Event}Type;
-	uint8_t GPIO_Evt_Type;
+	gpio_evEdge edge;
+	gpio_evType type;
 }tch_gpio_evCfg;
 
+typedef enum {Out,In,Analog,Function}gpio_mode;
+typedef enum {PushPull,OpenDrain}gpio_otype;
+typedef enum {IoSpeedLow,IoSpeedMid,IoSpeedHigh,IoSpeedVeryHigh}gpio_ospeed;
+typedef enum {Pullup,Pulldown,NoPull}gpio_pupd;
+
 typedef struct tch_gpio_cfg {
-	enum {Out,In,Analog,Function}Mode;
-	enum {PushPull,OpenDrain}Otype;
-	enum {IoSpeedLow,IoSpeedMid,IoSpeedHigh,IoSpeedVeryHigh}OSpeed;
-	enum {Pullup,Pulldown,Float}PuPd;
+	gpio_mode Mode;
+	gpio_otype Otype;
+	gpio_ospeed OSpeed;
+	gpio_pupd PuPd;
 	uint8_t Af;
 }tch_gpio_cfg;
 
@@ -53,16 +60,17 @@ typedef struct tch_gpio_handle {
 	 * @param self handle object
 	 * @param val bit flags value to be written into gpio(s)
 	 */
-	void (*out)(tch_gpio_handle* self,uint16_t pin,tch_bState nstate);
+	void (*out)(tch_gpio_handle* self,tch_bState nstate);
 	tch_bState (*in)(tch_gpio_handle* self);
-	void (*writePort)(tch_gpio_handle* self,uint16_t val);
-	uint16_t (*readPort)(tch_gpio_handle* self);
-	void (*registerIoEvent)(tch_gpio_handle* self,uint16_t pin,tch_IoEventCalback_t callback);
+	void (*registerIoEvent)(tch_gpio_handle* self,tch_IoEventCalback_t callback);
+	void (*unregisterIoEvent)(tch_gpio_handle* self);
+	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout);
 }tch_gpio_handle;
 
 
 typedef struct tch_lld_gpio {
-	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint16_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
+	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
+	void (*initCfg)(tch_gpio_cfg* cfg);
 	uint16_t (*getPortCount)();
 	uint16_t (*getPincount)(const gpIo_x port);
 	uint32_t (*getPinAvailable)(const gpIo_x port);

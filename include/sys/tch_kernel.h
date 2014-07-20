@@ -24,6 +24,7 @@
 #include "lib/tch_absdata.h"
 #include "tch_port.h"
 #include "hal/tch_hal.h"
+#include "tch_halcfg.h"
 #include "tch_mem.h"
 
 /***

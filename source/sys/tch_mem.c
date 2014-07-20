@@ -11,6 +11,7 @@
  *      Author: innocentevil
  */
 #include "tch_kernel.h"
+#include "tch_halcfg.h"
 #include "tch.h"
 
 

@@ -17,8 +17,6 @@
 
 #include "tch.h"
 
-
-
 #define tch_port_setThreadSP(sp)           __set_PSP(sp)
 #define tch_port_getThreadSP()             __get_PSP()
 #define tch_port_setHandlerSP(sp)          __set_MSP(sp)
