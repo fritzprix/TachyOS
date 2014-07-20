@@ -25,24 +25,49 @@ typedef struct classroom {
 	person students[50];
 }classroom;
 
+
+static void onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
+
+
 int main(void* arg) {
 	tch* api = (tch*) arg;
 	person* p = new person();
 	api->Mem->free(p);
 	tch_gpio_cfg iocfg;
+	tch_gpio_evCfg evcfg;
+	evcfg.type = Interrupt;
+	evcfg.edge = Fall;
+
+
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Otype = PushPull;
 	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);
+
+	api->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = In;
+	iocfg.PuPd = Pullup;
+	tch_gpio_handle* btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,NoActOnSleep);
+
+	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
+
+
+
+
 	float fVal = 0.1f;
 	while(1){
 		fVal += 0.02f;
 		led->out(led,bSet);
-		api->Thread->sleep(1000);
+		api->Thread->sleep(100);
 		led->out(led,bClear);
-		api->Thread->sleep(1000);
+		api->Thread->sleep(100);
 		classroom* clp = new classroom();
 		delete clp;
 	}
 	return 0;
+}
+
+uint32_t prscnt = 0;
+void onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
+	prscnt++;
 }
 

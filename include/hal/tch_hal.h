@@ -15,21 +15,23 @@
 #ifndef TCH_HAL_H_
 #define TCH_HAL_H_
 
-/**
- * #if !defined (STM32F40_41xxx) && !defined (STM32F427_437xx) && !defined (STM32F429_439xx) && !defined (STM32F401xx)
- *
- */
+#include "tch_halcfg.h"
+
+
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"
 #include "tch_adc.h"
 #include "tch_rtc.h"
 #include "tch_timer.h"
+#if MFEATURE_GPIO
 #include "tch_gpio.h"
-
+#endif
 
 struct tch_hal_t{
+#if MFEATURE_GPIO
 	const tch_lld_gpio*  gpio;
+#endif
 	const tch_lld_timer* timer;
 	const tch_lld_usart* usart;
 	const tch_lld_spi*   spi;

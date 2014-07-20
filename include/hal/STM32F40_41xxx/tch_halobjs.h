@@ -96,67 +96,83 @@ __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 
 __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI0_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI1_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI2_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI3_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI4_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI9_5_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI9_5_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI9_5_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI9_5_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI9_5_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		},
 		{
-				0,
+				NULL,
+				GENERIC_LIST_QUEUE_INIT,
 				EXTI15_10_IRQn
 		}
 };

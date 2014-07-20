@@ -29,8 +29,9 @@ typedef struct _tch_gpio_descriptor {
 
 
 typedef struct _tch_ioInterrupt_descriptor {
-	uint32_t    io_occp;
-	IRQn_Type   irq;
+	void*                     io_occp;
+	tch_genericList_queue_t   wq;
+	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 
 /////////////////////////////  Platform specific mapping  ////////////////////////////

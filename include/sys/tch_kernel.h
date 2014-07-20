@@ -27,6 +27,10 @@
 #include "tch_halcfg.h"
 #include "tch_mem.h"
 
+
+#define MTX(Sys)          ((tch*)Sys)->Mtx
+
+
 /***
  *  Supervisor call table
  */
@@ -34,6 +38,7 @@ typedef struct tch_kernel_instance{
 	tch                     tch_api;
 	tch_mem_handle*         tch_heap_handle;
 } tch_kernel_instance;
+
 
 
 typedef enum tch_thread_state_t {

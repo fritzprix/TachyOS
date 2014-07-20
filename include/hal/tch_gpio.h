@@ -52,7 +52,7 @@ typedef struct tch_gpio_cfg {
 	uint8_t Af;
 }tch_gpio_cfg;
 
-typedef BOOL (*tch_IoEventCalback_t) (tch_gpio_handle* self,uint16_t pin);
+typedef BOOL (*tch_IoEventCalback_t) (tch_gpio_handle* self,uint8_t pin);
 
 typedef struct tch_gpio_handle {
 	/**
@@ -62,15 +62,16 @@ typedef struct tch_gpio_handle {
 	 */
 	void (*out)(tch_gpio_handle* self,tch_bState nstate);
 	tch_bState (*in)(tch_gpio_handle* self);
-	void (*registerIoEvent)(tch_gpio_handle* self,tch_IoEventCalback_t callback);
-	void (*unregisterIoEvent)(tch_gpio_handle* self);
-	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout);
+	tchStatus (*registerIoEvent)(tch_gpio_handle* self,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback);
+	tchStatus (*unregisterIoEvent)(tch_gpio_handle* self);
+	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout,const tch_gpio_evCfg* cfg);
 }tch_gpio_handle;
 
 
 typedef struct tch_lld_gpio {
 	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
 	void (*initCfg)(tch_gpio_cfg* cfg);
+	void (*initEvCfg)(tch_gpio_evCfg* evcfg);
 	uint16_t (*getPortCount)();
 	uint16_t (*getPincount)(const gpIo_x port);
 	uint32_t (*getPinAvailable)(const gpIo_x port);

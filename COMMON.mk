@@ -11,9 +11,17 @@ include tchConfig.mk
 
 # Tachyos Src Tree Structure
 ROOT_DIR= $(CURDIR)
-GEN_DIR=$(ROOT_DIR)/Debug
-ifeq (%,RELEASE)
+ifeq ($(PUBLISH_TYPE),)
+#	PUBLISH_TYPE=Release
+	PUBLISH_TYPE=Debug
+endif
+ifeq ($(GEN_DIR),)
+	GEN_DIR=$(ROOT_DIR)/Debug
+endif
+
+ifeq ($(PUBLISH_TYPE),Release)
 	GEN_DIR=$(ROOT_DIR)/Release
+	PUBLISH_TYPE=Release
 endif
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/sys
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
@@ -60,6 +68,14 @@ ifeq ($(INC),)
 endif
 
 
+ifeq ($(OPT_FLAG),)
+	OPT_FLAG=-O0 -g3
+ifeq ($(PUBLISH_TYPE),Release)
+	OPT_FLAG=-O3 -g0
+endif
+endif
+
+
 ifeq ($(CFLAG),)
 	CFLAG = -fsigned-char\
 		-ffunction-sections\
@@ -70,8 +86,8 @@ ifeq ($(CFLAG),)
 		-Xlinker\
 		--gc-sections\
 		-T$(LDSCRIPT)\
-		-O0\
-		-g3
+		$(OPT_FLAG)
+		
 endif
 
 ifeq ($(CPFLAG),)
@@ -87,8 +103,7 @@ ifeq ($(CPFLAG),)
 	         -Wall\
 	         -fpermissive\
 	         -T$(LDSCRIPT)\
-	         -O0\
-	         -g3
+	         $(OPT_FLAG)
 endif
 
 

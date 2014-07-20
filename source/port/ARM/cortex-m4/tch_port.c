@@ -18,21 +18,6 @@
 #include "tch_hal.h"
 #include "tch_lib.h"
 
-#define GROUP_PRIOR_Pos                (uint8_t) (7)
-#define SUB_PRIOR_Pos                  (uint8_t) (4)
-#define GROUP_PRIOR(x)                 (uint8_t) ((x & 1) << (GROUP_PRIOR_Pos - SUB_PRIOR_Pos))
-#define SUB_PRIOR(y)                   (uint8_t) ((y & 7))
-
-#define MODE_KERNEL                    (uint32_t)(1 << GROUP_PRIOR_Pos)                                 // execution priority of kernel only supervisor call can interrupt
-#define MODE_USER                      (uint32_t)(0)
-
-#define HANDLER_SVC_PRIOR              (uint32_t)(GROUP_PRIOR(0) | SUB_PRIOR(0))
-#define HANDLER_SYSTICK_PRIOR          (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(1))
-#define HANDLER_HIGH_PRIOR             (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(2))
-#define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
-#define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
-
-
 
 
 #define IDLE_STACK_SIZE            (uint32_t) (1 << 9)
