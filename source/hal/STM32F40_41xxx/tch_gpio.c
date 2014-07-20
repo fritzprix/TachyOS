@@ -138,6 +138,7 @@ tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_c
 		*gpio->_lpclkenr &= ~gpio->lpclkmsk; /// otherwise clear
 	}
 
+
 	switch(cfg->Mode){
 	case Out:
 		ioctrl_regs->MODER |= (GPIO_Mode_OUT << (pin << 1));
