@@ -26,7 +26,7 @@ typedef struct classroom {
 }classroom;
 
 
-static void onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
+static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 
 
 int main(void* arg) {
@@ -67,7 +67,8 @@ int main(void* arg) {
 }
 
 uint32_t prscnt = 0;
-void onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
+BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
 	prscnt++;
+	return TRUE;
 }
 

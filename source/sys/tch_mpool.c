@@ -55,7 +55,7 @@ tch_mpool_id tch_mpool_create(const tch_mpoolDef_t* pool){
 	end = end - pool->align;
 	while(1){
 		next = blk + pool->align;
-		if(next > end) break;
+		if(next > (void*)end) break;
 		*((void**)blk) = next;
 		blk = (uint8_t*)next;
 	}
