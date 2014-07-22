@@ -138,6 +138,14 @@
 #define MFEATURE_PINCOUNT_pPort     (16)
 #endif
 
+#ifndef MFEATURE_DMA
+#define MFEATURE_DMA                (16)
+#endif
+
+#ifndef MFEATURE_DMA_Ch
+#define MFEATURE_DMA_Ch             (8)
+#endif
+
 
 
 #include "stm32f4xx.h"

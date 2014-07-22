@@ -126,38 +126,3 @@ int tch_genericQue_remove(tch_genericList_queue_t* queue,tch_genericList_node_t*
 }
 
 
-
-void tch_genericMemPool_init(tch_generic_ringBuffer* mp,void* bp,uint8_t align,uint32_t len){
-	mp->_bp = bp;
-	mp->balign = align;
-	mp->blastIdx = 0;
-	mp->blenght = len;
-	uint32_t bytelen = mp->balign * mp->blenght;
-	uint8_t* tbp = mp->_bp;
-	while(bytelen--){
-		*tbp++ = 0;
-	}
-	mp->blastIdx = 0;
-}
-
-void* tch_genericMemPool_allcate(tch_generic_ringBuffer* mp){
-	uint32_t searchMaxTry = (mp->blenght >> 2 | 0x01);
-	uint32_t bytelen = mp->balign * mp->blenght;
-	uint32_t idx = mp->blastIdx;
-	while(searchMaxTry--){
-		if(!(idx < bytelen)){
-			idx = 0;
-		}
-		if(mp->bstub.isAvailable((uint8_t*)mp->_bp + idx)){
-			mp->blastIdx = idx;
-			return (uint8_t*) mp->_bp + idx;
-		}
-		idx += mp->balign;
-	}
-	return NULL;
-}
-
-void tch_genericMemPool_free(tch_generic_ringBuffer* mp,void* ins){
-	mp->bstub.onDealloc(ins);
-}
-

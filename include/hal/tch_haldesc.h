@@ -20,9 +20,9 @@
 
 typedef struct _tch_gpio_descriptor {
 	void*                _hw;
-	uint32_t*            _clkenr;
+	volatile uint32_t*   _clkenr;
 	const uint32_t        clkmsk;
-	uint32_t*            _lpclkenr;
+	volatile uint32_t*   _lpclkenr;
 	const uint32_t        lpclkmsk;
 	uint32_t              io_ocpstate;
 }tch_gpio_descriptor;
@@ -33,6 +33,27 @@ typedef struct _tch_ioInterrupt_descriptor {
 	tch_genericList_queue_t   wq;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
+
+
+/**
+ * 	DMA_Stream_TypeDef* _hw;
+	uint16_t             status;
+	volatile uint32_t*  _isr;
+	volatile uint32_t*  _icr;
+	const uint32_t       ipos;
+	IRQn_Type            irq;
+ */
+typedef struct _tch_dma_descriptor {
+	void*               _hw;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpcklmsk;
+	volatile uint32_t*  _isr;
+	volatile uint32_t*  _icr;
+	uint32_t             ipos;
+	IRQn_Type            irq;
+}tch_dma_descriptor;
 
 /////////////////////////////  Platform specific mapping  ////////////////////////////
 
