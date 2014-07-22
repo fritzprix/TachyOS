@@ -14,6 +14,6 @@ OBJS += $(LIB_OBJS)
 $(GEN_DIR)/lib/%.o:$(LIB_SRC_DIR)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
-	$(CC) $< -c $(CFLAG) $(INC) -o $@
+	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '

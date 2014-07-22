@@ -12,8 +12,8 @@ include tchConfig.mk
 # Tachyos Src Tree Structure
 ROOT_DIR= $(CURDIR)
 ifeq ($(PUBLISH_TYPE),)
-#	PUBLISH_TYPE=Release
-	PUBLISH_TYPE=Debug
+	PUBLISH_TYPE=Release
+#	PUBLISH_TYPE=Debug
 endif
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/Debug
@@ -71,10 +71,13 @@ endif
 ifeq ($(OPT_FLAG),)
 	OPT_FLAG=-O0 -g3
 ifeq ($(PUBLISH_TYPE),Release)
-	OPT_FLAG=-O3 -g0
+	OPT_FLAG=-O2 -g3
 endif
 endif
 
+ifeq ($(LDFLAG),)
+	LDFLAG=
+endif
 
 ifeq ($(CFLAG),)
 	CFLAG = -fsigned-char\

@@ -43,7 +43,6 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
-//	tch_port_setHandlerSP((uint32_t)Sys_Stack_Top);
 	tch_sys_instance.tch_api.Device = tch_kernel_initHAL();
 	if(!tch_sys_instance.tch_api.Device)
 		tch_kernel_errorHandler(FALSE,osErrorValue);
@@ -68,6 +67,7 @@ void tch_kernelInit(void* arg){
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
+	return;
 
 }
 

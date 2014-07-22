@@ -156,7 +156,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 
 
 int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
-	int result = 0;
+	volatile int result = 0;
 	asm volatile(
 			"svc #0\n"                                // raise sv interrupt
 			"str r0,[%0]" : : "r"(&result) :);        // return from sv interrupt and get result from register #0

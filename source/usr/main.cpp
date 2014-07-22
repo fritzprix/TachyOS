@@ -38,7 +38,6 @@ int main(void* arg) {
 	evcfg.type = Interrupt;
 	evcfg.edge = Fall;
 
-
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Otype = PushPull;
 	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);

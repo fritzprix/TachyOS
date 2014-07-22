@@ -38,7 +38,7 @@ all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
-	$(CC) -o $@ $(CFLAG) $(MMAP_FLAG) $(INC) $(OBJS)
+	$(CC) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(INC) $(OBJS)
 	@echo ' '
 
 $(TARGET_FLASH): $(TARGET)
