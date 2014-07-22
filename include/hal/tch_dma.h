@@ -49,6 +49,7 @@
 
 
 typedef uint8_t dma_t;
+typedef struct tch_dma_ix_t tch_dma_ix;
 typedef struct tch_dma_handle_t tch_dma_handle;
 typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
 typedef struct _dma_cfg_t tch_dma_cfg;
@@ -73,6 +74,10 @@ typedef enum {
 	FlowCtrlDMA,FlowCtrlPeriph
 } tch_Dma_FlowCtrl;
 
+typedef enum {
+	VeryHigh,High,Mid,Low
+}tch_Dma_Priority;
+
 
 struct tch_dma_handle_t{
 	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size);
@@ -83,29 +88,25 @@ struct tch_dma_handle_t{
 	void (*close)(tch_dma_handle* self);
 };
 
-struct tch_dma_ix {
+struct tch_dma_ix_t {
 	void (*initCfg)(tch_dma_cfg* cfg);
 	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
 };
 
 struct _dma_cfg_t {
-	uint8_t DMA_Ch;
-	tch_Dma_BufferType BufferType;
-	tch_Dma_BurstSize mem_burst;
-	tch_Dma_BurstSize periph_burst;
-	tch_Dma_dalign mAlign;
-	tch_Dma_dalign pAlign;
-
-	uint8_t DMA_BufferMode;
-	uint8_t DMA_MBurst;
-	uint8_t DMA_PBurst;
-	uint8_t DMA_Prior;
-	uint8_t DMA_MDataAlign;
-	uint8_t DMA_PDataAlign;
-	uint8_t DMA_Minc;
-	uint8_t DMA_Pinc;
-	uint8_t DMA_Dir;
-	uint8_t DMA_FlowControl;
+	uint8_t              Ch;
+	tch_Dma_BufferType   BufferType;
+	tch_Dma_Dir          Dir;
+	tch_Dma_Priority     Priority
+	tch_Dma_FlowCtrl     FlowCtrl;
+	tch_Dma_BurstSize    mBurstSize;
+	tch_Dma_BurstSize    pBurstSize;
+	tch_Dma_dalign       mAlign;
+	tch_Dma_dalign       pAlign;
+	BOOL                 mInc;
+	BOOL                 pInc;
 };
+
+extern const tch_dma_ix* Dma;
 
 #endif /* TCH_DMA_H_ */

@@ -189,7 +189,7 @@ __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_
 	uint32_t             ipos;
 	IRQn_Type            irq;
  */
-static tch_dma_descriptor DMA_HWs[] ={
+__attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		{
 				DMA1_Stream0,
 				&RCC->AHB1ENR,
@@ -202,103 +202,169 @@ static tch_dma_descriptor DMA_HWs[] ={
 				DMA1_Stream0_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream1,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
 				&DMA1->LISR,
 				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				6,
+				DMA1_Stream1_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream2,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
 				&DMA1->LISR,
 				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				16,
+				DMA1_Stream2_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream3,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
 				&DMA1->LISR,
 				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				22,
+				DMA1_Stream3_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream4,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
+				&DMA1->HISR,
+				&DMA1->HIFCR,
 				0,
-				DMA1_Stream0_IRQn
+				DMA1_Stream4_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream5,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				&DMA1->HISR,
+				&DMA1->HIFCR,
+				6,
+				DMA1_Stream5_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream6,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				&DMA1->HISR,
+				&DMA1->HIFCR,
+				16,
+				DMA1_Stream6_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA1_Stream7,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
-				0,
-				DMA1_Stream0_IRQn
+				&DMA1->HISR,
+				&DMA1->HIFCR,
+				22,
+				DMA1_Stream7_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA2_Stream0,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
+				&DMA2->LISR,
+				&DMA2->LIFCR,
 				0,
-				DMA1_Stream0_IRQn
+				DMA2_Stream0_IRQn
 		},
 		{
-				DMA1_Stream0,
+				DMA2_Stream1,
 				&RCC->AHB1ENR,
-				RCC_AHB1ENR_DMA1EN,
+				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_DMA1LPEN,
-				&DMA1->LISR,
-				&DMA1->LIFCR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->LISR,
+				&DMA2->LIFCR,
+				6,
+				DMA2_Stream1_IRQn
+		},
+		{
+				DMA2_Stream2,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->LISR,
+				&DMA2->LIFCR,
+				16,
+				DMA2_Stream2_IRQn
+		},
+		{
+				DMA2_Stream3,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->LISR,
+				&DMA2->LIFCR,
+				22,
+				DMA2_Stream3_IRQn
+		},
+		{
+				DMA2_Stream4,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->HISR,
+				&DMA2->HIFCR,
 				0,
-				DMA1_Stream0_IRQn
+				DMA2_Stream4_IRQn
+		},
+		{
+				DMA2_Stream5,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->HISR,
+				&DMA2->HIFCR,
+				6,
+				DMA2_Stream5_IRQn
+		},
+		{
+				DMA2_Stream6,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->HISR,
+				&DMA2->HIFCR,
+				16,
+				DMA2_Stream6_IRQn
+		},
+		{
+				DMA2_Stream7,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_DMA2EN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_DMA2LPEN,
+				&DMA2->HISR,
+				&DMA2->HIFCR,
+				22,
+				DMA2_Stream7_IRQn
 		}
 };
 

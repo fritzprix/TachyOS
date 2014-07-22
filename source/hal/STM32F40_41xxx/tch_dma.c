@@ -90,6 +90,13 @@
 		                                        DMA_FLAG_EvDME)
 
 
+typedef struct tch_dma_manager_t {
+	tch_dma_ix                 _pix;
+	uint8_t                    occp_state[2];
+	uint8_t                    lpoccp_state[2];
+}tch_dma_manager;
+
+
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
 
@@ -102,12 +109,28 @@ static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,
 static void tch_dma_close(tch_dma_handle* self);
 
 
+__attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
+		{
+				tch_dma_initCfg,
+				tch_dma_openStream
+		},
+		{0},
+		{0}
+};
+
+const tch_dma_ix* Dma = (tch_dma_ix*) &DMA_Manager;
 
 
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg){
+	cfg->Ch  = 0;
+	cfg->BufferType = NormalBuffType;
+	cfg->Dir = MemToPeriph;
+	cfg->FlowCtrl = FlowCtrlDMA;
+	cfg->Priority = Mid;
 
 }
+
 
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg){
 
