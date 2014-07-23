@@ -36,16 +36,10 @@ PORT_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)/$(CPU)
 PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_PLF)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
-
-
-USR_HDR_DIR=$(ROOT_DIR)/include/usr
-
-
-
-#---will be deprecated---
 LIB_HDR_DIR=$(ROOT_DIR)/include/lib
 LIB_SRC_DIR=$(ROOT_DIR)/source/lib
 
+USR_HDR_DIR=$(ROOT_DIR)/include/usr
 
 
 
@@ -71,7 +65,7 @@ endif
 ifeq ($(OPT_FLAG),)
 	OPT_FLAG=-O0 -g3
 ifeq ($(PUBLISH_TYPE),Release)
-	OPT_FLAG=-O2 -g3
+	OPT_FLAG=-O2 -g
 endif
 endif
 
