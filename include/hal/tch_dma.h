@@ -55,28 +55,42 @@ typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
 typedef struct _dma_cfg_t tch_dma_cfg;
 
 typedef enum {
-	NormalBuffType,DoubleBuffType,CircularBuffType
-} tch_Dma_BufferType;
+	tch_DmaBuffType_Normal,
+	tch_DmaBuffType_Double,
+	tch_DmaBuffType_Circular
+} tch_DmaBuffType;
 
 typedef enum {
-	MemToMem,MemToPeriph,PeriphToMem
-} tch_Dma_Dir;
+	tch_DmaDir_MemToMem,
+	tch_DmaDir_MemToPeriph,
+	tch_DmaDir_PeriphToMem
+} tch_DmaDir;
 
 typedef enum {
-	BurstSingle,Burst2,Burst4,Burst8,Burst16
-} tch_Dma_BurstSize;
+	tch_DmaBurstSize_1,
+	tch_DmaBurstSize_2,
+	tch_DmaBurstSize_4,
+	tch_DmaBurstSize_8,
+	tch_DmaBurstSize_16
+} tch_DmaBurstSize;
 
 typedef enum {
-	dalignByte = (uint8_t) 0,dalignHword = (uint8_t) 1,dalignWord = (uint8_t)2
-} tch_Dma_dalign;
+	tch_DmaAlign_Byte,
+	tch_DmaAlign_Hword,
+	tch_DmaAlign_dalignWord
+} tch_DmaAlign;
 
 typedef enum {
-	FlowCtrlDMA,FlowCtrlPeriph
-} tch_Dma_FlowCtrl;
+	tch_DmaFlowCtrl_DMA,
+	tch_DmaFlowCtrl_Periph
+} tch_DmaFlowCtrl;
 
 typedef enum {
-	VeryHigh,High,Mid,Low
-}tch_Dma_Priority;
+	tch_DmaPriority_Low,
+	tch_DmaPriority_Mid,
+	tch_DmaPriority_High,
+	tch_DmaPriority_VHigh
+}tch_DmaPriority;
 
 
 struct tch_dma_handle_t{
@@ -93,16 +107,17 @@ struct tch_dma_ix_t {
 	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
 };
 
+
 struct _dma_cfg_t {
-	uint8_t              Ch;
-	tch_Dma_BufferType   BufferType;
-	tch_Dma_Dir          Dir;
-	tch_Dma_Priority     Priority
-	tch_Dma_FlowCtrl     FlowCtrl;
-	tch_Dma_BurstSize    mBurstSize;
-	tch_Dma_BurstSize    pBurstSize;
-	tch_Dma_dalign       mAlign;
-	tch_Dma_dalign       pAlign;
+	uint8_t                Ch;
+	tch_DmaBuffType        BufferType;
+	tch_DmaDir             Dir;
+	tch_DmaPriority        Priority;
+	tch_DmaFlowCtrl        FlowCtrl;
+	tch_DmaBurstSize       mBurstSize;
+	tch_DmaBurstSize       pBurstSize;
+	tch_DmaAlign           mAlign;
+	tch_DmaAlign           pAlign;
 	BOOL                 mInc;
 	BOOL                 pInc;
 };

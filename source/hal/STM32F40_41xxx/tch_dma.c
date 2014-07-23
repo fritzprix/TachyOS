@@ -123,12 +123,6 @@ const tch_dma_ix* Dma = (tch_dma_ix*) &DMA_Manager;
 
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg){
-	cfg->Ch  = 0;
-	cfg->BufferType = NormalBuffType;
-	cfg->Dir = MemToPeriph;
-	cfg->FlowCtrl = FlowCtrlDMA;
-	cfg->Priority = Mid;
-
 }
 
 

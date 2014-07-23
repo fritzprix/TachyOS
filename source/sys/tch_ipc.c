@@ -12,8 +12,9 @@
  *      Author: innocentevil
  */
 
+#include <stdlib.h>
+
 #include "tch_kernel.h"
-#include "tch_lib.h"
 
 
 
@@ -74,7 +75,7 @@ const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
-	tch_memset((uint8_t*)que->pool,0,que->item_sz * que->queue_sz);
+	memset(que->pool,0,que->item_sz * que->queue_sz);
 	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
 	msgq_header->pidx = 0;
 	msgq_header->gidx = 0;
@@ -158,7 +159,7 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 
 
 tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
-	tch_memset((uint8_t*)que->pool,0,que->item_sz * que->queue_sz);
+	memset(que->pool,0,que->item_sz * que->queue_sz);
 	tch_mailq_instance* mailq = (tch_mailq_instance*) que->pool - 1;
 	mailq->bfree = que->pool;
 	mailq->bend = ((uint8_t*) que->pool + que->item_sz * que->queue_sz);          ///< assign end of pool
@@ -219,7 +220,7 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 		mailq->bfree = *free;
 	}
 	tch_port_kernel_unlock();
-	tch_memset((uint8_t*)free,0,mailq->mailqDef->item_sz);
+	memset(free,0,mailq->mailqDef->item_sz);
 	return free;
 }
 

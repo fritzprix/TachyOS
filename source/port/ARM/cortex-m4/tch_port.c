@@ -12,11 +12,12 @@
  *      Author: innocentevil
  */
 
+#include <stdio.h>
+
 
 #include "tch_port.h"
 #include "tch_kernel.h"
 #include "tch_hal.h"
-#include "tch_lib.h"
 
 
 
@@ -169,7 +170,7 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
-	tch_memset((uint8_t*) org_sp,0,sizeof(tch_exc_stack));
+	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;
@@ -186,7 +187,7 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
  */
 void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;
-	tch_memset((uint8_t*)exc_sp,0,sizeof(tch_exc_stack));
+	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = 0;
@@ -197,7 +198,7 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 #endif
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	tch_memset((uint8_t*)th_ctx,0,sizeof(tch_thread_context));
+	memset(th_ctx,0,sizeof(tch_thread_context));
 	th_ctx->kRetv = osOK;
 	return (uint32_t*) th_ctx;                                    ///<
 

@@ -74,7 +74,12 @@ SECTIONS
 	. = ALIGN(4);
     } >FLASH
  
-    
+     .ARM.exidx :
+    {
+    	_sexidx = .;
+    	*(.ARM.exidx)
+    	_eexidx = .;
+    } >FLASH
     /* the program code is stored in the .text section, which goes to Flash */
     .text :
     {
@@ -88,10 +93,12 @@ SECTIONS
         *(.glue_7t)
 
 	    . = ALIGN(4);
-   	 _etext = .;
 	    /* This is used by the startup in order to initialize the .data secion */
-   	 _sidata = _etext;
+	    _sidata = .;
     } >FLASH
+    
+   
+    _etext = .;
     
     /* MEMORY_ARRAY */
     .ROarraySection :
@@ -115,7 +122,7 @@ SECTIONS
 
 	    . = ALIGN(4);
 	    /* This is used by the startup in order to initialize the .data secion */
-   	 _edata = . ;
+	    _edata = . ;
     } >RAM
     
     

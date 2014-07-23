@@ -11,7 +11,6 @@
 #include <stdint.h>
 
 
-#define NULL                ((void*) 0)
 
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.

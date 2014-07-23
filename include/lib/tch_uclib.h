@@ -44,12 +44,14 @@ typedef struct _tch_ctype_ix_t {
 
 }tch_ctype_ix;
 
-struct _tch_ustdl_ix_t {
+typedef struct _tch_ustdl_ix_t {
 	const tch_stdio_ix* stdio;
 	const tch_stdlib_ix* stdlib;
 	const tch_string_ix* string;
 	const tch_math_ix* math;
 	const tch_ctype_ix* ctype;
-};
+}tch_ulib_ix;
+
+extern const tch_ulib_ix* uLib;
 
 #endif /* TCH_USTDLIB_H_ */

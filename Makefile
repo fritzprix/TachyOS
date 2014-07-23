@@ -17,8 +17,9 @@ include $(USR_SRC_DIR)/usr.mk
 TARGET=$(GEN_DIR)/tachyos.elf
 
 
-LIBS=
-LIB_DIR=
+LIBS=-L'C/Program Files/GNU Tools ARM Embedded/4.8 2014q2/arm-none-eabi\lib'
+LIB_DIR=-lc
+
 CFLAG+=\
        -D$(HW_PLF)\
        -mcpu=$(CPU)\
@@ -28,6 +29,12 @@ CPFLAG+=\
        -D$(HW_PLF)\
        -mcpu=$(CPU)\
        -m$(INSTR)
+       
+ifneq ($(LIBS),)
+	CFLAG+=--specs=nano.specs\
+			-D__NEWLIB__\
+			-D__CODE_RED
+endif
 
 MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
 
@@ -38,7 +45,7 @@ all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
-	$(CC) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(INC) $(OBJS)
+	$(CC) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
 	@echo ' '
 
 $(TARGET_FLASH): $(TARGET)

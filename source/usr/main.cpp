@@ -14,6 +14,7 @@
 
 #include "main.h"
 #include "tch.h"
+#include <stdio.h>
 
 
 typedef struct person{
@@ -37,6 +38,8 @@ int main(void* arg) {
 	tch_gpio_evCfg evcfg;
 	evcfg.type = Interrupt;
 	evcfg.edge = Fall;
+
+	printf("Hhis is address %d\n",(int)&iocfg);
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Otype = PushPull;

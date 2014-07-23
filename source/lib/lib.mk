@@ -4,7 +4,7 @@
 ##include $(CURDIR)/COMMON.mk
 LIB_SRCS=\
            tch_absdata.c\
-           tch_lib.c
+           tch_clibsysc.c
            
 LIB_OBJS=$(LIB_SRCS:%.c=$(GEN_DIR)/lib/%.o)
 
