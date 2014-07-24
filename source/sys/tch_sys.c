@@ -22,6 +22,7 @@
 #include "tch_mem.h"
 #include "tch_sched.h"
 #include "tch_halcfg.h"
+#include "tch_port.h"
 
 
 
@@ -182,5 +183,21 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 	}
 }
 
+
+void tch_kernel_faulthandle(int fault){
+	switch(fault){
+	case FAULT_TYPE_BUS:
+		break;
+	case FAULT_TYPE_HARD:
+		break;
+	case FAULT_TYPE_MEM:
+		break;
+	case FAULT_TYPE_USG:
+		break;
+	}
+	while(1){
+		;
+	}
+}
 
 

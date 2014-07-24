@@ -17,8 +17,10 @@ include $(USR_SRC_DIR)/usr.mk
 TARGET=$(GEN_DIR)/tachyos.elf
 
 
-LIBS=-L'C/Program Files/GNU Tools ARM Embedded/4.8 2014q2/arm-none-eabi\lib'
-LIB_DIR=-lc
+LIBS=-L'C/Program Files/GNU Tools ARM Embedded/4.8 2014q2/arm-none-eabi/lib/armv7-m/'
+LIB_DIR=-lnosys\
+        -lgcc\
+        -lm\
 
 CFLAG+=\
        -D$(HW_PLF)\
@@ -31,9 +33,7 @@ CPFLAG+=\
        -m$(INSTR)
        
 ifneq ($(LIBS),)
-	CFLAG+=--specs=nano.specs\
-			-D__NEWLIB__\
-			-D__CODE_RED
+	CFLAG+=--specs=nano.specs
 endif
 
 MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)

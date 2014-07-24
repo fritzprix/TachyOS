@@ -92,9 +92,8 @@ ifeq ($(CPFLAG),)
 	         -mlong-calls\
 	         -ffunction-sections\
 	         -ffreestanding\
-	         -nodefaultlibs\
-	         -nostdlib\
 	         -O\
+	         -nostdlib\
 	         -fno-rtti\
 	         -fno-exceptions\
 	         -Wall\

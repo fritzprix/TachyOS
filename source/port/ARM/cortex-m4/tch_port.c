@@ -227,3 +227,20 @@ void PendSV_Handler(void){
 	__set_PSP((uint32_t)org_sp);                                       // pop manipulated stack
 	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
+
+
+void HardFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_HARD);
+}
+
+void MemManage_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_MEM);
+}
+
+void BusFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_BUS);
+}
+
+void UsageFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_USG);
+}

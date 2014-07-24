@@ -37,6 +37,13 @@
 #define tch_port_setHandlerSP(sp)          __set_MSP(sp)
 #define tch_port_getHandlerSP()            __get_MSP()
 
+#define FAULT_TYPE_HARD                    (-4)
+#define FAULT_TYPE_MEM                     (-3)
+#define FAULT_TYPE_BUS                     (-2)
+#define FAULT_TYPE_USG                     (-1)
+
+
+extern void tch_kernel_faulthandle(int faulttype);
 
 extern void tch_port_enableSysTick(void);
 extern void tch_port_enableISR(void);

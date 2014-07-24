@@ -73,13 +73,18 @@ SECTIONS
         *(.flashtext)            /* Startup code */
 	. = ALIGN(4);
     } >FLASH
- 
-     .ARM.exidx :
+    
+    .ARM.extab : 
     {
-    	_sexidx = .;
-    	*(.ARM.exidx)
-    	_eexidx = .;
-    } >FLASH
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
+
+    __exidx_start = .;
+    .ARM.exidx :
+    {
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > FLASH
+    __exidx_end = .;
     /* the program code is stored in the .text section, which goes to Flash */
     .text :
     {
