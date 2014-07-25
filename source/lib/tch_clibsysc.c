@@ -15,8 +15,8 @@
 char* __env[1] = {0};
 char** environ = __env;
 
-char* _sbrk_r(void* reent,size_t incr){
-	return Sys->tch_api.Mem->alloc(incr);
+char* _sbrk(int size){
+	return 0;
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
