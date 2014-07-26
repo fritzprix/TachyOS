@@ -17,13 +17,13 @@ include $(USR_SRC_DIR)/usr.mk
 TARGET=$(GEN_DIR)/tachyos.elf
 
 
-LIBS=-L'C/Program Files/GNU Tools ARM Embedded/4.8 2014q2/arm-none-eabi/lib/armv7-m/'
-LIB_DIR=-lnosys\
-        -lgcc\
-        -lm\
+LIBS=-L'C:\Program Files\GNU Tools ARM Embedded\4.8 2014q2\arm-none-eabi\lib\armv7-m\'
+LIB_DIR=-lc_s\
+        -lg_s
 
 CFLAG+=\
        -D$(HW_PLF)\
+       -D__NEWLIB__\
        -mcpu=$(CPU)\
        -m$(INSTR)
 

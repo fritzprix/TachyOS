@@ -33,13 +33,12 @@ static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 int main(void* arg) {
 	tch* api = (tch*) arg;
 	person* p = new person();
-	api->Mem->free(p);
+	delete p;
 	tch_gpio_cfg iocfg;
 	tch_gpio_evCfg evcfg;
 	evcfg.type = Interrupt;
 	evcfg.edge = Fall;
 
-	printf("Hhis is address %d\n",(int)&iocfg);
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Otype = PushPull;

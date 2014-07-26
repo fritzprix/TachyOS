@@ -41,7 +41,7 @@ endif
 ARCH = ARM
 CPU = cortex-m4
 INSTR = thumb
-FPU = HARD
+FPU = HALFSOFT
 HW_VENDOR = "ST Micro"
 HW_PLF = STM32F40_41xxx
 
