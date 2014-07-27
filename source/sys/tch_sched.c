@@ -167,7 +167,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 
 
 tch_thread_header* tch_schedResume(tch_thread_queue* wq){
-	if(!wq->thque.next)
+	if(tch_listIsEmpty(wq))
 		return NULL;
 	tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
 	nth->t_waitQ = NULL;
@@ -186,9 +186,9 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq){
 
 void tch_schedResumeAll(tch_thread_queue* wq){
 	tch_thread_header* nth = NULL;
-	if(!wq->thque.next)
+	if(tch_listIsEmpty(wq))
 		return;
-	while(wq->thque.next){
+	while(!tch_listIsEmpty(wq)){
 		tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
 		nth->t_waitQ = NULL;
 		nth->t_state = READY;
@@ -218,7 +218,7 @@ tchStatus tch_schedCancelTimeout(tch_thread_id thread){
 void tch_kernelSysTick(void){
 	tch_systimeTick++;
 	tch_thread_header* nth = NULL;
-	while(getThreadHeader(tch_pendQue.thque.next)->t_to <= tch_systimeTick){                      ///< Check timeout value
+	while((!tch_listIsEmpty(&tch_pendQue)) && (getThreadHeader(tch_pendQue.thque.next)->t_to <= tch_systimeTick)){                      ///< Check timeout value
 		nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&tch_pendQue);
 		nth->t_state = READY;
 		tch_schedReady(nth);
@@ -227,7 +227,7 @@ void tch_kernelSysTick(void){
 			nth->t_waitQ = NULL;                                         ///< set reference to wait queue to null
 		}
 	}
-	if(tch_readyQue.thque.next && tch_schedIsPreemtable(tch_readyQue.thque.next)){
+	if((!tch_listIsEmpty(&tch_readyQue)) && tch_schedIsPreemtable(tch_readyQue.thque.next)){
 		tch_thread_header* nth = (tch_thread_header*)tch_listDequeue((tch_lnode_t*)&tch_readyQue);
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,tch_currentThread,tch_schedReadyQPolicy);
 		getListNode(nth)->prev = tch_currentThread;
@@ -252,7 +252,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 	tch_thread_id jth = 0;
 	tch_thread_header* cth_p = getThreadHeader(thread);
 	cth_p->t_state = TERMINATED;                          ///< change state of thread to terminated
-	while(cth_p->t_joinQ.next){
+	while(!tch_listIsEmpty(&cth_p->t_joinQ)){
 		jth = (tch_thread_id)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,jth,tch_schedReadyQPolicy);
 		getThreadHeader(jth)->t_ctx->kRetv = result;

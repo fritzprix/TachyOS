@@ -18,10 +18,12 @@
 #include "tch_kernel.h"
 
 void* operator new(size_t size) throw() {
-	return malloc(size);
+	//return malloc(size);
+	return ((tch*)Sys)->Mem->alloc(size);
 }
 void operator delete(void* p){
-	free(p);
+	//free(p);
+	((tch*)Sys)->Mem->free(p);
 }
 
 extern "C" int __aeabi_atexit(void *object,void (*)(void*),void *dso_handle){

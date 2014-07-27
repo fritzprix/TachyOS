@@ -42,6 +42,8 @@ void* tch_listDequeue(tch_lnode_t* lentry){
 	tch_lnode_t* cnode = lentry->next;
 	lentry->next = cnode->next;
 	((tch_lnode_t*)cnode->next)->prev = lentry;
+	if(cnode->next == cnode)
+		lentry->next = lentry;
 	return (void*) cnode;
 }
 

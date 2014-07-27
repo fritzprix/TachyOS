@@ -40,8 +40,9 @@ MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
 
 TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
+TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
-all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE)  
+all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
@@ -53,7 +54,12 @@ $(TARGET_FLASH): $(TARGET)
 	$(OBJCP) -O ihex $<  $@
 	@echo 'Finished building: $@'
 	@echo ' '
-
+	
+$(TARGET_BINARY): $(TARGET)
+	@echo 'Invoking: Cross ARM GNU Create Flash Image'
+	$(OBJCP) -O binary -S $<  $@
+	@echo 'Finished building: $@'
+	@echo ' '
 
 $(TARGET_SIZE): $(TARGET)
 	@echo 'Invoking: Cross ARM GNU Print Size'
@@ -62,4 +68,4 @@ $(TARGET_SIZE): $(TARGET)
 	@echo 
 
 clean:
-	rm -rf $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) 
