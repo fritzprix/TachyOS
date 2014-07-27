@@ -84,8 +84,8 @@ tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
 	thread_p->t_waitQ = NULL;
 	thread_p->t_sig.match_target = thread_p->t_sig.signal = 0;
-	tch_genericQue_Init(&thread_p->t_sig.sig_wq);
-	tch_genericQue_Init(&thread_p->t_joinQ);
+	tch_listInit(&thread_p->t_sig.sig_wq);
+	tch_listInit(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
 
 	return (tch_thread_id) thread_p;

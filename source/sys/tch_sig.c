@@ -42,7 +42,7 @@ int32_t tch_signal_set(tch_thread_id thread,int32_t signals){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	int32_t sig = th_p->t_sig.signal;
 	th_p->t_sig.signal |= signals;
-	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
+	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.next){
 		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t) thread,0);
 		else
@@ -60,7 +60,7 @@ int32_t tch_signal_clear(tch_thread_id thread,int32_t signals){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	int32_t sig = th_p->t_sig.signal;
 	th_p->t_sig.signal &= ~signals;
-	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.entry){
+	if((th_p->t_sig.match_target == th_p->t_sig.signal) && th_p->t_sig.sig_wq.next){
 		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t)thread,0);
 		else

@@ -21,11 +21,11 @@
  *   - Initialize kernel enviroment (init kernel internal objects,
  */
 #include "tch.h"
-#include "lib/tch_absdata.h"
 #include "tch_port.h"
 #include "hal/tch_hal.h"
 #include "tch_halcfg.h"
 #include "tch_mem.h"
+#include "tch_list.h"
 
 
 #define MTX(Sys)          ((tch*)Sys)->Mtx
@@ -53,15 +53,15 @@ typedef enum tch_thread_state_t {
 typedef struct tch_signal_t {
 	int32_t                 match_target;
 	int32_t                 signal;
-	tch_genericList_queue_t sig_wq;
+	tch_lnode_t             sig_wq;
 }tch_signal;
 
 
 typedef struct tch_thread_header {
-	tch_genericList_node_t      t_schedNode;   ///<extends genericlist node class
-	tch_genericList_node_t      t_waitNode;
-	tch_genericList_queue_t     t_joinQ;      ///<thread queue to wait for this thread's termination
-	tch_genericList_queue_t*    t_waitQ;      ///<reference to wait queue in which this thread is waiting
+	tch_lnode_t                 t_schedNode;   ///<extends genericlist node class
+	tch_lnode_t                 t_waitNode;
+	tch_lnode_t                 t_joinQ;      ///<thread queue to wait for this thread's termination
+	tch_lnode_t*                t_waitQ;      ///<reference to wait queue in which this thread is waiting
 	tch_thread_routine          t_fn;         ///<thread function pointer
 	const char*                 t_name;       ///<thread name /* currently not implemented */
 	void*                       t_arg;        ///<thread arg field
@@ -77,7 +77,7 @@ typedef struct tch_thread_header {
 } tch_thread_header   __attribute__((aligned(8)));
 
 typedef struct tch_thread_queue{
-	tch_genericList_queue_t                  thque;
+	tch_lnode_t             thque;
 } tch_thread_queue;
 
 

@@ -64,7 +64,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint32_t                      pMsk;
 	tch_mtx_id                    mtx;
 	tch_mtx                       mtx_hdr;
-	tch_genericList_queue_t       wq;
+	tch_lnode_t                   wq;
 	tch_IoEventCalback_t          cb;
 }tch_gpio_handle_prototype;
 
@@ -311,7 +311,7 @@ void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 	tch_mtx_ix* Mtx = (tch_mtx_ix*)(((tch*) Sys)->Mtx);
 	handle->mtx = Mtx->create(&handle->mtx_hdr);
 	handle->cb = NULL;
-	tch_genericQue_Init(&handle->wq);
+	tch_listInit(&handle->wq);
 }
 
 
@@ -358,7 +358,7 @@ void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 			if(_handle->cb)
 				_handle->cb((tch_gpio_handle*)_handle,_handle->pin);
 			EXTI->PR |= pMsk;
-			if(ioIntObj->wq.entry)
+			if(ioIntObj->wq.next)
 				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIntObj->wq,0);
 		}
 		ext_pr >>= 1;

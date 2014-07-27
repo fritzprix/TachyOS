@@ -10,6 +10,12 @@
 
 #include <stdint-gcc.h>
 
+
+// Static Initializer for List Node
+#define INIT_LIST   {NULL,NULL}
+// Decl for Compare Function for priority queue operation
+#define LIST_CMP_FN(fn) int fn(void* prior,void* post)
+
 typedef struct _tch_lnode_t {
 	void* prev;
 	void* next;

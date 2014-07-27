@@ -79,7 +79,6 @@ ifeq ($(CFLAG),)
 		-fdata-sections\
 		-ffreestanding\
 		-nostartfiles\
-		-nostdlib\
 		-Xlinker\
 		--gc-sections\
 		-T$(LDSCRIPT)\
@@ -93,7 +92,6 @@ ifeq ($(CPFLAG),)
 	         -ffunction-sections\
 	         -ffreestanding\
 	         -O\
-	         -nostdlib\
 	         -fno-rtti\
 	         -fno-exceptions\
 	         -Wall\

@@ -15,7 +15,7 @@
 #ifndef TCH_MTX_H_
 #define TCH_MTX_H_
 
-#include "lib/tch_absdata.h"
+#include "tch_list.h"
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)
 #define getMtxObject(id)              ((tch_mtx*) id)
@@ -26,7 +26,7 @@
 typedef void* tch_mtx_id;
 typedef struct _tch_mtx_t tch_mtx;
 typedef struct _tch_mtx_waitque_t {
-	tch_genericList_queue_t que;
+	tch_lnode_t          que;
 }tch_mtx_waitque;
 
 
