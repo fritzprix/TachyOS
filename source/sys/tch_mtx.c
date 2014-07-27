@@ -39,7 +39,7 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 tch_mtx_id tch_mtx_create(tch_mtx* mtx){
 	mtx->key = MTX_INIT_MARK;
-	tch_genericQue_Init((tch_genericList_queue_t*)&mtx->que);
+	tch_listInit((tch_lnode_t*)&mtx->que);
 	return (tch_mtx_id) mtx;
 }
 

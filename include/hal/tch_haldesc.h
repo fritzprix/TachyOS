@@ -30,7 +30,7 @@ typedef struct _tch_gpio_descriptor {
 
 typedef struct _tch_ioInterrupt_descriptor {
 	void*                     io_occp;
-	tch_genericList_queue_t   wq;
+	tch_lnode_t               wq;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 

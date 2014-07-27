@@ -23,8 +23,8 @@ typedef struct tch_msgq_instance {
 	uint32_t                      gidx;
 	uint32_t                      psize;
 	const tch_msgQueDef_t*        msgDef;
-	tch_genericList_queue_t       msgputWq;
-	tch_genericList_queue_t       msggetWq;
+	tch_lnode_t                   msgputWq;
+	tch_lnode_t                   msggetWq;
 }tch_msgq_instance;
 
 /***
@@ -36,8 +36,8 @@ typedef struct tch_mailq_instance {
 	uint32_t                      psize;
 	void*                         bfree;
 	void*                         bend;
-	tch_genericList_queue_t       mailGetWq;
-	tch_genericList_queue_t       mailAllocWq;
+	tch_lnode_t                   mailGetWq;
+	tch_lnode_t                   mailAllocWq;
 	tch_mailQueDef_t*             mailqDef;
 }tch_mailq_instance;
 
@@ -81,8 +81,8 @@ tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	msgq_header->gidx = 0;
 	msgq_header->psize = 0;
 	msgq_header->msgDef = que;                                                      ///< initialize msgq header
-	tch_genericQue_Init(&msgq_header->msgputWq);                                    ///< initialize wait queue for thread blocked in put function
-	tch_genericQue_Init(&msgq_header->msggetWq);                                    ///< initialize wait queue for thread blocked in get function
+	tch_listInit(&msgq_header->msgputWq);                                    ///< initialize wait queue for thread blocked in put function
+	tch_listInit(&msgq_header->msggetWq);                                    ///< initialize wait queue for thread blocked in get function
 	return (tch_msgQue_id) msgq_header;
 }
 
@@ -178,8 +178,8 @@ tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	mailq->pidx = 0;
 	mailq->psize = 0;
 	mailq->mailqDef = (tch_mailQueDef_t*)que;
-	tch_genericQue_Init(&mailq->mailAllocWq);
-	tch_genericQue_Init(&mailq->mailGetWq);
+	tch_listInit(&mailq->mailAllocWq);
+	tch_listInit(&mailq->mailGetWq);
 	return mailq;
 }
 

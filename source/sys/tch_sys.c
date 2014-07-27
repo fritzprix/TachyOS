@@ -143,9 +143,9 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		}
 		return;
 	case SV_MTX_DESTROY:
-		while(((tch_mtx*)arg1)->que.que.entry){               ///< check waiting thread in mtx entry
-			nth = (tch_thread_header*) tch_genericQue_dequeue((tch_genericList_queue_t*)&((tch_mtx*) arg1)->que);
-			nth = (tch_thread_header*) ((tch_genericList_node_t*) nth - 1);
+		while(!tch_listIsEmpty(&((tch_mtx*)arg1)->que)){               ///< check waiting thread in mtx entry
+			nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&((tch_mtx*) arg1)->que);
+			nth = (tch_thread_header*) ((tch_lnode_t*) nth - 1);
 			nth->t_ctx->kRetv = osErrorResource;
 			nth->t_waitQ = NULL;
 			tch_schedReady(nth);                    ///< if there is thread waiting,put it ready state

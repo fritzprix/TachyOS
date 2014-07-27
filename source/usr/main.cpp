@@ -15,6 +15,7 @@
 #include "main.h"
 #include "tch.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 
 typedef struct person{
@@ -62,7 +63,9 @@ int main(void* arg) {
 		led->out(led,bClear);
 		api->Thread->sleep(100);
 		classroom* clp = new classroom();
+	//	classroom* acls = (classroom*)malloc(sizeof(classroom));
 		delete clp;
+//		free(acls);
 	}
 	return 0;
 }
