@@ -36,8 +36,6 @@ PORT_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)/$(CPU)
 PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_PLF)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
-LIB_HDR_DIR=$(ROOT_DIR)/include/lib
-LIB_SRC_DIR=$(ROOT_DIR)/source/lib
 
 USR_HDR_DIR=$(ROOT_DIR)/include/usr
 
@@ -56,7 +54,6 @@ ifeq ($(INC),)
 	      -I$(HAL_VND_HDR_DIR)\
 	      -I$(HAL_COMMON_HDR_DIR)\
 	      -I$(KERNEL_HDR_DIR)\
-	      -I$(LIB_HDR_DIR)\
 	      -I$(TCH_API_HDR_DIR)\
 	      -I$(USR_HDR_DIR)	      
 endif

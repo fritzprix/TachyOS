@@ -8,3 +8,13 @@
 .settings/language.settings.xml
 
 .project
+
+*.o
+
+*.bin
+
+*.elf
+
+*.hex
+
+*.map

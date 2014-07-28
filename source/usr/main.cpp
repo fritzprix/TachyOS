@@ -30,6 +30,7 @@ typedef struct classroom {
 
 static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
+tch_gpio_handle* btn  = NULL;
 
 int main(void* arg) {
 	tch* api = (tch*) arg;
@@ -49,7 +50,7 @@ int main(void* arg) {
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.In;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	tch_gpio_handle* btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,NoActOnSleep);
+	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,NoActOnSleep);
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
 
@@ -61,7 +62,9 @@ int main(void* arg) {
 		fVal += 0.02f;
 		led->out(led,bSet);
 		api->Thread->sleep(100);
+		led->out(led,bClear);
 		api->Thread->sleep(100);
+		btn->listen(btn,osWaitForever);
 		classroom* clp = new classroom();
 //		classroom* acls = (classroom*)malloc(sizeof(classroom));
 		delete clp;
@@ -73,7 +76,6 @@ int main(void* arg) {
 uint32_t prscnt = 0;
 BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
 	prscnt++;
-	led->out(led,bClear);
 	return TRUE;
 }
 

@@ -96,7 +96,7 @@ typedef struct tch_gpio_handle {
 	tchStatus (*registerIoEvent)(tch_gpio_handle* self,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback);
 	tchStatus (*unregisterIoEvent)(tch_gpio_handle* self);
 	tchStatus (*configure)(tch_gpio_handle* self,const tch_gpio_evCfg* cfg);
-	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout,const tch_gpio_evCfg* cfg);
+	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout);
 }tch_gpio_handle;
 
 

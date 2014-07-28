@@ -73,12 +73,14 @@ BOOL tch_kernel_initPort(){
 
 
 	// set Handler Priority
-	NVIC_EnableIRQ(SysTick_IRQn);
-	NVIC_EnableIRQ(SVCall_IRQn);
-	NVIC_EnableIRQ(PendSV_IRQn);
+
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_SetPriority(SVCall_IRQn,HANDLER_SVC_PRIOR);
 	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
+	NVIC_EnableIRQ(SysTick_IRQn);
+	NVIC_EnableIRQ(SVCall_IRQn);
+	NVIC_EnableIRQ(PendSV_IRQn);
+
 
 	return TRUE;
 }
@@ -170,8 +172,8 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
-	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
+	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;
 	org_sp->R2 = arg2;

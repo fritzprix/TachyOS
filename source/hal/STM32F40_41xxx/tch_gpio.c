@@ -125,7 +125,7 @@ static tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* self);
 static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* self,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback);
 static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* self);
 static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* self,const tch_gpio_cfg* cfg);
-static BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* self,uint32_t timeout,const tch_gpio_evCfg* cfg);
+static BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* self,uint32_t timeout);
 
 /**********************************************************************************************/
 /************************************     private fuctnions   *********************************/
@@ -186,6 +186,7 @@ tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_c
 	instance->pMsk = pMsk;
 	instance->idx = port;
 	instance->pin = pin;
+
 
 	gpio->io_ocpstate |= instance->pMsk;          /// set this pin as occupied
 	GPIO_TypeDef* ioctrl_regs = (GPIO_TypeDef*) gpio->_hw;
@@ -254,10 +255,13 @@ tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* _handle){
 tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback){
 	tch_ioInterrupt_descriptor* ioIrqOjb = &IoInterrupt_HWs[_handle->pin];
 	tchStatus result = osOK;
-
+	if(__get_IPSR()){
+		return osErrorISR;
+	}
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-	if(_handle->cb)
+	if(ioIrqOjb->io_occp)
 		return osErrorResource;
+	tch_listInit(&ioIrqOjb->wq);
 	result = MTX(Sys)->lock(&_handle->mtx_hdr,osWaitForever);
 	_handle->cb = callback;
 	ioIrqOjb->io_occp = _handle;
@@ -269,8 +273,10 @@ tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,con
 
 tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _handle){
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[_handle->pin];
+	if(__get_IPSR()){
+		return osErrorISR;
+	}
 	uint32_t pMsk = (1 << _handle->pin);
-
 	if(ioIrqObj->io_occp != _handle)
 		return osErrorResource;
 	NVIC_DisableIRQ(ioIrqObj->irq);
@@ -280,8 +286,10 @@ tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _handle){
 	EXTI->FTSR &= ~pMsk;
 	EXTI->RTSR &= ~pMsk;
 	_handle->cb = NULL;
+	if(!tch_listIsEmpty(&ioIrqObj->wq)){
+		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIrqObj->wq,0);
+	}
 	ioIrqObj->io_occp = NULL;
-
 	return osOK;
 
 }
@@ -321,18 +329,13 @@ tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,const tch
 	return osOK;
 }
 
-BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* _handle,uint32_t timeout,const tch_gpio_evCfg* cfg){
+BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* _handle,uint32_t timeout){
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[_handle->pin];
 	if(__get_IPSR())
 		return FALSE;
-	if(!ioIrqObj->io_occp){
-		RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-		if(MTX(Sys)->lock(&_handle->mtx_hdr,timeout) != osOK)
-			return FALSE;
-		ioIrqObj->io_occp = _handle;
-		tch_gpio_setIrq(_handle,cfg);
-		MTX(Sys)->unlock(&_handle->mtx_hdr);
-	}
+	if(!ioIrqObj->io_occp)
+		return FALSE;
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ioIrqObj->wq,timeout) == osOK ? TRUE : FALSE;
 }
 
@@ -394,8 +397,8 @@ void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 			if(_handle->cb)
 				_handle->cb((tch_gpio_handle*)_handle,_handle->pin);
 			EXTI->PR |= pMsk;
-			if(ioIntObj->wq.next)
-				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIntObj->wq,0);
+			if(!tch_listIsEmpty(&ioIntObj->wq))
+				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,&ioIntObj->wq,0);
 		}
 		ext_pr >>= 1;
 		pMsk <<= 1;
