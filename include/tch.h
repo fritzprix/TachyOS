@@ -80,8 +80,7 @@ typedef struct _tch_t {
 #include "sys/tch_mpool.h"
 #include "sys/tch_ipc.h"
 #include "sys/tch_mem.h"
-#include "lib/tch_uclib.h"
-
+#include "sys/tch_nclib.h"
 #include "hal/tch_hal.h"
 
 

@@ -75,7 +75,7 @@ caddr_t sbrk(int incr){
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
 	if (heap_end + incr > (uint32_t) &Heap_Limit) {
-		write (1, "Heap and stack collision\n", 25);
+		return NULL;
 	}
 	heap_end += incr;
 	return (caddr_t)prev_heap_end;
@@ -112,7 +112,7 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
 	if (heap_end + incr > (uint32_t) &Heap_Limit) {
-		write (1, "Heap and stack collision\n", 25);
+		return NULL;
 	}
 	heap_end += incr;
 	return prev_heap_end;

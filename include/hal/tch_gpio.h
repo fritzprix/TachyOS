@@ -32,23 +32,54 @@ typedef struct tch_gpio_handle tch_gpio_handle;
  * gpio handle interface
  */
 
-typedef enum {Rise,Fall,Both}gpio_evEdge;
-typedef enum {Interrupt,Event}gpio_evType;
+typedef struct _tch_gpio_ev_edge{
+	const uint8_t Rise;
+	const uint8_t Fall;
+	const uint8_t Both;
+}tch_gpioEvEdge;
+
+typedef struct _tch_gpio_ev_Type{
+	const uint8_t Interrupt;
+	const uint8_t Event;
+}tch_gpioEvType;
+
 typedef struct tch_gpio_evCfg {
-	gpio_evEdge edge;
-	gpio_evType type;
+	uint8_t EvEdge;
+	uint8_t EvType;
 }tch_gpio_evCfg;
 
-typedef enum {Out,In,Analog,Function}gpio_mode;
-typedef enum {PushPull,OpenDrain}gpio_otype;
-typedef enum {IoSpeedLow,IoSpeedMid,IoSpeedHigh,IoSpeedVeryHigh}gpio_ospeed;
-typedef enum {Pullup,Pulldown,NoPull}gpio_pupd;
+
+
+typedef struct _tch_gpio_mode_t {
+	const uint8_t Out;
+	const uint8_t In;
+	const uint8_t Analog;
+	const uint8_t Func;
+}tch_gpioMode;
+
+typedef struct _tch_gpio_otype_t {
+	const uint8_t PushPull;
+	const uint8_t OpenDrain;
+}tch_gpioOtype;
+
+typedef struct _tch_gpio_ospeed_t{
+	const uint8_t Low;
+	const uint8_t Mid;
+	const uint8_t High;
+	const uint8_t VeryHigh;
+}tch_gpioSpeed;
+
+typedef struct _tch_gpio_pupd_t{
+	const uint8_t PullUp;
+	const uint8_t PullDown;
+	const uint8_t NoPull;
+}tch_gpioPuPd;
 
 typedef struct tch_gpio_cfg {
-	gpio_mode Mode;
-	gpio_otype Otype;
-	gpio_ospeed OSpeed;
-	gpio_pupd PuPd;
+	uint8_t Mode;
+	uint8_t Otype;
+	uint8_t Speed;
+	uint8_t PuPd;
 	uint8_t Af;
 }tch_gpio_cfg;
 
@@ -70,6 +101,12 @@ typedef struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
+	tch_gpioMode Mode;
+	tch_gpioOtype Otype;
+	tch_gpioSpeed Speed;
+	tch_gpioPuPd PuPd;
+	tch_gpioEvEdge EvEdeg;
+	tch_gpioEvType EvType;
 	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
 	void (*initCfg)(tch_gpio_cfg* cfg);
 	void (*initEvCfg)(tch_gpio_evCfg* evcfg);

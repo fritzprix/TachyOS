@@ -49,6 +49,40 @@
 		                                 GPIO_PuPd_PU|\
 		                                 GPIO_PuPd_PD)
 
+#define GPIO_EvEdge_Rise               ((uint8_t) 1)
+#define GPIO_EvEdge_Fall               ((uint8_t) 2)
+#define GPIO_EvEdge_Both               ((uint8_t) GPIO_EvEdge_Fall | GPIO_EvEdge_Rise)
+
+
+#define GPIO_EvType_Interrupt          ((uint8_t) 1)
+#define GPIO_EvType_Event              ((uint8_t) 2)
+
+#define INIT_GPIOMODE_TYPE             {GPIO_Mode_OUT,\
+	                                    GPIO_Mode_IN,\
+	                                    GPIO_Mode_AN,\
+	                                    GPIO_Mode_AF}
+
+#define INIT_GPIOOTYPE_TYPE            {GPIO_Otype_PP,\
+	                                    GPIO_Otype_OD}
+
+#define INIT_GPIOSPEED_TYPE            {GPIO_OSpeed_2M,\
+	                                    GPIO_OSpeed_25M,\
+	                                    GPIO_OSpeed_50M,\
+	                                    GPIO_OSpeed_100M}
+
+#define INIT_GPIOPUPD_TYPE             {GPIO_PuPd_PU,\
+	                                    GPIO_PuPd_PD,\
+	                                    GPIO_PuPd_Float}
+
+#define INIT_GPIO_EVEdge_TYPE          {GPIO_EvEdge_Rise,\
+	                                    GPIO_EvEdge_Fall,\
+	                                    GPIO_EvEdge_Both}
+
+
+#define INIT_GPIO_EVType_TYPE          {GPIO_EvType_Interrupt,\
+	                                    GPIO_EvType_Event}
+
+
 
 
 typedef struct tch_gpio_manager_internal_t {
@@ -62,7 +96,6 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       idx;
 	uint8_t                       pin;
 	uint32_t                      pMsk;
-	tch_mtx_id                    mtx;
 	tch_mtx                       mtx_hdr;
 	tch_lnode_t                   wq;
 	tch_IoEventCalback_t          cb;
@@ -101,8 +134,26 @@ static void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle);
 static void tch_gpio_setIrq(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg);
 static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt);
 
+
+
+/**
+ * 	tch_gpioMode Mode;
+	tch_gpioOtype Otype;
+	tch_gpioSpeed Speed;
+	tch_gpioPuPd PuPd;
+	tch_gpioEvEdge EvEdeg;
+	tch_gpioEvType EvType;
+ */
+
 __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
+
 		{
+				INIT_GPIOMODE_TYPE,
+				INIT_GPIOOTYPE_TYPE,
+				INIT_GPIOSPEED_TYPE,
+				INIT_GPIOPUPD_TYPE,
+				INIT_GPIO_EVEdge_TYPE,
+				INIT_GPIO_EVType_TYPE,
 				tch_gpio_allocIo,
 				tch_gpio_initCfg,
 				tch_gpio_initEvCfg,
@@ -155,15 +206,15 @@ tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_c
 void tch_gpio_initCfg(tch_gpio_cfg* cfg){
 
 	cfg->Af = 0;
-	cfg->Mode = GPIO_Mode_IN;
-	cfg->OSpeed = GPIO_OSpeed_2M;
-	cfg->Otype = GPIO_Otype_OD;
-	cfg->PuPd = GPIO_PuPd_Float;
+	cfg->Mode = GPIO_StaticManager._pix.Mode.In;
+	cfg->Speed = GPIO_StaticManager._pix.Speed.Low;
+	cfg->Otype = GPIO_StaticManager._pix.Otype.PushPull;
+	cfg->PuPd = GPIO_StaticManager._pix.PuPd.NoPull;
 }
 
 void tch_gpio_initEvCfg(tch_gpio_evCfg* evcfg){
-	evcfg->edge = Rise;
-	evcfg->type = Interrupt;
+	evcfg->EvEdge = GPIO_StaticManager._pix.EvEdeg.Rise;
+	evcfg->EvType = GPIO_StaticManager._pix.EvType.Interrupt;
 }
 
 
@@ -181,7 +232,7 @@ uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
-	MTX(Sys)->destroy(_handle->mtx);
+	MTX(Sys)->destroy(&_handle->mtx_hdr);
 }
 
 
@@ -207,11 +258,11 @@ tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,con
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	if(_handle->cb)
 		return osErrorResource;
-	result = MTX(Sys)->lock(_handle->mtx,osWaitForever);
+	result = MTX(Sys)->lock(&_handle->mtx_hdr,osWaitForever);
 	_handle->cb = callback;
 	ioIrqOjb->io_occp = _handle;
 	tch_gpio_setIrq(_handle,cfg);
-	result = MTX(Sys)->unlock(_handle->mtx);
+	result = MTX(Sys)->unlock(&_handle->mtx_hdr);
 
 	return result;
 }
@@ -237,48 +288,35 @@ tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _handle){
 
 tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,const tch_gpio_cfg* cfg){
 	GPIO_TypeDef* ioctrl_regs = (GPIO_TypeDef*)GPIO_HWs[_handle->idx]._hw;
+	ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << (_handle->pin << 1));
 	switch(cfg->Mode){
-	case Out:
+	case GPIO_Mode_OUT:
 		ioctrl_regs->MODER |= (GPIO_Mode_OUT << (_handle->pin << 1));
-		if(cfg->Otype == OpenDrain){
+
+		ioctrl_regs->OTYPER &= ~(GPIO_Otype_Msk << _handle->pin);
+		if(cfg->Otype == GPIO_Otype_OD){
 			ioctrl_regs->OTYPER |= (1 << _handle->pin);
 		}else{
 			ioctrl_regs->OTYPER &= ~(0 << _handle->pin);
 		}
-		switch(cfg->OSpeed){
-		case IoSpeedLow:
-			ioctrl_regs->OSPEEDR |= (GPIO_OSpeed_2M << (_handle->pin << 1));
-			break;
-		case IoSpeedMid:
-			ioctrl_regs->OSPEEDR |= (GPIO_OSpeed_25M << (_handle->pin << 1));
-			break;
-		case IoSpeedHigh:
-			ioctrl_regs->OSPEEDR |= (GPIO_OSpeed_50M << (_handle->pin << 1));
-			break;
-		case IoSpeedVeryHigh:
-			ioctrl_regs->OSPEEDR |= (GPIO_OSpeed_100M << (_handle->pin << 1));
-			break;
-		}
+
+		ioctrl_regs->OSPEEDR &= ~(GPIO_OSpeed_Msk << (_handle->pin << 1));
+		ioctrl_regs->OSPEEDR |= (cfg->Speed << (_handle->pin << 1));
 		break;
-	case In:
+	case GPIO_Mode_IN:
 		ioctrl_regs->MODER |= (GPIO_Mode_IN << (_handle->pin << 1));
-		switch(cfg->PuPd){
-		case Pullup:
-			ioctrl_regs->PUPDR |= (GPIO_PuPd_PU << (_handle->pin << 1));
-			break;
-		case NoPull:
-			ioctrl_regs->PUPDR |= (GPIO_PuPd_Float << (_handle->pin << 1));
-			break;
-		case Pulldown:
-			ioctrl_regs->PUPDR |= (GPIO_PuPd_PD << (_handle->pin << 1));
-			break;
-		}
+
+		ioctrl_regs->PUPDR &= ~(GPIO_PuPd_Msk << (_handle->pin << 1));
+		ioctrl_regs->PUPDR |= (cfg->PuPd << (_handle->pin << 1));
 		break;
-	case Analog:
+	case GPIO_Mode_AN:
 		ioctrl_regs->MODER |= (GPIO_Mode_AN << (_handle->pin << 1));
 		break;
-	case Function:
+	case GPIO_Mode_AF:
 		ioctrl_regs->MODER |= (GPIO_Mode_AF << (_handle->pin << 1));
+
+		ioctrl_regs->AFR[_handle->pin / 8] &= ~(0xF << (_handle->pin << 2));
+		ioctrl_regs->AFR[_handle->pin / 8] |= (cfg->Af << (_handle->pin << 2));
 	}
 	return osOK;
 }
@@ -289,11 +327,11 @@ BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* _handle,uint32_t timeout,
 		return FALSE;
 	if(!ioIrqObj->io_occp){
 		RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-		if(MTX(Sys)->lock(_handle->mtx,timeout) != osOK)
+		if(MTX(Sys)->lock(&_handle->mtx_hdr,timeout) != osOK)
 			return FALSE;
 		ioIrqObj->io_occp = _handle;
 		tch_gpio_setIrq(_handle,cfg);
-		MTX(Sys)->unlock(_handle->mtx);
+		MTX(Sys)->unlock(&_handle->mtx_hdr);
 	}
 	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ioIrqObj->wq,timeout) == osOK ? TRUE : FALSE;
 }
@@ -309,7 +347,7 @@ void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 	handle->pMsk = 0;
 
 	tch_mtx_ix* Mtx = (tch_mtx_ix*)(((tch*) Sys)->Mtx);
-	handle->mtx = Mtx->create(&handle->mtx_hdr);
+	Mtx->create(&handle->mtx_hdr);
 	handle->cb = NULL;
 	tch_listInit(&handle->wq);
 }
@@ -317,26 +355,24 @@ void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 
 void tch_gpio_setIrq(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg){
 	tch_ioInterrupt_descriptor* ioIntObj = &IoInterrupt_HWs[_handle->pin];
-	switch(cfg->edge){
-	case Fall:
-		EXTI->FTSR |= _handle->pMsk;
-		break;
-	case Rise:
+	EXTI->RTSR &= ~_handle->pMsk;
+	EXTI->FTSR &= ~_handle->pMsk;
+
+
+	if(cfg->EvEdge & GPIO_EvEdge_Rise){
 		EXTI->RTSR |= _handle->pMsk;
-		break;
-	case Both:
+	}
+	if(cfg->EvEdge & GPIO_EvEdge_Fall){
 		EXTI->FTSR |= _handle->pMsk;
-		EXTI->RTSR |= _handle->pMsk;
-		break;
 	}
 
-	switch(cfg->type){
-	case Event:
+	EXTI->EMR &= ~_handle->pMsk;
+	EXTI->IMR &= ~_handle->pMsk;
+	if(cfg->EvType & GPIO_EvType_Event){
 		EXTI->EMR |= _handle->pMsk;
-		break;
-	case Interrupt:
+	}
+	if(cfg->EvType & GPIO_EvType_Interrupt){
 		EXTI->IMR |= _handle->pMsk;
-		break;
 	}
 	NVIC_SetPriority(ioIntObj->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(ioIntObj->irq);

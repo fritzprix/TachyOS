@@ -1,2 +1,10 @@
 /Debug
 /tachyos.ppm
+
+*.launch
+
+.cproject
+
+.settings/language.settings.xml
+
+.project

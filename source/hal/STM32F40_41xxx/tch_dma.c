@@ -57,7 +57,7 @@
 
 #define DMA_Prior_Pos            (uint8_t) 16
 #define DMA_Prior_Low            (uint8_t) 0
-#define DMA_Prior_Med            (uint8_t) 1
+#define DMA_Prior_Mid            (uint8_t) 1
 #define DMA_Prior_High           (uint8_t) 2
 #define DMA_Prior_VHigh          (uint8_t) 4
 
@@ -89,6 +89,48 @@
 		                                        DMA_FLAG_EvTE |\
 		                                        DMA_FLAG_EvDME)
 
+#define INIT_DMA_BUFFER_TYPE                   {\
+                                                 DMA_BufferMode_Normal,\
+                                                 DMA_BufferMode_Dbl,\
+                                                 DMA_BufferMode_Cir\
+                                               }
+
+#define INIT_DMA_DIR_TYPE                      {\
+	                                             DMA_Dir_PeriphToMem,\
+	                                             DMA_Dir_MemToMem,\
+	                                             DMA_Dir_MemToPeriph\
+                                               }
+
+#define INIT_DMA_PRIORITY_TYPE                 {\
+	                                             DMA_Prior_VHigh,\
+	                                             DMA_Prior_High,\
+	                                             DMA_Prior_Mid,\
+	                                             DMA_Prior_Low\
+                                                }
+
+#define INIT_DMA_BURSTSIZE_TYPE                 {\
+	                                              DMA_Burst_Single,\
+	                                              0,\
+	                                              DMA_Burst_Inc4,\
+	                                              DMA_Burst_Inc8,\
+	                                              DMA_Burst_Inc16\
+                                                }
+
+
+#define INIT_DMA_FLOWCTRL_TYPE                  {\
+	                                              DMA_FlowControl_Periph,\
+	                                              DMA_FlowControl_DMA\
+                                                }
+
+#define INIT_DMA_ALIGN_TYPE                     {\
+	                                              DMA_DataAlign_Byte,\
+	                                              DMA_DataAlign_Hword,\
+	                                              DMA_DataAlign_Word\
+                                                }
+
+
+
+
 
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
@@ -96,6 +138,12 @@ typedef struct tch_dma_manager_t {
 	uint8_t                    lpoccp_state[2];
 }tch_dma_manager;
 
+typedef struct tch_dma_handle_prototype_t{
+	tch_dma_handle             _pix;
+	dma_t                       dma;
+	uint8_t                     ch;
+	tch_mtx                     mtx_head;
+}tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
@@ -109,8 +157,15 @@ static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,
 static void tch_dma_close(tch_dma_handle* self);
 
 
+
 __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 		{
+				INIT_DMA_BUFFER_TYPE,
+				INIT_DMA_DIR_TYPE,
+				INIT_DMA_PRIORITY_TYPE,
+				INIT_DMA_BURSTSIZE_TYPE,
+				INIT_DMA_FLOWCTRL_TYPE,
+				INIT_DMA_ALIGN_TYPE,
 				tch_dma_initCfg,
 				tch_dma_openStream
 		},
@@ -121,13 +176,28 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 const tch_dma_ix* Dma = (tch_dma_ix*) &DMA_Manager;
 
 
-
 static void tch_dma_initCfg(tch_dma_cfg* cfg){
+	cfg->BufferType = Dma->BufferType.Normal;
+	cfg->Ch = 0;
+	cfg->Dir = Dma->Dir.MemToPeriph;
+	cfg->FlowCtrl = Dma->FlowCtrl.DMA;
+	cfg->Priority = Dma->Priority.Normal;
+	cfg->mAlign = Dma->Align.Byte;
+	cfg->pAlign = Dma->Align.Byte;
+	cfg->mInc = FALSE;
+	cfg->pInc = FALSE;
+	cfg->mBurstSize = Dma->BurstSize.Burst1;
+	cfg->pBurstSize = Dma->BurstSize.Burst1;
 }
 
 
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg){
-
+	/// check H/W Occupation
+	if(dma < 8){
+		if(DMA_Manager.occp_state[0] & (1 << dma)) return NULL;
+	}else{
+		if(DMA_Manager.occp_state[1] & (1 << (dma - 8))) return NULL;
+	}
 }
 
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size){

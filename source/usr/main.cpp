@@ -29,7 +29,7 @@ typedef struct classroom {
 
 
 static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
-
+tch_gpio_handle* led  = NULL;
 
 int main(void* arg) {
 	tch* api = (tch*) arg;
@@ -37,17 +37,18 @@ int main(void* arg) {
 	delete p;
 	tch_gpio_cfg iocfg;
 	tch_gpio_evCfg evcfg;
-	evcfg.type = Interrupt;
-	evcfg.edge = Fall;
+	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
+	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
 
 
 	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Otype = PushPull;
-	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);
+	iocfg.Mode = api->Device->gpio->Mode.Out;
+	iocfg.Otype = api->Device->gpio->Otype.PushPull;
+	led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);
 
 	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = In;
-	iocfg.PuPd = Pullup;
+	iocfg.Mode = api->Device->gpio->Mode.In;
+	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
 	tch_gpio_handle* btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,NoActOnSleep);
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
@@ -60,10 +61,9 @@ int main(void* arg) {
 		fVal += 0.02f;
 		led->out(led,bSet);
 		api->Thread->sleep(100);
-		led->out(led,bClear);
 		api->Thread->sleep(100);
 		classroom* clp = new classroom();
-	//	classroom* acls = (classroom*)malloc(sizeof(classroom));
+//		classroom* acls = (classroom*)malloc(sizeof(classroom));
 		delete clp;
 //		free(acls);
 	}
@@ -73,6 +73,7 @@ int main(void* arg) {
 uint32_t prscnt = 0;
 BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
 	prscnt++;
+	led->out(led,bClear);
 	return TRUE;
 }
 

@@ -259,7 +259,6 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 	}
 	tch_currentThread = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tch_currentThread,(uint32_t)cth_p,osOK);
-	///< optional on terminated hook here
 }
 
 
