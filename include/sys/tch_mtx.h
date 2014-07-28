@@ -18,12 +18,11 @@
 #include "tch_list.h"
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)
-#define getMtxObject(id)              ((tch_mtx*) id)
+#define INIT_MTX                      {MTX_INIT_MARK,{INIT_LIST}}
 
 /***
  *  mutex  types
  */
-typedef void* tch_mtx_id;
 typedef struct _tch_mtx_t tch_mtx;
 typedef struct _tch_mtx_waitque_t {
 	tch_lnode_t          que;
@@ -36,10 +35,10 @@ struct _tch_mtx_t {
 };
 
 struct _tch_mutex_ix_t {
-	tch_mtx_id (*create)(tch_mtx* mtx);
-	tchStatus (*lock)(tch_mtx_id mtx,uint32_t timeout);
-	tchStatus (*unlock)(tch_mtx_id mtx);
-	tchStatus (*destroy)(tch_mtx_id mtx);
+	tch_mtx* (*create)(tch_mtx* mtx);
+	tchStatus (*lock)(tch_mtx* mtx,uint32_t timeout);
+	tchStatus (*unlock)(tch_mtx* mtx);
+	tchStatus (*destroy)(tch_mtx* mtx);
 };
 
 

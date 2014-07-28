@@ -1,12 +1,13 @@
 /*
- * tch_ustdlib.h
+ * tch_nclib.h
  *
- *  Created on: 2014. 7. 13.
- *      Author: innocentevil
+ *  Created on: 2014. 7. 27.
+ *      Author: manics99
  */
 
-#ifndef TCH_USTDLIB_H_
-#define TCH_USTDLIB_H_
+#ifndef TCH_NCLIB_H_
+#define TCH_NCLIB_H_
+
 
 #include <stddef.h>
 
@@ -54,4 +55,4 @@ typedef struct _tch_ustdl_ix_t {
 
 extern const tch_ulib_ix* uLib;
 
-#endif /* TCH_USTDLIB_H_ */
+#endif /* TCH_NCLIB_H_ */

@@ -54,43 +54,46 @@ typedef struct tch_dma_handle_t tch_dma_handle;
 typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
 typedef struct _dma_cfg_t tch_dma_cfg;
 
-typedef enum {
-	tch_DmaBuffType_Normal,
-	tch_DmaBuffType_Double,
-	tch_DmaBuffType_Circular
-} tch_DmaBuffType;
 
-typedef enum {
-	tch_DmaDir_MemToMem,
-	tch_DmaDir_MemToPeriph,
-	tch_DmaDir_PeriphToMem
-} tch_DmaDir;
 
-typedef enum {
-	tch_DmaBurstSize_1,
-	tch_DmaBurstSize_2,
-	tch_DmaBurstSize_4,
-	tch_DmaBurstSize_8,
-	tch_DmaBurstSize_16
-} tch_DmaBurstSize;
+typedef struct _tch_dmabuffer_conf_t {
+	const uint8_t Normal;
+	const uint8_t Double;
+	const uint8_t Circular;
+}tch_DmaBufferType;
 
-typedef enum {
-	tch_DmaAlign_Byte,
-	tch_DmaAlign_Hword,
-	tch_DmaAlign_dalignWord
-} tch_DmaAlign;
+typedef struct _tch_dmadir_conf_t{
+	const uint8_t PeriphToMem;
+	const uint8_t MemToMem;
+	const uint8_t MemToPeriph;
+}tch_DmaDir;
 
-typedef enum {
-	tch_DmaFlowCtrl_DMA,
-	tch_DmaFlowCtrl_Periph
-} tch_DmaFlowCtrl;
+typedef struct _tch_dmaburst_size_t{
+	const uint8_t Burst1;
+	const uint8_t Burst2;
+	const uint8_t Burst4;
+	const uint8_t Burst8;
+	const uint8_t Burst16;
+}tch_DmaBurstSize;
 
-typedef enum {
-	tch_DmaPriority_Low,
-	tch_DmaPriority_Mid,
-	tch_DmaPriority_High,
-	tch_DmaPriority_VHigh
+typedef struct _tch_dma_align_t{
+	const uint8_t Byte;
+	const uint8_t Hword;
+	const uint8_t word;
+}tch_DmaAlign;
+
+typedef struct _tch_dma_priority_t{
+	const uint8_t VeryHigh;
+	const uint8_t High;
+	const uint8_t Normal;
+	const uint8_t Low;
 }tch_DmaPriority;
+
+typedef struct _tch_dma_flowctrl_t{
+	const uint8_t Periph;
+	const uint8_t DMA;
+}tch_DmaFlowCtrl;
+
 
 
 struct tch_dma_handle_t{
@@ -103,6 +106,12 @@ struct tch_dma_handle_t{
 };
 
 struct tch_dma_ix_t {
+	const tch_DmaBufferType   BufferType;
+	const tch_DmaDir          Dir;
+	const tch_DmaPriority     Priority;
+	const tch_DmaBurstSize    BurstSize;
+	const tch_DmaFlowCtrl     FlowCtrl;
+	const tch_DmaAlign        Align;
 	void (*initCfg)(tch_dma_cfg* cfg);
 	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
 };
@@ -110,16 +119,16 @@ struct tch_dma_ix_t {
 
 struct _dma_cfg_t {
 	uint8_t                Ch;
-	tch_DmaBuffType        BufferType;
-	tch_DmaDir             Dir;
-	tch_DmaPriority        Priority;
-	tch_DmaFlowCtrl        FlowCtrl;
-	tch_DmaBurstSize       mBurstSize;
-	tch_DmaBurstSize       pBurstSize;
-	tch_DmaAlign           mAlign;
-	tch_DmaAlign           pAlign;
-	BOOL                 mInc;
-	BOOL                 pInc;
+	uint8_t                BufferType;
+	uint8_t                Dir;
+	uint8_t                Priority;
+	uint8_t                FlowCtrl;
+	uint8_t                mBurstSize;
+	uint8_t                pBurstSize;
+	uint8_t                mAlign;
+	uint8_t                pAlign;
+	BOOL                   mInc;
+	BOOL                   pInc;
 };
 
 extern const tch_dma_ix* Dma;
