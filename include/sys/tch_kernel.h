@@ -72,8 +72,8 @@ typedef struct tch_thread_header {
 	uint32_t                    t_svd_prior;
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
-	uint32_t                    t_chks;
 	tch_signal                  t_sig;
+	uint32_t                    t_chks;
 } tch_thread_header   __attribute__((aligned(8)));
 
 typedef struct tch_thread_queue{

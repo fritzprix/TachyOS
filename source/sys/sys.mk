@@ -10,7 +10,8 @@ KERNEL_SRCS=\
 	    tch_thread.c\
 	    tch_vtimer.c\
 	    tch_list.c\
-	    tch_mem.c
+	    tch_mem.c\
+	    tch_clibsysc.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 
