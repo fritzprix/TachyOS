@@ -36,7 +36,7 @@ extern void tch_schedInit(void* arg);
  *   Return true if new thread has higher priority than current one
  *   @param nth : new thread
  */
-extern BOOL tch_schedIsPreemtable(tch_thread_id nth);
+extern BOOL tch_schedIsPreemptable(tch_thread_id nth);
 
 /***.
  *  start new thread

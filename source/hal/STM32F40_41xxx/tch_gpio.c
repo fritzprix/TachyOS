@@ -296,9 +296,9 @@ tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _handle){
 
 tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,const tch_gpio_cfg* cfg){
 	GPIO_TypeDef* ioctrl_regs = (GPIO_TypeDef*)GPIO_HWs[_handle->idx]._hw;
-	ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << (_handle->pin << 1));
+	ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << (_handle->pin << 1));              /// initialize gpio mode
 	switch(cfg->Mode){
-	case GPIO_Mode_OUT:
+	case GPIO_Mode_OUT:             /// gpio configure to output
 		ioctrl_regs->MODER |= (GPIO_Mode_OUT << (_handle->pin << 1));
 
 		ioctrl_regs->OTYPER &= ~(GPIO_Otype_Msk << _handle->pin);

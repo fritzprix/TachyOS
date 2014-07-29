@@ -28,6 +28,10 @@ typedef struct classroom {
 }classroom;
 
 
+tch_thread_id childThread;
+static DECLARE_THREADROUTINE(childthread_routine);
+static DECLARE_THREADSTACK(childthr_stack,1 << 11);
+
 static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
@@ -54,7 +58,14 @@ int main(void* arg) {
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
 
-
+	tch_thread_cfg thcfg;
+	thcfg._t_name = "childthread";
+	thcfg._t_routine = childthread_routine;
+	thcfg._t_stack = childthr_stack;
+	thcfg.t_stackSize = (1 << 11);
+	thcfg.t_proior = Normal;
+	childThread = api->Thread->create(&thcfg,arg);
+	api->Thread->start(childThread);
 
 
 	float fVal = 0.1f;
@@ -65,9 +76,9 @@ int main(void* arg) {
 		led->out(led,bClear);
 		api->Thread->sleep(100);
 		btn->listen(btn,osWaitForever);
-		classroom* clp = new classroom();
+	//	classroom* clp = new classroom();
 //		classroom* acls = (classroom*)malloc(sizeof(classroom));
-		delete clp;
+	//	delete clp;
 //		free(acls);
 	}
 	return 0;
@@ -79,3 +90,19 @@ BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
 	return TRUE;
 }
 
+DECLARE_THREADROUTINE(childthread_routine){
+	tch* api = (tch*) arg;
+	tch_gpio_cfg iocfg;
+	api->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = api->Device->gpio->Mode.Out;
+	iocfg.Otype = api->Device->gpio->Otype.PushPull;
+	iocfg.Speed = api->Device->gpio->Speed.Low;
+	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,ActOnSleep);
+	while(1){
+		led->out(led,bSet);
+		api->Thread->sleep(10);
+		led->out(led,bClear);
+		api->Thread->sleep(10);
+	}
+	return 0;
+}

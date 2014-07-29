@@ -43,7 +43,7 @@ static tch_thread_prior tch_threadGetPriorty();
 
 static void __tch_thread_entry(void);
 
-static tch_thread_ix tch_threadix = {
+__attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadCreate,
 		tch_threadStart,
 		tch_threadTerminate,
@@ -155,6 +155,7 @@ tch_thread_prior tch_threadGetPriorty(){
 BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 	tch_thread_header* th_p = (tch_thread_header*) thrtochk;
 	return th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
+
 }
 
 

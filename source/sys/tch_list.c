@@ -39,6 +39,8 @@ void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(vo
 }
 
 void* tch_listDequeue(tch_lnode_t* lentry){
+	if(tch_listIsEmpty(lentry))
+		return NULL;
 	tch_lnode_t* cnode = lentry->next;
 	lentry->next = cnode->next;
 	((tch_lnode_t*)cnode->next)->prev = lentry;
@@ -61,6 +63,8 @@ void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(tch_listIsEmpty(lentry))
+		return (1 < 0);
 	tch_lnode_t* cnode = lentry->next;
 	while(cnode->next != cnode){
 		if(cnode == item){
@@ -88,6 +92,8 @@ int tch_listSize(tch_lnode_t* lentry){
 }
 
 int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(tch_listIsEmpty(lentry))
+		return (1 < 0);
 	tch_lnode_t* cnode = lentry;
 	while(cnode->next != cnode){
 		cnode = cnode->next;

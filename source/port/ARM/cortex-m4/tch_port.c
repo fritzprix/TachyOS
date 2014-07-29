@@ -13,7 +13,7 @@
  */
 
 #include <stdio.h>
-
+#include <stdlib.h>
 
 #include "tch_port.h"
 #include "tch_kernel.h"
@@ -143,6 +143,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	                                                              *    - redirect kernel routine
 	                                                              **/
 	org_sp--;                                                     // 1. push stack
+	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R12 = ret_val;                                        ///< kthread result is stored in r12
@@ -171,9 +172,9 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
+	tch_port_kernel_lock();
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
-	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;
 	org_sp->R2 = arg2;
@@ -226,7 +227,7 @@ void SVC_Handler(void){
 void PendSV_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
 	tch_exc_stack* org_sp = exsp + 1;
-	__set_PSP((uint32_t)org_sp);                                       // pop manipulated stack
+	__set_PSP((uint32_t)org_sp);                                       // discard stack used to transfer arguements
 	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 

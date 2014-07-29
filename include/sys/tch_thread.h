@@ -16,8 +16,8 @@
 #define TCH_THREAD_H_
 
 
-#define DECLARE_THREADROUTINE(fn)                    void* fn(void* arg)
-#define DECLARE_THREADSTACK(name,sizeinword)         uint64_t name[sizeinword >> 1]
+#define DECLARE_THREADROUTINE(fn)                    int fn(void* arg)
+#define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[(sizeinbyte) >> 3]
 
 
 /**
