@@ -63,7 +63,7 @@ int main(void* arg) {
 	thcfg._t_routine = childthread_routine;
 	thcfg._t_stack = childthr_stack;
 	thcfg.t_stackSize = (1 << 11);
-	thcfg.t_proior = Normal;
+	thcfg.t_proior = High;
 	childThread = api->Thread->create(&thcfg,arg);
 	api->Thread->start(childThread);
 
@@ -97,12 +97,12 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.Low;
-	tch_gpio_handle* led = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,ActOnSleep);
+	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,ActOnSleep);
 	while(1){
-		led->out(led,bSet);
-		api->Thread->sleep(10);
-		led->out(led,bClear);
-		api->Thread->sleep(10);
+		bled->out(bled,bSet);
+		api->Thread->sleep(30);
+		bled->out(bled,bClear);
+		api->Thread->sleep(30);
 	}
 	return 0;
 }
