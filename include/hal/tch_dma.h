@@ -113,7 +113,7 @@ struct tch_dma_ix_t {
 	const tch_DmaFlowCtrl     FlowCtrl;
 	const tch_DmaAlign        Align;
 	void (*initCfg)(tch_dma_cfg* cfg);
-	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
+	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 };
 
 

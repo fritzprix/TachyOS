@@ -41,7 +41,7 @@ static void tch_threadSetPriority(tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty();
 
 
-static void __tch_thread_entry(void);
+static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
 
 __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadCreate,
@@ -63,14 +63,11 @@ tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 	/**
 	 * thread initialize from configuration type
 	 */
-	tch_thread_header* thread_p = ((tch_thread_header*) sptop - 1);
+	tch_thread_header* thread_p = ((tch_thread_header*) sptop - 1);          /// offset thread header size
 	thread_p->t_arg = arg;
 	thread_p->t_fn = cfg->_t_routine;
 	thread_p->t_name = cfg->_t_name;
 	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
-
-
-
 	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
@@ -160,14 +157,12 @@ BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 
 
 
-void __tch_thread_entry(void){
-	tch_thread_header* thr_p = (tch_thread_header*) tch_schedGetRunningThread();
+void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 
 #ifdef MFEATURE_HFLOAT
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;
 #endif
-
 	thr_p->t_state = RUNNING;
 	int result = thr_p->t_fn(thr_p->t_arg);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
