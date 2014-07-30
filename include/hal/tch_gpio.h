@@ -107,7 +107,7 @@ typedef struct tch_lld_gpio {
 	tch_gpioPuPd PuPd;
 	tch_gpioEvEdge EvEdeg;
 	tch_gpioEvType EvType;
-	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
+	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 	void (*initCfg)(tch_gpio_cfg* cfg);
 	void (*initEvCfg)(tch_gpio_evCfg* evcfg);
 	uint16_t (*getPortCount)();

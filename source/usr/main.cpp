@@ -49,12 +49,12 @@ int main(void* arg) {
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
-	led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,NoActOnSleep);
+	led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,osWaitForever,NoActOnSleep);
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.In;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,NoActOnSleep);
+	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,osWaitForever,NoActOnSleep);
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
 
@@ -77,9 +77,9 @@ int main(void* arg) {
 		api->Thread->sleep(100);
 		btn->listen(btn,osWaitForever);
 	//	classroom* clp = new classroom();
-//		classroom* acls = (classroom*)malloc(sizeof(classroom));
+	//	classroom* acls = (classroom*)malloc(sizeof(classroom));
 	//	delete clp;
-//		free(acls);
+	//	free(acls);
 	}
 	return 0;
 }
@@ -97,12 +97,12 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.Low;
-	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,ActOnSleep);
+	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,osWaitForever,ActOnSleep);
 	while(1){
 		bled->out(bled,bSet);
-		api->Thread->sleep(30);
+		api->Thread->sleep(20);
 		bled->out(bled,bClear);
-		api->Thread->sleep(30);
+		api->Thread->sleep(20);
 	}
 	return 0;
 }

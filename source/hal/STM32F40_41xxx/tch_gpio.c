@@ -87,6 +87,7 @@
 
 typedef struct tch_gpio_manager_internal_t {
 	tch_lld_gpio                    _pix;
+	tch_mtx                          mtx;
 	const uint8_t                    port_cnt;
 	const uint8_t                    io_cnt;
 }tch_gpio_manager;
@@ -96,7 +97,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       idx;
 	uint8_t                       pin;
 	uint32_t                      pMsk;
-	tch_mtx                       mtx_hdr;
+	tch_mtx                       mtx;
 	tch_lnode_t                   wq;
 	tch_IoEventCalback_t          cb;
 }tch_gpio_handle_prototype;
@@ -108,7 +109,7 @@ typedef struct _tch_gpio_handle_prototype {
 /**********************************************************************************************/
 /************************************  gpio driver public function  ***************************/
 /**********************************************************************************************/
-static tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg);
+static tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 static void tch_gpio_initCfg(tch_gpio_cfg* cfg);
 static void tch_gpio_initEvCfg(tch_gpio_evCfg* evcfg);
 static uint16_t tch_gpio_getPortCount();
@@ -162,6 +163,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 				tch_gpio_getPinAvailable,
 				tch_gpio_freeIo
 		},
+		INIT_MTX,
 		MFEATURE_GPIO,
 		MFEATURE_PINCOUNT_pPort
 };
@@ -169,16 +171,19 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticManager;
 
 
-tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,tch_pwr_def pcfg){
+tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	uint32_t pMsk = (1 << pin);
 	if(!gpio->_clkenr){                     /// given GPIO port is not supported in this H/W
 		return NULL;
 	}
+	Mtx->lock(&GPIO_StaticManager.mtx,timeout);
 	if(gpio->io_ocpstate & pMsk){           /// if there is pin which is occupied by another instance
+		Mtx->unlock(&GPIO_StaticManager.mtx);
 		return NULL;                        /// return null
 	}
-
+	gpio->io_ocpstate |= pMsk;
+	Mtx->unlock(&GPIO_StaticManager.mtx);
 	tch_gpio_handle_prototype* instance = ((tch*)Sys)->Mem->alloc(sizeof(tch_gpio_handle_prototype));
 	if(!instance)
 		return NULL;
@@ -233,7 +238,7 @@ uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
-	MTX(Sys)->destroy(&_handle->mtx_hdr);
+	MTX(Sys)->destroy(&_handle->mtx);
 }
 
 
@@ -262,11 +267,11 @@ tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,con
 	if(ioIrqOjb->io_occp)
 		return osErrorResource;
 	tch_listInit(&ioIrqOjb->wq);
-	result = MTX(Sys)->lock(&_handle->mtx_hdr,osWaitForever);
+	result = MTX(Sys)->lock(&_handle->mtx,osWaitForever);
 	_handle->cb = callback;
 	ioIrqOjb->io_occp = _handle;
 	tch_gpio_setIrq(_handle,cfg);
-	result = MTX(Sys)->unlock(&_handle->mtx_hdr);
+	result = MTX(Sys)->unlock(&_handle->mtx);
 
 	return result;
 }
@@ -350,7 +355,7 @@ void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 	handle->pMsk = 0;
 
 	tch_mtx_ix* Mtx = (tch_mtx_ix*)(((tch*) Sys)->Mtx);
-	Mtx->create(&handle->mtx_hdr);
+	Mtx->create(&handle->mtx);
 	handle->cb = NULL;
 	tch_listInit(&handle->wq);
 }

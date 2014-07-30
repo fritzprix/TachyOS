@@ -33,6 +33,7 @@
 
 
 static void __pend_loop(void) __attribute__((naked));
+static int isr_svc_cnt;
 
 
 
@@ -40,6 +41,7 @@ static void __pend_loop(void) __attribute__((naked));
 
 BOOL tch_kernel_initPort(){
 	__disable_irq();
+	isr_svc_cnt = 0;
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
 	                                                                        *   - Handler or thread within same group priority
@@ -114,6 +116,7 @@ void tch_port_disableISR(void){
 }
 
 void tch_port_switchContext(void* nth,void* cth){
+	isr_svc_cnt--;
 	asm volatile(
 			"push {r12}\n"                       ///< save system call result
 #ifdef MFEATURE_HFLOAT
@@ -137,6 +140,9 @@ void tch_port_switchContext(void* nth,void* cth){
  *  this function redirect execution to thread mode for thread context manipulation
  */
 void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val){
+	if(isr_svc_cnt)
+		tch_kernel_errorHandler(FALSE,osErrorISR);
+	isr_svc_cnt++;
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();         /***
 	                                                              *   prepare fake exception stack
 	                                                              *    - passing arguement to kernel mode thread
@@ -189,21 +195,19 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
  *  prepare initial context for start thread
  */
 void* tch_port_makeInitialContext(void* th_header,void* initfn){
-	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;
+	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;                // offset exc_stack size (size depends on floating point option)
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
-	exc_sp->R0 = 0;
-	exc_sp->R1 = (uint32_t)th_header;
-	exc_sp->R2 = osOK;
+	exc_sp->R1 = osOK;
 #if MFEATURE_HFLOAT
 	exc_sp->S0 = 0.1f;
 #endif
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	memset(th_ctx,0,sizeof(tch_thread_context));
-	th_ctx->kRetv = osOK;
-	return (uint32_t*) th_ctx;                                    ///<
+	th_ctx->kRetv = (uint32_t)th_header;
+	return (uint32_t*) th_ctx;
 
 }
 

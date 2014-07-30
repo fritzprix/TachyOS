@@ -59,9 +59,9 @@ static tch_thread_queue tch_readyQue;        ///< thread wait to become running 
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
 
 
-static tch_thread_id     tch_currentThread;
+static tch_thread_id          tch_currentThread;
 static tch_kernel_instance*   _sys;
-static uint64_t          tch_systimeTick;
+static uint64_t               tch_systimeTick;
 
 
 
@@ -97,7 +97,9 @@ void tch_schedInit(void* arg){
 
 	tch_currentThread = IdleThread_id;
 	tch_schedInitKernelThread(IdleThread_id);
-	while(TRUE){
+
+
+	while(TRUE){     // Unreachable Code. Ensure to protect from executing when undetected schedulr failure happens
 		__WFI();
 	}
 
@@ -105,7 +107,7 @@ void tch_schedInit(void* arg){
 
 
 /** Note : should not called any other program except kernel mode program
- *  start thread based on its priority (thread can be started in preempted way)
+ *  @brief start thread based on its priority (thread can be started in preempted way)
  */
 void tch_schedStartThread(tch_thread_id nth){
 	tch_thread_header* thr_p = nth;

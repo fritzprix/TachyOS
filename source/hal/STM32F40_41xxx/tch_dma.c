@@ -14,9 +14,9 @@
 
 
 #include "tch_hal.h"
-#include "tch_halcfg.h"
+#include "tch_kernel.h"
 #include "tch_dma.h"
-#include "tch_haldesc.h"
+#include "tch_halobjs.h"
 
 #define DMA_MBurst_Pos            (uint8_t) 23
 #define DMA_PBurst_Pos            (uint8_t) 21
@@ -134,6 +134,7 @@
 
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
+	tch_mtx                    mtx;
 	uint8_t                    occp_state[2];
 	uint8_t                    lpoccp_state[2];
 }tch_dma_manager;
@@ -146,7 +147,7 @@ typedef struct tch_dma_handle_prototype_t{
 }tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
-static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg);
+static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 
 
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size);
@@ -169,6 +170,7 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 				tch_dma_initCfg,
 				tch_dma_openStream
 		},
+		INIT_MTX,
 		{0},
 		{0}
 };
@@ -191,13 +193,32 @@ static void tch_dma_initCfg(tch_dma_cfg* cfg){
 }
 
 
-static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,tch_pwm_def pcfg){
+static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
 	/// check H/W Occupation
+	Mtx->lock(&DMA_Manager.mtx,timeout);
 	if(dma < 8){
-		if(DMA_Manager.occp_state[0] & (1 << dma)) return NULL;
+		if(DMA_Manager.occp_state[0] & (1 << dma)){
+			Mtx->unlock(&DMA_Manager.mtx);
+			return NULL;
+		}
+		DMA_Manager.occp_state[0] |= (1 << dma);
 	}else{
-		if(DMA_Manager.occp_state[1] & (1 << (dma - 8))) return NULL;
+		if(DMA_Manager.occp_state[1] & (1 << (dma - 8))){
+			Mtx->unlock(&DMA_Manager.mtx);
+			return NULL;
+		}
+		DMA_Manager.occp_state[1] |= (1 << (dma - 8));
 	}
+	Mtx->unlock(&DMA_Manager.mtx);
+
+	// Acquire DMA H/w
+	tch_dma_descriptor* dma_desc = &DMA_HWs[dma];
+	*dma_desc->_clkenr |= dma_desc->clkmsk;
+	if(pcfg == ActOnSleep)
+		*dma_desc->_lpclkenr |= dma_desc->lpcklmsk;
+
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
+
 }
 
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size){
