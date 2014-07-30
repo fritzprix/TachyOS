@@ -8,17 +8,14 @@
 # C Compiler preprocessor option
 include COMMON.mk
 
-include $(PORT_SRC_DIR)/port.mk
-include $(HAL_SRC_DIR)/hal.mk
-include $(KERNEL_SRC_DIR)/sys.mk
-include $(USR_SRC_DIR)/usr.mk
 
 TARGET=$(GEN_DIR)/tachyos.elf
 
 
-LIBS=-L'C:\Program Files\GNU Tools ARM Embedded\4.8 2014q2\arm-none-eabi\lib\armv7-m\'
-LIB_DIR=-lc_s\
-        -lg_s
+LIBS=-lnosys\
+     -lg_s\
+        
+LIB_DIR=-L'C:\Program Files\GNU Tools ARM Embedded\4.8 2014q2\arm-none-eabi\lib\armv7-m\'
 
 CFLAG+=\
        -D$(HW_PLF)\
@@ -35,13 +32,25 @@ ifneq ($(LIBS),)
 	CFLAG+=--specs=nano.specs
 endif
 
+DBG_FLAG=-D__USE_MALLOC
+CPFLAG+=$(DBG_FLAG)
+CFLAG+=$(DBG_FLAG)
+
+
+include $(PORT_SRC_DIR)/port.mk
+include $(HAL_SRC_DIR)/hal.mk
+include $(KERNEL_SRC_DIR)/sys.mk
+include $(USR_SRC_DIR)/usr.mk
+
+
+
 MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
 
 TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
 TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
-all : $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY)
+all : $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"

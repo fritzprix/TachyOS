@@ -55,8 +55,9 @@ void tch_kernelInit(void* arg){
 
 
 	tch_port_kernel_lock();
+#ifndef __USE_MALLOC
 	tch_sys_instance.tch_heap_handle = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
-
+#endif
 	tch* api = (tch*) &tch_sys_instance;
 	api->Thread = Thread;
 	api->Mtx = Mtx;
@@ -91,7 +92,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSleep(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
-		tch_schedSuspend(&((tch_thread_header*)arg1)->t_joinQ,arg2);
+		tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
 		return;
 	case SV_THREAD_RESUME:
 		nth = tch_schedResume((tch_thread_queue*)arg1);
