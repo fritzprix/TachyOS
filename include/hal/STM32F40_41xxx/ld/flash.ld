@@ -140,6 +140,7 @@ SECTIONS
         _sbss = .;
         
         *(.bss)
+        *(.bss.*)
         *(COMMON)
         
 	    . = ALIGN(4);
@@ -155,10 +156,10 @@ SECTIONS
     */
     .heap :
     {
-    	. = ALIGN(4);
+    	. = ALIGN(8);
     	_sheap = .;
     	*(.heap)
-    	. = ALIGN(4);
+    	. = ALIGN(8);
     	_eheap = .;
     } >RAM
     

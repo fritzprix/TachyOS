@@ -12,6 +12,8 @@
  *      Author: innocentevil
  */
 
+
+#include <stdlib.h>
 #include "tch.h"
 #include "tch_kernel.h"
 #include "tch_halobjs.h"
@@ -184,7 +186,11 @@ tch_gpio_handle* tch_gpio_allocIo(const gpIo_x port,uint8_t pin,const tch_gpio_c
 	}
 	gpio->io_ocpstate |= pMsk;
 	Mtx->unlock(&GPIO_StaticManager.mtx);
-	tch_gpio_handle_prototype* instance = ((tch*)Sys)->Mem->alloc(sizeof(tch_gpio_handle_prototype));
+#ifndef __USE_MALLOC
+	tch_gpio_handle_prototype* instance = (tch_gpio_handle_prototype*)((tch*)Sys)->Mem->alloc(sizeof(tch_gpio_handle_prototype));
+#else
+	tch_gpio_handle_prototype* instance = (tch_gpio_handle_prototype*)malloc(sizeof(tch_gpio_handle_prototype));
+#endif
 	if(!instance)
 		return NULL;
 	tch_gpio_initGpioHandle(instance);
@@ -403,7 +409,7 @@ void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 				_handle->cb((tch_gpio_handle*)_handle,_handle->pin);
 			EXTI->PR |= pMsk;
 			if(!tch_listIsEmpty(&ioIntObj->wq))
-				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,&ioIntObj->wq,0);
+				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIntObj->wq,0);
 		}
 		ext_pr >>= 1;
 		pMsk <<= 1;
