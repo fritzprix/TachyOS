@@ -22,6 +22,7 @@
 #include "tch_mem.h"
 #include "tch_sched.h"
 #include "tch_halcfg.h"
+#include "tch_nclib.h"
 #include "tch_port.h"
 
 
@@ -52,6 +53,8 @@ void tch_kernelInit(void* arg){
 	if(!tch_kernel_initPort()){
 		tch_kernel_errorHandler(FALSE,osErrorOS);
 	}
+
+	tch_ulib_ix* stdlib = tch_initCrt(NULL);
 
 
 	tch_port_kernel_lock();
