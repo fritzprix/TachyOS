@@ -50,6 +50,16 @@ typedef struct _tch_stdio_ix_t {
 	int (*vfprintf)(FILE* fp,const char* fmt,va_list list);
 	int (*vsprintf)(char* str, const char* fmt,va_list list);
 	int (*vsnprintf)(char* str,size_t size, const char* fmt,va_list list);
+	int (*sniprintf)(char* str,size_t size,const char* format,...);
+	int (*asiprintf)(char** strp,const char* format,...);
+	char* (*asniprintf)(char* str,size_t* size,const char* format,...);
+	void (*rewind)(FILE* fp);
+	void (*setbuf)(FILE* fp, char* buf);
+	int (*setvbuf)(FILE* fp, char* buf,int mode,size_t size);
+	int (*fiscanf)(FILE* fd,const char* format,...);
+	int (*siscanf)(const char* str, const char* format,...);
+	int (*fiprintf)(FILE* fd,const char* format,...);
+	int (*siprintf)(char* str,const char* format,...);
 #endif
 #ifdef POSIX_LIBSET
 	int (*fileno)(FILE* fp);
@@ -90,6 +100,7 @@ typedef struct _tch_stdio_ix_t {
 	int (*vfwprintf)(FILE* fp,const wchar_t* fmt,va_list list);
 	int (*vswprintf)(wchar_t* str,size_t size,const wchar_t* fmt,va_list list);
 #endif
+#ifdef MFEATURE_FILESYSTEM
 	int (*fclose)(FILE* fp);
 	FILE* (*fdopen)(int fd,const char* mode);
 	int (*feof)(FILE* fp);
@@ -103,24 +114,15 @@ typedef struct _tch_stdio_ix_t {
 	int (*fseek)(FILE* fp,long offset,int whence);
 	size_t (*fwrite)(const void* buf,size_t size,size_t count,FILE* fp);
 	int (*getc)(FILE* fp);
+	int (*putc)(int ch,FILE* fp);
+#endif
 	int (*getchar)(void);
 	void (*perror)(const char* prefix);
-	int (*putc)(int ch,FILE* fp);
 	int (*putchar)(int ch);
 	int (*puts)(const char* s);
 	char* (*gets)(char* buf);
-	void (*rewind)(FILE* fp);
-	void (*setbuf)(FILE* fp, char* buf);
-	int (*setvbuf)(FILE* fp, char* buf,int mode,size_t size);
 	int (*iprintf)(const char* format,...);
-	int (*fiprintf)(FILE* fd,const char* format,...);
-	int (*siprintf)(char* str,const char* format,...);
-	int (*sniprintf)(char* str,size_t size,const char* format,...);
-	int (*asiprintf)(char** strp,const char* format,...);
-	char* (*asniprintf)(char* str,size_t* size,const char* format,...);
 	int (*iscanf)(const char* format,...);
-	int (*fiscanf)(FILE* fd,const char* format,...);
-	int (*siscanf)(const char* str, const char* format,...);
 }tch_stdio_ix;
 
 typedef struct _tch_string_ix_t {
@@ -135,6 +137,11 @@ typedef struct _tch_string_ix_t {
 	char* (*strerror)(int errnum);
 	char* (*strstr)(const char* s1, const char* s2);
 	size_t (*strxfrm)(char* s1, const char* s2,size_t n);
+	char* (*strncpy)(char*__restrict dst,const char*__restrict src,size_t len);
+	char* (*strrchr)(const char* string,int c);
+	size_t (*strcspn)(const char* s1,const char* s2);
+	int (*strcmp)(const char* str,const char* b);
+	char* (*strcpy)(char* dst,const char* src);
 #endif
 #ifdef POSIX_LIBSET
 	char* (*strsignal)(int signal);
@@ -148,19 +155,9 @@ typedef struct _tch_string_ix_t {
 	void* (*memmem)(const void* s1,size_t l1,const void* s2,size_t l2);
 	void* (*memmove)(void* dst,const void* src,size_t len);
 	void* (*memset)(void* dst,int c,size_t length);
-	char* (*index)(const char* str,int c);
-	char* (*rindex)(const char* str,int c);
 	char* (*strcat)(char* dst, const char* src);
 	char* (*strchr)(const char* str,int c);
-	int (*strcmp)(const char* str,const char* b);
-	int (*strcoll)(const char* stra,const char* strb);
-	char* (*strcpy)(char* dst,const char* src);
-	size_t (*strcspn)(const char* s1,const char* s2);
 	size_t (*strlen)(const char* str);
-	char* (*strncat)(char* dst,const char* src,size_t len);
-	int (*strncmp)(const char* a, const char* b, size_t len);
-	char* (*strncpy)(char*__restrict dst,const char*__restrict src,size_t len);
-	char* (*strrchr)(const char* string,int c);
 	size_t (*strspn)(const char* s1,const char* s2);
 	char* (*strtok)(char*__restrict src,const char*__restrict del);
 }tch_string_ix;
@@ -189,6 +186,11 @@ typedef struct _tch_stdlib_ix_t{
 	size_t (*wcstombs)(char* s,const wchar_t* pwc,size_t n);
 	int (*wctomb)(char* s, wchar_t wchar);
 	void (*exit)(int code);
+	double (*strtod)(const char* str, char** tail);
+	float (*strtof)(const char* str,char** tail);
+	long (*strtol)(const char* str,char** ptr,int base);
+	void* (*bsearch)(const void* key,const void* base,size_t nitems,size_t size,int (*compare)(const void*, const void*));
+	void (*qsort)(void* base,size_t nitems,size_t size,int (*compare)(const void*,const void*));
 #endif
 #ifdef C99_LIBSET
 	lldiv_t (*lldiv)(long long n, long long d);
@@ -204,8 +206,6 @@ typedef struct _tch_stdlib_ix_t{
 	float (*atoff)(const char* str);
 	int (*atoi)(const char* str);
 	long int (*atol)(const char* str);
-	void* (*bsearch)(const void* key,const void* base,size_t nitems,size_t size,int (*compare)(const void*, const void*));
-	void (*qsort)(void* base,size_t nitems,size_t size,int (*compare)(const void*,const void*));
 	void* (*calloc)(size_t nitems,size_t size);
 	void (*free)(void* ptr);
 	void* (*malloc)(size_t size);
@@ -213,9 +213,6 @@ typedef struct _tch_stdlib_ix_t{
 	long int (*labs)(long int x);
 	int (*rand)(void);
 	void (*srand)(unsigned seed);
-	double (*strtod)(const char* str, char** tail);
-	float (*strtof)(const char* str,char** tail);
-	long (*strtol)(const char* str,char** ptr,int base);
 }tch_stdlib_ix;
 
 typedef struct _tch_math_ix_t {

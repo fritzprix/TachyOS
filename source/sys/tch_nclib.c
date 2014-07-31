@@ -14,7 +14,7 @@
 #include <time.h>
 
 
-const static tch_stdio_ix STDIO_StaticObj =  {
+const tch_stdio_ix STDIO_StaticObj =  {
 #ifdef ANSI_LIBSET
 	                                            remove,
                                                 clearerr,
@@ -41,6 +41,16 @@ const static tch_stdio_ix STDIO_StaticObj =  {
                                                 vfprintf,
                                                 vsprintf,
                                                 vsnprintf,
+                                                sniprintf,
+                                                asiprintf,
+                                                asniprintf,
+	                                            rewind,
+	                                            setbuf,
+	                                            setvbuf,
+	                                            fiscanf,
+	                                            siscanf,
+	                                            fiprintf,
+	                                            siprintf,
 #endif
 #ifdef POSIX_LIBSET
 	                                            fileno,
@@ -80,6 +90,7 @@ const static tch_stdio_ix STDIO_StaticObj =  {
 	                                            vfwprintf,
 	                                            vswprintf,
 #endif
+#ifdef MFEATURE_FILESYSTEM
 	                                            fclose,
 	                                            fdopen,
 	                                            feof,
@@ -93,26 +104,18 @@ const static tch_stdio_ix STDIO_StaticObj =  {
 	                                            fseek,
 	                                            fwrite,
 	                                            getc,
+	                                            putc,
+#endif
 	                                            getchar,
 	                                            perror,
-	                                            putc,
 	                                            putchar,
 	                                            puts,
 	                                            gets,
-	                                            rewind,
-	                                            setbuf,
-	                                            setvbuf,
 	                                            iprintf,
-	                                            fiprintf,
-	                                            siprintf,
-	                                            sniprintf,
-	                                            asiprintf,
-	                                            asniprintf,
-	                                            iscanf,
-	                                            fiscanf,
-	                                            siscanf};
+	                                            iscanf
+};
 
-const static tch_stdlib_ix STDLIB_StaticObj = {
+const tch_stdlib_ix STDLIB_StaticObj = {
 #ifdef ANSI_LIBSET
 		abort,
 		atexit,
@@ -136,6 +139,11 @@ const static tch_stdlib_ix STDLIB_StaticObj = {
 		wcstombs,
 		wctomb,
 		exit,
+		strtod,
+		strtof,
+		strtol,
+		bsearch,
+		qsort,
 #endif
 #ifdef C99_LIBSET
 		lldiv,
@@ -151,21 +159,17 @@ const static tch_stdlib_ix STDLIB_StaticObj = {
 		atoff,
 		atoi,
 		atol,
-		bsearch,
-		qsort,
 		calloc,
 		free,
 		malloc,
 		realloc,
 		labs,
 		rand,
-		srand,
-		strtod,
-		strtof,
-		strtol};
+		srand
+};
 
 
-const static tch_ctype_ix CTYPE_StaticObj = {
+const tch_ctype_ix CTYPE_StaticObj = {
 #ifdef ANSI_LIBSET
 		isgraph,
 		ispunct,
@@ -202,10 +206,11 @@ const static tch_ctype_ix CTYPE_StaticObj = {
 		isspace,
 		isupper,
 		tolower,
-		toupper};
+		toupper
+};
 
 
-const static tch_string_ix STRING_StaticObj = {
+const tch_string_ix STRING_StaticObj = {
 #ifdef GNUX_LIBSET
 		memccpy,
 		mempcpy,
@@ -217,6 +222,11 @@ const static tch_string_ix STRING_StaticObj = {
 		strerror,
 		strstr,
 		strxfrm,
+		strncpy,
+		strrchr,
+		strcspn,
+		strcmp,
+		strcpy,
 #endif
 #ifdef POSIX_LIBSET
 		strsignal,
@@ -230,19 +240,9 @@ const static tch_string_ix STRING_StaticObj = {
 		memmem,
 		memmove,
 		memset,
-		index,
-		rindex,
 		strcat,
 		strchr,
-		strcmp,
-		strcoll,
-		strcpy,
-		strcspn,
 		strlen,
-		strncat,
-		strncmp,
-		strncpy,
-		strrchr,
 		strspn,
 		strtok};
 
@@ -262,6 +262,10 @@ const tch_time_ix TIME_StaticObj = {
 #endif
 };
 
+const tch_math_ix MATH_StaticObj = {
+
+};
+
 static tch_ulib_ix NLIB_Instance;
 
 tch_ustdlib_ix* tch_initCrt(void* arg){
@@ -270,6 +274,7 @@ tch_ustdlib_ix* tch_initCrt(void* arg){
 	NLIB_Instance.string = &STRING_StaticObj;
 	NLIB_Instance.ctype = &CTYPE_StaticObj;
 	NLIB_Instance.time = &TIME_StaticObj;
+	NLIB_Instance.math = &MATH_StaticObj;
 	return &NLIB_Instance;
 }
 

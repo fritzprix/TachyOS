@@ -36,58 +36,18 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
-	switch(fd){
-	case stdin:
-		return cnt;
-	case stdout:
-		return cnt;
-	case stderr:
-		return cnt;
-	default:
-		return cnt;
-	}
 	return cnt;
 }
 
 int _close_r(void *reent, int fd){
-	switch(fd){
-	case stdin:
-		return -1;
-	case stdout:
-		return -1;
-	case stderr:
-		return -1;
-	default:
-		return -1;
-	}
 	return -1;
 }
 
 off_t _lseek_r(void *reent,int fd, off_t pos, int whence){
-	switch(fd){
-	case stdin:
-		return 0;
-	case stdout:
-		return 0;
-	case stderr:
-		return 0;
-	default:
-		return 0;
-	}
 	return 0;
 }
 
 long _read_r(void *reent,int fd, void *buf, size_t cnt){
-	switch(fd){
-	case stdin:
-		return cnt;
-	case stdout:
-		return cnt;
-	case stderr:
-		return cnt;
-	default:
-		return cnt;
-	}
 	return cnt;
 }
 
