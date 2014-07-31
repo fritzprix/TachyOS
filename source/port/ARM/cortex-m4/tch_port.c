@@ -30,13 +30,8 @@
 #define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
-
-
 static void __pend_loop(void) __attribute__((naked));
 static int isr_svc_cnt;
-
-
-
 
 
 BOOL tch_kernel_initPort(){

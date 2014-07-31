@@ -23,95 +23,12 @@ char** environ = __env;
 __attribute__((section(".data")))static char* heap_end = NULL;
 
 
-int close(int file){
-	return -1;
-}
-
-int execve(char* name,char** argv,char** env){
-	errno = ENOMEM;
-	return -1;
-}
-
-int fork(void){
-	errno = EAGAIN;
-	return -1;
-}
-
-int fstat(int file,struct stat* st){
-	st->st_mode = S_IFCHR;
-	return 0;
-}
-
-int getpid(void){
-	return 1;
-}
-
-int isatty(int file){
-	return 1;
-}
-
-int kill(int pid,int sig){
-	errno = EINVAL;
-	return -1;
-}
-
-int link(char* old, char* new){
-	errno = EMLINK;
-	return -1;
-}
-
-
-int lseek(int file,int ptr,int dir){
-	return 0;
-}
-
-int open(const char* name,int flags,int mode){
-	return -1;
-}
-
-caddr_t sbrk(int incr){
-	if(heap_end == NULL)
-		heap_end = &Heap_Base;
-	char *prev_heap_end;
-	prev_heap_end = heap_end;
-	if (heap_end + incr > (uint32_t) &Heap_Limit) {
-		return NULL;
-	}
-	heap_end += incr;
-	return (caddr_t)prev_heap_end;
-}
-
-
-int stat(const char* file,struct stat* st){
-	st->st_mode = S_IFCHR;
-	return 0;
-}
-
-clock_t times(struct tms* buf){
-	return -1;
-}
-
-int unlink(char* name){
-	errno = ENOENT;
-	return -1;
-}
-
-int wait(int* status){
-	errno = ECHILD;
-	return -1;
-}
-
-int write(int file,char* ptr,int len){
-	return len;
-}
-
-
 char* _sbrk_r(struct _reent* reent,size_t incr){
 	if(heap_end == NULL)
-		heap_end = &Heap_Base;
+		heap_end = (char*)&Heap_Base;
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
-	if (heap_end + incr > (uint32_t) &Heap_Limit) {
+	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
 		return NULL;
 	}
 	heap_end += incr;
@@ -119,18 +36,58 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
+	switch(fd){
+	case stdin:
+		return cnt;
+	case stdout:
+		return cnt;
+	case stderr:
+		return cnt;
+	default:
+		return cnt;
+	}
 	return cnt;
 }
 
 int _close_r(void *reent, int fd){
+	switch(fd){
+	case stdin:
+		return -1;
+	case stdout:
+		return -1;
+	case stderr:
+		return -1;
+	default:
+		return -1;
+	}
 	return -1;
 }
 
 off_t _lseek_r(void *reent,int fd, off_t pos, int whence){
+	switch(fd){
+	case stdin:
+		return 0;
+	case stdout:
+		return 0;
+	case stderr:
+		return 0;
+	default:
+		return 0;
+	}
 	return 0;
 }
 
 long _read_r(void *reent,int fd, void *buf, size_t cnt){
+	switch(fd){
+	case stdin:
+		return cnt;
+	case stdout:
+		return cnt;
+	case stderr:
+		return cnt;
+	default:
+		return cnt;
+	}
 	return cnt;
 }
 
@@ -164,3 +121,28 @@ int _isatty_r(int file){
 	return 1;
 }
 
+void exit(int code){
+	while(1);
+}
+
+void abort(void){
+	while(1);
+}
+
+
+int _open_r(void *reent,const char *file, int flags, int mode){
+	return -1;
+}
+
+int _getpid(void){
+	return -1;
+}
+
+
+time_t _times(void* _reent){
+	return (time_t) 0;
+}
+
+int _gettimeofday(void* _reent){
+	return -1;
+}
