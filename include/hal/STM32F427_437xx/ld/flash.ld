@@ -73,13 +73,18 @@ SECTIONS
         *(.flashtext)            /* Startup code */
 	. = ALIGN(4);
     } >FLASH
- 
-     .ARM.exidx :
+    
+    .ARM.extab : 
     {
-    	_sexidx = .;
-    	*(.ARM.exidx)
-    	_eexidx = .;
-    } >FLASH
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
+
+    __exidx_start = .;
+    .ARM.exidx :
+    {
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > FLASH
+    __exidx_end = .;
     /* the program code is stored in the .text section, which goes to Flash */
     .text :
     {
@@ -135,6 +140,7 @@ SECTIONS
         _sbss = .;
         
         *(.bss)
+        *(.bss.*)
         *(COMMON)
         
 	    . = ALIGN(4);
@@ -150,10 +156,10 @@ SECTIONS
     */
     .heap :
     {
-    	. = ALIGN(4);
+    	. = ALIGN(8);
     	_sheap = .;
     	*(.heap)
-    	. = ALIGN(4);
+    	. = ALIGN(8);
     	_eheap = .;
     } >RAM
     

@@ -84,7 +84,9 @@ ifeq ($(CFLAG),)
 endif
 
 ifeq ($(CPFLAG),)
-	CPFLAG = -g -gdwarf-2 -c\
+	CPFLAG = -g\
+	         -gdwarf-2 \
+	         -c\
 	         -mlong-calls\
 	         -ffunction-sections\
 	         -ffreestanding\
