@@ -47,7 +47,7 @@ typedef struct  {
 /***
  *  General Types
  */
-typedef enum {	TRUE = 1,FALSE = !TRUE  } BOOL;
+typedef enum {	TRUE = (1 > 0),FALSE = !TRUE  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_pwr_def;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
 

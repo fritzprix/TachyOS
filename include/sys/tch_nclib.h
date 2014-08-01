@@ -23,6 +23,20 @@
 #define MICRO_LIBSET
 #endif
 
+/*!
+ * \brief c standard I/O library structure
+ *
+ *  This Structure contains c standard I/O library functions pointer.
+ *  Each pointer is linked to std lib function built statically with platform binary
+ *  By default, only minimal set is available.
+ *  if more std I/O lib functions are required, platform binary should be rebuilt with
+ *  additional macro definition.
+ *
+ * \see MICRO_LIBSET
+ * \see GNUX_LIBSET
+ * \see ANSI_LIBSET
+ * \see POSIX_LIBSET
+ */
 typedef struct _tch_stdio_ix_t {
 #ifdef ANSI_LIBSET
 	int (*remove)(char* filename);
