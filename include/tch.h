@@ -20,7 +20,13 @@
 #include "tch_TypeDef.h"
 
 
-/***            Macro Definition From CMSIS RTOS                  ***/
+/*!
+ *  \brief Configuration Macro for CMSIS
+ *
+ *   These are macro for configuration of OS Feature which is compatible
+ *   to CMSIS
+ *
+ */
 
 #define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
 #define osFeature_Pool         1       ///< Memory Pools:    1=available, 0=not available
@@ -35,7 +41,7 @@
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 
 
-/***
+/*!
  *  tachyos kernel interface
  */
 typedef struct _tch_thread_ix_t tch_thread_ix;

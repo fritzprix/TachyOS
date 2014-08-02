@@ -18,6 +18,11 @@
 #include "tch_dma.h"
 #include "tch_halobjs.h"
 
+
+#define DMA_Ch_Pos                (uint8_t) 25 ///< DMA Channel bit position
+#define DMA_Ch_Msk                (DMA_Ch7)
+
+
 #define DMA_MBurst_Pos            (uint8_t) 23
 #define DMA_PBurst_Pos            (uint8_t) 21
 #define DMA_Burst_Single          (uint8_t) 0
