@@ -1,3 +1,9 @@
+/*! \brief HAL Description Type Definition Header
+ *
+ *  HAL Object Model is defined so that
+ *
+ */
+
 /*
  * tch_haldesc.h
  *
