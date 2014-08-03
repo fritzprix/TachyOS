@@ -1,5 +1,4 @@
 
-
 /*!
  * \defgroup TCH_DMA tch_dma
  * @{
@@ -62,38 +61,74 @@
 
 
 
-/**
+/*!
  *  \brief DMA Type
- *  used in macro variable
+ *   DMA Stream Type
  */
 typedef uint8_t dma_t;
+
+/*!
+ *  \brief DMA HAL Interface
+ *   DMA HAL Interface which is accessible from \ref tch object
+ */
 typedef struct tch_dma_ix_t tch_dma_ix;
+
+/*!
+ *  \brief DMA Handle
+ *   DMA Operation handle which can be obtained by \ref tch_dma_ix
+ */
 typedef struct tch_dma_handle_t tch_dma_handle;
+
+/*!
+ *  \brief dma event listener type
+ *   DMA event Listener type. fist arg is \ref dma_handle
+ */
 typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
+
+/*!
+ * \brief DMA Configuration type
+ */
 typedef struct _dma_cfg_t tch_dma_cfg;
 
 
-
+/*!
+ * \brief DMA Buffer Type
+ * This Structure contains R/O Value which can be used to configure dma buffer option
+ */
 typedef struct _tch_dmabuffer_conf_t {
-	const uint8_t Normal;
-	const uint8_t Double;
-	const uint8_t Circular;
+	const uint8_t Normal;            ///< Single Shot Buffer Mode
+	const uint8_t Double;            ///< Double Buffer Mode, Source Memory is switched at each end of transfer
+	const uint8_t Circular;          ///< Circular Buffer Mode, which means transfer begins from  buffer head at the end of transfer, thus continues loop
 }tch_DmaBufferType;
 
+/*!
+ * \brief DMA Direction Type
+ * This Structure contains R/O Value which can be used to configure dma direction option
+ */
 typedef struct _tch_dmadir_conf_t{
-	const uint8_t PeriphToMem;
-	const uint8_t MemToMem;
-	const uint8_t MemToPeriph;
+	const uint8_t PeriphToMem;        ///< Peripheral to Memory
+	const uint8_t MemToMem;           ///< Memory to Memory
+	const uint8_t MemToPeriph;        ///< Memory to Peripheral
 }tch_DmaDir;
 
+
+/*!
+ * \brief DMA Burst-Size Type
+ * This Structure contains R/O Value which can be used to configure burst size of dma transfer
+ */
 typedef struct _tch_dmaburst_size_t{
-	const uint8_t Burst1;
+	const uint8_t Burst1;             ///<
 	const uint8_t Burst2;
 	const uint8_t Burst4;
 	const uint8_t Burst8;
 	const uint8_t Burst16;
 }tch_DmaBurstSize;
 
+
+/*!
+ * \brief DMA Align Type
+ * This structure contains R/O Value which can be used to configure Data Alignment of both dma source and target
+ */
 typedef struct _tch_dma_align_t{
 	const uint8_t Byte;
 	const uint8_t Hword;
@@ -112,10 +147,32 @@ typedef struct _tch_dma_flowctrl_t{
 	const uint8_t DMA;
 }tch_DmaFlowCtrl;
 
+typedef struct _tch_dma_targetAddress_t{
+	const uint8_t MemTarget0;
+	const uint8_t MemTarget1;
+	const uint8_t PeriTarget0;
+	const uint8_t PeriTarget1;
+}tch_DmaTargetAddress;
 
 
+/*!
+ * \brief DMA handle object type
+ * Interface used to access control of dma H/W
+ */
 struct tch_dma_handle_t{
+	/*!
+	 * \brief Begine DMA Transfer
+	 * \param \ref tch_dma_handle object which is obtained from \ref openStream
+	 * \param size size of data to be transfered by DMA
+	 * \return true if successful, otherwise false
+	 */
 	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size);
+
+	/*!
+	 * \brief Set both source and target Address of DMA
+	 * \param \ref tch_dma_handle object which is obtained from \ref openStream
+	 * \param target which is among
+	 */
 	void (*setAddress)(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr);
 	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
 	void (*unregisterEventListener)(tch_dma_handle* self);
@@ -124,18 +181,41 @@ struct tch_dma_handle_t{
 };
 
 struct tch_dma_ix_t {
-	const tch_DmaBufferType   BufferType;
-	const tch_DmaDir          Dir;
-	const tch_DmaPriority     Priority;
-	const tch_DmaBurstSize    BurstSize;
-	const tch_DmaFlowCtrl     FlowCtrl;
-	const tch_DmaAlign        Align;
+	const tch_DmaBufferType   BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
+	const tch_DmaDir          Dir;                       ///< Direction of DMA Stream \note Value can be differ from each platform H/W
+	const tch_DmaPriority     Priority;                  ///< Priority of DMA Channel \note Value can be differ from each platform H/W
+	const tch_DmaBurstSize    BurstSize;                 ///< Burst Size of DMA Stream \note Value can be differ from each platform H/W
+	const tch_DmaFlowCtrl     FlowCtrl;                  ///< Flow Controller of DMA Operation. can be either DMA or Peripheral \note Value can be differ from each platform H/W
+	const tch_DmaAlign        Align;                     ///< Data Alignment of DMA Source and Target \note Value can be differ from each platform H/W
+
+	/*!
+	 * \brief Initialize DMA Configuration
+	 * \param cfg pointer of \ref tch_dma_cfg
+	 * \see tch_dma_cfg
+	 */
 	void (*initCfg)(tch_dma_cfg* cfg);
+
+	/*!
+	 * \brief open dma stream
+	 * \param dma dma stream from \ref DMA_Str0 to \ref DMA_Str15
+	 * \param cfg dma configuration type. \ref tch_dma_cfg
+	 * \param timeout any number of time in millisec or \ref osWaitForever
+	 * \param power mode option \ref tch_pwr_def
+	 * \return dma handle which allows access dma H/W
+	 */
 	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+
+	/*!
+	 * \brief get dma count of platform H/W
+	 * \return total number of dma stream available
+	 */
 	int (*getDMACount)();
 };
 
 
+/*
+ *
+ */
 struct _dma_cfg_t {
 	uint8_t                Ch;
 	uint8_t                BufferType;

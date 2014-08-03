@@ -51,6 +51,7 @@ typedef struct _tch_ioInterrupt_descriptor {
  */
 typedef struct _tch_dma_descriptor {
 	void*               _hw;
+	void*               _handle;
 	volatile uint32_t*  _clkenr;
 	const uint32_t       clkmsk;
 	volatile uint32_t*  _lpclkenr;
