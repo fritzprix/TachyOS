@@ -94,6 +94,8 @@
 		                                        DMA_FLAG_EvTE |\
 		                                        DMA_FLAG_EvDME)
 
+#define DMA_FLAG_BUSY                          ((uint16_t) (1 << 10))
+
 #define INIT_DMA_BUFFER_TYPE                   {\
                                                  DMA_BufferMode_Normal,\
                                                  DMA_BufferMode_Dbl,\
@@ -133,13 +135,20 @@
 	                                              DMA_DataAlign_Word\
                                                 }
 
+#define INIT_DMA_TARGET_ADDRESS                 {\
+	                                              DMA_TargetAddress_Mem0,\
+	                                              DMA_TargetAddress_Mem1,\
+	                                              DMA_TargetAddress_Periph,\
+	                                              0\
+                                                }
+
 
 
 
 
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
-	tch_mtx                    mtx;
+	tch_mtx                     mtx;
 	uint16_t                    occp_state;
 	uint16_t                    lpoccp_state;
 }tch_dma_manager;
@@ -150,6 +159,8 @@ typedef struct tch_dma_handle_prototype_t{
 	uint8_t                     ch;
 	tch_mtx                     mtx;
 	tch_lnode_t                 wq;
+	tch_dma_eventListener       listener;
+	uint32_t                    status;
 }tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
@@ -174,6 +185,7 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 				INIT_DMA_BURSTSIZE_TYPE,
 				INIT_DMA_FLOWCTRL_TYPE,
 				INIT_DMA_ALIGN_TYPE,
+				INIT_DMA_TARGET_ADDRESS,
 				tch_dma_initCfg,
 				tch_dma_openStream
 		},
@@ -202,7 +214,8 @@ static void tch_dma_initCfg(tch_dma_cfg* cfg){
 
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
 	/// check H/W Occupation
-	Mtx->lock(&DMA_Manager.mtx,timeout);
+	if(Mtx->lock(&DMA_Manager.mtx,timeout) != osOK)
+		return NULL;
 	if(DMA_Manager.occp_state & (1 << dma)){
 		Mtx->unlock(&DMA_Manager.mtx);
 		return NULL;
@@ -240,6 +253,7 @@ static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){
 	dma_handle->_pix.setIncrementMode = tch_dma_setIncrementMode;
 	dma_handle->ch = ch;
 	dma_handle->dma = dma;
+	dma_handle->status = 0;
 	Mtx->create(&dma_handle->mtx);
 	tch_listInit(&dma_handle->wq);
 
@@ -247,47 +261,119 @@ static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){
 }
 
 
-/**
- * 	tch_dma_prototype* ins = (tch_dma_prototype*) self;
-	dma_hw_descriptor* dhw = &DMA_HWs[ins->idx];
-	if(DMA_IS_BUSY(ins)){
-		return FALSE;
-	}
-	tch_Mtx_lockt(&ins->acc_lock,MTX_TRYMODE_WAIT);
-	DMA_SET_BUSY(ins);
-	tch_Mtx_unlockt(&ins->acc_lock);
-//	while((DMA_GET_ISR(dhw) & DMA_FLAG_EvTC) == 0){tchThread_sleep(1);}
-	dhw->_hw->NDTR = size;
-	__DMB();
-	__ISB();
-	dhw->_hw->CR |= DMA_SxCR_EN;
-	return TRUE;
- */
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeout){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	tch_dma_descriptor* dmaHw = &DMA_HWs[ins->dma];
-	Mtx->lock(&ins->mtx,timeout);
-
+	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
+	if(Mtx->lock(&ins->mtx,timeout) != osOK)
+		return FALSE;
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
+	dmaHw->NDTR = size;
+	dmaHw->CR |= DMA_SxCR_EN;
+	ins->status |= DMA_FLAG_BUSY;
+	tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&ins->wq,timeout);
 	Mtx->unlock(&ins->mtx);
+	return TRUE;
 }
 
+/*
+ *
+ */
 static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr){
-
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*)self;
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+	switch(targetAddress){
+	case DMA_Manager._pix.targetAddress.MemTarget0:
+		dmaHw->M0AR = addr;
+		break;
+	case DMA_Manager._pix.targetAddress.MemTarget1:
+		dmaHw->M1AR = addr;
+		break;
+	case DMA_Manager._pix.targetAddress.PeriTarget0:
+	case DMA_Manager._pix.targetAddress.PeriTarget1:
+		dmaHw->PAR = addr;
+		break;
+	}
 }
-
+/*
+ */
 static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType){
-
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	tch_dma_descriptor* dma_desc = (tch_dma_descriptor*) &DMA_HWs[ins->dma];
+	NVIC_DisableIRQ(dma_desc->irq);
+	((DMA_Stream_TypeDef*)dma_desc)->CR |= evType;
+	((DMA_Stream_TypeDef*)dma_desc)->FCR |= ((evType & (1 << 0)) << 7);
+	ins->status |= evType;
+	ins->listener = listener;
+	NVIC_EnableIRQ(dma_desc->irq);
 }
 
+/*
+ *
+ */
 static void tch_dma_unregisterEventListener(tch_dma_handle* self){
-
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	tch_dma_descriptor* dma_desc = (dma_hw_descriptor*)&DMA_HWs[ins->dma];
+	NVIC_DisableIRQ(dma_desc->irq);
+	((DMA_Stream_TypeDef*)dma_desc->_hw)->CR &= ~(DMA_FLAG_EvMsk >> 1);
+	((DMA_Stream_TypeDef*)dma_desc->_hw)->FCR &= ~(1 << 7);
+	ins->listener = NULL;
+	NVIC_EnableIRQ(dma_desc->irq);
 }
 
-static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,BOOL enable){
 
+/*
+ * 	tch_dma_prototype* ins = (tch_dma_prototype*) self;
+	dma_hw_descriptor* dhw = (dma_hw_descriptor*) &DMA_HWs[ins->idx];
+	switch(targetAddress){
+	case DMA_TargetAddress_Mem0:
+	case DMA_TargetAddress_Mem1:
+		if(enable){
+			dhw->_hw->CR |= DMA_SxCR_MINC;
+		}else{
+			dhw->_hw->CR &= ~DMA_SxCR_MINC;
+		}
+		break;
+	case DMA_TargetAddress_Periph:
+		if(enable){
+			dhw->_hw->CR |= DMA_SxCR_PINC;
+		}else{
+			dhw->_hw->CR &= ~DMA_SxCR_PINC;
+		}
+		break;
+	}
+ *
+ */
+static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,BOOL enable){
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	tch_dma_descriptor* dma_desc = (tch_dma_descriptor*) &DMA_HWs[ins->dma];
+	switch(targetAddress){
+	case DMA_Manager._pix.targetAddress.MemTarget0:
+	case DMA_Manager._pix.targetAddress.MemTarget1:
+	if(enable){
+		((DMA_Stream_TypeDef*)dma_desc->_hw)->CR |= DMA_SxCR_MINC;
+	}else{
+		((DMA_Stream_TypeDef*)dma_desc->_hw)->CR &= ~DMA_SxCR_MINC;
+	}
+	break;
+	case DMA_Manager._pix.targetAddress.PeriTarget0:
+	case DMA_Manager._pix.targetAddress.PeriTarget1:
+	if(enable){
+		((DMA_Stream_TypeDef*)dma_desc->_hw)->CR |= DMA_SxCR_PINC;
+	}else{
+		((DMA_Stream_TypeDef*)dma_desc->_hw)->CR &= ~DMA_SxCR_PINC;
+	}
+	break;
+	}
 }
 
 static void tch_dma_close(tch_dma_handle* self){
-
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	while(ins->status & DMA_FLAG_BUSY)
+		Thread->sleep(1);
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+	dmaHw->CR = 0;
+	dmaHw->FCR = 0;
+	Mtx->destroy(&ins->mtx);
+	tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,&ins->wq,0);
 }
 
