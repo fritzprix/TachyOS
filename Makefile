@@ -15,7 +15,6 @@ TARGET=$(GEN_DIR)/tachyos.elf
 LIBS=-lnosys\
      -lg_s\
         
-LIB_DIR=-L'C:\Program Files\GNU Tools ARM Embedded\4.8 2014q2\arm-none-eabi\lib\armv7-m\'
 
 CFLAG+=\
        -D$(HW_PLF)\

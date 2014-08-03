@@ -227,7 +227,7 @@ static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t ti
 	NVIC_SetPriority(dma_desc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(dma_desc->irq);
 	dma_desc->_handle = tch_dma_initHandle(dma,cfg->Ch);
-	return dma_desc;
+	return (tch_dma_handle*)dma_desc->_handle;
 }
 
 static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){

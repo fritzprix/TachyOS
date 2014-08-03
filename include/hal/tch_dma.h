@@ -166,7 +166,7 @@ struct tch_dma_handle_t{
 	 * \param size size of data to be transfered by DMA
 	 * \return true if successful, otherwise false
 	 */
-	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size);
+	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size,uint32_t timeout);
 
 	/*!
 	 * \brief Set both source and target Address of DMA
