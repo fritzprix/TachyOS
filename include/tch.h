@@ -21,6 +21,11 @@
 
 
 /*!
+ * \mainpage
+ *  this is main page
+ */
+
+/*!
  *  \brief Configuration Macro for CMSIS
  *
  *   These are macro for configuration of OS Feature which is compatible
