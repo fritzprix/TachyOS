@@ -187,6 +187,7 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq){
 		tch_currentThread = nth;
 	}else{
 		nth->t_state = READY;
+		nth->t_ctx->kRetv = osOK;
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 	}
 	return nth;
