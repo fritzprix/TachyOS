@@ -241,8 +241,8 @@ void tch_kernelSysTick(void){
 		nth->t_state = READY;
 		tch_schedReady(nth);
 		if(nth->t_waitQ){
-			tch_listRemove(nth->t_waitQ,&getThreadHeader(nth)->t_waitNode);        ///< cancel wait to lock mutex
-			nth->t_waitQ = NULL;                                         ///< set reference to wait queue to null
+			tch_listRemove(nth->t_waitQ,&getThreadHeader(nth)->t_waitNode);        // cancel wait to lock mutex
+			nth->t_waitQ = NULL;                                                   // set reference to wait queue to null
 		}
 	}
 	if((!tch_listIsEmpty(&tch_readyQue)) && tch_schedIsPreemptable(tch_readyQue.thque.next)){

@@ -16,6 +16,7 @@
 #include "tch.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 
 typedef struct person{
@@ -35,9 +36,9 @@ static DECLARE_THREADSTACK(childthr_stack,1 << 11);
 static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
+tch_mtx mtx;
 
 int main(void* arg) {
-
 
 	person* p = new person();
 	delete p;
@@ -59,6 +60,8 @@ int main(void* arg) {
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
 	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,osWaitForever,NoActOnSleep);
 
+	api->Mtx->create(&mtx);
+
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
 
@@ -70,6 +73,9 @@ int main(void* arg) {
 	thcfg.t_proior = High;
 	childThread = api->Thread->create(&thcfg,arg);
 	api->Thread->start(childThread);
+
+	tchStatus result =  api->Mtx->lock(&mtx,osWaitForever);
+//	api->Mtx->unlock(&mtx);
 
 	float fVal = 0.f;
 	while(1){
@@ -102,6 +108,7 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.Low;
 	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,osWaitForever,ActOnSleep);
+	tchStatus result = api->Mtx->lock(&mtx,300);
 
 	while(1){
 		bled->out(bled,bSet);

@@ -14,6 +14,7 @@ TARGET=$(GEN_DIR)/tachyos.elf
 
 LIBS=-lnosys\
      -lg_s\
+     -lsupc++_s\
         
 
 CFLAG+=\
