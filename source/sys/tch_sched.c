@@ -102,7 +102,6 @@ void tch_schedInit(void* arg){
 	while(TRUE){     // Unreachable Code. Ensure to protect from executing when undetected schedulr failure happens
 		__WFI();
 	}
-
 }
 
 
@@ -191,6 +190,11 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq){
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 	}
 	return nth;
+}
+
+
+uint64_t tch_kernelCurrentSystick(){
+	return tch_systimeTick;
 }
 
 

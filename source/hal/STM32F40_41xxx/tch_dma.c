@@ -267,7 +267,7 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	if(Mtx->lock(&ins->mtx,timeout) != osOK)
 		return FALSE;
 	tch_thread_header* header = (tch_thread_header*)tch_schedGetRunningThread();
-	uint32_t rtime = (uint32_t) header->t_to; // get extra time
+	uint32_t rtime = (uint32_t) header->t_to - tch_kernelCurrentSystick(); // get extra time
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
 	dmaHw->NDTR = size;
 	dmaHw->CR |= DMA_SxCR_EN;
