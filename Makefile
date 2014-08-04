@@ -14,8 +14,9 @@ TARGET=$(GEN_DIR)/tachyos.elf
 
 LIBS=-lnosys\
      -lg_s\
-     -lsupc++_s\
-        
+     -lstdc++_s\
+    
+LIB_DIR=    
 
 CFLAG+=\
        -D$(HW_PLF)\
@@ -54,7 +55,7 @@ all : $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
-	$(CC) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
+	$(CPP) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
 	@echo ' '
 
 $(TARGET_FLASH): $(TARGET)
