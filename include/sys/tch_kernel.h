@@ -40,7 +40,6 @@ typedef struct tch_kernel_instance{
 } tch_kernel_instance;
 
 
-
 typedef enum tch_thread_state_t {
 	PENDED = 1,                              // state in which thread is created but not started yet (waiting in ready queue)
 	RUNNING = 2,                             // state in which thread occupies cpu
@@ -49,6 +48,7 @@ typedef enum tch_thread_state_t {
 	SLEEP = 5,                               // state in which thread is yield cpu for given amount of time
 	TERMINATED = -1                          // state in which thread has finished its task
 } tch_thread_state;
+
 
 typedef struct tch_signal_t {
 	int32_t                 match_target;
@@ -82,6 +82,16 @@ typedef struct tch_thread_queue{
 
 
 
+
+typedef struct tch_async_cb_t {
+	tch_lnode_t                     ln;
+	int (*fn)(uint32_t,void*);
+	void*                           arg;
+	uint8_t                         prior;
+	tch_thread_queue                wq;
+}tch_async_cb;
+
+
 #define SV_RETURN_TO_KTHREAD             ((uint32_t) 0x01)              /**
                                                                       *  Return to temporal thread mode in kernel mode
                                                                       *   - Simplify Thread Context Switching OP.
@@ -108,6 +118,10 @@ typedef struct tch_thread_queue{
 #define SV_MEM_MALLOC                    ((uint32_t) 0x27)
 #define SV_MEM_FREE                      ((uint32_t) 0x28)
 
+#define SV_ASYNC_START                   ((uint32_t) 0x2A)               ///< Supervisor call id to start async task
+#define SV_ASYNC_BLSTART                 ((uint32_t) 0x2B)               ///< Supervisor call id to start async task with blocking current execution
+#define SV_ASYNC_NOTIFY                  ((uint32_t) 0x2C)               ///< Supervisor call id to notify async task result
+
 
 
 extern void tch_kernelInit(void* arg);
@@ -128,6 +142,8 @@ extern int Main_Stack_Limit asm("main_stack_limit");
 
 extern int Idle_Stack_Top asm("idle_stack_top");
 extern int Idle_Stack_Limit asm("idle_stack_limit");
+
+
 
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
