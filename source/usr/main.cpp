@@ -37,6 +37,9 @@ static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
+static DECL_ASYNC_TASK(async_job);
+tch_async_id async_id;
+
 int main(void* arg) {
 
 
@@ -106,6 +109,9 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Speed = api->Device->gpio->Speed.Low;
 	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,osWaitForever,ActOnSleep);
 
+	async_id = api->Async->create(async_job,arg,api->Async->Prior.Normal);
+	tchStatus result = api->Async->blockedstart(async_id,osWaitForever);
+
 	while(1){
 		bled->out(bled,bSet);
 		api->Thread->sleep(20);
@@ -114,3 +120,13 @@ DECLARE_THREADROUTINE(childthread_routine){
 	}
 	return 0;
 }
+
+
+static DECL_ASYNC_TASK(async_job){
+	person* p = new person();
+	p->age = 25;
+	p->sex = 1;
+	((tch*)arg)->Async->notify(id,osOK);
+	return TRUE;
+}
+

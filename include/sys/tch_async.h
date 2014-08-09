@@ -24,7 +24,7 @@ extern "C"{
 #endif
 
 
-#define DECL_ASYNC_TASK(fn)      int fn(void)
+#define DECL_ASYNC_TASK(fn)      int fn(tch_async_id id, void* arg)
 
 /**
  * tachyos에서 I/O는 asynchronous 방식으로 지원될 수 있다. 이는 I/O 동작의 즉시성을
@@ -40,7 +40,7 @@ struct tch_async_prior {
 	uint8_t VeryLow;
 };
 
-typedef struct tch_async_ix_t {
+typedef struct _tch_async_ix_t {
 	struct tch_async_prior Prior;
 	tch_async_id (*create)(tch_async_routine fn,void* arg,uint8_t prior);
 	tchStatus (*start)(tch_async_id id);

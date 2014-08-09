@@ -64,6 +64,8 @@ static tch_thread_id          tch_currentThread;
 static tch_kernel_instance*   _sys;
 static uint64_t               tch_systimeTick;
 
+static DECL_ASYNC_TASK(tch_blank_async);
+
 
 
 void tch_schedInit(void* arg){
@@ -313,6 +315,8 @@ int idle(void* arg){
 	 * idle init
 	 * - idle indicator init
 	 */
+	tch_async_id async = Async->create(tch_blank_async,arg,Async->Prior.Normal);
+	Async->start(async);
 	tch_kernel_instance* _sys = (tch_kernel_instance*) arg;
 	_sys->tch_api.Thread->start(MainThread_id);
 	while(TRUE){
@@ -323,4 +327,10 @@ int idle(void* arg){
 		__ISB();
 	}
 	return 0;
+}
+
+static uint32_t i = 0;
+DECL_ASYNC_TASK(tch_blank_async){
+	i++;
+	return TRUE;
 }

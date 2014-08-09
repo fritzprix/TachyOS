@@ -79,6 +79,7 @@ void tch_kernelInit(void* arg){
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
 	api->Mem = Mem;
+	api->Async = Async;
 
 	tch_listInit(&sysThread.sThreadWaitNode);
 	tch_thread_cfg th_Cfg;
@@ -86,9 +87,10 @@ void tch_kernelInit(void* arg){
 	th_Cfg._t_routine = sThread_routine;
 	th_Cfg._t_stack = sysThread.sThread_stack;
 	th_Cfg.t_proior = Realtime;
+	th_Cfg.t_stackSize = (1 << 10);
 	sysThread.sThread = Thread->create(&th_Cfg,api);
 
-	tch_listPutFirst(&sysThread.sThreadWaitNode,((tch_lnode_t*)&sysThread.sThread + 1));
+	tch_listPutFirst(&sysThread.sThreadWaitNode,((tch_lnode_t*)sysThread.sThread + 1));
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
@@ -120,11 +122,11 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
 		return;
 	case SV_THREAD_RESUME:
-		nth = tch_schedResume((tch_thread_queue*)arg1);
+		nth = tch_schedResume((tch_thread_queue*)arg1,osOK);
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_thread_queue*)arg1);
+		tch_schedResumeAll((tch_thread_queue*)arg1,osOK);
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
@@ -156,7 +158,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			if(!--cth->t_lckCnt){
 				cth->t_prior = cth->t_svd_prior;
 			}
-			nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que);
+			nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que,osOK);
 			if(nth){
 				((tch_mtx*) arg1)->key |= (uint32_t)nth;
 				nth->t_ctx->kRetv = osOK;
@@ -184,7 +186,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
-		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq);
+		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_MEM_MALLOC:
@@ -205,6 +207,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_ASYNC_NOTIFY:
 		tch_schedResume(&((tch_async_cb*) arg1)->wq,arg2);
+		return;
 	}
 }
 
@@ -214,7 +217,7 @@ static DECLARE_THREADROUTINE(sThread_routine){
 	//initiailize task q
 	tch_listInit(&sysThread.asynTaskQ);
 	while(TRUE){
-		while(tch_listIsEmpty(&sysThread.asynTaskQ)){ // perform tasks
+		while(!tch_listIsEmpty(&sysThread.asynTaskQ)){ // perform tasks
 			tch_async_cb* cb = tch_listDequeue(&sysThread.asynTaskQ);
 			cb->fn(cb,cb->arg);
 		}

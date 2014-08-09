@@ -23,7 +23,6 @@ static void tch_async_notify(tch_async_id id,tchStatus res);
 static void tch_async_destroy(tch_async_id async);
 
 
-static LIST_CMP_FN(tch_async_comp);
 
 
 __attribute__((section(".data"))) static tch_async_ix ASYNC_StaticInstance = {
