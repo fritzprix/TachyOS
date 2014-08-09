@@ -24,14 +24,24 @@
 #include "tch_halcfg.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
+#include "tch_async.h"
 
 
 
+typedef struct tch_sysThread_cb_t{
+	tch_lnode_t asynTaskQ;
+	DECLARE_THREADSTACK(sThread_stack,1 << 10);
+	tch_lnode_t sThreadWaitNode;
+	tch_thread_id sThread;
+}tch_sysThread_cb;
+
+static DECLARE_THREADROUTINE(sThread_routine);
+
+static tch_sysThread_cb sysThread;
 
 
 static tch_kernel_instance tch_sys_instance;
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
-
 
 /***
  *  Initialize Kernel including...
@@ -69,12 +79,26 @@ void tch_kernelInit(void* arg){
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
 	api->Mem = Mem;
+	api->Async = Async;
+
+	tch_listInit(&sysThread.sThreadWaitNode);
+	tch_thread_cfg th_Cfg;
+	th_Cfg._t_name = "SysThread";
+	th_Cfg._t_routine = sThread_routine;
+	th_Cfg._t_stack = sysThread.sThread_stack;
+	th_Cfg.t_proior = Realtime;
+	th_Cfg.t_stackSize = (1 << 10);
+	sysThread.sThread = Thread->create(&th_Cfg,api);
+
+	tch_listPutFirst(&sysThread.sThreadWaitNode,((tch_lnode_t*)sysThread.sThread + 1));
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
 	return;
 
 }
+
+
 
 void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = (tch_exc_stack*)tch_port_getThreadSP();
@@ -98,11 +122,11 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
 		return;
 	case SV_THREAD_RESUME:
-		nth = tch_schedResume((tch_thread_queue*)arg1);
+		nth = tch_schedResume((tch_thread_queue*)arg1,osOK);
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_thread_queue*)arg1);
+		tch_schedResumeAll((tch_thread_queue*)arg1,osOK);
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
@@ -114,14 +138,14 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_MTX_LOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
 		if((!(((tch_mtx*) arg1)->key > MTX_INIT_MARK)) || (((tch_mtx*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      ///< check mtx is not locked by any thread
-			((tch_mtx*) arg1)->key |= (uint32_t) cth;        ///< marking mtx key as locked
-			if(!cth->t_lckCnt++){                            ///< ensure priority escalation occurs only once
+			((tch_mtx*) arg1)->key |= (uint32_t) cth;        /// marking mtx key as locked
+			if(!cth->t_lckCnt++){                            /// ensure priority escalation occurs only once
 				cth->t_svd_prior = cth->t_prior;
-				cth->t_prior = Unpreemtible;                 ///< if thread owns mtx, its priority is escalated to unpreemptible level
-				                                             /**
-				                                              *  This temporary priority change is to minimize resource allocation time
-				                                              *  of single thread
-				                                              */
+				cth->t_prior = Unpreemtible;                 /// if thread owns mtx, its priority is escalated to unpreemptible level
+				                                             ///
+				                                             /// This temporary priority change is to minimize resource allocation time
+				                                             /// of single thread
+				                                             ///
 			}
 			sp->R0 = osOK;
 			return;
@@ -134,7 +158,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			if(!--cth->t_lckCnt){
 				cth->t_prior = cth->t_svd_prior;
 			}
-			nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que);
+			nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que,osOK);
 			if(nth){
 				((tch_mtx*) arg1)->key |= (uint32_t)nth;
 				nth->t_ctx->kRetv = osOK;
@@ -162,7 +186,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
-		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq);
+		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
 		nth->t_ctx->kRetv = osOK;
 		return;
 	case SV_MEM_MALLOC:
@@ -171,9 +195,36 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_MEM_FREE:
 		sp->R0 = Sys->tch_heap_handle->free(Sys->tch_heap_handle,(void*)arg1);
 		return;
+	case SV_ASYNC_START:
+		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
+		tch_schedResume(&sysThread.sThreadWaitNode,osOK);
+		return;
+	case SV_ASYNC_BLSTART:
+		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
+		if(!tch_listIsEmpty(&sysThread.sThreadWaitNode))
+			tch_schedReady((tch_thread_id)tch_listDequeue(&sysThread.sThreadWaitNode));
+		tch_schedSuspend(&((tch_async_cb*)arg1)->wq,arg2);
+		return;
+	case SV_ASYNC_NOTIFY:
+		tch_schedResume(&((tch_async_cb*) arg1)->wq,arg2);
+		return;
 	}
 }
 
+
+
+static DECLARE_THREADROUTINE(sThread_routine){
+	//initiailize task q
+	tch_listInit(&sysThread.asynTaskQ);
+	while(TRUE){
+		while(!tch_listIsEmpty(&sysThread.asynTaskQ)){ // perform tasks
+			tch_async_cb* cb = tch_listDequeue(&sysThread.asynTaskQ);
+			cb->fn(cb,cb->arg);
+		}
+		tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&sysThread.sThreadWaitNode,0);  // suspend until new task available
+	}
+	return osOK;
+}
 
 
 
@@ -188,6 +239,7 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 }
 
 
+
 void tch_kernel_faulthandle(int fault){
 	switch(fault){
 	case FAULT_TYPE_BUS:
@@ -200,7 +252,7 @@ void tch_kernel_faulthandle(int fault){
 		break;
 	}
 	while(1){
-		;
+		asm volatile("NOP");
 	}
 }
 

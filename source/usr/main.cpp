@@ -16,6 +16,7 @@
 #include "tch.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 
 typedef struct person{
@@ -35,6 +36,9 @@ static DECLARE_THREADSTACK(childthr_stack,1 << 11);
 static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
+
+static DECL_ASYNC_TASK(async_job);
+tch_async_id async_id;
 
 int main(void* arg) {
 
@@ -60,6 +64,7 @@ int main(void* arg) {
 	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,osWaitForever,NoActOnSleep);
 
 
+
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
 
 	tch_thread_cfg thcfg;
@@ -70,6 +75,7 @@ int main(void* arg) {
 	thcfg.t_proior = High;
 	childThread = api->Thread->create(&thcfg,arg);
 	api->Thread->start(childThread);
+
 
 	float fVal = 0.f;
 	while(1){
@@ -103,6 +109,9 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Speed = api->Device->gpio->Speed.Low;
 	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,osWaitForever,ActOnSleep);
 
+	async_id = api->Async->create(async_job,arg,api->Async->Prior.Normal);
+	tchStatus result = api->Async->blockedstart(async_id,osWaitForever);
+
 	while(1){
 		bled->out(bled,bSet);
 		api->Thread->sleep(20);
@@ -111,3 +120,13 @@ DECLARE_THREADROUTINE(childthread_routine){
 	}
 	return 0;
 }
+
+
+static DECL_ASYNC_TASK(async_job){
+	person* p = new person();
+	p->age = 25;
+	p->sex = 1;
+	((tch*)arg)->Async->notify(id,osOK);
+	return TRUE;
+}
+

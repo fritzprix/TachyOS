@@ -166,7 +166,7 @@ struct tch_dma_handle_t{
 	 * \param size size of data to be transfered by DMA
 	 * \return true if successful, otherwise false
 	 */
-	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size);
+	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size,uint32_t timeout);
 
 	/*!
 	 * \brief Set both source and target Address of DMA
@@ -181,13 +181,13 @@ struct tch_dma_handle_t{
 };
 
 struct tch_dma_ix_t {
-	const tch_DmaBufferType   BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
-	const tch_DmaDir          Dir;                       ///< Direction of DMA Stream \note Value can be differ from each platform H/W
-	const tch_DmaPriority     Priority;                  ///< Priority of DMA Channel \note Value can be differ from each platform H/W
-	const tch_DmaBurstSize    BurstSize;                 ///< Burst Size of DMA Stream \note Value can be differ from each platform H/W
-	const tch_DmaFlowCtrl     FlowCtrl;                  ///< Flow Controller of DMA Operation. can be either DMA or Peripheral \note Value can be differ from each platform H/W
-	const tch_DmaAlign        Align;                     ///< Data Alignment of DMA Source and Target \note Value can be differ from each platform H/W
-
+	const tch_DmaBufferType     BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
+	const tch_DmaDir            Dir;                       ///< Direction of DMA Stream \note Value can be differ from each platform H/W
+	const tch_DmaPriority       Priority;                  ///< Priority of DMA Channel \note Value can be differ from each platform H/W
+	const tch_DmaBurstSize      BurstSize;                 ///< Burst Size of DMA Stream \note Value can be differ from each platform H/W
+	const tch_DmaFlowCtrl       FlowCtrl;                  ///< Flow Controller of DMA Operation. can be either DMA or Peripheral \note Value can be differ from each platform H/W
+	const tch_DmaAlign          Align;                     ///< Data Alignment of DMA Source and Target \note Value can be differ from each platform H/W
+	const tch_DmaTargetAddress  targetAddress;
 	/*!
 	 * \brief Initialize DMA Configuration
 	 * \param cfg pointer of \ref tch_dma_cfg

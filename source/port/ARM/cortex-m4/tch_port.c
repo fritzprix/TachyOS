@@ -110,6 +110,8 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
+
+
 void tch_port_switchContext(void* nth,void* cth){
 	isr_svc_cnt--;
 	asm volatile(
@@ -138,26 +140,27 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	if(isr_svc_cnt)
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 	isr_svc_cnt++;
-	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();         /***
-	                                                              *   prepare fake exception stack
-	                                                              *    - passing arguement to kernel mode thread
-	                                                              *    - redirect kernel routine
-	                                                              **/
+	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
+	                                                              //   prepare fake exception stack
+	                                                              //    - passing arguement to kernel mode thread
+	                                                              //   - redirect kernel routine
+	                                                              //
 	org_sp--;                                                     // 1. push stack
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R12 = ret_val;                                        ///< kthread result is stored in r12
-	                                                              /***
-	                                                               *  kernel thread function has responsibility to push r12 in stack of thread
-	                                                               *  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
-	                                                               *  more detail could be found in context switch function
-	                                                               */
+	                                                              //
+	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
+	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
+	                                                              //  more detail could be found in context switch function
+
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
 }
+
 
 
 int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
@@ -167,13 +170,11 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
 			"str r0,[%0]" : : "r"(&result) :);        // return from sv interrupt and get result from register #0
 	return result;
 }
-
 /***
  */
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
-	tch_port_kernel_lock();
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
@@ -205,6 +206,7 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	return (uint32_t*) th_ctx;
 
 }
+
 
 void __pend_loop(void){
 	__ISB();

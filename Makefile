@@ -14,8 +14,9 @@ TARGET=$(GEN_DIR)/tachyos.elf
 
 LIBS=-lnosys\
      -lg_s\
-        
-LIB_DIR=-L'C:\Program Files\GNU Tools ARM Embedded\4.8 2014q2\arm-none-eabi\lib\armv7-m\'
+     -lstdc++_s\
+    
+LIB_DIR=    
 
 CFLAG+=\
        -D$(HW_PLF)\
@@ -54,7 +55,7 @@ all : $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
 
 $(TARGET): $(OBJS)
 	@echo "Generating ELF"
-	$(CC) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
+	$(CPP) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
 	@echo ' '
 
 $(TARGET_FLASH): $(TARGET)
