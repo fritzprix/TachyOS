@@ -266,8 +266,8 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
 	if(Mtx->lock(&ins->mtx,timeout) != osOK)
 		return FALSE;
-	tch_thread_header* header = (tch_thread_header*)tch_schedGetRunningThread();
-	uint32_t rtime = (uint32_t) header->t_to; // get extra time
+	tch_thread_header* header = (tch_thread_header*)Thread->self();
+	uint32_t rtime = (uint32_t) header->t_to - tch_kernelCurrentSystick(); // get extra time
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
 	dmaHw->NDTR = size;
 	dmaHw->CR |= DMA_SxCR_EN;
@@ -364,7 +364,7 @@ static void tch_dma_close(tch_dma_handle* self){
 	dmaHw->CR = 0;
 	dmaHw->FCR = 0;
 	Mtx->destroy(&ins->mtx);
-	tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,&ins->wq,0);
+	tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&ins->wq,0);
 }
 
 

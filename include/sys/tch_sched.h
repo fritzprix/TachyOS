@@ -66,8 +66,8 @@ extern void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout);
 /**
  *
  */
-extern tch_thread_header* tch_schedResume(tch_thread_queue* wq);
-extern void tch_schedResumeAll(tch_thread_queue* wq);
+extern tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res);
+extern void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res);
 
 /**
  *
