@@ -85,8 +85,10 @@ typedef struct tch_thread_queue{
 
 typedef struct tch_async_cb_t {
 	tch_lnode_t                     ln;
+	tch_thread_id                   own;
 	int (*fn)(uint32_t,void*);
 	void*                           arg;
+	uint8_t                         status;
 	uint8_t                         prior;
 	tch_thread_queue                wq;
 }tch_async_cb;

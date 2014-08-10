@@ -12,26 +12,12 @@
  *      Author: innocentevil
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "tch_port.h"
 #include "tch_kernel.h"
 #include "tch_hal.h"
-#include "tch_lib.h"
-
-#define GROUP_PRIOR_Pos                (uint8_t) (7)
-#define SUB_PRIOR_Pos                  (uint8_t) (4)
-#define GROUP_PRIOR(x)                 (uint8_t) ((x & 1) << (GROUP_PRIOR_Pos - SUB_PRIOR_Pos))
-#define SUB_PRIOR(y)                   (uint8_t) ((y & 7))
-
-#define MODE_KERNEL                    (uint32_t)(1 << GROUP_PRIOR_Pos)                                 // execution priority of kernel only supervisor call can interrupt
-#define MODE_USER                      (uint32_t)(0)
-
-#define HANDLER_SVC_PRIOR              (uint32_t)(GROUP_PRIOR(0) | SUB_PRIOR(0))
-#define HANDLER_SYSTICK_PRIOR          (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(1))
-#define HANDLER_HIGH_PRIOR             (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(2))
-#define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
-#define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
-
 
 
 
@@ -44,16 +30,13 @@
 #define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
-
-
 static void __pend_loop(void) __attribute__((naked));
-
-
-
+static int isr_svc_cnt;
 
 
 BOOL tch_kernel_initPort(){
 	__disable_irq();
+	isr_svc_cnt = 0;
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
 	                                                                        *   - Handler or thread within same group priority
@@ -87,12 +70,14 @@ BOOL tch_kernel_initPort(){
 
 
 	// set Handler Priority
-	NVIC_EnableIRQ(SysTick_IRQn);
-	NVIC_EnableIRQ(SVCall_IRQn);
-	NVIC_EnableIRQ(PendSV_IRQn);
+
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_SetPriority(SVCall_IRQn,HANDLER_SVC_PRIOR);
 	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
+	NVIC_EnableIRQ(SysTick_IRQn);
+	NVIC_EnableIRQ(SVCall_IRQn);
+	NVIC_EnableIRQ(PendSV_IRQn);
+
 
 	return TRUE;
 }
@@ -125,7 +110,10 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
+
+
 void tch_port_switchContext(void* nth,void* cth){
+	isr_svc_cnt--;
 	asm volatile(
 			"push {r12}\n"                       ///< save system call result
 #ifdef MFEATURE_HFLOAT
@@ -149,20 +137,24 @@ void tch_port_switchContext(void* nth,void* cth){
  *  this function redirect execution to thread mode for thread context manipulation
  */
 void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val){
-	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();         /***
-	                                                              *   prepare fake exception stack
-	                                                              *    - passing arguement to kernel mode thread
-	                                                              *    - redirect kernel routine
-	                                                              **/
+	if(isr_svc_cnt)
+		tch_kernel_errorHandler(FALSE,osErrorISR);
+	isr_svc_cnt++;
+	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
+	                                                              //   prepare fake exception stack
+	                                                              //    - passing arguement to kernel mode thread
+	                                                              //   - redirect kernel routine
+	                                                              //
 	org_sp--;                                                     // 1. push stack
+	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R12 = ret_val;                                        ///< kthread result is stored in r12
-	                                                              /***
-	                                                               *  kernel thread function has responsibility to push r12 in stack of thread
-	                                                               *  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
-	                                                               *  more detail could be found in context switch function
-	                                                               */
+	                                                              //
+	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
+	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
+	                                                              //  more detail could be found in context switch function
+
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
@@ -170,21 +162,20 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 }
 
 
+
 int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
-	int result = 0;
+	volatile int result = 0;
 	asm volatile(
 			"svc #0\n"                                // raise sv interrupt
 			"str r0,[%0]" : : "r"(&result) :);        // return from sv interrupt and get result from register #0
 	return result;
 }
-
 /***
  */
 int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
-	tch_memset((uint8_t*) org_sp,0,sizeof(tch_exc_stack));
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;
 	org_sp->R1 = arg1;
@@ -200,23 +191,22 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
  *  prepare initial context for start thread
  */
 void* tch_port_makeInitialContext(void* th_header,void* initfn){
-	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;
-	tch_memset((uint8_t*)exc_sp,0,sizeof(tch_exc_stack));
+	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;                // offset exc_stack size (size depends on floating point option)
+	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
-	exc_sp->R0 = 0;
-	exc_sp->R1 = (uint32_t)th_header;
-	exc_sp->R2 = osOK;
+	exc_sp->R1 = osOK;
 #if MFEATURE_HFLOAT
 	exc_sp->S0 = 0.1f;
 #endif
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	tch_memset((uint8_t*)th_ctx,0,sizeof(tch_thread_context));
-	th_ctx->kRetv = osOK;
-	return (uint32_t*) th_ctx;                                    ///<
+	memset(th_ctx,0,sizeof(tch_thread_context));
+	th_ctx->kRetv = (uint32_t)th_header;
+	return (uint32_t*) th_ctx;
 
 }
+
 
 void __pend_loop(void){
 	__ISB();
@@ -238,6 +228,23 @@ void SVC_Handler(void){
 void PendSV_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
 	tch_exc_stack* org_sp = exsp + 1;
-	__set_PSP((uint32_t)org_sp);                                       // pop manipulated stack
+	__set_PSP((uint32_t)org_sp);                                       // discard stack used to transfer arguements
 	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+}
+
+
+void HardFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_HARD);
+}
+
+void MemManage_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_MEM);
+}
+
+void BusFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_BUS);
+}
+
+void UsageFault_Handler(){
+	tch_kernel_faulthandle(FAULT_TYPE_USG);
 }

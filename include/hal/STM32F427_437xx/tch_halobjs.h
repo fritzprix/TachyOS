@@ -192,6 +192,7 @@ __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_
 __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		{
 				DMA1_Stream0,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -203,6 +204,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream1,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -214,6 +216,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream2,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -225,6 +228,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream3,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -236,6 +240,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream4,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -247,6 +252,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream5,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -258,6 +264,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream6,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -269,6 +276,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA1_Stream7,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -280,6 +288,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream0,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA1EN,
 				&RCC->AHB1LPENR,
@@ -291,6 +300,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream1,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -302,6 +312,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream2,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -313,6 +324,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream3,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -324,6 +336,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream4,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -335,6 +348,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream5,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -346,6 +360,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream6,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
@@ -357,6 +372,7 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		},
 		{
 				DMA2_Stream7,
+				NULL,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_DMA2EN,
 				&RCC->AHB1LPENR,
