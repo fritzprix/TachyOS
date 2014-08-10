@@ -126,8 +126,6 @@ static DECL_ASYNC_TASK(async_job){
 	person* p = new person();
 	p->age = 25;
 	p->sex = 1;
-	((tch*)arg)->Async->destroy(id);
-	((tch*)arg)->Async->start(id);
 	((tch*)arg)->Async->notify(id,osOK);
 	return TRUE;
 }

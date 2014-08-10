@@ -45,6 +45,7 @@ static int idle(void* arg);
  */
 static LIST_CMP_FN(tch_schedReadyQPolicy);
 static LIST_CMP_FN(tch_schedPendQPolicy);
+static LIST_CMP_FN(tch_schedWqPolicy);
 
 /***
  *  Invoked when new thread start
@@ -161,7 +162,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_pendQue,getListNode(tch_currentThread),tch_schedPendQPolicy);
 
 	}
-	tch_listEnqueuePriority((tch_lnode_t*) wq,&getThreadHeader(tch_currentThread)->t_waitNode,tch_schedReadyQPolicy);
+	tch_listEnqueuePriority((tch_lnode_t*) wq,&getThreadHeader(tch_currentThread)->t_waitNode,tch_schedWqPolicy);
 	nth = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,osErrorOS);
@@ -302,13 +303,18 @@ static inline void tch_schedInitKernelThread(tch_thread_id init_thr){
 		tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 
-LIST_CMP_FN(tch_schedReadyQPolicy){
+static LIST_CMP_FN(tch_schedReadyQPolicy){
 	return getThreadHeader(prior)->t_prior > getThreadHeader(post)->t_prior;
 }
 
-LIST_CMP_FN(tch_schedPendQPolicy){
+static LIST_CMP_FN(tch_schedPendQPolicy){
 	return getThreadHeader(prior)->t_to < getThreadHeader(post)->t_to;
 }
+
+static LIST_CMP_FN(tch_schedWqPolicy){
+	return TRUE;
+}
+
 
 int idle(void* arg){
 	/**

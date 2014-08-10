@@ -73,6 +73,7 @@ typedef struct tch_thread_header {
 	uint64_t                    t_to;
 	tch_thread_context*         t_ctx;
 	tch_signal                  t_sig;
+	void*                       t_reent;       ///< binary tree entry node for data owned soley by thread (means reentrant data)
 	uint32_t                    t_chks;
 } tch_thread_header   __attribute__((aligned(8)));
 
@@ -85,10 +86,9 @@ typedef struct tch_thread_queue{
 
 typedef struct tch_async_cb_t {
 	tch_lnode_t                     ln;
-	tch_thread_id                   own;
 	int (*fn)(uint32_t,void*);
 	void*                           arg;
-	uint8_t                         status;
+	volatile uint8_t                status;
 	uint8_t                         prior;
 	tch_thread_queue                wq;
 }tch_async_cb;

@@ -176,6 +176,8 @@ static void tch_dma_close(tch_dma_handle* self);
 static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch);
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc);
 
+static DECL_ASYNC_TASK(tch_dma_trigger);
+
 
 __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 		{
@@ -270,12 +272,18 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	uint32_t rtime = (uint32_t) header->t_to - tch_kernelCurrentSystick(); // get extra time
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
 	dmaHw->NDTR = size;
-	dmaHw->CR |= DMA_SxCR_EN;
 	ins->status |= DMA_FLAG_BUSY;
+	dmaHw->CR |= DMA_SxCR_EN;
 	tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ins->wq,rtime);
 	Mtx->unlock(&ins->mtx);
 	return TRUE;
 }
+
+static DECL_ASYNC_TASK(tch_dma_trigger){
+	((DMA_Stream_TypeDef*)arg)->CR |= DMA_SxCR_EN;
+	return osOK;
+}
+
 
 /*
  *

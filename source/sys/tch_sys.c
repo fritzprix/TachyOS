@@ -86,7 +86,7 @@ void tch_kernelInit(void* arg){
 	th_Cfg._t_name = "SysThread";
 	th_Cfg._t_routine = sThread_routine;
 	th_Cfg._t_stack = sysThread.sThread_stack;
-	th_Cfg.t_proior = Realtime;
+	th_Cfg.t_proior = KThread;
 	th_Cfg.t_stackSize = (1 << 10);
 	sysThread.sThread = Thread->create(&th_Cfg,api);
 

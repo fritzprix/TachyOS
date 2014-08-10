@@ -35,6 +35,7 @@ typedef struct tch_msg{
 
 
 typedef enum {
+	KThread = 8,
 	Unpreemtible = 6,
 	Realtime = 5,
 	High = 4,
