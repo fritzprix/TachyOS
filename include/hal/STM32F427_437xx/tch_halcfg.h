@@ -23,11 +23,11 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
-#define TACHYOS_HAL_VENDOR               "ST_Micro"                      // vendor name field
-#define TACHYOS_HAL_PLATFORM_NAME        HW_PLF                     // hw platform name (product name of mcu / mpu ic)
-#define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              // hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
-#define TACHYOS_HAL_MAIN_VERSION          0
-#define TACHYOS_HAL_SUB_VERSION           0
+#define TACHYOS_HAL_VENDOR               "ST_Micro"                      ///< vendor name field
+#define TACHYOS_HAL_PLATFORM_NAME        HW_PLF                          ///< hw platform name (product name of mcu / mpu ic)
+#define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              ///< hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
+#define TACHYOS_HAL_MAIN_VERSION          0                              ///< hal version
+#define TACHYOS_HAL_SUB_VERSION           0                              ///< hal sub version
 
 ///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
 /**
@@ -47,9 +47,17 @@
 
 
 /**
- *  @brief Type of Ext. Mem
+ *  @brief External Memory Type : SDRAM
+ *  @see USE_EXTMEM
+ *  @see EXTMEM_TYPE
  */
 #define EXTMEM_TYPE_SDRAM         0
+
+/**
+ * @brief External Memory Type : SRAM
+ * @see USE_EXTMEM
+ * @see EXTMEM_TYPE
+ */
 #define EXTMEM_TYPE_SRAM          1
 
 
@@ -58,32 +66,39 @@
 
 
 /**
- *  @brief Use Ext. Mem or Not
+ *  @brief Use of Extrenal Memory
+ *  if External Memory is used set this to '1', otherwise, '0'
+ *
+ *  @see EXTMEM_TYPE_SDRAM
+ *  @see EXTMEM_TYPE_SRAM
  */
 #ifndef USE_EXTMEM
 #define USE_EXTMEM                0
 #endif
 
 #if (USE_EXTMEM == 1)
+
 #ifndef EXTMEM_TYPE
  #error "Please define 'EXTMEM_TYPE' "
 #endif
 #endif
 
-/***
- *  configure clock source type of target system  : default external crystal
- */
+
 #ifndef SYS_MCLK_TYPE
+/**
+ *  @brief configure clock source type of target system  : default external crystal
+ */
 #define SYS_MCLK_TYPE            SYS_MCLK_TYPE_CRYSTAL
 #endif
 
 
 
 
-/***
+
+#ifndef SYS_INTERNAL_CLK_FREQ
+/**
  *  configure clock source frequency
  */
-#ifndef SYS_INTERNAL_CLK_FREQ
 #define SYS_INTERNAL_CLK_FREQ      16000000
 #endif
 

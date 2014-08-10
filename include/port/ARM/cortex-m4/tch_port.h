@@ -60,7 +60,6 @@ extern void tch_port_kernel_lock(void);
 extern void tch_port_kernel_unlock(void);
 extern BOOL tch_port_isISR();
 extern void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
-//extern void tch_port_switchContext(void* nth,void* cth);
 extern void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t retv);
 extern int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
 extern int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
