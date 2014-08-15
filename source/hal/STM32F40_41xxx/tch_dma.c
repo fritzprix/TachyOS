@@ -161,6 +161,7 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
+	tch_async_id                dma_async;
 }tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
@@ -258,6 +259,7 @@ static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){
 	dma_handle->status = 0;
 	Mtx->create(&dma_handle->mtx);
 	tch_listInit(&dma_handle->wq);
+	dma_handle->dma_async = Async->create(tch_dma_trigger,dma_handle,Async->Prior.Normal);
 
 	return (tch_dma_handle*)dma_handle;
 }
@@ -273,8 +275,9 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
 	dmaHw->NDTR = size;
 	ins->status |= DMA_FLAG_BUSY;
-	dmaHw->CR |= DMA_SxCR_EN;
-	tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ins->wq,rtime);
+	Async->blockedstart(ins->dma_async,timeout);
+	//dmaHw->CR |= DMA_SxCR_EN;
+	//tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ins->wq,rtime);
 	Mtx->unlock(&ins->mtx);
 	return TRUE;
 }
@@ -379,7 +382,21 @@ static void tch_dma_close(tch_dma_handle* self){
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc){
 	uint32_t isr = *dma_desc->_isr >> dma_desc->ipos;
 	if(handle){
+		if(isr & DMA_FLAG_EvFE){
 
+		}
+		if(isr & DMA_FLAG_EvHT){
+
+		}
+		if(isr & DMA_FLAG_EvDME){
+
+		}
+		if(isr & DMA_FLAG_EvTC){
+
+		}
+		if(isr & DMA_FLAG_EvTE){
+
+		}
 	}else{
 		if(isr & DMA_FLAG_EvFE){
 

@@ -47,7 +47,15 @@ extern void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t 
 extern int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
 extern int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
 extern void* tch_port_makeInitialContext(void* sp,void* initfn);
-
+/*!
+ * \brief arch. specific exclusive compare
+ * \param[out] dest the target memory compared
+ * \param[in] comp the compare value
+ * \param[in] the value updated to dest, if two comparees are different from
+ * \return if equal return 0, greater than comp return 1, otherwise -1
+ */
+extern int tch_port_exclusiveCompare(int* dest,int comp,int update);
+extern int tch_port_atomicCompareModify(int* dval,int* tval);
 
 typedef struct _tch_exc_stack tch_exc_stack;
 typedef struct _tch_thread_context tch_thread_context;
@@ -124,7 +132,6 @@ struct _tch_thread_context {
 	uint32_t S30;
 	uint32_t S31;
 #endif
-	uint32_t kRetv;
 }__attribute__((aligned(8)));
 
 

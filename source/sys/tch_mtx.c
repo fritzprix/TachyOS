@@ -71,6 +71,45 @@ tchStatus tch_mtx_lock(tch_mtx* mtx,uint32_t timeout){
 	}
 }
 
+/*
+tchStatus tch_mtx_lock(tch_mtx* mtx,uint32_t timeout){
+	if(tch_port_isISR()){
+		tch_kernel_errorHandler(FALSE,osErrorISR);
+		return osErrorISR;
+	}else{
+		if(mtx->key < MTX_INIT_MARK)
+			return osErrorParameter;
+		while(TRUE){
+			int tid = (int)Thread->self();
+			if(!tch_port_exclusiveCompare(&mtx->key,tid,tid)){
+				return osOK;
+			}
+
+			if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&mtx->que,timeout) != osOK){
+				return osErrorTimeoutResource;
+			}
+		}
+		return osErrorResource;
+	}
+}*/
+
+/*
+tchStatus tch_mtx_unlock(tch_mtx* mtx){
+	if(tch_port_isISR()){
+		return osErrorISR;
+	}else{
+		if(mtx->key != Thread->self())
+			return osErrorParameter;
+		if(mtx->key == MTX_INIT_MARK)
+			return osErrorResource;
+		if(tch_port_exclusiveCompare(&mtx->key,MTX_INIT_MARK,MTX_INIT_MARK)){
+			tch_port_enterSvFromUsr(SV_THREAD_RESUME,&mtx->que,0);
+		}
+	}
+}
+*/
+
+
 tchStatus tch_mtx_unlock(tch_mtx* mtx){
 	if(tch_port_isISR()){                               ///< check if in isr mode, then return osErrorISR
 		tch_kernel_errorHandler(FALSE,osErrorISR);
@@ -95,3 +134,16 @@ tchStatus tch_mtx_destroy(tch_mtx* mtx){
 		return (tchStatus)tch_port_enterSvFromUsr(SV_MTX_DESTROY,(uint32_t)mtx,0);
 	}
 }
+/*
+tchStatus tch_mtx_destroy(tch_mtx* mtx){
+	if(tch_port_isISR()){
+		tch_kernel_errorHandler(FALSE,osErrorISR);
+		return osErrorISR;
+	}else{
+		if(!(mtx->key > MTX_INIT_MARK)){
+			return osErrorResource;
+		}
+		mtx->key = 0;
+		return (tchStatus)tch_port_enterSvFromUsr(SV_MTX_DESTROY,(uint32_t)mtx,0);
+	}
+}*/

@@ -16,6 +16,7 @@
 #define TCHtch_port_H_
 
 #include "tch.h"
+#include "tch_ktypes.h"
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
 #define SUB_PRIOR_Pos                  (uint8_t) (4)
@@ -88,22 +89,22 @@ struct _tch_exc_stack {
 	uint32_t Return;
 	uint32_t xPSR;
 #if MFEATURE_HFLOAT
-	uint32_t S0;
-	uint32_t S1;
-	uint32_t S2;
-	uint32_t S3;
-	uint32_t S4;
-	uint32_t S5;
-	uint32_t S6;
-	uint32_t S7;
-	uint32_t S8;
-	uint32_t S9;
-	uint32_t S10;
-	uint32_t S11;
-	uint32_t S12;
-	uint32_t S13;
-	uint32_t S14;
-	uint32_t S15;
+	float S0;
+	float S1;
+	float S2;
+	float S3;
+	float S4;
+	float S5;
+	float S6;
+	float S7;
+	float S8;
+	float S9;
+	float S10;
+	float S11;
+	float S12;
+	float S13;
+	float S14;
+	float S15;
 	uint32_t FPSCR;
 	uint32_t RESV;
 #endif
@@ -120,24 +121,23 @@ struct _tch_thread_context {
 	uint32_t R11;
 	uint32_t LR;
 #if MFEATURE_HFLOAT
-	uint32_t S16;
-	uint32_t S17;
-	uint32_t S18;
-	uint32_t S19;
-	uint32_t S20;
-	uint32_t S21;
-	uint32_t S22;
-	uint32_t S23;
-	uint32_t S24;
-	uint32_t S25;
-	uint32_t S26;
-	uint32_t S27;
-	uint32_t S28;
-	uint32_t S29;
-	uint32_t S30;
-	uint32_t S31;
+	float S16;
+	float S17;
+	float S18;
+	float S19;
+	float S20;
+	float S21;
+	float S22;
+	float S23;
+	float S24;
+	float S25;
+	float S26;
+	float S27;
+	float S28;
+	float S29;
+	float S30;
+	float S31;
 #endif
-	uint32_t kRetv;
 }__attribute__((aligned(8)));
 
 

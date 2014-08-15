@@ -124,7 +124,6 @@ struct _tch_thread_context {
 	uint32_t S30;
 	uint32_t S31;
 #endif
-	uint32_t kRetv;
 }__attribute__((aligned(8)));
 
 

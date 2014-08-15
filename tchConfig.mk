@@ -22,7 +22,7 @@ endif
 
 # FPU Option   HARD | SOFT | NO
 ifeq ($(FPU),)
-	FPU = HARD
+	FPU = SOFT
 endif
 
 # Hardware Vendor Option
