@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tch_port.h"
 #include "tch_kernel.h"
 #include "tch_hal.h"
 
@@ -46,7 +45,7 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-
+//	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
@@ -57,6 +56,8 @@ BOOL tch_kernel_initPort(){
 	                                                 *  - dedicated Thread Stack Pointer enabled
 	                                                 *
 	                                                 **/
+
+
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
 #ifdef MFEATURE_HFLOAT
 	/***
@@ -67,7 +68,7 @@ BOOL tch_kernel_initPort(){
 #endif
 	__set_CONTROL(mcu_ctrl);
 	__ISB();
-
+	__DMB();
 
 	// set Handler Priority
 
@@ -115,7 +116,6 @@ void tch_port_disableISR(void){
 void tch_port_switchContext(void* nth,void* cth){
 	isr_svc_cnt--;
 	asm volatile(
-			"push {r12}\n"                       ///< save system call result
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
 #endif
@@ -127,7 +127,6 @@ void tch_port_switchContext(void* nth,void* cth){
 #ifdef MFEATURE_HFLOAT
 			"vpop {s16-s31}\n"
 #endif
-			"pop {r1}\n"
 			"ldr r0,=%2\n"
 			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
 }
@@ -149,7 +148,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
-	org_sp->R12 = ret_val;                                        ///< kthread result is stored in r12
+	tch_kernelSetResult(tch_currentThread,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -164,11 +163,11 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 
 
 int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
-	volatile int result = 0;
 	asm volatile(
-			"svc #0\n"                                // raise sv interrupt
-			"str r0,[%0]" : : "r"(&result) :);        // return from sv interrupt and get result from register #0
-	return result;
+			"dmb\n"
+			"isb\n"
+			"svc #0"   : : :);        // return from sv interrupt and get result from register #0
+	return ((tch_thread_header*)tch_currentThread)->t_kRet;
 }
 /***
  */
@@ -195,16 +194,53 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
+	exc_sp->R0 = th_header;
 	exc_sp->R1 = osOK;
 #if MFEATURE_HFLOAT
-	exc_sp->S0 = 0.1f;
+	exc_sp->S0 = (float)0.2f;
 #endif
+	exc_sp = ((uint32_t*) exc_sp + 2);
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	memset(th_ctx,0,sizeof(tch_thread_context));
-	th_ctx->kRetv = (uint32_t)th_header;
+	memset(th_ctx,0,sizeof(tch_thread_context) - 8);
 	return (uint32_t*) th_ctx;
 
+}
+
+int tch_port_atomicCompareModify(int* dval,int* tval){
+	volatile int result = 0;
+	asm volatile(
+			"LDR r4,[r0]\n"
+			"LDR r3,=#1\n"
+			"TRY:\n"
+			"LDREX r5,[r1]\n"
+			"CMP r5,r4\n"
+			"ITTEE NE\n"
+			"STREXNE r6,r5,[r0]\n"
+			"ADDNE r3,r3,r3\n"
+			"STREXEQ r6,r4,[r1]\n"
+			"SUBEQ r3,r3,r3\n"
+			"CMP r6,#0\n"
+			"BNE TRY\n"
+			"STR r3,[%0]" : : "r"(&result) : "r4","r5","r6","r3");
+	return result;
+}
+
+int tch_port_exclusiveCompare(int* dest,int comp,int update){
+	int result = 0;
+	asm volatile(
+			"Try:\n"
+			"LDREX r4,[r0]\n"   // read dest exclusively
+			"CMP r4,r1\n"       // compare read val to comp
+			"ITTEE NE\n"           // if not equal
+			"STREXNE r6,r2,[r0]\n" // update dest with new one
+			"SUBNE r5,r4,r1\n"      // dest > comp : result > 0 otherwise result < 0
+			"STREXEQ r6,r4,[r0]\n"
+			"LDREQ r5,=#0\n"
+			"CMP r6,#0\n"
+			"BNE Try\n"
+			"STR r5,[%0]" : : "r"(&result) : "r4","r5","r6");
+	return result;
 }
 
 

@@ -16,7 +16,9 @@
 
 #ifndef TCH_H_
 #define TCH_H_
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "tch_TypeDef.h"
 
 
@@ -104,5 +106,7 @@ typedef struct _tch_t {
  * tachyos generic data interface
  */
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif /* TCH_H_ */

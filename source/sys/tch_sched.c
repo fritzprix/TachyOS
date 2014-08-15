@@ -61,9 +61,11 @@ static tch_thread_queue tch_readyQue;        ///< thread wait to become running 
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
 
 
-static tch_thread_id          tch_currentThread;
 static tch_kernel_instance*   _sys;
 static uint64_t               tch_systimeTick;
+tch_thread_id tch_currentThread;
+
+
 
 static DECL_ASYNC_TASK(tch_blank_async);
 
@@ -148,9 +150,9 @@ void tch_schedSleep(uint32_t timeout,tch_thread_state nextState){
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,osErrorOS);
 	getListNode(nth)->prev = tch_currentThread;
+	getThreadHeader(nth)->t_state = RUNNING;
+	getThreadHeader(tch_currentThread)->t_state = nextState;
 	tch_currentThread = nth;
-	getThreadHeader(tch_currentThread)->t_state = RUNNING;
-	getThreadHeader(getListNode(tch_currentThread)->prev)->t_state = nextState;
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osEventTimeout);
 }
 
@@ -187,10 +189,9 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res){
 		getListNode(nth)->prev = tch_currentThread;
 		tch_currentThread = nth;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
-		tch_currentThread = nth;
 	}else{
 		nth->t_state = READY;
-		nth->t_ctx->kRetv = res;
+		nth->t_kRet = res;
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 	}
 	return nth;
@@ -214,7 +215,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 		}else{
 			nth->t_waitQ = NULL;
 			nth->t_state = READY;
-			nth->t_ctx->kRetv = res;
+			nth->t_kRet = res;
 			tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 		}
 	}
@@ -225,7 +226,6 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 		getListNode(tpreempt)->prev = tch_currentThread;
 		tch_currentThread = tpreempt;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
-		tch_currentThread = tpreempt;
 	}
 
 }
@@ -283,7 +283,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 	while(!tch_listIsEmpty(&cth_p->t_joinQ)){
 		jth = (tch_thread_id)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,jth,tch_schedReadyQPolicy);
-		getThreadHeader(jth)->t_ctx->kRetv = result;
+		getThreadHeader(jth)->t_kRet = result;
 	}
 	tch_currentThread = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tch_currentThread,(uint32_t)cth_p,osOK);

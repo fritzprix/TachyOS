@@ -244,7 +244,7 @@ uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
-	MTX(Sys)->destroy(&_handle->mtx);
+	Mtx->destroy(&_handle->mtx);
 }
 
 
@@ -273,11 +273,11 @@ tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,con
 	if(ioIrqOjb->io_occp)
 		return osErrorResource;
 	tch_listInit(&ioIrqOjb->wq);
-	result = MTX(Sys)->lock(&_handle->mtx,osWaitForever);
+	result = Mtx->lock(&_handle->mtx,osWaitForever);
 	_handle->cb = callback;
 	ioIrqOjb->io_occp = _handle;
 	tch_gpio_setIrq(_handle,cfg);
-	result = MTX(Sys)->unlock(&_handle->mtx);
+	result = Mtx->unlock(&_handle->mtx);
 
 	return result;
 }
@@ -360,7 +360,6 @@ void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 	handle->_pix.configure = tch_gpio_handle_configure;
 	handle->pMsk = 0;
 
-	tch_mtx_ix* Mtx = (tch_mtx_ix*)(((tch*) Sys)->Mtx);
 	Mtx->create(&handle->mtx);
 	handle->cb = NULL;
 	tch_listInit(&handle->wq);
