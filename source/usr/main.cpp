@@ -42,11 +42,8 @@ tch_gpio_handle* btn  = NULL;
 static DECL_ASYNC_TASK(async_job);
 tch_async_id async_id;
 uint8_t mcnt;
-static void dummyfunc(void* arg, uint32_t a);
-void (*dummyfn)(void* arg,uint32_t a);
 int main(void* arg) {
 
-	dummyfn = dummyfunc;
 	tch_mtx* mmtx = &tmtx;
 	tch* api = (tch*) arg;
 
@@ -61,12 +58,12 @@ int main(void* arg) {
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
-	led = api->Device->gpio->allocIo(gpIo_5,6,&iocfg,osWaitForever,NoActOnSleep);
+	led = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,6,&iocfg,osWaitForever,NoActOnSleep);
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.In;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	btn = api->Device->gpio->allocIo(gpIo_5,10,&iocfg,osWaitForever,NoActOnSleep);
+	btn = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,10,&iocfg,osWaitForever,NoActOnSleep);
 
 
 
@@ -86,7 +83,6 @@ int main(void* arg) {
 		led->out(led,bSet);
 		api->Thread->sleep(100);
 		for(mcnt = 0;mcnt < 200;mcnt++){
-	//		race(api);
 			if(api->Mtx->lock(mmtx,osWaitForever) == osOK)
 				api->Mtx->unlock(mmtx);
 		}
@@ -108,7 +104,6 @@ int main(void* arg) {
 
 
 		btn->listen(btn,osWaitForever);
-		dummyfn(mmtx,osWaitForever);
 
 		for(mcnt = 0;mcnt < 200;mcnt++){
 			if(api->Mtx->lock(mmtx,osWaitForever) == osOK){
@@ -120,19 +115,10 @@ int main(void* arg) {
 		classroom* acls = (classroom*)malloc(sizeof(classroom));
 		delete clp;
 		free(acls);
-/*             Mtx Race 부분이 이 위치에 있을 때 종종 Mtx Parameter가 전달이 안되는 경우가 ㅅ애긴다.
- *
- */
 
 	//	api->Thread->sleep(0);
 	}
 	return 0;
-}
-
-static void dummyfunc(void* arg, uint32_t a){
-	if(arg == 0){
-		a++;
-	}
 }
 
 
@@ -150,9 +136,9 @@ DECLARE_THREADROUTINE(childthread_routine){
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.Low;
-	tch_gpio_handle* bled = api->Device->gpio->allocIo(gpIo_5,7,&iocfg,osWaitForever,ActOnSleep);
+	tch_gpio_handle* bled = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,7,&iocfg,osWaitForever,ActOnSleep);
 
-	tch_gpio_handle* btntoggle = api->Device->gpio->allocIo(gpIo_0,6,&iocfg,osWaitForever,ActOnSleep);
+	tch_gpio_handle* btntoggle = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,6,&iocfg,osWaitForever,ActOnSleep);
 
 	tch_mtx* mmtx = &tmtx;
 

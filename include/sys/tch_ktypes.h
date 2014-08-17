@@ -8,6 +8,8 @@
 #ifndef TCH_KTYPES_H_
 #define TCH_KTYPES_H_
 
+#include "tch.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +22,9 @@ extern "C" {
  */
 typedef struct tch_kernel_instance{
 	tch                     tch_api;
-	tch_mem_handle*         tch_heap_handle;
 } tch_kernel_instance;
+
+
 
 
 typedef enum tch_thread_state_t {
@@ -39,6 +42,7 @@ typedef struct tch_signal_t {
 	int32_t                 signal;
 	tch_lnode_t             sig_wq;
 }tch_signal;
+
 
 
 typedef struct tch_thread_header {

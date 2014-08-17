@@ -13,6 +13,7 @@
 #include "tch_kernel.h"
 #include "tch_halcfg.h"
 #include "tch.h"
+#include <stdlib.h>
 
 
 typedef struct _tch_memp_header {
@@ -32,9 +33,16 @@ static void* tch_mem_alloc(tch_mem_handle* self,size_t size);
 static int tch_mem_free(tch_mem_handle* self,void*);
 
 __attribute__((section(".data")))static tch_mem_ix MEM_StaticInstance = {
+#ifndef __USE_MALLOC
 		tch_apic_mem_alloc,
 		tch_apic_free
+#else
+		malloc,
+		free
+#endif
+
 };
+
 
 const tch_mem_ix* Mem = &MEM_StaticInstance;
 
@@ -103,10 +111,10 @@ int tch_mem_free(tch_mem_handle* self,void* fp){
 	return (0);
 }
 
-
+#ifndef __USE_MALLOC
 void* tch_apic_mem_alloc(size_t size){
 	if(__get_IPSR()){
-		return Sys->tch_heap_handle->alloc(Sys->tch_heap_handle,size);
+		return Heap_Manager->alloc(Sys->tch_heap_handle,size);
 	}else{
 		return (void*)tch_port_enterSvFromUsr(SV_MEM_MALLOC,size,0);
 	}
@@ -114,10 +122,11 @@ void* tch_apic_mem_alloc(size_t size){
 
 int tch_apic_free(void* p){
 	if(__get_IPSR()){
-		return Sys->tch_heap_handle->free(Sys->tch_heap_handle,p);
+		return Heap_Manager->free(Sys->tch_heap_handle,p);
 	}else{
 		return tch_port_enterSvFromUsr(SV_MEM_FREE,(uint32_t)p,0);
 	}
 }
+#endif
 
 

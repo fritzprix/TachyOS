@@ -89,7 +89,7 @@ tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 
 }
 
-tchStatus tch_threadStart(tch_thread_id thread){
+static tchStatus tch_threadStart(tch_thread_id thread){
 	if(tch_port_isISR()){          ///< check current execution mode (Thread or Handler)
 		tch_schedReady(thread);    ///< if handler mode call, put current thread in ready queue
 		                                     ///< optionally check preemption required or not
@@ -107,7 +107,7 @@ tchStatus tch_threadStart(tch_thread_id thread){
  *
  *  if there is any new idea, comment below...
  */
-tchStatus tch_threadTerminate(tch_thread_id thread){
+static tchStatus tch_threadTerminate(tch_thread_id thread){
 	// not implemented
 	return osErrorOS;
 }
@@ -115,11 +115,11 @@ tchStatus tch_threadTerminate(tch_thread_id thread){
 /***
  *
  */
-tch_thread_id tch_threadSelf(){
+static tch_thread_id tch_threadSelf(){
 	return tch_schedGetRunningThread();
 }
 
-tchStatus tch_threadSleep(uint32_t millisec){
+static tchStatus tch_threadSleep(uint32_t millisec){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -128,7 +128,7 @@ tchStatus tch_threadSleep(uint32_t millisec){
 	}
 }
 
-tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
+static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -140,11 +140,12 @@ tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 	}
 }
 
-void tch_threadSetPriority(tch_thread_prior nprior){
+
+static void tch_threadSetPriority(tch_thread_prior nprior){
 	getThreadHeader(tch_schedGetRunningThread())->t_prior = nprior;
 }
 
-tch_thread_prior tch_threadGetPriorty(){
+static tch_thread_prior tch_threadGetPriorty(){
 	return getThreadHeader(tch_schedGetRunningThread())->t_prior;
 }
 
@@ -157,7 +158,7 @@ BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
 
 
 
-void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
+static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 
 #ifdef MFEATURE_HFLOAT
 	float _force_fctx = 0.1f;

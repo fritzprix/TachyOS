@@ -18,12 +18,14 @@
 #include "tch_halcfg.h"
 
 
+
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"
 #include "tch_adc.h"
 #include "tch_rtc.h"
 #include "tch_timer.h"
+#include "tch_intr.h"
 #if MFEATURE_GPIO
 #include "tch_gpio.h"
 #endif
@@ -38,6 +40,7 @@ struct tch_hal_t{
 	const tch_lld_i2c*   i2c;
 	const tch_lld_adc*   adc;
 	const tch_lld_rtc*   rtc;
+	const tch_lld_intr*  interrupt;
 };
 
 
