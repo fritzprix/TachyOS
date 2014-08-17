@@ -10,7 +10,9 @@
 
 #include <stdint.h>
 
-
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
@@ -52,7 +54,9 @@ typedef enum {	TRUE = (1 > 0),FALSE = !TRUE  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_pwr_def;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TCH_TYPEDEF_H_ */
 

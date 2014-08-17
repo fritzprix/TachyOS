@@ -12,6 +12,7 @@
  *      Author: innocentevil
  */
 
+#include "tch.h"
 #include "mailq_test.h"
 
 typedef struct person {
@@ -31,10 +32,10 @@ static tch_thread_id receiver_id;
 tch_mailQDef(testmail,10,person);
 tch_mailQue_id testmailq_id;
 
-osStatus do_mailQBaseTest(tch* api){
+tchStatus do_mailQBaseTest(tch* api){
 	testmailq_id = api->MailQ->create(tch_access_mailq(testmail));
 
-	tch_thread_ix* Thread = api->Thread;
+	const tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg tcfg;
 	tcfg._t_name = "sender";
 	tcfg._t_routine = sender;
@@ -65,7 +66,7 @@ DECLARE_THREADROUTINE(sender){
 		api->Thread->sleep(20);
 		cnt++;
 	}
-	return NULL;
+	return osOK;
 }
 
 DECLARE_THREADROUTINE(receiver){
@@ -78,5 +79,5 @@ DECLARE_THREADROUTINE(receiver){
 		if(evt.status == osEventMail)
 			cnt++;
 	}
-	return NULL;
+	return osOK;
 }

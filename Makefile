@@ -42,6 +42,7 @@ include $(PORT_SRC_DIR)/port.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/sys.mk
 include $(USR_SRC_DIR)/usr.mk
+include $(TEST_SYS_SRC_DIR)/sys.mk
 
 
 

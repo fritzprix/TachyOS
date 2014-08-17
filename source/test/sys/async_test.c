@@ -6,6 +6,7 @@
  */
 
 
-#include "tch.h"
+#include "async_test.h"
 
 
+extern tchStatus async_performTest(tch* api);

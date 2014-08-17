@@ -16,7 +16,7 @@
 #define MPOOL_TEST_H_
 #include "tch.h"
 
-extern osStatus do_mpoolBaseTest(tch* api);
+extern tchStatus do_mpoolBaseTest(tch* api);
 
 
 #endif /* MPOOL_TEST_H_ */

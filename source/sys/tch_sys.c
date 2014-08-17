@@ -125,7 +125,9 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSleep(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
 		return;
 	case SV_THREAD_JOIN:
-		tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
+		if(((tch_thread_header*)arg1)->t_state != TERMINATED)
+			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
+		tch_kernelSetResult(tch_currentThread,((tch_thread_header*)arg1)->t_kRet);
 		return;
 	case SV_THREAD_RESUME:
 		nth = tch_schedResume((tch_thread_queue*)arg1,arg2);
@@ -161,6 +163,10 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_MTX_UNLOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
+		if((((tch_mtx*) arg1)->key & (uint32_t)cth) != (uint32_t) cth){
+			tch_kernelSetResult(cth,osErrorResource);
+			return;
+		}
 		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
 			if(!--cth->t_lckCnt){
 				cth->t_prior = cth->t_svd_prior;

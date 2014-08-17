@@ -17,7 +17,7 @@
 
 #include "tch.h"
 
-extern osStatus do_msgqBaseTest(tch* api);
+extern tchStatus do_msgqBaseTest(tch* api);
 
 
 #endif /* MSGQ_TEST_H_ */

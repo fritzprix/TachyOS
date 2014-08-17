@@ -57,7 +57,7 @@ tchStatus tch_mtx_lock(tch_mtx* mtx,uint32_t timeout){
 		}
 		while(TRUE){
 			switch(tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout)){
-			case osErrorTimeoutResource:
+			case osEventTimeout:
 				return osErrorTimeoutResource;
 			case osErrorResource:
 				return osErrorResource;
