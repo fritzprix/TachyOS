@@ -250,6 +250,7 @@ void tch_kernelSysTick(void){
 		tch_schedReady(nth);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&getThreadHeader(nth)->t_waitNode);        // cancel wait to lock mutex
+			tch_kernelSetResult(nth,osEventTimeout);
 			nth->t_waitQ = NULL;                                                   // set reference to wait queue to null
 		}
 	}

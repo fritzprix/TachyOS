@@ -133,9 +133,6 @@ static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		if(getThreadHeader(thread)->t_state == TERMINATED){
-			return osErrorParameter;
-		}
 		return tch_port_enterSvFromUsr(SV_THREAD_JOIN,(uint32_t) thread,timeout);
 	}
 }

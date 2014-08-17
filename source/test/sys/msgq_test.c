@@ -29,7 +29,7 @@ static tch_msgQDef(test,10);
 static tch_msgQue_id mid;
 
 
-osStatus do_msgqBaseTest(tch* api){
+tchStatus do_msgqBaseTest(tch* api){
 
 	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(&msgQ_test);
