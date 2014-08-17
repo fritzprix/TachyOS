@@ -74,7 +74,7 @@ void tch_kernelInit(void* arg){
 
 	tch_port_kernel_lock();
 #ifndef __USE_MALLOC
-	tch_sys_instance.tch_heap_handle = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
+	Heap_Manager = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
 #endif
 	tch* api = (tch*) &tch_sys_instance;
 	api->Thread = Thread;
@@ -128,11 +128,11 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
 		return;
 	case SV_THREAD_RESUME:
-		nth = tch_schedResume((tch_thread_queue*)arg1,osOK);
+		nth = tch_schedResume((tch_thread_queue*)arg1,arg2);
 		tch_kernelSetResult(nth,osOK);
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_thread_queue*)arg1,osOK);
+		tch_schedResumeAll((tch_thread_queue*)arg1,arg2);
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
@@ -169,7 +169,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 				nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que,osOK);
 			if(nth){
 				((tch_mtx*) arg1)->key |= (uint32_t)nth;
-				nth->t_kRet = osOK;
+				tch_kernelSetResult(nth,osOK);
 			}else{
 				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
 			}
@@ -182,7 +182,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		while(!tch_listIsEmpty(&((tch_mtx*)arg1)->que)){               ///< check waiting thread in mtx entry
 			nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&((tch_mtx*) arg1)->que);
 			nth = (tch_thread_header*) ((tch_lnode_t*) nth - 1);
-			nth->t_kRet = osErrorResource;
+			tch_kernelSetResult(nth,osErrorResource);
 			nth->t_waitQ = NULL;
 			tch_schedReady(nth);                    ///< if there is thread waiting,put it ready state
 		}
@@ -197,19 +197,29 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
 		return;
 	case SV_MEM_MALLOC:
-		tch_kernelSetResult(tch_currentThread,(uint32_t)Sys->tch_heap_handle->alloc(Sys->tch_heap_handle,arg1));
+#ifndef __USE_MALLOC
+		tch_kernelSetResult(tch_currentThread,(uint32_t)Heap_Manager->alloc(Heap_Manager,arg1));
+#endif
 		return;
 	case SV_MEM_FREE:
-		tch_currentThread = Sys->tch_heap_handle->free(Sys->tch_heap_handle,(void*)arg1);
+#ifndef __USE_MALLOC
+		tch_currentThread = Heap_Manager->free(Heap_Manager,(void*)arg1);
+#endif
 		return;
 	case SV_ASYNC_START:
+		if(!((tch_async_cb*)arg1)->fn){
+			tch_kernelSetResult(tch_currentThread,osOK);
+			return;
+		}
 		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
 		tch_schedResume(&sysThread.sThreadWaitNode,osOK);
 		return;
 	case SV_ASYNC_BLSTART:
-		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
-		if(!tch_listIsEmpty(&sysThread.sThreadWaitNode))
-			tch_schedReady((tch_thread_id)tch_listDequeue(&sysThread.sThreadWaitNode));
+		if(((tch_async_cb*) arg1)->fn){
+			tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
+			if(!tch_listIsEmpty(&sysThread.sThreadWaitNode))
+				tch_schedReady((tch_thread_id)tch_listDequeue(&sysThread.sThreadWaitNode));
+		}
 		tch_schedSuspend(&((tch_async_cb*)arg1)->wq,arg2);
 		return;
 	case SV_ASYNC_NOTIFY:

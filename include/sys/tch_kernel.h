@@ -23,8 +23,7 @@
 #include "tch.h"
 #include "tch_ktypes.h"
 #include "tch_port.h"
-#include "hal/tch_hal.h"
-#include "tch_halcfg.h"
+#include "tch_hal.h"
 #include "tch_mem.h"
 #include "tch_list.h"
 
@@ -49,8 +48,12 @@ extern int Main_Stack_Limit asm("main_stack_limit");
 
 extern int Idle_Stack_Top asm("idle_stack_top");
 extern int Idle_Stack_Limit asm("idle_stack_limit");
-extern tch_thread_id tch_currentThread;
 
+
+extern tch_thread_id tch_currentThread;
+#ifndef __USE_MALLOC
+extern tch_mem_handle* Heap_Manager;
+#endif
 
 
 

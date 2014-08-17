@@ -20,16 +20,15 @@
  *  condition variable types
  */
 typedef void* tch_condv_id;
-typedef struct _tch_condv_t tch_condv;
 
 struct _tch_condvar_ix_t {
-	tch_condv_id (*create)(tch_condv* condv);
-	BOOL (*wait)(tch_condv* condv,uint32_t timeout);
-	tchStatus (*wake)(tch_condv* condv);
-	tchStatus (*wakeAll)(tch_condv* condv);
-	tchStatus (*destroy)(tch_condv* condv);
+	tch_condv_id (*create)();
+	BOOL (*wait)(tch_condv_id condv,tch_mtx* lock,uint32_t timeout);
+	tchStatus (*wake)(tch_condv_id condv);
+	tchStatus (*wakeAll)(tch_condv_id condv);
+	tchStatus (*destroy)(tch_condv_id condv);
 };
 
-
+extern const tch_condv_ix* pcondvar;
 
 #endif /* TCH_CONDV_H_ */

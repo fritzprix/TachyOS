@@ -20,7 +20,7 @@ ifeq ($(INSTR),)
 	INSTR = thumb
 endif
 
-# FPU Option   HARD | SOFT | NO
+# FPU Option   HARD | HALFSOFT | SOFT | NO
 ifeq ($(FPU),)
 	FPU = SOFT
 endif
@@ -34,6 +34,7 @@ endif
 ifeq ($(HW_PLF),)
 	HW_PLF = STM32F40_41xxx
 endif
+
 
 
 

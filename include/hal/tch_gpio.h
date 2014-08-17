@@ -21,11 +21,8 @@
 extern "C" {
 #endif
 
-typedef enum {
-	gpIo_0 = ((uint8_t) 0),
-	gpIo_1, gpIo_2, gpIo_3, gpIo_4, gpIo_5, gpIo_6, gpIo_7, gpIo_8, gpIo_9, gpIo_10,
-	gpIo_11 = ((uint8_t) 11)
-}gpIo_x;
+
+typedef uint8_t gpIo_x;
 typedef struct tch_gpio_handle tch_gpio_handle;
 
 /**
@@ -37,6 +34,21 @@ typedef struct _tch_gpio_ev_edge{
 	const uint8_t Fall;
 	const uint8_t Both;
 }tch_gpioEvEdge;
+
+typedef struct _tch_gpio_ports{
+	const gpIo_x   gpio_0;
+	const gpIo_x   gpio_1;
+	const gpIo_x   gpio_2;
+	const gpIo_x   gpio_3;
+	const gpIo_x   gpio_4;
+	const gpIo_x   gpio_5;
+	const gpIo_x   gpio_6;
+	const gpIo_x   gpio_7;
+	const gpIo_x   gpio_8;
+	const gpIo_x   gpio_9;
+	const gpIo_x   gpio_10;
+	const gpIo_x   gpio_11;
+}tch_gpioPorts;
 
 typedef struct _tch_gpio_ev_Type{
 	const uint8_t Interrupt;
@@ -101,13 +113,14 @@ typedef struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
+	tch_gpioPorts Ports;
 	tch_gpioMode Mode;
 	tch_gpioOtype Otype;
 	tch_gpioSpeed Speed;
 	tch_gpioPuPd PuPd;
 	tch_gpioEvEdge EvEdeg;
 	tch_gpioEvType EvType;
-	tch_gpio_handle* (*allocIo)(const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+	tch_gpio_handle* (*allocIo)(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 	void (*initCfg)(tch_gpio_cfg* cfg);
 	void (*initEvCfg)(tch_gpio_evCfg* evcfg);
 	uint16_t (*getPortCount)();

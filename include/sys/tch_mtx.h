@@ -28,7 +28,6 @@ typedef struct _tch_mtx_waitque_t {
 	tch_lnode_t          que;
 }tch_mtx_waitque;
 
-
 struct _tch_mtx_t {
 	uint32_t            key;
 	tch_mtx_waitque     que;

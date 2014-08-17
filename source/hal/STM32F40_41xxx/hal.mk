@@ -11,7 +11,8 @@ tch_i2c.c\
 tch_rtc.c\
 tch_spi.c\
 tch_timer.c\
-tch_usart.c
+tch_usart.c\
+tch_intr.c
 	
 HAL_ASM_SRCS=\
      startup_stm32f40xx.S

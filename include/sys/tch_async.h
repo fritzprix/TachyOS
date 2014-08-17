@@ -42,6 +42,9 @@ struct tch_async_prior {
 
 typedef struct _tch_async_ix_t {
 	struct tch_async_prior Prior;
+	/*!
+	 *
+	 */
 	tch_async_id (*create)(tch_async_routine fn,void* arg,uint8_t prior);
 	tchStatus (*start)(tch_async_id id);
 	tchStatus (*blockedstart)(tch_async_id id,uint32_t timeout);
