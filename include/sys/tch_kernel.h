@@ -50,7 +50,7 @@ extern int Idle_Stack_Top asm("idle_stack_top");
 extern int Idle_Stack_Limit asm("idle_stack_limit");
 
 
-extern tch_thread_id tch_currentThread;
+extern tch_thread_header* tch_currentThread;
 #ifndef __USE_MALLOC
 extern tch_mem_handle* Heap_Manager;
 #endif

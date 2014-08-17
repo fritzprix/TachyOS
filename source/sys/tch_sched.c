@@ -63,7 +63,7 @@ static tch_thread_queue tch_pendQue;         ///< thread wait to become ready st
 
 static tch_kernel_instance*   _sys;
 static uint64_t               tch_systimeTick;
-tch_thread_id tch_currentThread;
+tch_thread_header* tch_currentThread;
 
 
 
@@ -173,7 +173,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
 	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*)wq;
 	tch_currentThread = nth;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osErrorTimeoutResource);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osOK);
 }
 
 
@@ -215,7 +215,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 		}else{
 			nth->t_waitQ = NULL;
 			nth->t_state = READY;
-			nth->t_kRet = res;
+			tch_kernelSetResult(nth,res);
 			tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 		}
 	}
@@ -261,7 +261,7 @@ void tch_kernelSysTick(void){
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,osOK);
+		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
 	}
 }
 

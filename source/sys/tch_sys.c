@@ -174,7 +174,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			if(!tch_listIsEmpty((tch_thread_queue*)&((tch_mtx*)arg1)->que))
 				nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que,osOK);
 			if(nth){
-				((tch_mtx*) arg1)->key |= (uint32_t)nth;
+				((tch_mtx*) arg1)->key = ((uint32_t)nth | MTX_INIT_MARK);
 				tch_kernelSetResult(nth,osOK);
 			}else{
 				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
@@ -244,7 +244,7 @@ static DECLARE_THREADROUTINE(sThread_routine){
 			tch_async_cb* cb = tch_listDequeue(&sysThread.asynTaskQ);
 			cb->fn(cb,cb->arg);
 		}
-		tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&sysThread.sThreadWaitNode,0);  // suspend until new task available
+		tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&sysThread.sThreadWaitNode,osWaitForever);  // suspend until new task available why osWaitfor
 	}
 	return osOK;
 }

@@ -48,6 +48,7 @@ tch_mtx* tch_mtx_create(tch_mtx* mtx){
  *  thread try lock mtx for given amount of time
  */
 tchStatus tch_mtx_lock(tch_mtx* mtx,uint32_t timeout){
+	tchStatus result = osOK;
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -56,7 +57,8 @@ tchStatus tch_mtx_lock(tch_mtx* mtx,uint32_t timeout){
 			return osErrorParameter;
 		}
 		while(TRUE){
-			switch(tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout)){
+			result = tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout);
+			switch(result){
 			case osEventTimeout:
 				return osErrorTimeoutResource;
 			case osErrorResource:

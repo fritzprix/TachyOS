@@ -48,8 +48,8 @@ tchStatus mtx_performTest(tch* api){
 	if(api->Mtx->lock(&mmtx,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(child1);
-	api->Mtx->unlock(&mmtx);
 	api->Thread->sleep(500);
+	api->Mtx->unlock(&mmtx);
 
 	tchStatus result = api->Thread->join(child1,osWaitForever);
 	return result;
