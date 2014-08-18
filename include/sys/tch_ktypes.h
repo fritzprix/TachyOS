@@ -15,11 +15,6 @@
 extern "C" {
 #endif
 
-
-
-/***
- *  Supervisor call table
- */
 typedef struct tch_kernel_instance{
 	tch                     tch_api;
 } tch_kernel_instance;

@@ -48,6 +48,7 @@ extern "C" {
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 
 
+
 /*!
  *  tachyos kernel interface
  */

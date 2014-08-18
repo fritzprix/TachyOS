@@ -68,7 +68,7 @@ struct _tch_thread_ix_t {
 	 *  Start New Thread
 	 */
 	tchStatus (*start)(tch_thread_id thread);
-	tchStatus (*terminate)(tch_thread_id thread);
+	tchStatus (*terminate)(tch_thread_id thread,tchStatus err);
 	tch_thread_id (*self)();
 	tchStatus (*sleep)(uint32_t millisec);
 	tchStatus (*join)(tch_thread_id thread,uint32_t timeout);

@@ -33,7 +33,7 @@
  */
 static tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg);
 static tchStatus tch_threadStart(tch_thread_id thread);
-static tchStatus tch_threadTerminate(tch_thread_id thread);
+static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err);
 static tch_thread_id tch_threadSelf();
 static tchStatus tch_threadSleep(uint32_t millisec);
 static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout);
@@ -99,17 +99,15 @@ static tchStatus tch_threadStart(tch_thread_id thread){
 	}
 }
 
-/***
- *  I Think force thread to be terminated directly from other user thread is not good in design perspective
- *  the only use-case of these kind of functions is when thread has gone wrong.
- *  but for such a case, those kind of function(termiating thread) should be provided as kernel feature
- *  not as user program space function. just my thought
- *
- *  if there is any new idea, comment below...
+/*
  */
-static tchStatus tch_threadTerminate(tch_thread_id thread){
-	// not implemented
-	return osErrorOS;
+static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err){
+	if(tch_port_isISR()){
+		tch_kernel_errorHandler(FALSE,osErrorISR);
+		return osErrorISR;
+	}else{
+		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,tch_currentThread,err);
+	}
 }
 
 /***

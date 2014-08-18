@@ -13,11 +13,7 @@
  */
 
 #include "main.h"
-#include "tch.h"
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "mtx_test.h"
 
 
 
@@ -25,9 +21,9 @@ static BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin);
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
-int main(void* arg) {
+int main(tch* api) {
 
-	tch* api = (tch*) arg;
+//	tch* api = (tch*) arg;
 
 	tch_gpio_cfg iocfg;
 	tch_gpio_evCfg evcfg;
@@ -67,13 +63,6 @@ int main(void* arg) {
 uint32_t prscnt = 0;
 BOOL onBtnPressed(tch_gpio_handle* gpio,uint8_t pin){
 	prscnt++;
-	return TRUE;
-}
-
-
-
-static DECL_ASYNC_TASK(async_job){
-	((tch*)arg)->Async->notify(id,osOK);
 	return TRUE;
 }
 

@@ -19,8 +19,11 @@
 extern "C" {
 #endif
 
-int main(void*);
+#include "tch.h"
+#include <stdio.h>
+#include <stdlib.h>
 
+#include "mtx_test.h"
 
 #ifdef __cplusplus
 }
