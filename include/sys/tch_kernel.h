@@ -28,7 +28,14 @@
 #include "tch_list.h"
 
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
-
+#define tch_assert(b)          {\
+	if(b){\
+		if(tch_port_isISR()){\
+			tch_port_enterSvFromIsr(SV_THREAD_TERMINATE,(uint32_t) tch_currentThread,osErrorOS);\
+		else\
+            tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) tch_currentThread,osErrorOS);\
+	}\
+}
 
 extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);

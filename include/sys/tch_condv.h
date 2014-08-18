@@ -23,7 +23,7 @@ typedef void* tch_condv_id;
 
 struct _tch_condvar_ix_t {
 	tch_condv_id (*create)();
-	BOOL (*wait)(tch_condv_id condv,tch_mtx* lock,uint32_t timeout);
+	BOOL (*wait)(tch_condv_id condv,tch_mtxDef* lock,uint32_t timeout);
 	tchStatus (*wake)(tch_condv_id condv);
 	tchStatus (*wakeAll)(tch_condv_id condv);
 	tchStatus (*destroy)(tch_condv_id condv);

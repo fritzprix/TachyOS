@@ -63,7 +63,7 @@ DECLARE_THREADROUTINE(sender){
 		api->MsgQ->put(mid,0xFF,osWaitForever);
 		cnt++;
 	}
-	return NULL;
+	return osOK;
 }
 
 DECLARE_THREADROUTINE(receiver){
@@ -74,5 +74,5 @@ DECLARE_THREADROUTINE(receiver){
 		if(evt.status == osOK)
 			cnt++;
 	}
-	return NULL;
+	return osOK;
 }

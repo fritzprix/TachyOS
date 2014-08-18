@@ -89,7 +89,7 @@
 
 typedef struct tch_gpio_manager_internal_t {
 	tch_lld_gpio                    _pix;
-	tch_mtx                          mtx;
+	tch_mtxDef                          mtx;
 	const uint8_t                    port_cnt;
 	const uint8_t                    io_cnt;
 }tch_gpio_manager;
@@ -99,7 +99,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       idx;
 	uint8_t                       pin;
 	uint32_t                      pMsk;
-	tch_mtx                       mtx;
+	tch_mtxDef                       mtx;
 	tch_lnode_t                   wq;
 	tch_IoEventCalback_t          cb;
 }tch_gpio_handle_prototype;

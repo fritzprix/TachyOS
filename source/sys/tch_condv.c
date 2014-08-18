@@ -24,7 +24,7 @@
 
 typedef struct _tch_condv_type {
 	uint8_t          state;
-	tch_mtx*         wakeMtx;
+	tch_mtxDef*         wakeMtx;
 	tch_thread_queue wq;
 }tch_condvType;
 
@@ -63,7 +63,7 @@ static tch_condv_id tch_condv_create(){
  *  thread wait until given condition is met
  *
  */
-static BOOL tch_condv_wait(tch_condv_id id,tch_mtx* lock,uint32_t timeout){
+static BOOL tch_condv_wait(tch_condv_id id,tch_mtxDef* lock,uint32_t timeout){
 	if(!IS_VALID(id))
 		return osErrorResource;
 	tch_condvType* condv = (tch_condvType*) id;

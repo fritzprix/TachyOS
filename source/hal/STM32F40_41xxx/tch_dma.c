@@ -148,7 +148,7 @@
 
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
-	tch_mtx                     mtx;
+	tch_mtxDef                     mtx;
 	uint16_t                    occp_state;
 	uint16_t                    lpoccp_state;
 }tch_dma_manager;
@@ -157,7 +157,7 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_dma_handle             _pix;
 	dma_t                       dma;
 	uint8_t                     ch;
-	tch_mtx                     mtx;
+	tch_mtxDef                     mtx;
 	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;

@@ -69,14 +69,13 @@ void tch_kernelInit(void* arg){
 		tch_kernel_errorHandler(FALSE,osErrorOS);
 	}
 
-	tch_ulib_ix* stdlib = tch_initCrt(NULL);
-
 
 	tch_port_kernel_lock();
 #ifndef __USE_MALLOC
 	Heap_Manager = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
 #endif
 	tch* api = (tch*) &tch_sys_instance;
+	api->uStdLib = tch_initCrt(NULL);
 	api->Thread = Thread;
 	api->Mtx = Mtx;
 	api->Sig = Sig;
@@ -114,24 +113,23 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
 		tch_port_setThreadSP((uint32_t)sp);
-		__DMB();
-		__ISB();             ///< return kernel call result
 		tch_port_kernel_unlock();
 		return;
-	case SV_THREAD_START:             // thread pointer arg1
+	case SV_THREAD_START:              // start thread first time
 		tch_schedStartThread((tch_thread_id) arg1);
 		return;
 	case SV_THREAD_SLEEP:
-		tch_schedSleep(arg1,SLEEP);    ///< put current thread in the pend queue and update timeout value in the thread header
+		tch_schedSleep(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
 		return;
 	case SV_THREAD_JOIN:
-		if(((tch_thread_header*)arg1)->t_state != TERMINATED)
-			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);
-		tch_kernelSetResult(tch_currentThread,((tch_thread_header*)arg1)->t_kRet);
+		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
+			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
+			return;
+		}
+		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
 		return;
 	case SV_THREAD_RESUME:
-		nth = tch_schedResume((tch_thread_queue*)arg1,arg2);
-		tch_kernelSetResult(nth,osOK);
+		tch_schedResume((tch_thread_queue*)arg1,arg2);
 		return;
 	case SV_THREAD_RESUMEALL:
 		tch_schedResumeAll((tch_thread_queue*)arg1,arg2);
@@ -145,39 +143,42 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_MTX_LOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		if((!(((tch_mtx*) arg1)->key > MTX_INIT_MARK)) || (((tch_mtx*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      ///< check mtx is not locked by any thread
-			((tch_mtx*) arg1)->key |= (uint32_t) cth;        /// marking mtx key as locked
-			if(!cth->t_lckCnt++){                            /// ensure priority escalation occurs only once
+		if((!(((tch_mtxDef*) arg1)->key > MTX_INIT_MARK)) ||
+				(((tch_mtxDef*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      // check mtx is not locked by any thread
+
+			((tch_mtxDef*) arg1)->key |= (uint32_t) cth;                              // marking mtx key as locked
+			if(!cth->t_lckCnt++){                                                  // ensure priority escalation occurs only once
 				cth->t_svd_prior = cth->t_prior;
-				cth->t_prior = Unpreemtible;                 /// if thread owns mtx, its priority is escalated to unpreemptible level
-				                                             ///
-				                                             /// This temporary priority change is to minimize resource allocation time
-				                                             /// of single thread
-				                                             ///
+				((tch_mtxDef*)arg1)->own = cth;
+				                                             // This temporary priority change is to minimize resource allocation time
+				                                             // of single thread
 			}
 			tch_kernelSetResult(cth,osOK);
 			return;
-		}else{                                                 ///< otherwise, make thread block
-			tch_schedSuspend((tch_thread_queue*)&((tch_mtx*) arg1)->que,arg2);
+		}else{                                                 // otherwise, make thread block
+			if(!tch_schedIsPreemptable(((tch_mtxDef*)arg1)->own))          // if thread will be blocked has higher priority than mtx owner, mtx owner inherit the priority of current one
+				((tch_thread_header*)((tch_mtxDef*) arg1))->t_prior = tch_currentThread->t_prior;
+			tch_schedSuspend((tch_thread_queue*)&((tch_mtxDef*) arg1)->que,arg2);
 		}
 		return;
 	case SV_MTX_UNLOCK:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		if((((tch_mtx*) arg1)->key & (uint32_t)cth) != (uint32_t) cth){
+		if((((tch_mtxDef*) arg1)->key & (uint32_t)cth) != (uint32_t) cth){
 			tch_kernelSetResult(cth,osErrorResource);
 			return;
 		}
-		if(((tch_mtx*) arg1)->key > MTX_INIT_MARK){
+		if(((tch_mtxDef*) arg1)->key > MTX_INIT_MARK){
 			if(!--cth->t_lckCnt){
 				cth->t_prior = cth->t_svd_prior;
+				((tch_mtxDef*) arg1)->own = NULL;
 			}
-			if(!tch_listIsEmpty((tch_thread_queue*)&((tch_mtx*)arg1)->que))
-				nth = tch_schedResume((tch_thread_queue*)&((tch_mtx*)arg1)->que,osOK);
+			if(!tch_listIsEmpty((tch_thread_queue*)&((tch_mtxDef*)arg1)->que))
+				nth = tch_schedResume((tch_thread_queue*)&((tch_mtxDef*)arg1)->que,osOK);
 			if(nth){
-				((tch_mtx*) arg1)->key = ((uint32_t)nth | MTX_INIT_MARK);
+				((tch_mtxDef*) arg1)->key = ((uint32_t)nth | MTX_INIT_MARK);
 				tch_kernelSetResult(nth,osOK);
 			}else{
-				((tch_mtx*) arg1)->key = MTX_INIT_MARK;
+				((tch_mtxDef*) arg1)->key = MTX_INIT_MARK;
 			}
 			tch_kernelSetResult(cth,osOK);
 		}else{
@@ -185,8 +186,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		}
 		return;
 	case SV_MTX_DESTROY:
-		while(!tch_listIsEmpty(&((tch_mtx*)arg1)->que)){               ///< check waiting thread in mtx entry
-			nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&((tch_mtx*) arg1)->que);
+		while(!tch_listIsEmpty(&((tch_mtxDef*)arg1)->que)){               ///< check waiting thread in mtx entry
+			nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&((tch_mtxDef*) arg1)->que);
 			nth = (tch_thread_header*) ((tch_lnode_t*) nth - 1);
 			tch_kernelSetResult(nth,osErrorResource);
 			nth->t_waitQ = NULL;
