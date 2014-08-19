@@ -43,7 +43,8 @@ struct tch_hal_t{
 	const tch_lld_intr*  interrupt;
 };
 
-
-
+extern void __tch_printError(tchStatus err);
+extern void __tch_stdout(const void*,uint32_t);
+extern void __tch_stdin(void*,uint32_t);
 
 #endif /* TCH_HAL_H_ */

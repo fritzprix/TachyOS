@@ -65,6 +65,8 @@ extern void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t 
 extern int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2);
 extern int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2);
 extern void* tch_port_makeInitialContext(void* sp,void* initfn);
+extern int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update);
+extern int tch_port_exclusiveCompareDecrement(int* dest,int comp);
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

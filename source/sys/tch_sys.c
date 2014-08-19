@@ -59,11 +59,6 @@ void tch_kernelInit(void* arg){
 	if(!tch_sys_instance.tch_api.Device)
 		tch_kernel_errorHandler(FALSE,osErrorValue);
 
-//	int dval = 1;
-//	int tval = 5;
-
-//	int result = tch_port_exclusiveCompare(&dval,tval,10);
-
 
 	if(!tch_kernel_initPort()){
 		tch_kernel_errorHandler(FALSE,osErrorOS);
@@ -74,10 +69,12 @@ void tch_kernelInit(void* arg){
 #ifndef __USE_MALLOC
 	Heap_Manager = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
 #endif
+	/*Bind API Object*/
 	tch* api = (tch*) &tch_sys_instance;
 	api->uStdLib = tch_initCrt(NULL);
 	api->Thread = Thread;
 	api->Mtx = Mtx;
+	api->Sem = Sem;
 	api->Sig = Sig;
 	api->Mempool = Mempool;
 	api->MailQ = MailQ;

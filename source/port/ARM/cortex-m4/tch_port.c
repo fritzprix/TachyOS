@@ -226,23 +226,43 @@ int tch_port_atomicCompareModify(int* dval,int* tval){
 	return result;
 }
 
-int tch_port_exclusiveCompare(int* dest,int comp,int update){
+int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update){
 	int result = 0;
 	asm volatile(
+			"push {r4-r6}\n"
 			"Try:\n"
 			"LDREX r4,[r0]\n"   // read dest exclusively
 			"CMP r4,r1\n"       // compare read val to comp
 			"ITTEE NE\n"           // if not equal
 			"STREXNE r6,r2,[r0]\n" // update dest with new one
-			"SUBNE r5,r4,r1\n"      // dest > comp : result > 0 otherwise result < 0
+			"LDRNE r5,=#0\n"      // dest > comp : result > 0 otherwise result < 0
 			"STREXEQ r6,r4,[r0]\n"
-			"LDREQ r5,=#0\n"
+			"LDREQ r5,=#1\n"
 			"CMP r6,#0\n"
 			"BNE Try\n"
-			"STR r5,[%0]" : : "r"(&result) : "r4","r5","r6");
+			"STR r5,[%0]\n"
+			"pop {r4-r6}" : : "r"(&result) : "r4","r5","r6");
 	return result;
 }
 
+int tch_port_exclusiveCompareDecrement(int* dest,int comp){
+	int result = 0;
+	asm volatile(
+			"push {r4-r5}\n"
+			"_exCmpDec:\n"
+			"LDREX r4,[r0]\n"
+			"CMP r4,r1\n"
+			"ITTE NE\n"
+			"SUBNE r4,r4,#1\n"
+			"LDRNE r5,=#1\n"
+			"LDREQ r5,=#0\n"
+			"STREX r3,r4,[r0]\n"
+			"CMP r3,#0\n"
+			"BNE _exCmpDec\n"
+			"STR r5,[%0]\n"
+			"pop {r4-r5}\n" : :"r"(&result) : "r4","r5");
+	return result;
+}
 
 void __pend_loop(void){
 	__ISB();

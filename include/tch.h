@@ -46,7 +46,7 @@ extern "C" {
 /// Timeout value.
 /// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
-
+#define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
 
 
 /*!

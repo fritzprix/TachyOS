@@ -41,6 +41,7 @@ int main(tch* api) {
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
 	btn = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,10,&iocfg,osWaitForever,NoActOnSleep);
 
+	tch_assert(api,TRUE,osErrorISR);
 
 
 	btn->registerIoEvent(btn,&evcfg,onBtnPressed);

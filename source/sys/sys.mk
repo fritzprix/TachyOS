@@ -7,6 +7,7 @@ KERNEL_SRCS=\
 	    tch_sched.c\
 	    tch_sig.c\
 	    tch_sys.c\
+	    tch_sem.c\
 	    tch_thread.c\
 	    tch_vtimer.c\
 	    tch_list.c\
