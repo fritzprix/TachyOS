@@ -31,14 +31,14 @@ tchStatus mtx_performTest(tch* api){
 
 	tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg thCfg;
-	thCfg._t_name = "child1";
+	thCfg._t_name = "child1_mtx";
 	thCfg._t_routine = child1Routine;
 	thCfg._t_stack = child1Stack;
 	thCfg.t_proior = Normal;
 	thCfg.t_stackSize = (1 << 9);
 	child1 = Thread->create(&thCfg,api);
 
-	thCfg._t_name = "child2";
+	thCfg._t_name = "child2_mtx";
 	thCfg._t_routine = child2Routine;
 	thCfg._t_stack = child2Stack;
 	thCfg.t_stackSize = (1 << 9);

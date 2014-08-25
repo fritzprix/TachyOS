@@ -182,6 +182,9 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res){
 	if(tch_listIsEmpty(wq))
 		return NULL;
 	tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
+	tch_kernelSetResult(nth,res);
+	if(nth->t_to)
+		tch_listRemove(&tch_pendQue,nth);
 	nth->t_waitQ = NULL;
 	if(tch_schedIsPreemptable(nth)){
 		nth->t_state = RUNNING;
@@ -192,7 +195,6 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res){
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
 	}else{
 		nth->t_state = READY;
-		tch_kernelSetResult(nth,res);
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 	}
 	return nth;
@@ -211,12 +213,14 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 		return;
 	while(!tch_listIsEmpty(wq)){
 		tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
+		nth->t_waitQ = NULL;
+		if(nth->t_to)
+			tch_listRemove(&tch_pendQue,nth);
+		tch_kernelSetResult(nth,res);
 		if(tch_schedIsPreemptable(nth)){
 			tpreempt = nth;
 		}else{
-			nth->t_waitQ = NULL;
 			nth->t_state = READY;
-			tch_kernelSetResult(nth,res);
 			tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 		}
 	}
@@ -249,6 +253,7 @@ void tch_kernelSysTick(void){
 		nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&tch_pendQue);
 		nth->t_state = READY;
 		tch_schedReady(nth);
+		nth->t_to = 0;
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&getThreadHeader(nth)->t_waitNode);        // cancel wait to lock mutex
 			tch_kernelSetResult(nth,osEventTimeout);
@@ -284,6 +289,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 	cth_p->t_state = TERMINATED;                          ///< change state of thread to terminated
 	while(!tch_listIsEmpty(&cth_p->t_joinQ)){
 		jth = (tch_thread_id)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
+		getThreadHeader(jth)->t_waitQ = NULL;
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,jth,tch_schedReadyQPolicy);
 		tch_kernelSetResult(jth,result);
 	}

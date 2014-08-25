@@ -106,7 +106,7 @@ static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,tch_currentThread,err);
+		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,thread,err);
 	}
 }
 

@@ -148,7 +148,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
-	tch_kernelSetResult(tch_currentThread,ret_val);
+	tch_kernelSetResult(arg1,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -248,7 +248,7 @@ int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update){
 int tch_port_exclusiveCompareDecrement(int* dest,int comp){
 	int result = 0;
 	asm volatile(
-			"push {r4-r5}\n"
+			"push {r4-r6}\n"
 			"_exCmpDec:\n"
 			"LDREX r4,[r0]\n"
 			"CMP r4,r1\n"
@@ -256,11 +256,11 @@ int tch_port_exclusiveCompareDecrement(int* dest,int comp){
 			"SUBNE r4,r4,#1\n"
 			"LDRNE r5,=#1\n"
 			"LDREQ r5,=#0\n"
-			"STREX r3,r4,[r0]\n"
-			"CMP r3,#0\n"
+			"STREX r6,r4,[r0]\n"
+			"CMP r6,#0\n"
 			"BNE _exCmpDec\n"
 			"STR r5,[%0]\n"
-			"pop {r4-r5}\n" : :"r"(&result) : "r4","r5");
+			"pop {r4-r6}\n" : :"r"(&result) : "r4","r5","r6");
 	return result;
 }
 

@@ -80,6 +80,11 @@ int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 		}
 		cnode = cnode->next;
 	}
+	if(lentry->next){
+		lentry->next = NULL;
+		return (1 > 0);
+	}
+
 	return (1 < 0);
 }
 
