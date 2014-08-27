@@ -55,7 +55,6 @@ static tchStatus tch_semaphore_wait(tch_sem_id id,uint32_t timeout){
 		case osEventTimeout:                                   // if timeout expires, sv call will return osEventTimeout
 			return osErrorTimeoutResource;
 		case osErrorResource:                                  // if semaphore destroyed sv call will return osErrorResource
-
 			return osErrorResource;
 		}
 	}
@@ -70,10 +69,10 @@ static tchStatus tch_semaphore_unlock(tch_sem_id id){
 	tch_semDef* sem = (tch_semDef*) id;
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
-		if(!tch_port_isISR())
-			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
-		else
+		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
+		else
+			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
 	}
 	return osOK;
 }

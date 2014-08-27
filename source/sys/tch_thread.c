@@ -37,8 +37,8 @@ static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err);
 static tch_thread_id tch_threadSelf();
 static tchStatus tch_threadSleep(uint32_t millisec);
 static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout);
-static void tch_threadSetPriority(tch_thread_prior nprior);
-static tch_thread_prior tch_threadGetPriorty();
+static void tch_threadSetPriority(tch_thread_id id,tch_thread_prior nprior);
+static tch_thread_prior tch_threadGetPriorty(tch_thread_id id);
 
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
@@ -136,12 +136,12 @@ static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 }
 
 
-static void tch_threadSetPriority(tch_thread_prior nprior){
-	getThreadHeader(tch_schedGetRunningThread())->t_prior = nprior;
+static void tch_threadSetPriority(tch_thread_id id,tch_thread_prior nprior){
+	getThreadHeader(id)->t_prior = nprior;
 }
 
-static tch_thread_prior tch_threadGetPriorty(){
-	return getThreadHeader(tch_schedGetRunningThread())->t_prior;
+static tch_thread_prior tch_threadGetPriorty(tch_thread_id id){
+	return getThreadHeader(id)->t_prior;
 }
 
 

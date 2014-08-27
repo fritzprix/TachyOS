@@ -74,18 +74,25 @@ static void race(tch* api){
 
 static DECLARE_THREADROUTINE(child1Routine){
 	tch* api = (tch*) arg;
-	if(api->Mtx->lock(mmtx,10) != osErrorTimeoutResource)    // Timeout expected
+	tchStatus result = osOK;
+	if((result = api->Mtx->lock(mmtx,10)) != osErrorTimeoutResource)    // Timeout expected
 		return osErrorOS;
-	if(api->Mtx->unlock(mmtx) != osErrorResource)
+	if((result = api->Mtx->unlock(mmtx)) != osErrorResource)
 		return osErrorOS;
-	if(api->Mtx->lock(mmtx,osWaitForever) != osOK)
+	if((result = api->Mtx->lock(mmtx,osWaitForever)) != osOK)
 		return osErrorOS;
 	api->Thread->start(child2);
 	race(api);
+//	api->Mtx->destroy(mmtx);
 	return api->Thread->join(child2,osWaitForever);
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
+	tch* api = (tch*) arg;
 	race(arg);
-	return osOK;
+	tchStatus result = osOK;
+	api->Thread->sleep(50);
+	if((result = api->Mtx->lock(mmtx,osWaitForever)) == osErrorResource)
+		return osOK;
+	return osErrorOS;
 }

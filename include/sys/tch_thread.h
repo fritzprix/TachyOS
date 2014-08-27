@@ -50,7 +50,7 @@ struct _tch_thread_cfg_t {
 	uint32_t             t_stackSize;
 	tch_thread_routine  _t_routine;
 	tch_thread_prior     t_proior;
-	const void*               _t_stack;
+	const void*         _t_stack;
 	const char*         _t_name;
 };
 
@@ -72,8 +72,8 @@ struct _tch_thread_ix_t {
 	tch_thread_id (*self)();
 	tchStatus (*sleep)(uint32_t millisec);
 	tchStatus (*join)(tch_thread_id thread,uint32_t timeout);
-	void (*setPriority)(tch_thread_prior nprior);
-	tch_thread_prior (*getPriorty)();
+	void (*setPriority)(tch_thread_id id,tch_thread_prior nprior);
+	tch_thread_prior (*getPriorty)(tch_thread_id id);
 };
 
 #endif /* TCH_THREAD_H_ */

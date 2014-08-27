@@ -30,12 +30,12 @@
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
 static void __pend_loop(void) __attribute__((naked));
-static int isr_svc_cnt;
+//static int isr_svc_cnt;
 
 
 BOOL tch_kernel_initPort(){
 	__disable_irq();
-	isr_svc_cnt = 0;
+	//isr_svc_cnt = 0;
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
 	                                                                        *   - Handler or thread within same group priority
@@ -114,7 +114,7 @@ void tch_port_disableISR(void){
 
 
 void tch_port_switchContext(void* nth,void* cth){
-	isr_svc_cnt--;
+	//isr_svc_cnt--;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
@@ -136,9 +136,9 @@ void tch_port_switchContext(void* nth,void* cth){
  *  this function redirect execution to thread mode for thread context manipulation
  */
 void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val){
-	if(isr_svc_cnt)
-		tch_kernel_errorHandler(FALSE,osErrorISR);
-	isr_svc_cnt++;
+	//if(isr_svc_cnt)
+//		tch_kernel_errorHandler(FALSE,osErrorISR);
+	//isr_svc_cnt++;
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
 	                                                              //   prepare fake exception stack
 	                                                              //    - passing arguement to kernel mode thread
@@ -148,7 +148,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
-	tch_kernelSetResult(arg1,ret_val);
+	tch_kernelSetResult(arg2,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -230,16 +230,16 @@ int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
-			"Try:\n"
-			"LDREX r4,[r0]\n"   // read dest exclusively
-			"CMP r4,r1\n"       // compare read val to comp
-			"ITTEE NE\n"           // if not equal
-			"STREXNE r6,r2,[r0]\n" // update dest with new one
-			"LDRNE r5,=#0\n"      // dest > comp : result > 0 otherwise result < 0
-			"STREXEQ r6,r4,[r0]\n"
-			"LDREQ r5,=#1\n"
+			"__exCmpUpdate:\n"
+			"LDREX r4,[r0]\n"       // read dest exclusively
+			"CMP r4,r1\n"           // compare read val to comp
+			"ITTEE EQ\n"            // if not equal
+			"STREXEQ r6,r2,[r0]\n"  // update dest with new one
+			"LDREQ r5,=#0\n"        // return 1
+			"STREXNE r6,r4,[r0]\n"  // else update previous value
+			"LDRNE r5,=#1\n"        // return 0
 			"CMP r6,#0\n"
-			"BNE Try\n"
+			"BNE __exCmpUpdate\n"
 			"STR r5,[%0]\n"
 			"pop {r4-r6}" : : "r"(&result) : "r4","r5","r6");
 	return result;

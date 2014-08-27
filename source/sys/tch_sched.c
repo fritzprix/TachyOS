@@ -184,12 +184,12 @@ tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res){
 	tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
 	tch_kernelSetResult(nth,res);
 	if(nth->t_to)
-		tch_listRemove(&tch_pendQue,nth);
+		tch_listRemove((tch_lnode_t*)&tch_pendQue,getListNode(nth));
 	nth->t_waitQ = NULL;
 	if(tch_schedIsPreemptable(nth)){
 		nth->t_state = RUNNING;
 		getThreadHeader(tch_currentThread)->t_state = READY;
-		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,tch_currentThread,tch_schedReadyQPolicy);
+		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQPolicy);
 		getListNode(nth)->prev = tch_currentThread;
 		tch_currentThread = nth;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
@@ -215,7 +215,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 		tch_thread_header* nth = (tch_thread_header*) ((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) wq) - 1);
 		nth->t_waitQ = NULL;
 		if(nth->t_to)
-			tch_listRemove(&tch_pendQue,nth);
+			tch_listRemove((tch_lnode_t*)&tch_pendQue,getListNode(nth));
 		tch_kernelSetResult(nth,res);
 		if(tch_schedIsPreemptable(nth)){
 			tpreempt = nth;
@@ -227,7 +227,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 	if(tpreempt){
 		tpreempt->t_state = RUNNING;
 		getThreadHeader(tch_currentThread)->t_state = READY;
-		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,tch_currentThread,tch_schedReadyQPolicy);
+		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQPolicy);
 		getListNode(tpreempt)->prev = tch_currentThread;
 		tch_currentThread = tpreempt;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
@@ -261,8 +261,8 @@ void tch_kernelSysTick(void){
 		}
 	}
 	if((!tch_listIsEmpty(&tch_readyQue)) && tch_schedIsPreemptable(tch_readyQue.thque.next)){
-		tch_thread_header* nth = (tch_thread_header*)tch_listDequeue((tch_lnode_t*)&tch_readyQue);
-		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,tch_currentThread,tch_schedReadyQPolicy);
+		nth = (tch_thread_header*)tch_listDequeue((tch_lnode_t*)&tch_readyQue);
+		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQPolicy);
 		getListNode(nth)->prev = tch_currentThread;
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;

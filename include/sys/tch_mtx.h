@@ -16,6 +16,9 @@
 #define TCH_MTX_H_
 
 #include "tch_list.h"
+#include "tch_thread.h"
+#define __FUTEX     (1)
+
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)
 #define INIT_MTX                      {MTX_INIT_MARK,{INIT_LIST},NULL}
@@ -33,6 +36,9 @@ struct _tch_mtx_t {
 	uint32_t            key;
 	tch_mtx_waitque     que;
 	void*               own;
+#if __FUTEX
+	tch_thread_prior    svdPrior;
+#endif
 };
 
 struct _tch_mutex_ix_t {

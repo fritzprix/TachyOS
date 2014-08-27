@@ -147,8 +147,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			if(!cth->t_lckCnt++){                                                  // ensure priority escalation occurs only once
 				cth->t_svd_prior = cth->t_prior;
 				((tch_mtxDef*)arg1)->own = cth;
-				                                             // This temporary priority change is to minimize resource allocation time
-				                                             // of single thread
+				                                             // This temporary priority change is to prevent priority inversion
 			}
 			tch_kernelSetResult(cth,osOK);
 			return;
