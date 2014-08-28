@@ -56,7 +56,7 @@ tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 		return osErrorISR;
 	}else{
 		if(((tch_mtxDef*)mtx)->key < MTX_INIT_MARK){
-			return osErrorParameter;
+			return osErrorResource;
 		}
 		while(TRUE){
 			result = tch_port_enterSvFromUsr(SV_MTX_LOCK,(uint32_t)mtx,timeout);
@@ -86,12 +86,14 @@ tchStatus tch_mtx_lock(tch_mtx_id id,uint32_t timeout){
 		if((int)mtx->own == tid)
 			return osOK;
 		if(mtx->key < MTX_INIT_MARK)
-			return osErrorParameter;
+			return osErrorResource;
 		while(tch_port_exclusiveCompareUpdate((int*)&mtx->key,MTX_INIT_MARK,tid | MTX_INIT_MARK)){
 			tch_thread_prior prior = Thread->getPriorty((tch_thread_id)tid);
 			if(Thread->getPriorty(mtx->own) < prior)
 				Thread->setPriority(mtx->own,prior);
 			result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mtx->que,timeout);
+			if(mtx->key < MTX_INIT_MARK)
+				return osErrorResource;
 			switch(result){
 			case osEventTimeout:
 				return osErrorTimeoutResource;
@@ -118,7 +120,7 @@ tchStatus tch_mtx_unlock(tch_mtx_id mtx){
 		return osErrorISR;
 	}else{
 		if(((tch_mtxDef*)mtx)->key < MTX_INIT_MARK){     ///< otherwise ensure this key is locked by any thread
-			return osErrorParameter;                    ///< if not, return osErrorParameter
+			return osErrorResource;                    ///< if not, return osErrorParameter
 		}
 		return (tchStatus)tch_port_enterSvFromUsr(SV_MTX_UNLOCK,(uint32_t)mtx,0);   ///< otherwise, invoke system call for unlocking mtx
 	}
@@ -133,7 +135,7 @@ tchStatus tch_mtx_unlock(tch_mtx_id id){
 		if(mtx->key != ((uint32_t)tid | MTX_INIT_MARK))
 			return osErrorResource;
 		if(mtx->key < MTX_INIT_MARK)
-			return osErrorParameter;
+			return osErrorResource;
 		Thread->setPriority(mtx->own,mtx->svdPrior);
 		mtx->svdPrior = Idle;
 		mtx->own = NULL;

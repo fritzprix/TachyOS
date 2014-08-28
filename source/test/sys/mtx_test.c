@@ -83,7 +83,7 @@ static DECLARE_THREADROUTINE(child1Routine){
 		return osErrorOS;
 	api->Thread->start(child2);
 	race(api);
-//	api->Mtx->destroy(mmtx);
+	api->Mtx->destroy(mmtx);
 	return api->Thread->join(child2,osWaitForever);
 }
 

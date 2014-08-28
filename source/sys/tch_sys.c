@@ -139,8 +139,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedTerminate((tch_thread_id) cth,arg2);
 		return;
 	case SV_MTX_LOCK:
+		if(((tch_mtxDef*) arg1)->key < MTX_INIT_MARK){
+			tch_kernelSetResult(tch_currentThread,osErrorResource);
+			return;
+		}
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		if((!(((tch_mtxDef*) arg1)->key > MTX_INIT_MARK)) ||
+		if((((tch_mtxDef*) arg1)->key == MTX_INIT_MARK) ||
 				(((tch_mtxDef*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      // check mtx is not locked by any thread
 
 			((tch_mtxDef*) arg1)->key |= (uint32_t) cth;                              // marking mtx key as locked

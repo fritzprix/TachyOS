@@ -20,8 +20,8 @@
 typedef struct _tch_lnode_t tch_lnode_t;
 
 typedef struct _tch_lnode_t {
-	void* prev;
-	void* next;
+	tch_lnode_t* prev;
+	tch_lnode_t* next;
 }tch_lnode_t;
 
 
