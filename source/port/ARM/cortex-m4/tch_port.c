@@ -148,7 +148,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
-	tch_kernelSetResult(arg2,ret_val);
+	tch_kernelSetResult(arg1,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack

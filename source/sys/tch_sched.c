@@ -122,7 +122,7 @@ void tch_schedStartThread(tch_thread_id nth){
 		tch_currentThread = nth;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
 		getThreadHeader(getListNode(tch_currentThread)->prev)->t_state = READY;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osOK);
+		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,getListNode(nth)->prev,osOK);
 	}else{
 		getThreadHeader(nth)->t_state = READY;
 		tch_kernelSetResult(tch_currentThread,osOK);
@@ -174,7 +174,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
 	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*)wq;
 	tch_currentThread = nth;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osOK);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
 }
 
 
@@ -238,7 +238,11 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 
 
 tchStatus tch_schedCancelTimeout(tch_thread_id thread){
+	if(!thread)
+		return osErrorParameter;
 	tch_genericQue_remove((tch_lnode_t*)&tch_pendQue,(tch_lnode_t*)thread);
+	getThreadHeader(thread)->t_to = 0;
+	tch_schedReady(thread);
 	return osOK;
 }
 
@@ -254,9 +258,9 @@ void tch_kernelSysTick(void){
 		nth->t_state = READY;
 		tch_schedReady(nth);
 		nth->t_to = 0;
+		tch_kernelSetResult(nth,osEventTimeout);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&getThreadHeader(nth)->t_waitNode);        // cancel wait to lock mutex
-			tch_kernelSetResult(nth,osEventTimeout);
 			nth->t_waitQ = NULL;                                                   // set reference to wait queue to null
 		}
 	}
@@ -294,7 +298,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 		tch_kernelSetResult(jth,result);
 	}
 	tch_currentThread = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tch_currentThread,(uint32_t)cth_p,osOK);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tch_currentThread,(uint32_t)cth_p,tch_currentThread->t_kRet);
 }
 
 

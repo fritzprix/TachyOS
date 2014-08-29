@@ -44,13 +44,16 @@ static tch_sem_id tch_semaphore_create(tch_semDef* sem,uint32_t count){
 }
 
 static tchStatus tch_semaphore_wait(tch_sem_id id,uint32_t timeout){
-	tch_kAssert(IS_INIT(id),osErrorParameter);
-	tch_kAssert(!tch_port_isISR(),osErrorISR);
-
+	if(tch_port_isISR())
+		return osErrorISR;
+	if(!IS_INIT(id))
+		return osErrorResource;
 	tch_semDef* sem = (tch_semDef*) id;
 	tchStatus result = osOK;
 	while(!tch_port_exclusiveCompareDecrement((int*)&sem->count,0)){                // try to exclusively decrement count value
 		result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&sem->wq,timeout);
+		if(!IS_INIT(id))                                                            // validity of semaphore is double-checked because waiting thread is siganled and in ready state before semaphore destroyed
+			return osErrorResource;
 		switch(result){
 		case osEventTimeout:                                   // if timeout expires, sv call will return osEventTimeout
 			return osErrorTimeoutResource;
@@ -60,12 +63,12 @@ static tchStatus tch_semaphore_wait(tch_sem_id id,uint32_t timeout){
 	}
 	if(result == osOK)
 		return osOK;
-	tch_kAssert(TRUE,osErrorOS);
 	return osErrorOS;                      // unreachable code
 }
 
 static tchStatus tch_semaphore_unlock(tch_sem_id id){
-	tch_kAssert(IS_INIT(id),osErrorParameter);
+	if(!IS_INIT(id))
+		return osErrorResource;
 	tch_semDef* sem = (tch_semDef*) id;
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
@@ -78,8 +81,8 @@ static tchStatus tch_semaphore_unlock(tch_sem_id id){
 }
 
 static tchStatus tch_semaphore_destroy(tch_sem_id id){
-	tch_kAssert(IS_INIT(id),osErrorParameter);
-
+	if(!IS_INIT(id))
+		return osErrorParameter;
 	tch_semDef* sem = (tch_semDef*) id;
 	sem->key = 0;
 	sem->count = 0;

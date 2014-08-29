@@ -17,7 +17,7 @@
 
 #include "tch_list.h"
 #include "tch_thread.h"
-#define __FUTEX     (0)
+#define __FUTEX     (1)
 
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)

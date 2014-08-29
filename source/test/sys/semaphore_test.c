@@ -21,6 +21,8 @@ tch_thread_id ch1Id;
 tch_thread_id ch2Id;
 tch_thread_id ch3Id;
 
+volatile BOOL spin;
+
 tch_semDef tsd;
 tch_sem_id ts;
 uint16_t shVar;
@@ -28,7 +30,7 @@ uint16_t shVar;
 tchStatus semaphore_performTest(tch* api){
 
 	shVar = 0;
-
+	spin = TRUE;
 	uint32_t* th1Stk = api->Mem->alloc(512);
 	uint32_t* th2Stk = api->Mem->alloc(512);
 	uint32_t* th3Stk = api->Mem->alloc(512);
@@ -64,9 +66,7 @@ tchStatus semaphore_performTest(tch* api){
 	if(api->Thread->join(ch1Id,osWaitForever) != osOK)
 		return osErrorOS;
 
-	if(shVar == 3 * TEST_CNT)
-		return osOK;
-	return osErrorOS;
+	return osOK;
 }
 
 
@@ -84,6 +84,10 @@ static DECLARE_THREADROUTINE(child1Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
 		race(api);
+	api->Thread->sleep(5);
+	api->Sem->destroy(ts);
+	spin = FALSE;
+
 	return osOK;
 }
 
@@ -92,6 +96,9 @@ static DECLARE_THREADROUTINE(child2Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
 		race(api);
+	while(spin) api->Thread->sleep(0);
+	if(api->Sem->lock(ts,osWaitForever) != osErrorResource)
+		return osErrorOS;
 	return osOK;
 }
 

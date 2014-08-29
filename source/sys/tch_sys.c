@@ -138,9 +138,9 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		tch_schedTerminate((tch_thread_id) cth,arg2);
 		return;
-	case SV_MTX_LOCK:
-		if(((tch_mtxDef*) arg1)->key < MTX_INIT_MARK){
-			tch_kernelSetResult(tch_currentThread,osErrorResource);
+	case SV_MTX_LOCK:  // * Mutex Lock System Call
+		if(((tch_mtxDef*) arg1)->key < MTX_INIT_MARK){    // check validity of mutex object
+			tch_kernelSetResult(tch_currentThread,osErrorResource);     // if mutex object is not valid, return
 			return;
 		}
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
