@@ -66,6 +66,11 @@ tchStatus semaphore_performTest(tch* api){
 	if(api->Thread->join(ch1Id,osWaitForever) != osOK)
 		return osErrorOS;
 
+	api->Mem->free(th1Stk);
+	api->Mem->free(th2Stk);
+	api->Mem->free(th3Stk);
+
+
 	return osOK;
 }
 

@@ -60,13 +60,17 @@ extern tch_mem_handle* Heap_Manager;
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
 
-
+/**
+ * Kernel API Struct* List
+ * - are bound statically in compile time
+ */
 extern const tch_thread_ix* Thread;
 extern const tch_signal_ix* Sig;
 extern const tch_timer_ix* Timer;
 extern const tch_condv_ix* Condv;
 extern const tch_mtx_ix* Mtx;
 extern const tch_semaph_ix* Sem;
+extern const tch_bar_ix* Barrier;
 extern const tch_msgq_ix* MsgQ;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;

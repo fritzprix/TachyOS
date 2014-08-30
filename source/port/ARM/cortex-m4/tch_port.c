@@ -113,7 +113,7 @@ void tch_port_disableISR(void){
 
 
 
-void tch_port_switchContext(void* nth,void* cth){
+void tch_port_switchContext(uaddr_t nth,uaddr_t cth){
 	//isr_svc_cnt--;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
@@ -135,7 +135,7 @@ void tch_port_switchContext(void* nth,void* cth){
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,uint32_t ret_val){
+void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t ret_val){
 	//if(isr_svc_cnt)
 //		tch_kernel_errorHandler(FALSE,osErrorISR);
 	//isr_svc_cnt++;
@@ -162,7 +162,7 @@ void tch_port_jmpToKernelModeThread(void* routine,uint32_t arg1,uint32_t arg2,ui
 
 
 
-int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
+int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
 			"dmb\n"
 			"isb\n"
@@ -171,7 +171,7 @@ int tch_port_enterSvFromUsr(int sv_id,uint32_t arg1,uint32_t arg2){
 }
 /***
  */
-int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
+int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
@@ -189,7 +189,7 @@ int tch_port_enterSvFromIsr(int sv_id,uint32_t arg1,uint32_t arg2){
 /**
  *  prepare initial context for start thread
  */
-void* tch_port_makeInitialContext(void* th_header,void* initfn){
+void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;                // offset exc_stack size (size depends on floating point option)
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
@@ -207,7 +207,7 @@ void* tch_port_makeInitialContext(void* th_header,void* initfn){
 
 }
 
-int tch_port_atomicCompareModify(int* dval,int* tval){
+int tch_port_atomicCompareModify(uaddr_t dval,uaddr_t tval){
 	volatile int result = 0;
 	asm volatile(
 			"LDR r4,[r0]\n"
@@ -226,7 +226,7 @@ int tch_port_atomicCompareModify(int* dval,int* tval){
 	return result;
 }
 
-int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update){
+int tch_port_exclusiveCompareUpdate(uaddr_t dest,int comp,int update){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
@@ -245,7 +245,7 @@ int tch_port_exclusiveCompareUpdate(int* dest,int comp,int update){
 	return result;
 }
 
-int tch_port_exclusiveCompareDecrement(int* dest,int comp){
+int tch_port_exclusiveCompareDecrement(uaddr_t dest,int comp){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"

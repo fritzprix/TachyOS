@@ -64,6 +64,7 @@ typedef struct _tch_mpool_ix_t tch_mpool_ix;
 typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
+typedef struct _tch_bar_ix_t tch_bar_ix;
 
 typedef struct tch_hal_t tch_hal;
 
@@ -75,6 +76,7 @@ typedef struct _tch_t {
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
 	const tch_semaph_ix* Sem;
+	const tch_bar_ix* Barrier;
 	const tch_msgq_ix* MsgQ;
 	const tch_mailq_ix* MailQ;
 	const tch_mpool_ix* Mempool;                ///< Operating System
@@ -89,6 +91,7 @@ typedef struct _tch_t {
 
 #include "sys/tch_mtx.h"
 #include "sys/tch_sem.h"
+#include "sys/tch_bar.h"
 #include "sys/tch_thread.h"
 #include "sys/tch_sig.h"
 #include "sys/tch_vtimer.h"
