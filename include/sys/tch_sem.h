@@ -15,6 +15,11 @@
 #ifndef TCH_SEM_H_
 #define TCH_SEM_H_
 
+#include "tch_TypeDef.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 
 /***
@@ -34,5 +39,9 @@ struct _tch_semaph_ix_t {
 	tchStatus (*destroy)(tch_sem_id sid);
 };
 
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_SEM_H_ */

@@ -18,6 +18,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(__cplusplus)
+extern "C"{
+#endif
+
 
 #if !defined(MICRO_LIBSET) && !defined(GNUX_LIBSET) && !defined(ANSI_LIBSET) && !defined(POSIX_LIBSET) && !defined(C99_LIBSET)
 #define MICRO_LIBSET
@@ -299,5 +303,9 @@ typedef struct _tch_ustdl_ix_t {
 
 
 extern tch_ustdlib_ix* tch_initCrt(void* arg);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_NCLIB_H_ */

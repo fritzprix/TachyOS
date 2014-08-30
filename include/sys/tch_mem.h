@@ -15,7 +15,14 @@
 #ifndef TCH_MEM_H_
 #define TCH_MEM_H_
 
-#include <stddef.h>
+
+#include "tch_TypeDef.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
+
+
 typedef struct _tch_mem_handle tch_mem_handle;
 
 /**
@@ -38,4 +45,8 @@ struct _tch_mem_ix_t {
 
 extern tch_mem_handle* tch_memInit(void* pool,size_t size);
 
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* TCH_MEM_H_ */

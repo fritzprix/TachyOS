@@ -226,7 +226,7 @@ int tch_port_atomicCompareModify(uaddr_t dval,uaddr_t tval){
 	return result;
 }
 
-int tch_port_exclusiveCompareUpdate(uaddr_t dest,int comp,int update){
+int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
@@ -245,7 +245,7 @@ int tch_port_exclusiveCompareUpdate(uaddr_t dest,int comp,int update){
 	return result;
 }
 
-int tch_port_exclusiveCompareDecrement(uaddr_t dest,int comp){
+int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"

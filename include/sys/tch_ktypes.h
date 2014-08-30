@@ -11,7 +11,7 @@
 #include "tch.h"
 
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -63,8 +63,6 @@ typedef struct tch_thread_header {
 typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
-
-
 
 
 typedef struct tch_async_cb_t {

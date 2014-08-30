@@ -45,6 +45,7 @@ typedef struct tch_mailq_instance {
 static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que);
 static tchStatus tch_msgQ_put(tch_msgQue_id,uint32_t msg,uint32_t millisec);
 static osEvent tch_msgQ_get(tch_msgQue_id,uint32_t millisec);
+static tchStatus tch_msgQ_destroy(tch_msgQue_id id);
 
 
 static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que);
@@ -74,7 +75,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
-tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
+static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
 	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
 	msgq_header->pidx = 0;
@@ -86,7 +87,7 @@ tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	return (tch_msgQue_id) msgq_header;
 }
 
-tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
+static tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
 	if(tch_port_isISR()){                                                            ///< ISR Mode
 		if(millisec)                                                                 ///< ##Note : in ISR Mode, timeout is taken into error, because isr mode execution can not blocked
@@ -116,7 +117,7 @@ tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
 	}
 }
 
-osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
+static osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
 	osEvent evt;
 	evt.def = que_id;
@@ -157,8 +158,13 @@ osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
 	}
 }
 
+static tchStatus tch_msgQ_destroy(tch_msgQue_id id){
+	return osErrorOS;
+}
 
-tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
+
+
+static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
 	tch_mailq_instance* mailq = (tch_mailq_instance*) que->pool - 1;
 	mailq->bfree = que->pool;
@@ -183,7 +189,7 @@ tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	return mailq;
 }
 
-void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
+static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
@@ -203,7 +209,7 @@ void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	return free;
 }
 
-void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
+static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
@@ -226,7 +232,7 @@ void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 
 
 
-tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	if((mailq->mailqDef->pool > mail) && (mailq->bend <= mail))
 		return osErrorValue;
@@ -242,7 +248,7 @@ tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 	return osOK;
 }
 
-osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
+static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	osEvent evt;
 	evt.status = osOK;
@@ -268,7 +274,7 @@ osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 }
 
 
-tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
 	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
 	tch_port_kernel_lock();
 	mailq->psize++;

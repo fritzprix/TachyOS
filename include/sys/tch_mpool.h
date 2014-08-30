@@ -15,6 +15,11 @@
 #ifndef TCH_MPOOL_H_
 #define TCH_MPOOL_H_
 
+#include "tch_TypeDef.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 /**
  * Macro Function
@@ -51,6 +56,8 @@ struct _tch_mpool_ix_t {
 	tchStatus (*free)(tch_mpool_id mpool,void* block);
 };
 
-
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_MPOOL_H_ */

@@ -42,17 +42,6 @@
 #define FAULT_TYPE_USG                     (-1)
 
 
-/*
- *
- *  must be defined properly your target platform
- *
- */
-typedef uint32_t uword_t;
-typedef uint16_t uhword_t;
-typedef int32_t  word_t;
-typedef int16_t  hword_t;
-typedef void* uaddr_t;
-
 
 extern void tch_kernel_faulthandle(int faulttype);
 
@@ -75,8 +64,8 @@ extern void tch_port_jmpToKernelModeThread(void* routine,uword_t arg1,uword_t ar
 extern int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2);
 extern int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2);
 extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
-extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,int comp,int update);
-extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,int comp);
+extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
+extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

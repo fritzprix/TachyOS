@@ -15,6 +15,12 @@
 #ifndef TCH_CONDV_H_
 #define TCH_CONDV_H_
 
+#include "tch_Typedef.h"
+
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 /***
  *  condition variable types
@@ -31,4 +37,8 @@ struct _tch_condvar_ix_t {
 
 extern const tch_condv_ix* pcondvar;
 
+
+#if defined(__cplusplus)
+}
+#endif
 #endif /* TCH_CONDV_H_ */

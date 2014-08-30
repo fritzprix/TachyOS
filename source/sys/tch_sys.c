@@ -219,7 +219,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			return;
 		}
 		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
-		tch_schedResume((addr_t)&sysThread.sThreadWaitNode,osOK);
+		tch_schedResume((uaddr_t)&sysThread.sThreadWaitNode,osOK);
 		return;
 	case SV_ASYNC_BLSTART:
 		if(((tch_async_cb*) arg1)->fn){

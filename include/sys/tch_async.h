@@ -19,11 +19,11 @@
 #ifndef TCH_ASYNC_H_
 #define TCH_ASYNC_H_
 
-#if defined(cplusplus)
+#include "tch_Typedef.h"
+
+#if defined(__cplusplus)
 extern "C"{
 #endif
-
-#include "tch.h"
 
 #define DECL_ASYNC_TASK(fn)      int fn(tch_async_id id, void* arg)
 
@@ -56,7 +56,7 @@ typedef struct _tch_async_ix_t {
 extern const tch_async_ix* Async;
 extern LIST_CMP_FN(tch_async_comp);
 
-#if defined(cplusplus)
+#if defined(__cplusplus)
 }
 #endif
 

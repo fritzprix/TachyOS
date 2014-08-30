@@ -16,6 +16,14 @@
 #define TCH_THREAD_H_
 
 
+#include "tch_TypeDef.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
+
+
+
 #define DECLARE_THREADROUTINE(fn)                    int fn(void* arg)
 #define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[(sizeinbyte) >> 3]
 
@@ -75,5 +83,9 @@ struct _tch_thread_ix_t {
 	void (*setPriority)(tch_thread_id id,tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)(tch_thread_id id);
 };
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_THREAD_H_ */

@@ -75,7 +75,7 @@ DECLARE_THREADROUTINE(receiver){
 	osEvent evt;
 	while(cnt < 100){
 		evt = api->MailQ->get(testmailq_id,osWaitForever);
-		api->MailQ->free(testmailq_id,evt.value.v);
+		api->MailQ->free(testmailq_id,(void*)evt.value.v);
 		if(evt.status == osEventMail)
 			cnt++;
 	}

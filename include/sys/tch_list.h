@@ -8,8 +8,11 @@
 #ifndef TCH_LIST_H_
 #define TCH_LIST_H_
 
-#include <stdint-gcc.h>
+#include "tch_TypeDef.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 // Static Initializer for List Node
 #define INIT_LIST   {NULL,NULL}
@@ -35,6 +38,9 @@ extern int tch_listSize(tch_lnode_t* lentry);
 extern int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item);
 extern void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item));
 
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif /* TCH_LIST_H_ */

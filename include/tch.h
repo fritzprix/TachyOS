@@ -19,8 +19,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "tch_TypeDef.h"
 
+#include "tch_TypeDef.h"
 
 /*!
  * \mainpage

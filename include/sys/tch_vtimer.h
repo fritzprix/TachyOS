@@ -15,6 +15,12 @@
 #ifndef TCH_VTIMER_H_
 #define TCH_VTIMER_H_
 
+#include "tch_TypeDef.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
+
 /***
  *  timer types
  */
@@ -39,5 +45,9 @@ struct _tch_timer_ix_t {
 	tchStatus (*destroy)(tch_timer_id timer);
 };
 
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_SYSTIMER_H_ */

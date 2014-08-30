@@ -8,7 +8,8 @@
 #ifndef TCH_TYPEDEF_H_
 #define TCH_TYPEDEF_H_
 
-#include <stdint.h>
+#include <stddef.h>
+#include "tch_ptypes.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -31,7 +32,7 @@ typedef enum  {
   osErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
   osErrorValue            =  0x86,       ///< value of a parameter is out of range.
   osErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
-  os_status_reserved      =  0x7FFFFFFF  ///< prevent from enum down-size compiler optimization.
+  os_status_reserved      =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
 

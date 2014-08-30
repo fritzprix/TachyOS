@@ -8,9 +8,13 @@
 #ifndef TCH_BAR_H_
 #define TCH_BAR_H_
 
-#include "tch_ktypes.h"
+#include "tch_Typedef.h"
 
-typedef char* tch_barId;
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+typedef void* tch_barId;
 typedef struct tch_bar_def_t{
 	uint8_t                 status;
 	tch_lnode_t             wq;
@@ -22,5 +26,9 @@ struct _tch_bar_ix_t {
 	tchStatus (*signal)(tch_barDef* bar,tchStatus result);
 	tchStatus (*destroy)(tch_barDef* bar);
 };
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_BAR_H_ */

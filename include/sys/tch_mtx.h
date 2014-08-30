@@ -17,7 +17,16 @@
 
 #include "tch_list.h"
 #include "tch_thread.h"
+#include "tch_TypeDef.h"
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#ifndef __FUTEX
 #define __FUTEX     (1)
+#endif
 
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)
@@ -47,6 +56,10 @@ struct _tch_mutex_ix_t {
 	tchStatus (*unlock)(tch_mtx_id mtx);
 	tchStatus (*destroy)(tch_mtx_id mtx);
 };
+
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif /* TCH_MTX_H_ */

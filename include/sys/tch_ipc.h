@@ -29,6 +29,11 @@
 #ifndef TCH_IPC_H_
 #define TCH_IPC_H_
 
+#include "tch_Typedef.h"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 
 #define TCH_MSGQ_HEAD_SIZE             (sizeof(uint32_t) * 3 + sizeof(void*) + 4 * sizeof(void*))
@@ -117,6 +122,11 @@ struct _tch_msgque_ix_t {
 	 *           osErrorParameter: a parameter is invalid or outside of a permitted range.
 	 */
 	osEvent (*get)(tch_msgQue_id,uint32_t millisec);
+
+	/*!
+	 * \brief destroy msg queue
+	 */
+	tchStatus (*destroy)(tch_msgQue_id);
 };
 
 struct _tch_mailbox_ix_t {
@@ -128,5 +138,7 @@ struct _tch_mailbox_ix_t {
 	tchStatus (*free)(tch_mailQue_id qid,void* mail);
 };
 
-
+#if defined(__cplusplus)
+}
+#endif
 #endif /* TCH_IPC_H_ */
