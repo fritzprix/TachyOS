@@ -28,10 +28,10 @@
 #define MTX_ISVALID(mcb)      (((tch_mtxDef*)mcb)->key >= MTX_INIT_MARK) ||\
 	                          ((!((tch_mtxDef*)mcb)->key) && (!((tch_mtxDef*)mcb)->own))
 
-static tch_mtx_id tch_mtx_create(tch_mtxDef* mcb);
-static tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout);
-static tchStatus tch_mtx_unlock(tch_mtx_id mtx);
-static tchStatus tch_mtx_destroy(tch_mtx_id mtx);
+static tch_mtxId tch_mtx_create(tch_mtxDef* mcb);
+static tchStatus tch_mtx_lock(tch_mtxId mtx,uint32_t timeout);
+static tchStatus tch_mtx_unlock(tch_mtxId mtx);
+static tchStatus tch_mtx_destroy(tch_mtxId mtx);
 
 
 
@@ -46,7 +46,7 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 
 
-tch_mtx_id tch_mtx_create(tch_mtxDef* mcb){
+tch_mtxId tch_mtx_create(tch_mtxDef* mcb){
 	mcb->key = MTX_INIT_MARK;
 	tch_listInit((tch_lnode_t*)&mcb->que);
 	mcb->own = NULL;
@@ -58,7 +58,7 @@ tch_mtx_id tch_mtx_create(tch_mtxDef* mcb){
  *  thread try lock mtx for given amount of time
  */
 #if !__FUTEX
-tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
+tchStatus tch_mtx_lock(tch_mtxId mtx,uint32_t timeout){
 	if(!mtx)
 		return osErrorParameter;
  	tchStatus result = osOK;
@@ -85,7 +85,7 @@ tchStatus tch_mtx_lock(tch_mtx_id mtx,uint32_t timeout){
 
 }
 #else
-tchStatus tch_mtx_lock(tch_mtx_id id,uint32_t timeout){
+tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 	if(!id)                                   // check mtx id is not null
 		return osErrorParameter;              // otherwise return 'osErrorParameter'
 	tchStatus result = osOK;
@@ -100,7 +100,7 @@ tchStatus tch_mtx_lock(tch_mtx_id id,uint32_t timeout){
 	if((int)mtx->own == tid)              // if this mutex is locked by current thread, return 'ok'
 		return osOK;
 	while(tch_port_exclusiveCompareUpdate((int*)&mtx->key,MTX_INIT_MARK,tid | MTX_INIT_MARK)){   // try exclusively lock
-		tch_thread_prior prior = Thread->getPriorty((tch_thread_id)tid);                         // mutex is already locked
+		tch_thread_prior prior = Thread->getPriorty((tch_threadId)tid);                         // mutex is already locked
 		if(Thread->getPriorty(mtx->own) < prior)                                                 // compare current thread's priority
 			Thread->setPriority(mtx->own,prior);                                                 // if more prior than current thread, priority of mutex owner will inherit current thread priority (* prevent priority inversion *)
 		result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mtx->que,timeout);
@@ -115,7 +115,7 @@ tchStatus tch_mtx_lock(tch_mtx_id id,uint32_t timeout){
 	}
 	if(result == osOK){
 		mtx->own = (void*)tid;
-		mtx->svdPrior = Thread->getPriorty((tch_thread_id)tid);
+		mtx->svdPrior = Thread->getPriorty((tch_threadId)tid);
 		return osOK;
 	}
 	tch_kAssert(TRUE,osErrorOS);
@@ -126,7 +126,7 @@ tchStatus tch_mtx_lock(tch_mtx_id id,uint32_t timeout){
 
 
 #if !__FUTEX
-tchStatus tch_mtx_unlock(tch_mtx_id mtx){
+tchStatus tch_mtx_unlock(tch_mtxId mtx){
 	if(tch_port_isISR()){                               ///< check if in isr mode, then return osErrorISR
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -138,12 +138,12 @@ tchStatus tch_mtx_unlock(tch_mtx_id mtx){
 
 }
 #else
-tchStatus tch_mtx_unlock(tch_mtx_id id){
+tchStatus tch_mtx_unlock(tch_mtxId id){
 	tch_mtxDef* mtx = (tch_mtxDef*) id;
 	if(tch_port_isISR()){
 		return osErrorISR;
 	}
-	tch_thread_id tid = Thread->self();
+	tch_threadId tid = Thread->self();
 	if(mtx->key != ((uint32_t)tid | MTX_INIT_MARK))
 		return osErrorResource;
 	if(!MTX_ISVALID(mtx))
@@ -159,7 +159,7 @@ tchStatus tch_mtx_unlock(tch_mtx_id id){
 #endif
 
 #if !__FUTEX
-tchStatus tch_mtx_destroy(tch_mtx_id mtx){
+tchStatus tch_mtx_destroy(tch_mtxId mtx){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -172,7 +172,7 @@ tchStatus tch_mtx_destroy(tch_mtx_id mtx){
 	}
 }
 #else
-tchStatus tch_mtx_destroy(tch_mtx_id id){
+tchStatus tch_mtx_destroy(tch_mtxId id){
 	tch_mtxDef* mtx = (tch_mtxDef*)id;
 	if(!MTX_ISVALID(mtx))
 		return osErrorResource;

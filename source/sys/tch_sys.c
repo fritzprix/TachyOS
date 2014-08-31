@@ -32,7 +32,7 @@ typedef struct tch_sysThread_cb_t{
 	tch_lnode_t asynTaskQ;
 	DECLARE_THREADSTACK(sThread_stack,1 << 10);
 	tch_lnode_t sThreadWaitNode;
-	tch_thread_id sThread;
+	tch_threadId sThread;
 }tch_sysThread_cb;
 
 static DECLARE_THREADROUTINE(sThread_routine);
@@ -75,6 +75,8 @@ void tch_kernelInit(void* arg){
 	api->Thread = Thread;
 	api->Mtx = Mtx;
 	api->Sem = Sem;
+	api->Condv = Condv;
+	api->Barrier = Barrier;
 	api->Sig = Sig;
 	api->Mempool = Mempool;
 	api->MailQ = MailQ;
@@ -113,7 +115,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_port_kernel_unlock();
 		return;
 	case SV_THREAD_START:              // start thread first time
-		tch_schedStartThread((tch_thread_id) arg1);
+		tch_schedStartThread((tch_threadId) arg1);
 		return;
 	case SV_THREAD_SLEEP:
 		tch_schedSleep(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
@@ -136,7 +138,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
-		tch_schedTerminate((tch_thread_id) cth,arg2);
+		tch_schedTerminate((tch_threadId) cth,arg2);
 		return;
 	case SV_MTX_LOCK:  // * Mutex Lock System Call
 		if(((tch_mtxDef*) arg1)->key < MTX_INIT_MARK){    // check validity of mutex object
@@ -225,7 +227,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		if(((tch_async_cb*) arg1)->fn){
 			tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
 			if(!tch_listIsEmpty(&sysThread.sThreadWaitNode))
-				tch_schedReady((tch_thread_id)tch_listDequeue(&sysThread.sThreadWaitNode));
+				tch_schedReady((tch_threadId)tch_listDequeue(&sysThread.sThreadWaitNode));
 		}
 		tch_schedSuspend(&((tch_async_cb*)arg1)->wq,arg2);
 		return;

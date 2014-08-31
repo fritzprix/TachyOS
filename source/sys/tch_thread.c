@@ -31,14 +31,14 @@
  *     -> LR point Entry Routine of Thread
  *
  */
-static tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg);
-static tchStatus tch_threadStart(tch_thread_id thread);
-static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err);
-static tch_thread_id tch_threadSelf();
+static tch_threadId tch_threadCreate(tch_thread_cfg* cfg,void* arg);
+static tchStatus tch_threadStart(tch_threadId thread);
+static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err);
+static tch_threadId tch_threadSelf();
 static tchStatus tch_threadSleep(uint32_t millisec);
-static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout);
-static void tch_threadSetPriority(tch_thread_id id,tch_thread_prior nprior);
-static tch_thread_prior tch_threadGetPriorty(tch_thread_id id);
+static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
+static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
+static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
@@ -57,7 +57,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 
 const tch_thread_ix* Thread = &tch_threadix;
 
-tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
+tch_threadId tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 
 	/**
@@ -85,11 +85,11 @@ tch_thread_id tch_threadCreate(tch_thread_cfg* cfg,void* arg){
 	tch_listInit(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
 
-	return (tch_thread_id) thread_p;
+	return (tch_threadId) thread_p;
 
 }
 
-static tchStatus tch_threadStart(tch_thread_id thread){
+static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){          // check current execution mode (Thread or Handler)
 		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
 		                           // optionally check preemption required or not
@@ -101,7 +101,7 @@ static tchStatus tch_threadStart(tch_thread_id thread){
 
 /*
  */
-static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err){
+static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -113,7 +113,7 @@ static tchStatus tch_threadTerminate(tch_thread_id thread,tchStatus err){
 /***
  *
  */
-static tch_thread_id tch_threadSelf(){
+static tch_threadId tch_threadSelf(){
 	return tch_schedGetRunningThread();
 }
 
@@ -126,7 +126,7 @@ static tchStatus tch_threadSleep(uint32_t millisec){
 	}
 }
 
-static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
+static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
@@ -136,16 +136,16 @@ static tchStatus tch_threadJoin(tch_thread_id thread,uint32_t timeout){
 }
 
 
-static void tch_threadSetPriority(tch_thread_id id,tch_thread_prior nprior){
+static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior){
 	getThreadHeader(id)->t_prior = nprior;
 }
 
-static tch_thread_prior tch_threadGetPriorty(tch_thread_id id){
+static tch_thread_prior tch_threadGetPriorty(tch_threadId id){
 	return getThreadHeader(id)->t_prior;
 }
 
 
-BOOL tch_kernelThreadIntegrityCheck(tch_thread_id thrtochk){
+BOOL tch_kernelThreadIntegrityCheck(tch_threadId thrtochk){
 	tch_thread_header* th_p = (tch_thread_header*) thrtochk;
 	return th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
 

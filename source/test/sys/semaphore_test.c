@@ -17,15 +17,15 @@ static DECLARE_THREADROUTINE(child3Routine);
 static void race(tch* api);
 
 
-tch_thread_id ch1Id;
-tch_thread_id ch2Id;
-tch_thread_id ch3Id;
+static tch_threadId ch1Id;
+static tch_threadId ch2Id;
+static tch_threadId ch3Id;
 
-volatile BOOL spin;
+static volatile BOOL spin;
 
-tch_semDef tsd;
-tch_sem_id ts;
-uint16_t shVar;
+static tch_semDef tsd;
+static tch_sem_id ts;
+static uint16_t shVar;
 
 tchStatus semaphore_performTest(tch* api){
 

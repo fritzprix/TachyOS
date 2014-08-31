@@ -13,12 +13,12 @@
 static DECLARE_THREADROUTINE(child1Routine);
 static DECLARE_THREADROUTINE(child2Routine);
 
-tch_thread_id child1;
-tch_thread_id child2;
+static tch_threadId child1;
+static tch_threadId child2;
 
 static void race(tch* api);
-tch_mtxDef mtxdef;
-tch_mtx_id mmtx;
+static tch_mtxDef mtxdef;
+static tch_mtxId mmtx;
 
 
 /*!

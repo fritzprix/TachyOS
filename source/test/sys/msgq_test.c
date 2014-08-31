@@ -18,11 +18,11 @@
 
 static DECLARE_THREADROUTINE(sender);
 static DECLARE_THREADSTACK(sender_stack,1 << 8);
-static tch_thread_id sender_id;
+static tch_threadId sender_id;
 
 static DECLARE_THREADROUTINE(receiver);
 static DECLARE_THREADSTACK(receiver_stack,1 << 8);
-static tch_thread_id receiver_id;
+static tch_threadId receiver_id;
 
 static tch_msgQDef(test,10);
 

@@ -16,8 +16,8 @@
 #include "tch_thread.h"
 #include "tch_sched.h"
 
-static int32_t tch_signal_set(tch_thread_id thread,int32_t signals);
-static int32_t tch_signal_clear(tch_thread_id thread,int32_t signals);
+static int32_t tch_signal_set(tch_threadId thread,int32_t signals);
+static int32_t tch_signal_clear(tch_threadId thread,int32_t signals);
 static tchStatus tch_signal_wait(int32_t signals,uint32_t millisec);
 
 
@@ -35,7 +35,7 @@ const tch_signal_ix* Sig = &Signal_StaticInstance;
 
 
 
-int32_t tch_signal_set(tch_thread_id thread,int32_t signals){
+int32_t tch_signal_set(tch_threadId thread,int32_t signals){
 	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
 		return 0x80000000;
 	}
@@ -53,7 +53,7 @@ int32_t tch_signal_set(tch_thread_id thread,int32_t signals){
 
 }
 
-int32_t tch_signal_clear(tch_thread_id thread,int32_t signals){
+int32_t tch_signal_clear(tch_threadId thread,int32_t signals){
 	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
 		return 0x80000000;
 	}

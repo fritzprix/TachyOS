@@ -35,7 +35,7 @@ extern "C" {
 /***
  *  mutex  types
  */
-typedef void* tch_mtx_id;
+typedef void* tch_mtxId;
 typedef struct _tch_mtx_t tch_mtxDef;
 typedef struct _tch_mtx_waitque_t {
 	tch_lnode_t          que;
@@ -51,10 +51,10 @@ struct _tch_mtx_t {
 };
 
 struct _tch_mutex_ix_t {
-	tch_mtx_id (*create)(tch_mtxDef* mcb);
-	tchStatus (*lock)(tch_mtx_id mtx,uint32_t timeout);
-	tchStatus (*unlock)(tch_mtx_id mtx);
-	tchStatus (*destroy)(tch_mtx_id mtx);
+	tch_mtxId (*create)(tch_mtxDef* mcb);
+	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
+	tchStatus (*unlock)(tch_mtxId mtx);
+	tchStatus (*destroy)(tch_mtxId mtx);
 };
 
 #if defined(__cplusplus)

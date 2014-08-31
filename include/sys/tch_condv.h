@@ -25,17 +25,16 @@ extern "C"{
 /***
  *  condition variable types
  */
-typedef void* tch_condv_id;
+typedef void* tch_condvId;
 
 struct _tch_condvar_ix_t {
-	tch_condv_id (*create)();
-	BOOL (*wait)(tch_condv_id condv,tch_mtxDef* lock,uint32_t timeout);
-	tchStatus (*wake)(tch_condv_id condv);
-	tchStatus (*wakeAll)(tch_condv_id condv);
-	tchStatus (*destroy)(tch_condv_id condv);
+	tch_condvId (*create)();
+	BOOL (*wait)(tch_condvId condv,tch_mtxId lock,uint32_t timeout);
+	tchStatus (*wake)(tch_condvId condv);
+	tchStatus (*wakeAll)(tch_condvId condv);
+	tchStatus (*destroy)(tch_condvId condv);
 };
 
-extern const tch_condv_ix* pcondvar;
 
 
 #if defined(__cplusplus)

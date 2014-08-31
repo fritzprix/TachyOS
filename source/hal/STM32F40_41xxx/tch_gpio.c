@@ -119,7 +119,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       pin;
 	uint32_t                      pMsk;
 	tch_mtxDef                    mtx;
-	tch_mtx_id                    mtxid;
+	tch_mtxId                    mtxid;
 	tch_async_id                  aio;
 	tch_IoEventCalback_t          cb;
 	const tch*                    sys;

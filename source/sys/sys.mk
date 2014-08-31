@@ -15,7 +15,8 @@ KERNEL_SRCS=\
 	    tch_clibsysc.c\
 	    tch_nclib.c\
 	    tch_async.c\
-	    tch_bar.c
+	    tch_bar.c\
+	    tch_condv.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 

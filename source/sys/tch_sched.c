@@ -50,10 +50,10 @@ static LIST_CMP_FN(tch_schedWqPolicy);
 /***
  *  Invoked when new thread start
  */
-static inline void tch_schedInitKernelThread(tch_thread_id thr)__attribute__((always_inline));
+static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((always_inline));
 
-static tch_thread_id MainThread_id;
-static tch_thread_id IdleThread_id;
+static tch_threadId MainThread_id;
+static tch_threadId IdleThread_id;
 
 
 
@@ -114,7 +114,7 @@ void tch_schedInit(void* arg){
 /** Note : should not called any other program except kernel mode program
  *  @brief start thread based on its priority (thread can be started in preempted way)
  */
-void tch_schedStartThread(tch_thread_id nth){
+void tch_schedStartThread(tch_threadId nth){
 	tch_thread_header* thr_p = nth;
 	if(tch_schedIsPreemptable(nth)){
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQPolicy);			///< put current thread in ready queue
@@ -134,7 +134,7 @@ void tch_schedStartThread(tch_thread_id nth){
 /**
  * put new thread into ready queue
  */
-void tch_schedReady(tch_thread_id th){
+void tch_schedReady(tch_threadId th){
 	tch_thread_header* thr_p = th;
 	getThreadHeader(th)->t_state = READY;
 	tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(thr_p),tch_schedReadyQPolicy);
@@ -144,22 +144,23 @@ void tch_schedReady(tch_thread_id th){
  *  make current thread sleep for specified amount of time (yield cpu time)
  */
 void tch_schedSleep(uint32_t timeout,tch_thread_state nextState){
-	tch_thread_id nth = 0;
+	tch_threadId nth = 0;
 	getThreadHeader(tch_currentThread)->t_to = tch_systimeTick + timeout;
 	tch_listEnqueuePriority((tch_lnode_t*)&tch_pendQue,getListNode(tch_currentThread),tch_schedPendQPolicy);
 	nth = tch_listDequeue((tch_lnode_t*)&tch_readyQue);
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,osErrorOS);
+	tch_kernelSetResult(tch_currentThread,osEventTimeout);
 	getListNode(nth)->prev = tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = nextState;
 	tch_currentThread = nth;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,osEventTimeout);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
 }
 
 
 void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
-	tch_thread_id nth = 0;
+	tch_threadId nth = 0;
 	if(timeout != osWaitForever){
 		getThreadHeader(tch_currentThread)->t_to = tch_systimeTick + timeout;
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_pendQue,getListNode(tch_currentThread),tch_schedPendQPolicy);
@@ -237,7 +238,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 
 
 
-tchStatus tch_schedCancelTimeout(tch_thread_id thread){
+tchStatus tch_schedCancelTimeout(tch_threadId thread){
 	if(!thread)
 		return osErrorParameter;
 	tch_genericQue_remove((tch_lnode_t*)&tch_pendQue,(tch_lnode_t*)thread);
@@ -275,24 +276,24 @@ void tch_kernelSysTick(void){
 	}
 }
 
-tch_thread_id tch_schedGetRunningThread(){
+tch_threadId tch_schedGetRunningThread(){
 	return tch_currentThread;
 }
 
 
 
-BOOL tch_schedIsPreemptable(tch_thread_id nth){
+BOOL tch_schedIsPreemptable(tch_threadId nth){
 	if(!nth)
 		return FALSE;
 	return tch_schedReadyQPolicy(nth,tch_currentThread);
 }
 
-void tch_schedTerminate(tch_thread_id thread,int result){
-	tch_thread_id jth = 0;
+void tch_schedTerminate(tch_threadId thread,int result){
+	tch_threadId jth = 0;
 	tch_thread_header* cth_p = getThreadHeader(thread);
 	cth_p->t_state = TERMINATED;                          ///< change state of thread to terminated
 	while(!tch_listIsEmpty(&cth_p->t_joinQ)){
-		jth = (tch_thread_id)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
+		jth = (tch_threadId)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
 		getThreadHeader(jth)->t_waitQ = NULL;
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,jth,tch_schedReadyQPolicy);
 		tch_kernelSetResult(jth,result);
@@ -302,7 +303,7 @@ void tch_schedTerminate(tch_thread_id thread,int result){
 }
 
 
-static inline void tch_schedInitKernelThread(tch_thread_id init_thr){
+static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_port_setThreadSP((uint32_t)thr_p->t_ctx);
 #ifdef MFEATURE_HFLOAT

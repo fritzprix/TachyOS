@@ -3,7 +3,9 @@ SYS_TEST_SRC = async_test.c\
                mpool_test.c\
                msgq_test.c\
                mtx_test.c\
-               semaphore_test.c
+               semaphore_test.c\
+               bar_test.c\
+               monitor_test.c
                
 SYS_TEST_OBJS=$(SYS_TEST_SRC:%.c=$(GEN_DIR)/test/sys/%.o)
 SYS_TEST_CPPOBJS=

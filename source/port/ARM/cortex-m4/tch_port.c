@@ -163,10 +163,13 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 
 
 int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
+//	tch_currentThread->t_kRet = osOK;
 	asm volatile(
+			"ldr r3,=#0\n"
+			"str r3,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"   : : :);        // return from sv interrupt and get result from register #0
+			"svc #0"   : :"r"(&tch_currentThread->t_kRet) : "r0","r1","r2");        // return from sv interrupt and get result from register #0
 	return ((tch_thread_header*)tch_currentThread)->t_kRet;
 }
 /***
@@ -174,6 +177,7 @@ int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
 int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
+	tch_currentThread->t_kRet = osOK;
 	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
 	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
 	org_sp->R0 = sv_id;

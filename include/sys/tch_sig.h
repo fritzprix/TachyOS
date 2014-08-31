@@ -23,8 +23,8 @@ extern "C" {
 #endif
 
 struct _tch_signal_ix_t {
-	int32_t (*set)(tch_thread_id thread,int32_t signals);
-	int32_t (*clear)(tch_thread_id thread,int32_t signals);
+	int32_t (*set)(tch_threadId thread,int32_t signals);
+	int32_t (*clear)(tch_threadId thread,int32_t signals);
 	tchStatus (*wait)(int32_t signals,uint32_t millisec);
 };
 

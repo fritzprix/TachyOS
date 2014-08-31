@@ -31,12 +31,12 @@ extern "C"{
 /**
  *  Thread relevant type definition
  */
-typedef void* tch_thread_id;
+typedef void* tch_threadId;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
 typedef int (*tch_thread_routine)(void* arg);
 
 typedef struct tch_msg{
-	tch_thread_id thread;
+	tch_threadId thread;
 	uint32_t      msg;
 	void*        _arg;
 } tch_msg;
@@ -71,17 +71,17 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
-	tch_thread_id (*create)(tch_thread_cfg* cfg,void* arg);
+	tch_threadId (*create)(tch_thread_cfg* cfg,void* arg);
 	/**
 	 *  Start New Thread
 	 */
-	tchStatus (*start)(tch_thread_id thread);
-	tchStatus (*terminate)(tch_thread_id thread,tchStatus err);
-	tch_thread_id (*self)();
+	tchStatus (*start)(tch_threadId thread);
+	tchStatus (*terminate)(tch_threadId thread,tchStatus err);
+	tch_threadId (*self)();
 	tchStatus (*sleep)(uint32_t millisec);
-	tchStatus (*join)(tch_thread_id thread,uint32_t timeout);
-	void (*setPriority)(tch_thread_id id,tch_thread_prior nprior);
-	tch_thread_prior (*getPriorty)(tch_thread_id id);
+	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
+	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
+	tch_thread_prior (*getPriorty)(tch_threadId id);
 };
 
 #if defined(__cplusplus)

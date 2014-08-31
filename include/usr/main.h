@@ -25,6 +25,8 @@ extern "C" {
 
 #include "mtx_test.h"
 #include "semaphore_test.h"
+#include "bar_test.h"
+#include "monitor_test.h"
 
 #ifdef __cplusplus
 }

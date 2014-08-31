@@ -6,3 +6,163 @@
  */
 
 
+/*!brief Unit test for monitor(Mutex & Condv)
+ *
+ */
+
+#include "tch.h"
+#define MAX_SZ    ((uint32_t) -1)
+#define MIN_SZ    ((uint32_t) 0)
+
+struct VBuf {
+	uint32_t size;
+	uint32_t updated;
+};
+
+static struct VBuf tstBuf;
+
+static DECLARE_THREADROUTINE(producerRoutine);
+static DECLARE_THREADROUTINE(consumerRoutine);
+
+
+static void consume(tch* api,struct VBuf* vb);
+static void produce(tch* api,struct VBuf* vb);
+
+static tch_mtxDef mdf;
+static tch_mtxId mtid;
+
+static tch_condvId condP;
+static tch_condvId condC;
+
+static tch_threadId consumer1Thread;
+static tch_threadId consumer2Thread;
+
+static tch_threadId producer1Thread;
+static tch_threadId producer2Thread;
+
+
+tchStatus monitor_performTest(tch* api){
+	tstBuf.size = 256;
+	tstBuf.updated = 0;
+
+	mtid = api->Mtx->create(&mdf);
+	condP = api->Condv->create();
+	condC = api->Condv->create();
+
+	uint8_t* cons1stk = NULL;
+	uint8_t* cons2stk = NULL;
+
+	uint8_t* prod1stk = NULL;
+	uint8_t* prod2stk = NULL;
+
+	cons1stk = api->Mem->alloc(512);
+	cons2stk = api->Mem->alloc(512);
+
+	prod1stk = api->Mem->alloc(512);
+	prod2stk = api->Mem->alloc(512);
+
+	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,osErrorOS);
+
+	tch_thread_cfg thcfg;
+	thcfg._t_name = "consumer1";
+	thcfg._t_routine = consumerRoutine;
+	thcfg._t_stack = cons1stk;
+	thcfg.t_proior = Normal;
+	thcfg.t_stackSize = 512;
+
+	consumer1Thread = api->Thread->create(&thcfg,api);
+
+	thcfg._t_name = "consumer2";
+	thcfg._t_stack = cons2stk;
+	consumer2Thread = api->Thread->create(&thcfg,api);
+
+
+
+	thcfg._t_name = "producer1";
+	thcfg._t_routine = producerRoutine;
+	thcfg._t_stack = prod1stk;
+	thcfg.t_proior = Normal;
+	thcfg.t_stackSize = 512;
+
+	producer1Thread = api->Thread->create(&thcfg,api);
+
+	thcfg._t_name = "producer2";
+	thcfg._t_stack = prod2stk;
+	producer2Thread = api->Thread->create(&thcfg,api);
+
+
+	api->Thread->start(producer1Thread);
+	api->Thread->start(producer2Thread);
+
+	api->Thread->start(consumer1Thread);
+	api->Thread->start(consumer2Thread);
+
+
+	if(api->Thread->join(producer1Thread,osWaitForever) != osOK)
+		return osErrorOS;
+	if(api->Thread->join(producer2Thread,osWaitForever) != osOK)
+		return osErrorOS;
+	if(api->Thread->join(consumer1Thread,osWaitForever) != osOK)
+		return osErrorOS;
+	if(api->Thread->join(consumer2Thread,osWaitForever) != osOK)
+		return osErrorOS;
+
+	api->Mem->free(cons1stk);
+	api->Mem->free(cons2stk);
+	api->Mem->free(prod1stk);
+	api->Mem->free(prod2stk);
+
+	if(tstBuf.updated == 0)
+		return osOK;
+	return osErrorOS;
+
+}
+
+
+static void consume(tch* api,struct VBuf* vb){
+	if(api->Mtx->lock(mtid,osWaitForever) != osOK)
+		return;
+	while(vb->updated == 0){
+		if(!api->Condv->wait(condC,mtid,osWaitForever))
+			return;
+	}
+	vb->updated--;
+	api->Condv->wakeAll(condP);
+	api->Mtx->unlock(mtid);
+}
+
+static void produce(tch* api,struct VBuf* vb){
+	 if(api->Mtx->lock(mtid,osWaitForever) != osOK)
+		 return;
+	 while(vb->updated == vb->size){
+		 if(!api->Condv->wait(condP,mtid,osWaitForever))
+			 return;
+	 }
+	 vb->updated++;
+	 api->Condv->wakeAll(condC);
+	 api->Mtx->unlock(mtid);
+}
+
+
+
+static DECLARE_THREADROUTINE(producerRoutine){
+	tch* api = (tch*) arg;
+	uint8_t cnt = 0;
+	for(cnt = 0; cnt < 200; cnt++){
+		produce(api,&tstBuf);
+		api->Thread->sleep(5);
+	}
+	return osOK;
+}
+
+static DECLARE_THREADROUTINE(consumerRoutine){
+	tch* api = (tch*) arg;
+	uint8_t cnt = 0;
+	for(cnt = 0; cnt < 200; cnt++){
+		consume(api,&tstBuf);
+		api->Thread->sleep(0);
+	}
+	return osOK;
+}
+
+
