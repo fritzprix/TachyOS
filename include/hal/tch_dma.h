@@ -32,6 +32,10 @@
 
 #include "tch_Typedef.h"
 
+#if defined(__cpluspls)
+extern "C" {
+#endif
+
 #define DMA_Str0                  (dma_t) 0    ///< DMA Stream #0
 #define DMA_Str1                  (dma_t) 1    ///< DMA Stream #1
 #define DMA_Str2                  (dma_t) 2    ///< DMA Stream #2
@@ -231,6 +235,10 @@ struct _dma_cfg_t {
 };
 
 extern const tch_dma_ix* Dma;
+
+#if defined(__cpluspls)
+}
+#endif
 
 /**@}*/
 

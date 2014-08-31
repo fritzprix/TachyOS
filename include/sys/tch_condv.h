@@ -1,5 +1,6 @@
-/*
- * tch_condv.h
+/*!
+ * \defgroup TCH_CONDV tch_condv
+ * @{ tch_condv.h
  *
  *  Copyright (C) 2014 doowoong,lee
  *  All rights reserved.
@@ -22,13 +23,24 @@
 extern "C"{
 #endif
 
-/***
- *  condition variable types
+/*! \brief condition variable identifier
  */
 typedef void* tch_condvId;
 
+/*!
+ * \brief posix-like condition variable API struct
+ */
 struct _tch_condvar_ix_t {
+
+	/*! \brief create posix-like condition variable
+	 *  \return initiated \ref tch_condvId
+	 */
 	tch_condvId (*create)();
+	/*! \brief wait on condition variable with unlocking mutex
+	 *  \param[in] condv
+	 *  \param[in] lock
+	 *  \param[in] timeout
+	 */
 	BOOL (*wait)(tch_condvId condv,tch_mtxId lock,uint32_t timeout);
 	tchStatus (*wake)(tch_condvId condv);
 	tchStatus (*wakeAll)(tch_condvId condv);
@@ -40,4 +52,7 @@ struct _tch_condvar_ix_t {
 #if defined(__cplusplus)
 }
 #endif
+
+/**@}*/
+
 #endif /* TCH_CONDV_H_ */

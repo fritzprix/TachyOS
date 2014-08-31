@@ -59,8 +59,8 @@ static tch_condvId tch_condv_create(){
 	return condv;
 }
 
-/**
- *  thread wait until given condition is met
+/*! \brief thread wait until given condition is met
+ *  \
  *
  */
 static BOOL tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
@@ -84,6 +84,9 @@ static BOOL tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 		return FALSE;
 	return TRUE;
 }
+
+
+
 
 
 /*!

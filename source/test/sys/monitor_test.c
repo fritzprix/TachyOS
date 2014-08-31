@@ -25,8 +25,8 @@ static DECLARE_THREADROUTINE(producerRoutine);
 static DECLARE_THREADROUTINE(consumerRoutine);
 
 
-static void consume(tch* api,struct VBuf* vb);
-static void produce(tch* api,struct VBuf* vb);
+static BOOL consume(tch* api,struct VBuf* vb,uint32_t timeout);
+static BOOL produce(tch* api,struct VBuf* vb,uint32_t timeout);
 
 static tch_mtxDef mdf;
 static tch_mtxId mtid;
@@ -98,10 +98,15 @@ tchStatus monitor_performTest(tch* api){
 	api->Thread->start(consumer2Thread);
 
 
+
+
 	if(api->Thread->join(producer1Thread,osWaitForever) != osOK)
 		return osErrorOS;
 	if(api->Thread->join(producer2Thread,osWaitForever) != osOK)
 		return osErrorOS;
+
+	api->Condv->destroy(condP);
+	api->Condv->destroy(condC);
 	if(api->Thread->join(consumer1Thread,osWaitForever) != osOK)
 		return osErrorOS;
 	if(api->Thread->join(consumer2Thread,osWaitForever) != osOK)
@@ -112,6 +117,9 @@ tchStatus monitor_performTest(tch* api){
 	api->Mem->free(prod1stk);
 	api->Mem->free(prod2stk);
 
+	api->Condv->destroy(condP);
+	api->Condv->destroy(condC);
+
 	if(tstBuf.updated == 0)
 		return osOK;
 	return osErrorOS;
@@ -119,28 +127,28 @@ tchStatus monitor_performTest(tch* api){
 }
 
 
-static void consume(tch* api,struct VBuf* vb){
+static BOOL consume(tch* api,struct VBuf* vb,uint32_t timeout){
 	if(api->Mtx->lock(mtid,osWaitForever) != osOK)
-		return;
+		return FALSE;
 	while(vb->updated == 0){
-		if(!api->Condv->wait(condC,mtid,osWaitForever))
-			return;
+		if(!api->Condv->wait(condC,mtid,timeout))
+			return FALSE;
 	}
 	vb->updated--;
 	api->Condv->wakeAll(condP);
-	api->Mtx->unlock(mtid);
+	return api->Mtx->unlock(mtid) == osOK;
 }
 
-static void produce(tch* api,struct VBuf* vb){
+static BOOL produce(tch* api,struct VBuf* vb,uint32_t timeout){
 	 if(api->Mtx->lock(mtid,osWaitForever) != osOK)
-		 return;
+		 return FALSE;
 	 while(vb->updated == vb->size){
-		 if(!api->Condv->wait(condP,mtid,osWaitForever))
-			 return;
+		 if(!api->Condv->wait(condP,mtid,timeout))
+			 return FALSE;
 	 }
 	 vb->updated++;
 	 api->Condv->wakeAll(condC);
-	 api->Mtx->unlock(mtid);
+	 return api->Mtx->unlock(mtid) == osOK;
 }
 
 
@@ -149,7 +157,7 @@ static DECLARE_THREADROUTINE(producerRoutine){
 	tch* api = (tch*) arg;
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		produce(api,&tstBuf);
+		produce(api,&tstBuf,osWaitForever);
 		api->Thread->sleep(5);
 	}
 	return osOK;
@@ -159,10 +167,12 @@ static DECLARE_THREADROUTINE(consumerRoutine){
 	tch* api = (tch*) arg;
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		consume(api,&tstBuf);
+		consume(api,&tstBuf,osWaitForever);
 		api->Thread->sleep(0);
 	}
-	return osOK;
+	if(!consume(api,&tstBuf,osWaitForever))
+		return osOK;
+	return osErrorOS;
 }
 
 

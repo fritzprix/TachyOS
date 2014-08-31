@@ -155,7 +155,7 @@ void tch_schedSleep(uint32_t timeout,tch_thread_state nextState){
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = nextState;
 	tch_currentThread = nth;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,getThreadHeader(nth)->t_kRet);
 }
 
 
@@ -175,7 +175,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
 	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*)wq;
 	tch_currentThread = nth;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
+	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,getThreadHeader(nth)->t_kRet);
 }
 
 
@@ -272,7 +272,7 @@ void tch_kernelSysTick(void){
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,tch_currentThread->t_kRet);
+		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,getThreadHeader(nth)->t_kRet);   // switch context without change
 	}
 }
 
