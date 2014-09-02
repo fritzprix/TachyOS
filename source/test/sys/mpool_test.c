@@ -24,7 +24,7 @@ typedef struct person {
 
 
 tch_mpoolDef(person_mp,10,person);
-tch_mpool_id person_mpool;
+tch_mpoolId person_mpool;
 person* ps[10];
 
 tchStatus do_mpoolBaseTest(tch* api){

@@ -18,19 +18,19 @@
 
 
 
-typedef struct tch_msgq_instance {
+typedef struct tch_msgq_cb_t {
 	uint32_t                      pidx;
 	uint32_t                      gidx;
 	uint32_t                      psize;
 	const tch_msgQueDef_t*        msgDef;
 	tch_lnode_t                   msgputWq;
 	tch_lnode_t                   msggetWq;
-}tch_msgq_instance;
+}tch_msgq_cb;
 
 /***
  *  MailQueue
  */
-typedef struct tch_mailq_instance {
+typedef struct tch_mailq_cb_t {
 	uint32_t                      pidx;
 	uint32_t                      gidx;
 	uint32_t                      psize;
@@ -39,7 +39,7 @@ typedef struct tch_mailq_instance {
 	tch_lnode_t                   mailGetWq;
 	tch_lnode_t                   mailAllocWq;
 	tch_mailQueDef_t*             mailqDef;
-}tch_mailq_instance;
+}tch_mailq_cb;
 
 
 static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que);
@@ -77,7 +77,7 @@ const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
-	tch_msgq_instance* msgq_header = (tch_msgq_instance*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
+	tch_msgq_cb* msgq_header = (tch_msgq_cb*) que->pool - 1;            ///< msgq header is located in lowest address of pool.
 	msgq_header->pidx = 0;
 	msgq_header->gidx = 0;
 	msgq_header->psize = 0;
@@ -88,7 +88,7 @@ static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 }
 
 static tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millisec){
-	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
+	tch_msgq_cb* mq_header = (tch_msgq_cb*) que_id;
 	if(tch_port_isISR()){                                                            ///< ISR Mode
 		if(millisec)                                                                 ///< ##Note : in ISR Mode, timeout is taken into error, because isr mode execution can not blocked
 			return osErrorParameter;                                                 ///<          and it generate 'osErrorParameter'
@@ -118,7 +118,7 @@ static tchStatus tch_msgQ_put(tch_msgQue_id que_id,uint32_t msg,uint32_t millise
 }
 
 static osEvent tch_msgQ_get(tch_msgQue_id que_id,uint32_t millisec){
-	tch_msgq_instance* mq_header = (tch_msgq_instance*) que_id;
+	tch_msgq_cb* mq_header = (tch_msgq_cb*) que_id;
 	osEvent evt;
 	evt.def = que_id;
 	evt.value.v = 0;
@@ -166,7 +166,7 @@ static tchStatus tch_msgQ_destroy(tch_msgQue_id id){
 
 static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
-	tch_mailq_instance* mailq = (tch_mailq_instance*) que->pool - 1;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) que->pool - 1;
 	mailq->bfree = que->pool;
 	mailq->bend = ((uint8_t*) que->pool + que->item_sz * que->queue_sz);          ///< assign end of pool
 	void* end = ((uint8_t*)mailq->bend - que->item_sz);                            ///< temporal end to initiate list
@@ -194,7 +194,7 @@ static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 		millisec = 0;
 	}
 	tchStatus res = osOK;
-	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	if(mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = (tchStatus)tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
@@ -214,7 +214,7 @@ static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 		millisec = 0;
 	}
 	tchStatus res = osOK;
-	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	if(!mailq->bfree){                                           //< if there is no more memory to allocate, block current thread execution
 		res = (tchStatus)tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mailq->mailAllocWq,millisec);
 	}
@@ -233,7 +233,7 @@ static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 
 
 static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
-	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	if((mailq->mailqDef->pool > mail) && (mailq->bend <= mail))
 		return osErrorValue;
 	tch_port_kernel_lock();
@@ -249,7 +249,7 @@ static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 }
 
 static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
-	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	osEvent evt;
 	evt.status = osOK;
 	evt.def = qid;
@@ -275,7 +275,7 @@ static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 
 
 static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
-	tch_mailq_instance* mailq = (tch_mailq_instance*) qid;
+	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	tch_port_kernel_lock();
 	mailq->psize++;
 	*((uint32_t*) mailq->mailqDef->queue + mailq->pidx++) = (uint32_t) mail;
