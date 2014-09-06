@@ -29,11 +29,10 @@ static DECLARE_THREADSTACK(receiver_stack,1 << 8);
 static tch_threadId receiver_id;
 
 
-tch_mailQDef(testmail,10,person);
 tch_mailQue_id testmailq_id;
 
 tchStatus do_mailQBaseTest(tch* api){
-	testmailq_id = api->MailQ->create(tch_access_mailq(testmail));
+	testmailq_id = api->MailQ->create(sizeof(person),10);
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg tcfg;

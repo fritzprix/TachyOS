@@ -58,7 +58,7 @@ tchStatus semaphore_performTest(tch* api){
 	if(api->Sem->lock(ts,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(ch1Id);
-	api->Thread->sleep(500);
+	api->Thread->sleep(200);
 	if(api->Thread->join(ch3Id,osWaitForever) != osOK)
 		return osErrorOS;
 	if(api->Thread->join(ch2Id,osWaitForever) != osOK)

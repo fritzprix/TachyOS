@@ -26,17 +26,15 @@ extern "C"{
  * Macro Function
  */
 
+/*
 #define TCH_MPOOL_CB_SIZE                    (3 * sizeof(void*))
-/***
- *
- */
 #define tch_mpoolDef(name,no,type)\
 uint8_t pool_##name[no * sizeof(type) + TCH_MPOOL_CB_SIZE]; \
 __attribute__((section(".data"))) static tch_mpoolDef_t  mempool_##name = {no,sizeof(type),pool_##name + TCH_MPOOL_CB_SIZE}
 
 #define tch_access_mpool(name)\
 &mempool_##name
-
+*/
 
 /**
  *  mempool types
@@ -51,7 +49,7 @@ typedef struct _tch_mpoolDef_t{
 typedef void* tch_mpoolId;
 
 struct _tch_mpool_ix_t {
-	tch_mpoolId (*create)(const tch_mpoolDef_t* pool);
+	tch_mpoolId (*create)(size_t sz,uint32_t plen);
 	void* (*alloc)(tch_mpoolId mpool);
 	void* (*calloc)(tch_mpoolId mpool);
 	tchStatus (*free)(tch_mpoolId mpool,void* block);

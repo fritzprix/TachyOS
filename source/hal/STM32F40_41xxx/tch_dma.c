@@ -148,7 +148,7 @@
 
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
-	tch_mtxDef                     mtx;
+	tch_mtxId                   mtxId;
 	uint16_t                    occp_state;
 	uint16_t                    lpoccp_state;
 }tch_dma_manager;
@@ -157,7 +157,7 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_dma_handle             _pix;
 	dma_t                       dma;
 	uint8_t                     ch;
-	tch_mtxDef                     mtx;
+	tch_mtxId                   mtxId;
 	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
@@ -192,7 +192,7 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 				tch_dma_initCfg,
 				tch_dma_openStream
 		},
-		INIT_MTX,
+		NULL,
 		0,
 		0
 };
@@ -217,14 +217,16 @@ static void tch_dma_initCfg(tch_dma_cfg* cfg){
 
 static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
 	/// check H/W Occupation
-	if(Mtx->lock(&DMA_Manager.mtx,timeout) != osOK)
+	if(!DMA_Manager.mtxId)
+		DMA_Manager.mtxId = Mtx->create();
+	if(Mtx->lock(DMA_Manager.mtxId,timeout) != osOK)
 		return NULL;
 	if(DMA_Manager.occp_state & (1 << dma)){
-		Mtx->unlock(&DMA_Manager.mtx);
+		Mtx->unlock(DMA_Manager.mtxId);
 		return NULL;
 	}
 	DMA_Manager.occp_state |= (1 << dma);
-	Mtx->unlock(&DMA_Manager.mtx);
+	Mtx->unlock(DMA_Manager.mtxId);
 
 	// Acquire DMA H/w
 	tch_dma_descriptor* dma_desc = &DMA_HWs[dma];
@@ -257,7 +259,7 @@ static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){
 	dma_handle->ch = ch;
 	dma_handle->dma = dma;
 	dma_handle->status = 0;
-	Mtx->create(&dma_handle->mtx);
+	dma_handle->mtxId = Mtx->create();
 	tch_listInit(&dma_handle->wq);
 	dma_handle->dma_async = Async->create(tch_dma_trigger,dma_handle,Async->Prior.Normal);
 
@@ -268,7 +270,7 @@ static tch_dma_handle* tch_dma_initHandle(dma_t dma,uint8_t ch){
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeout){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
-	if(Mtx->lock(&ins->mtx,timeout) != osOK)
+	if(Mtx->lock(ins->mtxId,timeout) != osOK)
 		return FALSE;
 	tch_thread_header* header = (tch_thread_header*)Thread->self();
 	uint32_t rtime = (uint32_t) header->t_to - tch_kernelCurrentSystick(); // get extra time
@@ -278,7 +280,7 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	Async->blockedstart(ins->dma_async,timeout);
 	//dmaHw->CR |= DMA_SxCR_EN;
 	//tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ins->wq,rtime);
-	Mtx->unlock(&ins->mtx);
+	Mtx->unlock(ins->mtxId);
 	return TRUE;
 }
 
@@ -294,7 +296,7 @@ static DECL_ASYNC_TASK(tch_dma_trigger){
 static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*)self;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
-	if(Mtx->lock(&ins->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(ins->mtxId,osWaitForever) != osOK)
 		return;
 	switch(targetAddress){
 	case DMA_TargetAddress_Mem0:
@@ -307,14 +309,14 @@ static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32
 		dmaHw->PAR = addr;
 		break;
 	}
-	Mtx->unlock(&ins->mtx);
+	Mtx->unlock(ins->mtxId);
 }
 /*
  */
 static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tch_dma_descriptor* dma_desc = (tch_dma_descriptor*) &DMA_HWs[ins->dma];
-	if(Mtx->lock(&ins->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(ins->mtxId,osWaitForever) != osOK)
 		return;
 	NVIC_DisableIRQ(dma_desc->irq);
 	((DMA_Stream_TypeDef*)dma_desc)->CR |= evType;
@@ -322,7 +324,7 @@ static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventList
 	ins->status |= evType;
 	ins->listener = listener;
 	NVIC_EnableIRQ(dma_desc->irq);
-	Mtx->unlock(&ins->mtx);
+	Mtx->unlock(ins->mtxId);
 }
 
 /*
@@ -331,21 +333,21 @@ static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventList
 static void tch_dma_unregisterEventListener(tch_dma_handle* self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tch_dma_descriptor* dma_desc = (tch_dma_descriptor*)&DMA_HWs[ins->dma];
-	if(Mtx->lock(&ins->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(ins->mtxId,osWaitForever) != osOK)
 		return;
 	NVIC_DisableIRQ(dma_desc->irq);
 	((DMA_Stream_TypeDef*)dma_desc->_hw)->CR &= ~(DMA_FLAG_EvMsk >> 1);
 	((DMA_Stream_TypeDef*)dma_desc->_hw)->FCR &= ~(1 << 7);
 	ins->listener = NULL;
 	NVIC_EnableIRQ(dma_desc->irq);
-	Mtx->unlock(&ins->mtx);
+	Mtx->unlock(ins->mtxId);
 }
 
 
 static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,BOOL enable){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tch_dma_descriptor* dma_desc = (tch_dma_descriptor*) &DMA_HWs[ins->dma];
-	if(Mtx->lock(&ins->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(ins->mtxId,osWaitForever) != osOK)
 		return;
 	switch(targetAddress){
 	case DMA_TargetAddress_Mem0:
@@ -364,7 +366,7 @@ static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,
 		}
 		break;
 	}
-	Mtx->unlock(&ins->mtx);
+	Mtx->unlock(ins->mtxId);
 }
 
 static void tch_dma_close(tch_dma_handle* self){
@@ -374,7 +376,7 @@ static void tch_dma_close(tch_dma_handle* self){
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 	dmaHw->CR = 0;
 	dmaHw->FCR = 0;
-	Mtx->destroy(&ins->mtx);
+	Mtx->destroy(ins->mtxId);
 	tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&ins->wq,0);
 }
 

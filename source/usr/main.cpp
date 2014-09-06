@@ -50,6 +50,8 @@ int main(tch* api) {
 	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
 
 	while(1){
 		led->out(led,bSet);

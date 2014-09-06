@@ -1,7 +1,6 @@
 ##include $(CURDIR)/COMMON.mk
 
 KERNEL_SRCS=\
-	    tch_ipc.c\
 	    tch_mpool.c\
 	    tch_mtx.c\
 	    tch_sched.c\
@@ -16,7 +15,9 @@ KERNEL_SRCS=\
 	    tch_nclib.c\
 	    tch_async.c\
 	    tch_bar.c\
-	    tch_condv.c
+	    tch_condv.c\
+	    tch_msgq.c\
+	    tch_mailq.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 

@@ -75,11 +75,17 @@ typedef struct tch_async_cb_t {
 }tch_async_cb;
 
 
-#define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
-#define SV_MTX_LOCK                      ((uint32_t) 0x10)
-#define SV_MTX_UNLOCK                    ((uint32_t) 0x11)
-#define SV_MTX_DESTROY                   ((uint32_t) 0x12)
+typedef struct tch_mtx_cb {
+	uint32_t            state;
+	uint32_t            key;
+	tch_thread_queue    que;
+	void*               own;
+	tch_thread_prior    svdPrior;
+}tch_mtx;
+
+
+#define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
 #define SV_SIG_MATCH                     ((uint32_t) 0x14)
 #define SV_SIG_WAIT                      ((uint32_t) 0x15)
@@ -99,6 +105,13 @@ typedef struct tch_async_cb_t {
 #define SV_ASYNC_START                   ((uint32_t) 0x2A)               ///< Supervisor call id to start async task
 #define SV_ASYNC_BLSTART                 ((uint32_t) 0x2B)               ///< Supervisor call id to start async task with blocking current execution
 #define SV_ASYNC_NOTIFY                  ((uint32_t) 0x2C)               ///< Supervisor call id to notify async task result
+
+#define SV_MSGQ_PUT                      ((uint32_t) 0x2D)               ///< Supervisor call id to put msg to msgq
+#define SV_MSGQ_GET                      ((uint32_t) 0x2E)               ///< Supervisor call id to get msg from msgq
+#define SV_MSGQ_DESTROY                  ((uint32_t) 0x2F)               ///< Supervisro call id to destoy msgq
+
+#define SV_MEMP_ALLOC                    ((uint32_t) 0x30)               ///< Supervisor call id to allocate memory chunk form mem pool
+#define SV_MEMP_FREE                     ((uint32_t) 0x31)               ///< Supervisor call id to free memory chunk into mem pool
 
 
 

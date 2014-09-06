@@ -15,16 +15,12 @@ extern "C" {
 #endif
 
 typedef void* tch_barId;
-typedef struct tch_bar_def_t{
-	uint8_t                 status;
-	tch_lnode_t             wq;
-} tch_barDef;
 
 struct _tch_bar_ix_t {
-	tch_barId (*create)(tch_barDef* bar);
-	tchStatus (*wait)(tch_barDef* bar,uint32_t timeout);
-	tchStatus (*signal)(tch_barDef* bar,tchStatus result);
-	tchStatus (*destroy)(tch_barDef* bar);
+	tch_barId (*create)();
+	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
+	tchStatus (*signal)(tch_barId bar,tchStatus result);
+	tchStatus (*destroy)(tch_barId bar);
 };
 
 #if defined(__cplusplus)

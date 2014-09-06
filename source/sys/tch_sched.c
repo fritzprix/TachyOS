@@ -207,7 +207,7 @@ uint64_t tch_kernelCurrentSystick(){
 }
 
 
-void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
+void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res,BOOL preemt){
 	tch_thread_header* nth = NULL;
 	tch_thread_header* tpreempt = NULL;
 	if(tch_listIsEmpty(wq))
@@ -225,7 +225,7 @@ void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res){
 			tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,(tch_lnode_t*)nth,tch_schedReadyQPolicy);
 		}
 	}
-	if(tpreempt){
+	if(tpreempt && preemt){
 		tpreempt->t_state = RUNNING;
 		getThreadHeader(tch_currentThread)->t_state = READY;
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQPolicy);

@@ -107,7 +107,7 @@
 
 typedef struct tch_gpio_manager_internal_t {
 	tch_lld_gpio                    _pix;
-	tch_mtxDef                          mtx;
+	tch_mtxId                        mtxId;
 	const uint8_t                    port_cnt;
 	const uint8_t                    io_cnt;
 }tch_gpio_manager;
@@ -118,8 +118,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       state;
 	uint8_t                       pin;
 	uint32_t                      pMsk;
-	tch_mtxDef                    mtx;
-	tch_mtxId                    mtxid;
+	tch_mtxId                     mtxId;
 	tch_async_id                  aio;
 	tch_IoEventCalback_t          cb;
 	const tch*                    sys;
@@ -187,7 +186,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 				tch_gpio_getPinAvailable,
 				tch_gpio_freeIo
 		},
-		INIT_MTX,
+		NULL,
 		MFEATURE_GPIO,
 		MFEATURE_PINCOUNT_pPort
 };
@@ -201,14 +200,16 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	if(!gpio->_clkenr){                     /// given GPIO port is not supported in this H/W
 		return NULL;
 	}
-	if(api->Mtx->lock(&GPIO_StaticManager.mtx,timeout) != osOK)
+	if(!GPIO_StaticManager.mtxId)
+		GPIO_StaticManager.mtxId = Mtx->create();
+	if(api->Mtx->lock(GPIO_StaticManager.mtxId,timeout) != osOK)
 		return NULL;
 	if(gpio->io_ocpstate & pMsk){           /// if there is pin which is occupied by another instance
-		api->Mtx->unlock(&GPIO_StaticManager.mtx);
+		api->Mtx->unlock(GPIO_StaticManager.mtxId);
 		return NULL;                        /// return null
 	}
 	gpio->io_ocpstate |= pMsk;
-	api->Mtx->unlock(&GPIO_StaticManager.mtx);
+	api->Mtx->unlock(GPIO_StaticManager.mtxId);
 	tch_gpio_handle_prototype* instance = api->Mem->alloc(sizeof(tch_gpio_handle_prototype));
 	if(!instance)
 		return NULL;
@@ -231,7 +232,7 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	}
 
 	instance->aio = Async->create(NULL,NULL,0);
-	instance->mtxid = Mtx->create(&instance->mtx);
+	instance->mtxId = Mtx->create();
 
 	tch_gpio_handle_configure(instance,cfg);
 	SET_INIT(instance);
@@ -267,7 +268,7 @@ static uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 static void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
-	_handle->sys->Mtx->destroy(&_handle->mtx);
+	_handle->sys->Mtx->destroy(&_handle->mtxId);
 }
 
 
@@ -296,12 +297,12 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _han
 	if(ioIrqOjb->io_occp)
 		return osErrorResource;
 	tch_listInit(&ioIrqOjb->wq);
-	if(_handle->sys->Mtx->lock(_handle->mtxid,osWaitForever) != osOK)
+	if(_handle->sys->Mtx->lock(_handle->mtxId,osWaitForever) != osOK)
 		return osErrorResource;
 	_handle->cb = callback;
 	ioIrqOjb->io_occp = _handle;
 	tch_gpio_setIrq(_handle,cfg);
-	result =_handle->sys->Mtx->unlock(_handle->mtxid);
+	result =_handle->sys->Mtx->unlock(_handle->mtxId);
 
 	return result;
 }
@@ -385,7 +386,7 @@ static void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 	handle->_pix.configure = tch_gpio_handle_configure;
 	handle->pMsk = 0;
 
-	handle->sys->Mtx->create(&handle->mtx);
+	handle->mtxId = handle->sys->Mtx->create();
 	handle->cb = NULL;
 }
 
@@ -425,7 +426,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 	uint32_t pMsk = 1;
 	while(ext_pr){
 		if(ext_pr & 1){
-			ioIntObj = &IoInterrupt_HWs[base_idx + pos++];
+			ioIntObj = &IoInterrupt_HWs[base_idx + pos];
 			if(!ioIntObj->io_occp)
 				return;
 			_handle = (tch_gpio_handle_prototype*)ioIntObj->io_occp;
@@ -437,7 +438,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 		}
 		ext_pr >>= 1;
 		pMsk <<= 1;
-		if(!(pos < group_cnt))
+		if(!(++pos < group_cnt))
 			return;
 	}
 }

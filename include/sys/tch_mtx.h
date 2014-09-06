@@ -24,9 +24,6 @@
 extern "C" {
 #endif
 
-#ifndef __FUTEX
-#define __FUTEX     (1)
-#endif
 
 
 #define MTX_INIT_MARK                 ((uint32_t) 0x01)
@@ -36,22 +33,10 @@ extern "C" {
  *  mutex  types
  */
 typedef void* tch_mtxId;
-typedef struct _tch_mtx_t tch_mtxDef;
-typedef struct _tch_mtx_waitque_t {
-	tch_lnode_t          que;
-}tch_mtx_waitque;
 
-struct _tch_mtx_t {
-	uint32_t            key;
-	tch_mtx_waitque     que;
-	void*               own;
-#if __FUTEX
-	tch_thread_prior    svdPrior;
-#endif
-};
 
 struct _tch_mutex_ix_t {
-	tch_mtxId (*create)(tch_mtxDef* mcb);
+	tch_mtxId (*create)();
 	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
 	tchStatus (*unlock)(tch_mtxId mtx);
 	tchStatus (*destroy)(tch_mtxId mtx);

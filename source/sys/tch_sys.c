@@ -19,6 +19,7 @@
 
 
 #include "tch_kernel.h"
+#include "tch_sys.h"
 #include "tch_mem.h"
 #include "tch_sched.h"
 #include "tch_halcfg.h"
@@ -131,7 +132,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedResume((tch_thread_queue*)arg1,arg2);
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_thread_queue*)arg1,arg2);
+		tch_schedResumeAll((tch_thread_queue*)arg1,arg2,TRUE);
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
@@ -139,62 +140,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
 		tch_schedTerminate((tch_threadId) cth,arg2);
-		return;
-	case SV_MTX_LOCK:  // * Mutex Lock System Call
-		if(((tch_mtxDef*) arg1)->key < MTX_INIT_MARK){    // check validity of mutex object
-			tch_kernelSetResult(tch_currentThread,osErrorResource);     // if mutex object is not valid, return
-			return;
-		}
-		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		if((((tch_mtxDef*) arg1)->key == MTX_INIT_MARK) ||
-				(((tch_mtxDef*) arg1)->key) == ((uint32_t)cth | MTX_INIT_MARK)){      // check mtx is not locked by any thread
-
-			((tch_mtxDef*) arg1)->key |= (uint32_t) cth;                              // marking mtx key as locked
-			if(!cth->t_lckCnt++){                                                  // ensure priority escalation occurs only once
-				cth->t_svd_prior = cth->t_prior;
-				((tch_mtxDef*)arg1)->own = cth;
-				                                             // This temporary priority change is to prevent priority inversion
-			}
-			tch_kernelSetResult(cth,osOK);
-			return;
-		}else{                                                 // otherwise, make thread block
-			if(!tch_schedIsPreemptable(((tch_mtxDef*)arg1)->own))          // if thread will be blocked has higher priority than mtx owner, mtx owner inherit the priority of current one
-				((tch_thread_header*)((tch_mtxDef*) arg1))->t_prior = tch_currentThread->t_prior;
-			tch_schedSuspend((tch_thread_queue*)&((tch_mtxDef*) arg1)->que,arg2);
-		}
-		return;
-	case SV_MTX_UNLOCK:
-		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		if((((tch_mtxDef*) arg1)->key & (uint32_t)cth) != (uint32_t) cth){
-			tch_kernelSetResult(cth,osErrorResource);
-			return;
-		}
-		if(((tch_mtxDef*) arg1)->key > MTX_INIT_MARK){
-			if(!--cth->t_lckCnt){
-				cth->t_prior = cth->t_svd_prior;
-				((tch_mtxDef*) arg1)->own = NULL;
-			}
-			if(!tch_listIsEmpty((tch_thread_queue*)&((tch_mtxDef*)arg1)->que))
-				nth = tch_schedResume((tch_thread_queue*)&((tch_mtxDef*)arg1)->que,osOK);
-			if(nth){
-				((tch_mtxDef*) arg1)->key = ((uint32_t)nth | MTX_INIT_MARK);
-				tch_kernelSetResult(nth,osOK);
-			}else{
-				((tch_mtxDef*) arg1)->key = MTX_INIT_MARK;
-			}
-			tch_kernelSetResult(cth,osOK);
-		}else{
-			tch_kernelSetResult(cth,osErrorResource);    ///< this mutex is not initialized yet.
-		}
-		return;
-	case SV_MTX_DESTROY:
-		while(!tch_listIsEmpty(&((tch_mtxDef*)arg1)->que)){               ///< check waiting thread in mtx entry
-			nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&((tch_mtxDef*) arg1)->que);
-			nth = (tch_thread_header*) ((tch_lnode_t*) nth - 1);
-			tch_kernelSetResult(nth,osErrorResource);
-			nth->t_waitQ = NULL;
-			tch_schedReady(nth);                    ///< if there is thread waiting,put it ready state
-		}
 		return;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
@@ -233,6 +178,15 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_ASYNC_NOTIFY:
 		tch_schedResume(&((tch_async_cb*) arg1)->wq,arg2);
+		return;
+	case SV_MSGQ_PUT:
+		tch_kernelSetResult(tch_currentThread,tch_msgq_kput(arg1,arg2));
+		return;
+	case SV_MSGQ_GET:
+		tch_kernelSetResult(tch_currentThread,tch_msgq_kget(arg1,arg2));
+		return;
+	case SV_MSGQ_DESTROY:
+		tch_kernelSetResult(tch_currentThread,tch_msgq_kdestroy(arg1));
 		return;
 	}
 }

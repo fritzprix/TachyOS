@@ -19,14 +19,22 @@
 #include "tch_kernel.h"
 
 
+#define TCH_MPOOL_CLASS_KEY             ((uint16_t) 0x2D05)
+#define tch_mpoolValidate(mpcb)         ((tch_mpool_cb*) mpcb)->bstate = ((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY
+#define tch_mpoolInvalidate(mpcb)       ((tch_mpool_cb*) mpcb)->bstate &= ~(0xFFFF)
+#define tch_mpoolIsValid(mpcb)          (((tch_mpool_cb*) mpcb)->bstate & 0xFFFF) == (((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY)
+
 
 typedef struct tch_mpool_cb_t {
+	uint32_t             bstate;
 	void*                bend;
 	void*                bfree;
-	tch_mpoolDef_t*      bDef;
+	uint32_t             bcount;
+	uint32_t             balign;
+	void*                bpool;
 }tch_mpool_cb;
 
-static tch_mpoolId tch_mpool_create(const tch_mpoolDef_t* pool);
+static tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen);
 static void* tch_mpool_alloc(tch_mpoolId mpool);
 static void* tch_mpool_calloc(tch_mpoolId mpool);
 static tchStatus tch_mpool_free(tch_mpoolId mpool,void* block);
@@ -40,7 +48,30 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
-tch_mpoolId tch_mpool_create(const tch_mpoolDef_t* pool){
+tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
+	tch_mpool_cb* mpcb = (tch_mpool_cb*) Mem->alloc(sizeof(tch_mpool_cb) + sz * plen);
+	mpcb->bpool = (tch_mpool_cb*) mpcb + 1;
+	mpcb->bcount = plen;
+	mpcb->balign = sz;
+	memset(mpcb->bpool,0,sz * plen);
+	void* next = NULL;
+	uint8_t* blk = (uint8_t*) mpcb->bpool;
+	uint8_t* end = blk + sz * plen;
+	mpcb->bend = end;
+	mpcb->bfree = blk;
+	end = end - mpcb->balign;
+	while(1){
+		next = blk + mpcb->balign;
+		if(next > (void*)end) break;
+		*((void**) blk) = next;
+		blk = (uint8_t*) next;
+	}
+	*((void**) blk) = 0;
+	tch_mpoolValidate(mpcb);
+	return (tch_mpoolId) mpcb;
+
+
+	/*
 	tch_mpool_cb* mp = (tch_mpool_cb*) pool->pool - 1;
 	memset(pool->pool,0,pool->count * pool->align);          // clear memory section
 	void* next = NULL;
@@ -58,15 +89,20 @@ tch_mpoolId tch_mpool_create(const tch_mpoolDef_t* pool){
 	}
 	*((void**)blk) = 0;
 	return mp;
+	*/
 }
 
 
 void* tch_mpool_alloc(tch_mpoolId mpool){
-	tch_mpool_cb* mp_header = (tch_mpool_cb*) mpool;
+	if(!tch_mpoolIsValid(mpool))
+		return NULL;
+	tch_mpool_cb* mpcb = (tch_mpool_cb*) mpool;
+	if(!mpcb->bfree)
+		return NULL;
 	tch_port_kernel_lock();
-	void** free = (void**)mp_header->bfree;
+	void** free = (void**)mpcb->bfree;
 	if(free){
-		mp_header->bfree = *free;
+		mpcb->bfree = *free;
 	}
 	tch_port_kernel_unlock();
 	return free;
@@ -74,21 +110,21 @@ void* tch_mpool_alloc(tch_mpoolId mpool){
 
 
 void* tch_mpool_calloc(tch_mpoolId mpool){
-	tch_mpool_cb* mp_header = (tch_mpool_cb*) mpool;
+	tch_mpool_cb* mpcb = (tch_mpool_cb*) mpool;
 	void* free = tch_mpool_alloc(mpool);
 	if(free){
-		memset(free,0,mp_header->bDef->align);
+		memset(free,0,mpcb->balign);
 	}
 	return free;
 }
 
 tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
-	tch_mpool_cb* mp_header = (tch_mpool_cb*) mpool;
-	if((block < mp_header->bDef->pool) || (block > mp_header->bend))
+	tch_mpool_cb* mpcb = (tch_mpool_cb*) mpool;
+	if((block < mpcb->bpool) || (block > mpcb->bend))
 		return osErrorParameter;
 	tch_port_kernel_lock();
-	*((void**)block) = mp_header->bfree;
-	mp_header->bfree = block;
+	*((void**)block) = mpcb->bfree;
+	mpcb->bfree = block;
 	tch_port_kernel_unlock();
 	return osOK;
 }

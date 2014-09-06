@@ -17,7 +17,6 @@ static tch_threadId child1;
 static tch_threadId child2;
 
 static void race(tch* api);
-static tch_mtxDef mtxdef;
 static tch_mtxId mmtx;
 
 
@@ -46,11 +45,11 @@ tchStatus mtx_performTest(tch* api){
 	thCfg.t_proior = Normal;
 	child2 = Thread->create(&thCfg,api);
 
-	mmtx = api->Mtx->create(&mtxdef);
+	mmtx = api->Mtx->create();
 	if(api->Mtx->lock(mmtx,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(child1);
-	api->Thread->sleep(500);
+	api->Thread->sleep(200);
 	api->Mtx->unlock(mmtx);
 
 
@@ -68,7 +67,7 @@ static void race(tch* api){
 	tch_mtx_ix* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){
 		if(Mtx->lock(mmtx,osWaitForever) == osOK){
-			api->Thread->sleep(5);
+			api->Thread->sleep(0);
 			Mtx->unlock(mmtx);
 		}
 	}

@@ -23,12 +23,11 @@ typedef struct person {
 } person;
 
 
-tch_mpoolDef(person_mp,10,person);
 tch_mpoolId person_mpool;
 person* ps[10];
 
-tchStatus do_mpoolBaseTest(tch* api){
-	person_mpool = api->Mempool->create(tch_access_mpool(person_mp));
+tchStatus mpool_performTest(tch* api){
+	person_mpool = api->Mempool->create(sizeof(person),10);
 	uint32_t i = 0;
 	/***
 	 *  allocation / free repeat test
@@ -57,5 +56,5 @@ tchStatus do_mpoolBaseTest(tch* api){
 	if(osOK == api->Mempool->free(person_mpool,NULL))
 		return osErrorOS;
 
-	return osOK;
+	return api->Mempool->free(person_mpool,ps[1]);
 }

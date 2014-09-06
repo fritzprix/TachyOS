@@ -34,7 +34,6 @@ static tch_threadId child2Id;
 static tch_threadId child3Id;
 static tch_threadId mainId;
 
-static tch_barDef bdf;
 static tch_barId bid;
 
 tchStatus barrier_performTest(tch* api){
@@ -71,7 +70,7 @@ tchStatus barrier_performTest(tch* api){
 
 	tch_assert(api,child1Id && child2Id && child3Id,osErrorOS);
 
-	bid = api->Barrier->create(&bdf);
+	bid = api->Barrier->create();
 
 	api->Thread->start(child1Id);
 	api->Thread->start(child2Id);

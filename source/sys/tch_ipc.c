@@ -72,8 +72,8 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		tch_mailQ_free
 };
 
-const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
-const tch_mailq_ix* MailQ = &MailQStaticInstance;
+//const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
+//const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_msgQue_id tch_msgQ_create(const tch_msgQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
@@ -289,4 +289,3 @@ static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
 	tch_port_kernel_unlock();
 	return osOK;
 }
-
