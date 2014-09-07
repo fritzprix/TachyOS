@@ -22,6 +22,9 @@ extern "C" {
 #endif
 
 
+#define DECLARE_IO_CALLBACK(name) BOOL name(tch_gpio_handle* self,uint8_t pin)
+
+
 typedef uint8_t gpIo_x;
 typedef struct tch_gpio_handle tch_gpio_handle;
 

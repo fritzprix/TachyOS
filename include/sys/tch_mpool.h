@@ -53,6 +53,7 @@ struct _tch_mpool_ix_t {
 	void* (*alloc)(tch_mpoolId mpool);
 	void* (*calloc)(tch_mpoolId mpool);
 	tchStatus (*free)(tch_mpoolId mpool,void* block);
+	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
 #if defined(__cplusplus)

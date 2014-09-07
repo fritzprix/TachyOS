@@ -22,19 +22,50 @@ static tch_threadId sender_id;
 static DECLARE_THREADROUTINE(receiver);
 static tch_threadId receiver_id;
 
+static DECLARE_IO_CALLBACK(ioEventListener);
 
 static tch_msgQue_id mid;
 static tch_barId mBar;
 
+static tch_gpio_handle* out;
+static tch_gpio_handle* in;
+
+static volatile tch* Api;
+static int irqcnt;
+static int usrcnt;
+static int miscnt;
 
 tchStatus msgq_performTest(tch* api){
+	Api = api;
 	mBar = api->Barrier->create();
+	irqcnt = 0;
+	miscnt = 0;
+	usrcnt = 0;
 
 	uint8_t* sender_stk = (uint8_t*) api->Mem->alloc(1 << 9);
 	uint8_t* receiver_stk = (uint8_t*) api->Mem->alloc(1 << 9);
 
 	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
+
+	tch_gpio_cfg iocfg;
+	api->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = api->Device->gpio->Mode.Out;
+	iocfg.Otype = api->Device->gpio->Otype.OpenDrain;
+	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
+	iocfg.Speed = api->Device->gpio->Speed.Mid;
+	out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,2,&iocfg,osWaitForever,ActOnSleep);
+	out->out(out,bSet);
+
+	iocfg.Mode = api->Device->gpio->Mode.In;
+	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
+	iocfg.Speed = api->Device->gpio->Speed.Mid;
+	in = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,0,&iocfg,osWaitForever,ActOnSleep);
+
+	tch_gpio_evCfg evcfg;
+	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
+	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
+	in->registerIoEvent(in,&evcfg,ioEventListener);
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg tcfg;
@@ -56,6 +87,7 @@ tchStatus msgq_performTest(tch* api){
 
 	tch_assert(api,Thread->join(receiver_id,osWaitForever) == osOK,osErrorOS);
 	tch_assert(api,Thread->join(sender_id,osWaitForever) == osOK,osErrorOS);
+	api->Barrier->destroy(mBar);
 
 	api->Mem->free(sender_stk);
 	api->Mem->free(receiver_stk);
@@ -65,12 +97,15 @@ tchStatus msgq_performTest(tch* api){
 }
 
 
-DECLARE_THREADROUTINE(sender){
+static DECLARE_THREADROUTINE(sender){
 	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
-	while(cnt < 100){
-		api->Thread->sleep(0);
+	while(cnt < 50){
 		api->MsgQ->put(mid,0xFF,osWaitForever);
+		out->out(out,bClear);
+		api->Thread->sleep(1);
+		out->out(out,bSet);
+		api->Thread->sleep(1);
 		cnt++;
 	}
 	api->Barrier->wait(mBar,osWaitForever);
@@ -79,14 +114,26 @@ DECLARE_THREADROUTINE(sender){
 	return osOK;
 }
 
-DECLARE_THREADROUTINE(receiver){
+static DECLARE_THREADROUTINE(receiver){
 	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
 	osEvent evt;
+	uint32_t mval = 0;
+	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
 		evt = api->MsgQ->get(mid,osWaitForever);
-		if(evt.status == osEventMessage)
+		totalMsgcnt++;
+		if(evt.status == osEventMessage){
 			cnt++;
+			if(evt.value.v == 0xFF){
+				usrcnt++;
+			}else if(evt.value.v == 0xF0){
+				irqcnt++;
+			}else{
+				mval = evt.value.v;
+				miscnt++;
+			}
+		}
 	}
 	evt = api->MsgQ->get(mid,10);
 	if(evt.status != osErrorTimeoutResource)
@@ -97,3 +144,9 @@ DECLARE_THREADROUTINE(receiver){
 		return osErrorResource;
 	return osOK;
 }
+
+static DECLARE_IO_CALLBACK(ioEventListener){
+	Api->MsgQ->put(mid,0xF0,0);
+	return TRUE;
+}
+

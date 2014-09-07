@@ -38,12 +38,15 @@ static tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen);
 static void* tch_mpool_alloc(tch_mpoolId mpool);
 static void* tch_mpool_calloc(tch_mpoolId mpool);
 static tchStatus tch_mpool_free(tch_mpoolId mpool,void* block);
+static tchStatus tch_mpool_destroy(tch_mpoolId mpool);
+
 
 __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 		tch_mpool_create,
 		tch_mpool_alloc,
 		tch_mpool_calloc,
-		tch_mpool_free
+		tch_mpool_free,
+		tch_mpool_destroy
 };
 
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
@@ -127,4 +130,9 @@ tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
 	mpcb->bfree = block;
 	tch_port_kernel_unlock();
 	return osOK;
+}
+
+
+static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
+
 }

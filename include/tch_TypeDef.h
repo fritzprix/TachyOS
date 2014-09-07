@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include "tch_ptypes.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C"{
 #endif
 
@@ -55,7 +55,7 @@ typedef enum {	TRUE = (1 > 0),FALSE = !TRUE  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_pwr_def;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

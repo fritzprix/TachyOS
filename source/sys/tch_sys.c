@@ -180,13 +180,16 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedResume(&((tch_async_cb*) arg1)->wq,arg2);
 		return;
 	case SV_MSGQ_PUT:
-		tch_kernelSetResult(tch_currentThread,tch_msgq_kput(arg1,arg2));
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_msgq_kput(arg1,arg2));
 		return;
 	case SV_MSGQ_GET:
-		tch_kernelSetResult(tch_currentThread,tch_msgq_kget(arg1,arg2));
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_msgq_kget(arg1,arg2));
 		return;
 	case SV_MSGQ_DESTROY:
-		tch_kernelSetResult(tch_currentThread,tch_msgq_kdestroy(arg1));
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_msgq_kdestroy(arg1));
 		return;
 	}
 }

@@ -119,7 +119,6 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       pin;
 	uint32_t                      pMsk;
 	tch_mtxId                     mtxId;
-	tch_async_id                  aio;
 	tch_IoEventCalback_t          cb;
 	const tch*                    sys;
 }tch_gpio_handle_prototype;
@@ -230,8 +229,6 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	}else{
 		*gpio->_lpclkenr &= ~gpio->lpclkmsk;     /// otherwise clear
 	}
-
-	instance->aio = Async->create(NULL,NULL,0);
 	instance->mtxId = Mtx->create();
 
 	tch_gpio_handle_configure(instance,cfg);
