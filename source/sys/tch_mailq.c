@@ -39,6 +39,9 @@ typedef struct _tch_mailq_cb {
 	uint32_t      bstate;
 	void*         bp;
 	size_t        bsz;
+	size_t        updated;
+	size_t        pidx;
+	size_t        gidx;
 	tch_mpoolId   bpool;
 	tch_mtxId     bMtx;
 	tch_condvId   bAllocV;

@@ -88,27 +88,6 @@ static tchStatus tch_msgq_putApi(tch_msgQue_id mqId, uword_t msg,uint32_t millis
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = msg;
-		/*
-		if(Mtx->lock(msgqCb->mtx,millisec) != osOK)
-			return osErrorResource;
-		while(msgqCb->updated >= msgqCb->sz){
-			if((result = Condv->wait(msgqCb->condvP,millisec)) != osOK){
-				switch(result){
-				case osErrorResource:
-					return osErrorResource;
-				case osEventTimeout:
-					return osErrorTimeoutResource;
-				}
-			}
-			if(!tch_msgqIsValid(msgqCb))
-				return osErrorResource;
-		}
-		*((uword_t*) msgqCb->bp + msgqCb->pidx++) = msg;
-		if(msgqCb->pidx >= msgqCb->sz)
-			msgqCb->pidx = 0;
-		msgqCb->updated++;
-		Condv->wake(msgqCb->condvC);
-		Mtx->unlock(msgqCb->mtx);*/
 		while((result = tch_port_enterSvFromUsr(SV_MSGQ_PUT,(uword_t)mqId,(uword_t)&arg)) != osOK){
 			if(!tch_msgqIsValid(msgqCb))
 				return osErrorResource;
@@ -171,29 +150,6 @@ static osEvent tch_msgq_getApi(tch_msgQue_id mqId,uint32_t millisec){
 		evt.status = osOK;
 		return evt;
 	}else{
-		/*
-		if(Mtx->lock(msgqCb->mtx,millisec) != osOK)
-			return osErrorResource;
-		while(msgqCb->updated == 0){
-			if((evt.status = Condv->wait(msgqCb->condvC,millisec)) != osOK){
-				switch(evt.status){
-				case osErrorResource:
-					return evt;
-				case osEventTimeout:
-					evt.status = osErrorTimeoutResource;
-					return evt;
-				}
-			}
-			if(!tch_msgqIsValid(msgqCb))
-				return osErrorResource;
-		}
-		evt.value.v = *((uword_t*)msgqCb->bp + msgqCb->gidx++);
-		if(msgqCb->gidx >= msgqCb->sz)
-			msgqCb->gidx = 0;
-		msgqCb->updated--;
-		Condv->wake(msgqCb->condvP);
-		return Mtx->unlock(msgqCb->mtx);
-		*/
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = 0;
@@ -248,14 +204,6 @@ static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
 		msgqCb->bp = NULL;
 		msgqCb->gidx = 0;
 		msgqCb->pidx = 0;
-		/*
-		while(!tch_listIsEmpty(&msgqCb->pwq)){
-			nth = tch_listDequeue(&msgqCb->pwq);
-			if(nth){
-				tch_kernelSetResult(nth,osErrorResource);
-				tch_schedReady(nth);
-			}
-		}*/
 		tch_schedResumeAll(&msgqCb->pwq,osErrorResource,FALSE);
 		tch_schedResumeAll(&msgqCb->cwq,osErrorResource,TRUE);
 		msgqCb->updated = 0;
@@ -265,15 +213,6 @@ static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
 		Mem->free(msgqCb);
 	}
 	return osOK;
-	/*
-	tch_msgqInvalidate(msgqCb);
-	msgqCb->bp = NULL;
-	msgqCb->gidx = 0;
-	msgqCb->pidx = 0;
-	msgqCb->updated = 0;
-	Mem->free(msgqCb);
-	return osOK;
-	*/
 }
 
 tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
