@@ -17,6 +17,6 @@
 
 #include "tch.h"
 
-extern tchStatus do_mailQBaseTest(tch* api);
+extern tchStatus mailq_performTest(tch* api);
 
 #endif /* MAILQ_TEST_H_ */

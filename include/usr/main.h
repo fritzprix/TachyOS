@@ -29,6 +29,7 @@ extern "C" {
 #include "monitor_test.h"
 #include "mpool_test.h"
 #include "msgq_test.h"
+#include "mailq_test.h"
 
 #ifdef __cplusplus
 }

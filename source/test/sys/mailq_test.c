@@ -21,17 +21,17 @@ typedef struct person {
 } person;
 
 static DECLARE_THREADROUTINE(sender);
-static DECLARE_THREADSTACK(sender_stack,1 << 8);
+static DECLARE_THREADSTACK(sender_stack,1 << 9);
 static tch_threadId sender_id;
 
 static DECLARE_THREADROUTINE(receiver);
-static DECLARE_THREADSTACK(receiver_stack,1 << 8);
+static DECLARE_THREADSTACK(receiver_stack,1 << 9);
 static tch_threadId receiver_id;
 
 
 tch_mailQue_id testmailq_id;
 
-tchStatus do_mailQBaseTest(tch* api){
+tchStatus mailq_performTest(tch* api){
 	testmailq_id = api->MailQ->create(sizeof(person),10);
 
 	const tch_thread_ix* Thread = api->Thread;
@@ -40,7 +40,7 @@ tchStatus do_mailQBaseTest(tch* api){
 	tcfg._t_routine = sender;
 	tcfg._t_stack = sender_stack;
 	tcfg.t_proior = Normal;
-	tcfg.t_stackSize = 1 << 8;
+	tcfg.t_stackSize = 1 << 9;
 	sender_id = Thread->create(&tcfg,api);
 
 	tcfg._t_name = "receiver";
@@ -58,11 +58,11 @@ DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = api->MailQ->calloc(testmailq_id,osWaitForever);
+		p = api->MailQ->calloc(testmailq_id,osWaitForever,NULL);
 		p->age = 0;
 		p->sex = 1;
 		api->MailQ->put(testmailq_id,p);
-		api->Thread->sleep(20);
+	//	api->Thread->sleep(0);
 		cnt++;
 	}
 	return osOK;

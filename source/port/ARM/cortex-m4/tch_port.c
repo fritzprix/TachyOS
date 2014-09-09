@@ -163,13 +163,10 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 
 
 int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
-//	tch_currentThread->t_kRet = osOK;
 	asm volatile(
-			"ldr r3,=#0\n"
-			"str r3,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"   : :"r"(&tch_currentThread->t_kRet) : "r0","r1","r2");        // return from sv interrupt and get result from register #0
+			"svc #0"   : : : "r0","r1","r2");        // return from sv interrupt and get result from register #0
 	return ((tch_thread_header*)tch_currentThread)->t_kRet;
 }
 /***

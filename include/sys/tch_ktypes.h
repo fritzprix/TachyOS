@@ -113,6 +113,10 @@ typedef struct tch_mtx_cb {
 #define SV_MEMP_ALLOC                    ((uint32_t) 0x30)               ///< Supervisor call id to allocate memory chunk form mem pool
 #define SV_MEMP_FREE                     ((uint32_t) 0x31)               ///< Supervisor call id to free memory chunk into mem pool
 
+#define SV_MAILQ_ALLOC                   ((uint32_t) 0x32)               ///< Supervisor call id to allocate mail
+#define SV_MAILQ_FREE                    ((uint32_t) 0x33)               ///< Supervisor call id to free mail
+#define SV_MAILQ_DESTROY                 ((uint32_t) 0x34)               ///< Supervisor call id to destroy mailq
+
 
 
 

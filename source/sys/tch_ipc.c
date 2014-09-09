@@ -56,7 +56,7 @@ static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec);
 static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail);
 
 
-
+/*
 __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
 		tch_msgQ_create,
 		tch_msgQ_put,
@@ -71,6 +71,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		tch_mailQ_get,
 		tch_mailQ_free
 };
+*/
 
 //const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 //const tch_mailq_ix* MailQ = &MailQStaticInstance;

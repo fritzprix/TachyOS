@@ -191,6 +191,18 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_msgq_kdestroy(arg1));
 		return;
+	case SV_MAILQ_ALLOC:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_mailq_kalloc(arg1,arg2));
+		return;
+	case SV_MAILQ_FREE:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_mailq_kfree(arg1,arg2));
+		return;
+	case SV_MAILQ_DESTROY:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_mailq_kdestroy(arg1,0));
+		return;
 	}
 }
 

@@ -72,27 +72,6 @@ tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
 	*((void**) blk) = 0;
 	tch_mpoolValidate(mpcb);
 	return (tch_mpoolId) mpcb;
-
-
-	/*
-	tch_mpool_cb* mp = (tch_mpool_cb*) pool->pool - 1;
-	memset(pool->pool,0,pool->count * pool->align);          // clear memory section
-	void* next = NULL;
-	uint8_t* blk = (uint8_t*)pool->pool;                     //
-	uint8_t* end = blk + pool->align * pool->count;
-	mp->bend = end;
-	mp->bfree = blk;
-	mp->bDef = (tch_mpoolDef_t*) pool;
-	end = end - pool->align;
-	while(1){
-		next = blk + pool->align;
-		if(next > (void*)end) break;
-		*((void**)blk) = next;
-		blk = (uint8_t*)next;
-	}
-	*((void**)blk) = 0;
-	return mp;
-	*/
 }
 
 
@@ -134,5 +113,11 @@ tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
 
 
 static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
-
+	if(!tch_mpoolIsValid(mpool)){
+		return osErrorParameter;
+	}
+	tch_mpoolInvalidate(mpool);
+	tch_mpool_cb* mcb = (tch_mpool_cb*) mpool;
+	Mem->free(mcb);
+	return osOK;
 }
