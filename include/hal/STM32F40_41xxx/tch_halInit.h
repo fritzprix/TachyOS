@@ -97,55 +97,78 @@ __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
 				NULL,
+				NULL,
 				INIT_LIST,
 				EXTI0_IRQn
 		},
 		{
+				NULL,
 				NULL,
 				INIT_LIST,
 				EXTI1_IRQn
 		},
 		{
 				NULL,
+				NULL,
 				INIT_LIST,
 				EXTI2_IRQn
 		},
 		{
+				NULL,
 				NULL,
 				INIT_LIST,
 				EXTI3_IRQn
 		},
 		{
 				NULL,
+				NULL,
 				INIT_LIST,
 				EXTI4_IRQn
 		},
 		{
 				NULL,
-				INIT_LIST,
-				EXTI9_5_IRQn
-		},
-		{
 				NULL,
 				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
 				NULL,
-				INIT_LIST,
-				EXTI9_5_IRQn
-		},
-		{
 				NULL,
 				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
 				NULL,
+				NULL,
 				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				NULL,
+				NULL,
+				INIT_LIST,
+				EXTI9_5_IRQn
+		},
+		{
+				NULL,
+				NULL,
+				INIT_LIST,
+				EXTI9_5_IRQn
+		},
+		{
+				NULL,
+				NULL,
+				INIT_LIST,
+				EXTI15_10_IRQn
+		},
+		{
+				NULL,
+				NULL,
+				INIT_LIST,
+				EXTI15_10_IRQn
+		},
+		{
+				NULL,
 				NULL,
 				INIT_LIST,
 				EXTI15_10_IRQn
@@ -157,20 +180,12 @@ __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_
 		},
 		{
 				NULL,
-				INIT_LIST,
-				EXTI15_10_IRQn
-		},
-		{
 				NULL,
 				INIT_LIST,
 				EXTI15_10_IRQn
 		},
 		{
 				NULL,
-				INIT_LIST,
-				EXTI15_10_IRQn
-		},
-		{
 				NULL,
 				INIT_LIST,
 				EXTI15_10_IRQn

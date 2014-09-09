@@ -108,6 +108,7 @@
 typedef struct tch_gpio_manager_internal_t {
 	tch_lld_gpio                    _pix;
 	tch_mtxId                        mtxId;
+	tch_condvId                      condvId;
 	const uint8_t                    port_cnt;
 	const uint8_t                    io_cnt;
 }tch_gpio_manager;
@@ -119,7 +120,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       pin;
 	uint32_t                      pMsk;
 	tch_mtxId                     mtxId;
-	tch_IoEventCalback_t          cb;
+	tch_IoEventCallback_t         cb;
 	const tch*                    sys;
 }tch_gpio_handle_prototype;
 
@@ -144,7 +145,7 @@ static void tch_gpio_freeIo(tch_gpio_handle* IoHandle);
 /**********************************************************************************************/
 static void tch_gpio_handle_out(tch_gpio_handle_prototype* self,tch_bState nstate);
 static tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* self);
-static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* self,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback);
+static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* self,const tch_gpio_evCfg* cfg,const tch_IoEventCallback_t callback,uint32_t timeout);
 static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* self);
 static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* self,const tch_gpio_cfg* cfg);
 static BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* self,uint32_t timeout);
@@ -186,6 +187,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 				tch_gpio_freeIo
 		},
 		NULL,
+		NULL,
 		MFEATURE_GPIO,
 		MFEATURE_PINCOUNT_pPort
 };
@@ -201,15 +203,19 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	}
 	if(!GPIO_StaticManager.mtxId)
 		GPIO_StaticManager.mtxId = Mtx->create();
+	if(!GPIO_StaticManager.condvId)
+		GPIO_StaticManager.condvId = Condv->create();
 	if(api->Mtx->lock(GPIO_StaticManager.mtxId,timeout) != osOK)
 		return NULL;
-	if(gpio->io_ocpstate & pMsk){           /// if there is pin which is occupied by another instance
-		api->Mtx->unlock(GPIO_StaticManager.mtxId);
-		return NULL;                        /// return null
+	while(gpio->io_ocpstate & pMsk){           /// if there is pin which is occupied by another instance
+		if(api->Condv->wait(GPIO_StaticManager.condvId,GPIO_StaticManager.mtxId,timeout) != osOK)
+			return NULL;
 	}
-	gpio->io_ocpstate |= pMsk;
+
+	gpio->io_ocpstate |= pMsk;     // mark pin as occupied
 	api->Mtx->unlock(GPIO_StaticManager.mtxId);
-	tch_gpio_handle_prototype* instance = api->Mem->alloc(sizeof(tch_gpio_handle_prototype));
+
+	tch_gpio_handle_prototype* instance = api->Mem->alloc(sizeof(tch_gpio_handle_prototype));   // allocate gpio handle
 	if(!instance)
 		return NULL;
 	instance->sys = api;
@@ -218,9 +224,7 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	instance->idx = port;
 	instance->pin = pin;
 
-	gpio->io_ocpstate |= instance->pMsk;          /// set this pin as occupied
 	GPIO_TypeDef* ioctrl_regs = (GPIO_TypeDef*) gpio->_hw;
-
 
 	*gpio->_clkenr |= gpio->clkmsk;              /// enable gpio clock
 
@@ -229,8 +233,6 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	}else{
 		*gpio->_lpclkenr &= ~gpio->lpclkmsk;     /// otherwise clear
 	}
-	instance->mtxId = Mtx->create();
-
 	tch_gpio_handle_configure(instance,cfg);
 	SET_INIT(instance);
 	return (tch_gpio_handle*) instance;
@@ -265,7 +267,28 @@ static uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 
 static void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
+	if(!IS_INIT(_handle))
+		return;
+	tch* api = _handle->sys;
+	if(api->Mtx->lock(_handle->mtxId,osWaitForever) != osOK)
+		return;
+	if(api->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever) != osOK)
+		return;
+	tch_gpio_descriptor* gpio = &GPIO_HWs[_handle->idx];
+	tch_gpio_cfg initCfg;
+	tch_gpio_initCfg(&initCfg);
+	tch_gpio_handle_configure(_handle,&initCfg);
+
+	*gpio->_clkenr &= ~gpio->clkmsk;
+	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
+	CLR_INIT(_handle);
+
+	gpio->io_ocpstate &= ~_handle->pMsk;
+	api->Condv->wakeAll(GPIO_StaticManager.condvId);
+
 	_handle->sys->Mtx->destroy(&_handle->mtxId);
+	api->Mem->free(_handle);
+	api->Mtx->unlock(GPIO_StaticManager.mtxId);
 }
 
 
@@ -284,24 +307,31 @@ static tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* _handle){
 
 /**
  */
-static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback){
+static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg,const tch_IoEventCallback_t callback,uint32_t timeout){
 	tch_ioInterrupt_descriptor* ioIrqOjb = &IoInterrupt_HWs[_handle->pin];
-	tchStatus result = osOK;
-	if(__get_IPSR()){
+	tch* api = _handle->sys;
+
+	if(__get_IPSR()){                                 // if isr mode, return
 		return osErrorISR;
 	}
-	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
-	if(ioIrqOjb->io_occp)
-		return osErrorResource;
-	tch_listInit(&ioIrqOjb->wq);
-	if(_handle->sys->Mtx->lock(_handle->mtxId,osWaitForever) != osOK)
-		return osErrorResource;
-	_handle->cb = callback;
-	ioIrqOjb->io_occp = _handle;
-	tch_gpio_setIrq(_handle,cfg);
-	result =_handle->sys->Mtx->unlock(_handle->mtxId);
+	if(api->Mtx->lock(GPIO_StaticManager.mtxId,timeout) != osOK)   // gpio global mutex lock -> guarantee only one thread can access & modify
+		return osErrorResource;                                    // data structure at any given time
 
-	return result;
+	if(!ioIrqOjb->condv)
+		ioIrqOjb->condv = api->Condv->create();
+
+	while(ioIrqOjb->io_occp){                              // block while irq is occupied
+		if(api->Condv->wait(ioIrqOjb->condv,GPIO_StaticManager.mtxId,timeout) != osOK)
+			return osErrorResource;
+	}
+	ioIrqOjb->io_occp = _handle;
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+	tch_listInit(&ioIrqOjb->wq);
+	_handle->cb = callback;                     // register callback routine
+	tch_gpio_setIrq(_handle,cfg);               // set irq
+	api->Mtx->unlock(GPIO_StaticManager.mtxId);
+
+	return osOK;
 }
 
 static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _handle){
@@ -310,9 +340,16 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _h
 		return osErrorISR;
 	}
 	uint32_t pMsk = (1 << _handle->pin);
-	if(ioIrqObj->io_occp != _handle)
+	tch* api = _handle->sys;
+
+	if(api->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever) != osOK)      // Mutex lock gpio manager singleton
 		return osErrorResource;
-	_handle->sys->Device->interrupt->disable(ioIrqObj->irq);
+	if(ioIrqObj->io_occp != _handle){
+		api->Mtx->unlock(GPIO_StaticManager.mtxId);
+		return osErrorResource;
+	}
+
+	_handle->sys->Device->interrupt->disable(ioIrqObj->irq);   // disable interrupt
 	SYSCFG->EXTICR[_handle->pin >> 2] = 0;
 	EXTI->EMR &= ~pMsk;
 	EXTI->IMR &= ~pMsk;
@@ -320,10 +357,13 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* _h
 	EXTI->RTSR &= ~pMsk;
 	_handle->cb = NULL;
 	if(!tch_listIsEmpty(&ioIrqObj->wq)){
-	//	_handle->sys->Sig->set(_handle->sys->Thread->self(),GPIO_Event_Signal);
-		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIrqObj->wq,0);
+		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&ioIrqObj->wq,osErrorResource);
 	}
+
 	ioIrqObj->io_occp = NULL;
+	api->Condv->wakeAll(ioIrqObj->condv);                 // wake thread(s) wating for condition
+
+	api->Mtx->unlock(GPIO_StaticManager.mtxId);
 	return osOK;
 
 }
@@ -450,15 +490,15 @@ void EXTI1_IRQHandler(void){
 }
 
 void EXTI2_IRQHandler(void){
-	tch_gpio_handleIrq(2,0);
+	tch_gpio_handleIrq(2,1);
 }
 
 void EXTI3_IRQHandler(void){
-	tch_gpio_handleIrq(3,0);
+	tch_gpio_handleIrq(3,1);
 }
 
 void EXTI4_IRQHandler(void){
-	tch_gpio_handleIrq(4,0);
+	tch_gpio_handleIrq(4,1);
 }
 
 /**

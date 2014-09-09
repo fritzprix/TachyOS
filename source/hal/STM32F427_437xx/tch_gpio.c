@@ -101,7 +101,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint32_t                      pMsk;
 	tch_mtxDef                       mtx;
 	tch_lnode_t                   wq;
-	tch_IoEventCalback_t          cb;
+	tch_IoEventCallback_t          cb;
 }tch_gpio_handle_prototype;
 
 
@@ -125,7 +125,7 @@ static void tch_gpio_freeIo(tch_gpio_handle* IoHandle);
 /**********************************************************************************************/
 static void tch_gpio_handle_out(tch_gpio_handle_prototype* self,tch_bState nstate);
 static tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* self);
-static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* self,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback);
+static tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* self,const tch_gpio_evCfg* cfg,const tch_IoEventCallback_t callback);
 static tchStatus tch_gpio_handle_unregisterIoEvent(tch_gpio_handle_prototype* self);
 static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* self,const tch_gpio_cfg* cfg);
 static BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* self,uint32_t timeout);
@@ -263,7 +263,7 @@ tch_bState tch_gpio_handle_in(tch_gpio_handle_prototype* _handle){
 
 /**
  */
-tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg,const tch_IoEventCalback_t callback){
+tchStatus tch_gpio_handle_registerIoEvent(tch_gpio_handle_prototype* _handle,const tch_gpio_evCfg* cfg,const tch_IoEventCallback_t callback){
 	tch_ioInterrupt_descriptor* ioIrqOjb = &IoInterrupt_HWs[_handle->pin];
 	tchStatus result = osOK;
 	if(__get_IPSR()){

@@ -44,7 +44,7 @@ int main(tch* api) {
 	tch_assert(api,TRUE,osErrorISR);
 
 
-	btn->registerIoEvent(btn,&evcfg,onBtnPressed);
+	btn->registerIoEvent(btn,&evcfg,onBtnPressed,osWaitForever);
 
 	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);

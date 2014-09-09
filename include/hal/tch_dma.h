@@ -36,34 +36,6 @@
 extern "C" {
 #endif
 
-#define DMA_Str0                  (dma_t) 0    ///< DMA Stream #0
-#define DMA_Str1                  (dma_t) 1    ///< DMA Stream #1
-#define DMA_Str2                  (dma_t) 2    ///< DMA Stream #2
-#define DMA_Str3                  (dma_t) 3    ///< DMA Stream #3
-#define DMA_Str4                  (dma_t) 4    ///< DMA Stream #4
-#define DMA_Str5                  (dma_t) 5    ///< DMA Stream #5
-#define DMA_Str6                  (dma_t) 6    ///< DMA Stream #6
-#define DMA_Str7                  (dma_t) 7    ///< DMA Stream #7
-#define DMA_Str8                  (dma_t) 8    ///< DMA Stream #8
-#define DMA_Str9                  (dma_t) 9    ///< DMA Stream #9
-#define DMA_Str10                 (dma_t) 10   ///< DMA Stream #10
-#define DMA_Str11                 (dma_t) 11   ///< DMA Stream #11
-#define DMA_Str12                 (dma_t) 12   ///< DMA Stream #12
-#define DMA_Str13                 (dma_t) 13   ///< DMA Stream #13
-#define DMA_Str14                 (dma_t) 14   ///< DMA Stream #14
-#define DMA_Str15                 (dma_t) 15   ///< DMA Stream #15
-#define DMA_NOT_USED              (dma_t) -1   ///< DMA Stream is not used
-
-#define DMA_Ch0                   (uint8_t) 0  ///< DMA Channel #0
-#define DMA_Ch1                   (uint8_t) 1  ///< DMA Channel #1
-#define DMA_Ch2                   (uint8_t) 2  ///< DMA Channel #2
-#define DMA_Ch3                   (uint8_t) 3  ///< DMA Channel #3
-#define DMA_Ch4                   (uint8_t) 4  ///< DMA Channel #4
-#define DMA_Ch5                   (uint8_t) 5  ///< DMA Channel #5
-#define DMA_Ch6                   (uint8_t) 6  ///< DMA Channel #6
-#define DMA_Ch7                   (uint8_t) 7  ///< DMA Channel #7
-
-
 
 /*!
  *  \brief DMA Type
@@ -93,6 +65,36 @@ typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
  * \brief DMA Configuration type
  */
 typedef struct _dma_cfg_t tch_dma_cfg;
+
+struct _tch_dma_str_t {
+	uint8_t      dma1;
+	uint8_t      dma2;
+	uint8_t      dma3;
+	uint8_t      dma4;
+	uint8_t      dma5;
+	uint8_t      dma6;
+	uint8_t      dma7;
+	uint8_t      dma8;
+	uint8_t      dma9;
+	uint8_t      dma10;
+	uint8_t      dma11;
+	uint8_t      dma12;
+	uint8_t      dma13;
+	uint8_t      dma14;
+	uint8_t      dma15;
+	uint8_t      dma_not_used;
+};
+
+struct _tch_dma_ch_t{
+	uint8_t      ch0;
+	uint8_t      ch1;
+	uint8_t      ch2;
+	uint8_t      ch3;
+	uint8_t      ch4;
+	uint8_t      ch5;
+	uint8_t      ch6;
+	uint8_t      ch7;
+};
 
 
 /*!
@@ -185,6 +187,8 @@ struct tch_dma_handle_t{
 };
 
 struct tch_dma_ix_t {
+	const struct _tch_dma_str_t Stream;
+	const struct _tch_dma_ch_t  Ch;
 	const tch_DmaBufferType     BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
 	const tch_DmaDir            Dir;                       ///< Direction of DMA Stream \note Value can be differ from each platform H/W
 	const tch_DmaPriority       Priority;                  ///< Priority of DMA Channel \note Value can be differ from each platform H/W
@@ -207,7 +211,7 @@ struct tch_dma_ix_t {
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	tch_dma_handle* (*openStream)(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+	tch_dma_handle* (*openStream)(tch* api,dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 
 	/*!
 	 * \brief get dma count of platform H/W

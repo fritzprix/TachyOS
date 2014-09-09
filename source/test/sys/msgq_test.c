@@ -65,7 +65,7 @@ tchStatus msgq_performTest(tch* api){
 	tch_gpio_evCfg evcfg;
 	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
-	in->registerIoEvent(in,&evcfg,ioEventListener);
+	in->registerIoEvent(in,&evcfg,ioEventListener,osWaitForever);
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_thread_cfg tcfg;

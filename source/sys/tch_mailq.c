@@ -20,8 +20,7 @@
 
 
 typedef struct _tch_mailq_cb {
-	uint32_t      bstate;
-	void*         bp;
+	uint32_t      bstate;         // state
 	size_t        bsz;
 	size_t        blen;
 	size_t        updated;
@@ -55,8 +54,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_mailQue_id tch_mailq_create(size_t sz,uint32_t qlen){
-	tch_mailq_cb* mailqcb = (tch_mailq_cb*) Mem->alloc(sizeof(tch_mailq_cb) + sizeof(void*) * qlen);
-	mailqcb->bp = ((tch_mailq_cb*) mailqcb + 1);
+	tch_mailq_cb* mailqcb = (tch_mailq_cb*) Mem->alloc(sizeof(tch_mailq_cb));
 	mailqcb->blen = qlen;
 	mailqcb->bsz = sz;
 	mailqcb->pidx = 0;

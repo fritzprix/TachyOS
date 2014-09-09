@@ -19,8 +19,36 @@
 #include "tch_halInit.h"
 
 
+#define DMA_Str0                  (dma_t) 0    ///< DMA Stream #0
+#define DMA_Str1                  (dma_t) 1    ///< DMA Stream #1
+#define DMA_Str2                  (dma_t) 2    ///< DMA Stream #2
+#define DMA_Str3                  (dma_t) 3    ///< DMA Stream #3
+#define DMA_Str4                  (dma_t) 4    ///< DMA Stream #4
+#define DMA_Str5                  (dma_t) 5    ///< DMA Stream #5
+#define DMA_Str6                  (dma_t) 6    ///< DMA Stream #6
+#define DMA_Str7                  (dma_t) 7    ///< DMA Stream #7
+#define DMA_Str8                  (dma_t) 8    ///< DMA Stream #8
+#define DMA_Str9                  (dma_t) 9    ///< DMA Stream #9
+#define DMA_Str10                 (dma_t) 10   ///< DMA Stream #10
+#define DMA_Str11                 (dma_t) 11   ///< DMA Stream #11
+#define DMA_Str12                 (dma_t) 12   ///< DMA Stream #12
+#define DMA_Str13                 (dma_t) 13   ///< DMA Stream #13
+#define DMA_Str14                 (dma_t) 14   ///< DMA Stream #14
+#define DMA_Str15                 (dma_t) 15   ///< DMA Stream #15
+#define DMA_NOT_USED              (dma_t) -1   ///< DMA Stream is not used
+
+#define DMA_Ch0                   (uint8_t) 0  ///< DMA Channel #0
+#define DMA_Ch1                   (uint8_t) 1  ///< DMA Channel #1
+#define DMA_Ch2                   (uint8_t) 2  ///< DMA Channel #2
+#define DMA_Ch3                   (uint8_t) 3  ///< DMA Channel #3
+#define DMA_Ch4                   (uint8_t) 4  ///< DMA Channel #4
+#define DMA_Ch5                   (uint8_t) 5  ///< DMA Channel #5
+#define DMA_Ch6                   (uint8_t) 6  ///< DMA Channel #6
+#define DMA_Ch7                   (uint8_t) 7  ///< DMA Channel #7
+
+
 #define DMA_Ch_Pos                (uint8_t) 25 ///< DMA Channel bit position
-#define DMA_Ch_Msk                (DMA_Ch7)
+#define DMA_Ch_Msk                (7)
 
 
 #define DMA_MBurst_Pos            (uint8_t) 23
@@ -96,6 +124,36 @@
 
 #define DMA_FLAG_BUSY                          ((uint16_t) (1 << 10))
 
+#define INIT_DMA_STR_TYPE                      {\
+	                                            DMA_Str0,\
+	                                            DMA_Str1,\
+	                                            DMA_Str2,\
+	                                            DMA_Str3,\
+	                                            DMA_Str4,\
+	                                            DMA_Str5,\
+	                                            DMA_Str6,\
+	                                            DMA_Str7,\
+	                                            DMA_Str8,\
+	                                            DMA_Str9,\
+	                                            DMA_Str10,\
+	                                            DMA_Str11,\
+	                                            DMA_Str12,\
+	                                            DMA_Str13,\
+	                                            DMA_Str14,\
+	                                            DMA_Str15\
+                                                }
+
+#define INIT_DMA_CH_TYPE                       {\
+	                                             DMA_Ch0,\
+	                                             DMA_Ch1,\
+	                                             DMA_Ch2,\
+	                                             DMA_Ch3,\
+	                                             DMA_Ch4,\
+	                                             DMA_Ch5,\
+	                                             DMA_Ch6,\
+	                                             DMA_Ch7\
+                                                }
+
 #define INIT_DMA_BUFFER_TYPE                   {\
                                                  DMA_BufferMode_Normal,\
                                                  DMA_BufferMode_Dbl,\
@@ -149,15 +207,22 @@
 typedef struct tch_dma_manager_t {
 	tch_dma_ix                 _pix;
 	tch_mtxId                   mtxId;
+	tch_condvId                 condvId;
 	uint16_t                    occp_state;
 	uint16_t                    lpoccp_state;
 }tch_dma_manager;
 
+
+#define TCH_DMA_CLASS_KEY             ((uint16_t) 0x3D01)
+#define TCH_DMA_BUSY                  ((uint16_t) 1)
+
 typedef struct tch_dma_handle_prototype_t{
 	tch_dma_handle             _pix;
+	tch*                        api;
 	dma_t                       dma;
 	uint8_t                     ch;
 	tch_mtxId                   mtxId;
+	tch_condvId                 condv;
 	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
@@ -165,7 +230,7 @@ typedef struct tch_dma_handle_prototype_t{
 }tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
-static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+static tch_dma_handle* tch_dma_openStream(tch* sys,dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 
 
 static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeout);
@@ -182,6 +247,8 @@ static DECL_ASYNC_TASK(tch_dma_trigger);
 
 __attribute__((section(".data"))) static tch_dma_manager DMA_Manager = {
 		{
+				INIT_DMA_STR_TYPE,
+				INIT_DMA_CH_TYPE,
 				INIT_DMA_BUFFER_TYPE,
 				INIT_DMA_DIR_TYPE,
 				INIT_DMA_PRIORITY_TYPE,
@@ -215,26 +282,27 @@ static void tch_dma_initCfg(tch_dma_cfg* cfg){
 }
 
 
-static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
+static tch_dma_handle* tch_dma_openStream(tch* api,dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
 	/// check H/W Occupation
 	if(!DMA_Manager.mtxId)
 		DMA_Manager.mtxId = Mtx->create();
+	if(!DMA_Manager.condvId)
+		DMA_Manager.condvId = Condv->create();
 	if(Mtx->lock(DMA_Manager.mtxId,timeout) != osOK)
 		return NULL;
-	if(DMA_Manager.occp_state & (1 << dma)){
-		Mtx->unlock(DMA_Manager.mtxId);
-		return NULL;
+	while(DMA_Manager.occp_state & (1 << dma)){
+		if(Condv->wait(DMA_Manager.condvId,DMA_Manager.mtxId,timeout) != osOK)
+			return NULL;
 	}
 	DMA_Manager.occp_state |= (1 << dma);
 	Mtx->unlock(DMA_Manager.mtxId);
 
 	// Acquire DMA H/w
 	tch_dma_descriptor* dma_desc = &DMA_HWs[dma];
-	*dma_desc->_clkenr |= dma_desc->clkmsk;
+	*dma_desc->_clkenr |= dma_desc->clkmsk;          // clk source is enabled
 	if(pcfg == ActOnSleep)
-		*dma_desc->_lpclkenr |= dma_desc->lpcklmsk;
-
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
+		*dma_desc->_lpclkenr |= dma_desc->lpcklmsk;  // if dma should be awaken during sleep, lp clk is enabled
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;   // initializing dma H/w Started
 	dmaHw->CR |= ((cfg->Ch << DMA_Ch_Pos) | (cfg->Dir << DMA_Dir_Pos) | (cfg->FlowCtrl << DMA_FlowControl_Pos));
 	dmaHw->CR |= ((cfg->mBurstSize << DMA_MBurst_Pos) | (cfg->pBurstSize << DMA_PBurst_Pos));
 	dmaHw->CR |= ((cfg->mAlign << DMA_MDataAlign_Pos) | (cfg->pAlign << DMA_PDataAlign_Pos));
@@ -244,7 +312,7 @@ static tch_dma_handle* tch_dma_openStream(dma_t dma,tch_dma_cfg* cfg,uint32_t ti
 
 	NVIC_SetPriority(dma_desc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(dma_desc->irq);
-	dma_desc->_handle = tch_dma_initHandle(dma,cfg->Ch);
+	dma_desc->_handle = tch_dma_initHandle(dma,cfg->Ch);             // initializing dma handle object
 	return (tch_dma_handle*)dma_desc->_handle;
 }
 
