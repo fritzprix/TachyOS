@@ -31,6 +31,8 @@ extern "C" {
 #include "msgq_test.h"
 #include "mailq_test.h"
 
+#include "gpio_test.h"
+
 #ifdef __cplusplus
 }
 #endif

@@ -60,26 +60,24 @@ tchStatus mailq_performTest(tch* api){
 }
 
 DECLARE_THREADROUTINE(sender){
-	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = api->MailQ->calloc(testmailq_id,osWaitForever,NULL);
+		p = sys->MailQ->calloc(testmailq_id,osWaitForever,NULL);
 		p->age = 0;
 		p->sex = 1;
-		api->MailQ->put(testmailq_id,p);
+		sys->MailQ->put(testmailq_id,p);
 		cnt++;
 	}
 	return osOK;
 }
 
 DECLARE_THREADROUTINE(receiver){
-	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
 	osEvent evt;
 	while(cnt < 100){
-		evt = api->MailQ->get(testmailq_id,osWaitForever);
-		api->MailQ->free(testmailq_id,(void*)evt.value.v);
+		evt = sys->MailQ->get(testmailq_id,osWaitForever);
+		sys->MailQ->free(testmailq_id,(void*)evt.value.v);
 		if(evt.status == osEventMail)
 			cnt++;
 	}

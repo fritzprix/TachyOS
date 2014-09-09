@@ -53,6 +53,7 @@ int main(tch* api) {
 	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 
 	while(1){
 		led->out(led,bSet);

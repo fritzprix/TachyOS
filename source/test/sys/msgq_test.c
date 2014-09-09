@@ -92,36 +92,39 @@ tchStatus msgq_performTest(tch* api){
 	api->Mem->free(sender_stk);
 	api->Mem->free(receiver_stk);
 
+	in->unregisterIoEvent(in);
+
+	api->Device->gpio->freeIo(out);
+	api->Device->gpio->freeIo(in);
+
 	return osOK;
 
 }
 
 
 static DECLARE_THREADROUTINE(sender){
-	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
 	while(cnt < 50){
-		api->MsgQ->put(mid,0xFF,osWaitForever);
+		sys->MsgQ->put(mid,0xFF,osWaitForever);
 		out->out(out,bClear);
-		api->Thread->sleep(1);
+		sys->Thread->sleep(1);
 		out->out(out,bSet);
-		api->Thread->sleep(1);
+		sys->Thread->sleep(1);
 		cnt++;
 	}
-	api->Barrier->wait(mBar,osWaitForever);
-	api->Thread->sleep(10);
-	api->MsgQ->destroy(mid);
+	sys->Barrier->wait(mBar,osWaitForever);
+	sys->Thread->sleep(10);
+	sys->MsgQ->destroy(mid);
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(receiver){
-	tch* api = (tch*) arg;
 	uint32_t cnt = 0;
 	osEvent evt;
 	uint32_t mval = 0;
 	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
-		evt = api->MsgQ->get(mid,osWaitForever);
+		evt = sys->MsgQ->get(mid,osWaitForever);
 		totalMsgcnt++;
 		if(evt.status == osEventMessage){
 			cnt++;
@@ -135,11 +138,11 @@ static DECLARE_THREADROUTINE(receiver){
 			}
 		}
 	}
-	evt = api->MsgQ->get(mid,10);
+	evt = sys->MsgQ->get(mid,10);
 	if(evt.status != osErrorTimeoutResource)
 		return osErrorOS;
-	api->Barrier->signal(mBar,osOK);
-	evt = api->MsgQ->get(mid,osWaitForever);
+	sys->Barrier->signal(mBar,osOK);
+	evt = sys->MsgQ->get(mid,osWaitForever);
 	if(evt.status != osErrorResource)
 		return osErrorResource;
 	return osOK;

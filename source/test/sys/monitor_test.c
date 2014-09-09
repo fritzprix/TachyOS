@@ -158,23 +158,21 @@ static BOOL produce(tch* api,struct VBuf* vb,uint32_t timeout){
 
 
 static DECLARE_THREADROUTINE(producerRoutine){
-	tch* api = (tch*) arg;
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		produce(api,&tstBuf,osWaitForever);
-		api->Thread->sleep(0);
+		produce(sys,&tstBuf,osWaitForever);
+		sys->Thread->sleep(0);
 	}
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(consumerRoutine){
-	tch* api = (tch*) arg;
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		consume(api,&tstBuf,osWaitForever);
-		api->Thread->sleep(0);
+		consume(sys,&tstBuf,osWaitForever);
+		sys->Thread->sleep(0);
 	}
-	if(!consume(api,&tstBuf,osWaitForever))
+	if(!consume(sys,&tstBuf,osWaitForever))
 		return osOK;
 	return osErrorOS;
 }

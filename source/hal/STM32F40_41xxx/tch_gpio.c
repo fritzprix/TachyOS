@@ -286,7 +286,7 @@ static void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
 	gpio->io_ocpstate &= ~_handle->pMsk;
 	api->Condv->wakeAll(GPIO_StaticManager.condvId);
 
-	_handle->sys->Mtx->destroy(&_handle->mtxId);
+	_handle->sys->Mtx->destroy(_handle->mtxId);
 	api->Mem->free(_handle);
 	api->Mtx->unlock(GPIO_StaticManager.mtxId);
 }
@@ -409,7 +409,6 @@ static BOOL tch_gpio_handle_listen(tch_gpio_handle_prototype* _handle,uint32_t t
 		return FALSE;
 	if(!ioIrqObj->io_occp)
 		return FALSE;
-	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&ioIrqObj->wq,timeout) == osOK? TRUE : FALSE;
 }
 

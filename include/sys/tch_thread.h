@@ -24,7 +24,7 @@ extern "C"{
 
 
 
-#define DECLARE_THREADROUTINE(fn)                    int fn(void* arg)
+#define DECLARE_THREADROUTINE(fn)                    int fn(tch* sys)
 #define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[(sizeinbyte) >> 3]
 
 
@@ -33,7 +33,7 @@ extern "C"{
  */
 typedef void* tch_threadId;
 typedef struct _tch_thread_cfg_t tch_thread_cfg;
-typedef int (*tch_thread_routine)(void* arg);
+typedef int (*tch_thread_routine)(tch* sys);
 
 typedef struct tch_msg{
 	tch_threadId thread;
@@ -82,6 +82,7 @@ struct _tch_thread_ix_t {
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
 	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)(tch_threadId id);
+	void* (*getArg)();
 };
 
 #if defined(__cplusplus)

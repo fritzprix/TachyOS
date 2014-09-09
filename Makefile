@@ -43,6 +43,7 @@ include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/sys.mk
 include $(USR_SRC_DIR)/usr.mk
 include $(TEST_SYS_SRC_DIR)/sys.mk
+include $(TEST_HAL_SRC_DIR)/haltst.mk
 
 
 
