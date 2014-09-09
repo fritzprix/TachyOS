@@ -8,6 +8,7 @@
 #ifndef TCH_MAILQ_H_
 #define TCH_MAILQ_H_
 
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -23,6 +24,7 @@ struct _tch_mailbox_ix_t {
 	tchStatus (*put)(tch_mailQue_id qid,void* mail);
 	osEvent (*get)(tch_mailQue_id qid,uint32_t millisec);
 	tchStatus (*free)(tch_mailQue_id qid,void* mail);
+	tchStatus (*destroy)(tch_mailQue_id qid);
 };
 
 #if defined(__cplusplus)

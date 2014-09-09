@@ -91,7 +91,7 @@ static void* tch_mailq_alloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* res
 		karg.timeout = millisec;
 		karg.chunk = NULL;
 		*result = osOK;
-		while((*result = tch_port_enterSvFromUsr(SV_MAILQ_ALLOC,mailqcb,&karg)) != osOK){
+		while((*result = tch_port_enterSvFromUsr(SV_MAILQ_ALLOC,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
 			if(!tch_mailqIsValid(mailqcb))
 				return NULL;
 			switch(*result){
@@ -138,7 +138,7 @@ static tchStatus tch_mailq_put(tch_mailQue_id qid,void* mail){
 		return osErrorResource;
 	if(!mail)
 		return osErrorParameter;
-	return MsgQ->put(((tch_mailq_cb*) qid)->msgq,mail,osWaitForever);
+	return MsgQ->put(((tch_mailq_cb*) qid)->msgq,(uword_t)mail,osWaitForever);
 }
 
 
@@ -169,7 +169,7 @@ static tchStatus tch_mailq_free(tch_mailQue_id qid,void* mail){
 		tch_mailq_karg karg;
 		karg.chunk = mail;
 		karg.timeout = 0;
-		while((result = tch_port_enterSvFromUsr(SV_MAILQ_FREE,mailqcb,(uword_t)&karg)) != osOK){
+		while((result = tch_port_enterSvFromUsr(SV_MAILQ_FREE,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
 			if(!tch_mailqIsValid(mailqcb))
 				return osErrorResource;
 			switch(result){
@@ -201,7 +201,7 @@ static tchStatus tch_mailq_destroy(tch_mailQue_id qid){
 		return osErrorResource;
 	if(tch_port_isISR())
 		return osErrorISR;
-	if((result = tch_port_enterSvFromUsr(SV_MAILQ_DESTROY,qid,0)) != osOK)
+	if((result = tch_port_enterSvFromUsr(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
 		return result;
 	MsgQ->destroy(mailqcb->msgq);
 	return osOK;
