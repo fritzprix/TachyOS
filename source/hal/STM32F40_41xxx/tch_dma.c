@@ -140,8 +140,9 @@
 	                                            DMA_Str12,\
 	                                            DMA_Str13,\
 	                                            DMA_Str14,\
-	                                            DMA_Str15\
-                                                }
+	                                            DMA_Str15,\
+	                                            DMA_NOT_USED\
+                                               }
 
 #define INIT_DMA_CH_TYPE                       {\
 	                                             DMA_Ch0,\
@@ -214,7 +215,12 @@ typedef struct tch_dma_manager_t {
 
 
 #define TCH_DMA_CLASS_KEY             ((uint16_t) 0x3D01)
-#define TCH_DMA_BUSY                  ((uint16_t) 1)
+#define TCH_DMA_BUSY                  ((uint32_t) 1 << 16)
+
+
+#define tch_dmaSetBusy(dma_handle)    ((tch_dma_handle_prototype*) dma_handle)->status |= TCH_DMA_BUSY
+#define tch_dmaClrBusy(dma_handle)    ((tch_dma_handle_prototype*) dma_handle)->status  &= ~TCH_DMA_BUSY
+#define tch_dmaIsBusy(dma_handle)     ((tch_dma_handle_prototype*) dma_handle)->status & TCH_DMA_BUSY
 
 typedef struct tch_dma_handle_prototype_t{
 	tch_dma_handle             _pix;
