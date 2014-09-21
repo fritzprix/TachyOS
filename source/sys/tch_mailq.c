@@ -32,13 +32,13 @@ typedef struct _tch_mailq_cb {
 }tch_mailq_cb;
 
 
-static tch_mailQue_id tch_mailq_create(size_t sz,uint32_t qlen);
-static void* tch_mailq_alloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* result);
-static void* tch_mailq_calloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* result);
-static tchStatus tch_mailq_put(tch_mailQue_id qid,void* mail);
-static osEvent tch_mailq_get(tch_mailQue_id qid,uint32_t millisec);
-static tchStatus tch_mailq_free(tch_mailQue_id qid,void* mail);
-static tchStatus tch_mailq_destroy(tch_mailQue_id qid);
+static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen);
+static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+static tchStatus tch_mailq_put(tch_mailqId qid,void* mail);
+static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
+static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
+static tchStatus tch_mailq_destroy(tch_mailqId qid);
 
 
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
@@ -53,7 +53,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
-static tch_mailQue_id tch_mailq_create(size_t sz,uint32_t qlen){
+static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) Mem->alloc(sizeof(tch_mailq_cb));
 	mailqcb->blen = qlen;
 	mailqcb->bsz = sz;
@@ -72,10 +72,10 @@ static tch_mailQue_id tch_mailq_create(size_t sz,uint32_t qlen){
 	}
 
 	tch_mailqValidate(mailqcb);
-	return (tch_mailQue_id) mailqcb;
+	return (tch_mailqId) mailqcb;
 }
 
-static void* tch_mailq_alloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* result){
+static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	tchStatus lresult = osOK;
 	if(!result)
@@ -107,7 +107,7 @@ static void* tch_mailq_alloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* res
 	}
 }
 
-tchStatus tch_mailq_kalloc(tch_mailQue_id qid,tch_mailq_karg* arg){
+tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	if(!tch_mailqIsValid(mailqcb)){
 		arg->chunk = NULL;
@@ -122,7 +122,7 @@ tchStatus tch_mailq_kalloc(tch_mailQue_id qid,tch_mailq_karg* arg){
 }
 
 
-static void* tch_mailq_calloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* result){
+static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result){
 	void* chunk = NULL;
 	chunk = tch_mailq_alloc(qid,millisec,result);
 	if(chunk){
@@ -131,7 +131,7 @@ static void* tch_mailq_calloc(tch_mailQue_id qid,uint32_t millisec,tchStatus* re
 	return chunk;
 }
 
-static tchStatus tch_mailq_put(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailq_put(tch_mailqId qid,void* mail){
 	if(!tch_mailqIsValid(qid))
 		return osErrorResource;
 	if(!mail)
@@ -140,7 +140,7 @@ static tchStatus tch_mailq_put(tch_mailQue_id qid,void* mail){
 }
 
 
-static osEvent tch_mailq_get(tch_mailQue_id qid,uint32_t millisec){
+static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec){
 	osEvent evt;
 	if(!tch_mailqIsValid(qid)){
 		evt.status = osErrorResource;
@@ -154,7 +154,7 @@ static osEvent tch_mailq_get(tch_mailQue_id qid,uint32_t millisec){
 }
 
 
-static tchStatus tch_mailq_free(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	if(!tch_mailqIsValid(mailqcb))
 		return osErrorResource;
@@ -179,18 +179,19 @@ static tchStatus tch_mailq_free(tch_mailQue_id qid,void* mail){
 	}
 }
 
-tchStatus tch_mailq_kfree(tch_mailQue_id qid,tch_mailq_karg* arg){
+tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg){
 	if((!arg) || (!qid)) return osErrorParameter;
 	if(!tch_mailqIsValid(qid))
 		return osErrorResource;
 	if(Mempool->free(((tch_mailq_cb*)qid)->bpool,arg->chunk) != osOK)
 		return osErrorParameter;
-	tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorNoMemory);
+//	tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorNoMemory);
+	tch_schedResumeM(&((tch_mailq_cb*)qid)->wq,SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
 	return osOK;
 }
 
 
-static tchStatus tch_mailq_destroy(tch_mailQue_id qid){
+static tchStatus tch_mailq_destroy(tch_mailqId qid){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	tchStatus result = osOK;
 	if(!qid)
@@ -205,14 +206,15 @@ static tchStatus tch_mailq_destroy(tch_mailQue_id qid){
 	return osOK;
 }
 
-tchStatus tch_mailq_kdestroy(tch_mailQue_id qid,tch_mailq_karg* arg){
+tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg){
 	if(!tch_mailqIsValid(qid))
 		return osErrorResource;
 	tchStatus result = osOK;
 	result = Mempool->destroy(((tch_mailq_cb*)qid)->bpool);
 	if(result == osOK){
 		tch_mailqInvalidate(qid);
-		tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorResource,TRUE);
+//		tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorResource,TRUE);
+		tch_schedResumeM(&((tch_mailq_cb*)qid)->wq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 		return osOK;
 	}
 	return osErrorParameter;

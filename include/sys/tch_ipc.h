@@ -77,7 +77,7 @@ typedef struct _tch_mailQue_def_t{
 	void* queue;
 } tch_mailQueDef_t;
 
-typedef void* tch_mailQue_id;
+typedef void* tch_mailqId;
 
 
 /**

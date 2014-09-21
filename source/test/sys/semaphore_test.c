@@ -36,7 +36,7 @@ tchStatus semaphore_performTest(tch* api){
 	uint32_t* th3Stk = api->Mem->alloc(512);
 
 
-	tch_thread_cfg thcfg;
+	tch_threadCfg thcfg;
 	thcfg._t_name = "child1";
 	thcfg._t_routine = child1Routine;
 	thcfg._t_stack = th1Stk;

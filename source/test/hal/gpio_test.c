@@ -35,7 +35,7 @@ tchStatus gpio_performTest(tch* api){
 	evcfg.EvType = gpio->EvType.Interrupt;
 	in->registerIoEvent(in,&evcfg,NULL,osWaitForever);
 
-	tch_thread_cfg thcfg;
+	tch_threadCfg thcfg;
 	thcfg._t_name = "evgen";
 	thcfg._t_routine = evgenRoutine;
 	thcfg._t_stack = evgen_stk;

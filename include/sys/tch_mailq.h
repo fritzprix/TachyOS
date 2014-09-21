@@ -14,17 +14,17 @@ extern "C" {
 #endif
 
 
-typedef void* tch_mailQue_id;
+typedef void* tch_mailqId;
 
 
 struct _tch_mailbox_ix_t {
-	tch_mailQue_id (*create)(size_t sz,uint32_t qlen);
-	void* (*alloc)(tch_mailQue_id qid,uint32_t millisec,tchStatus* result);
-	void* (*calloc)(tch_mailQue_id qid,uint32_t millisec,tchStatus* result);
-	tchStatus (*put)(tch_mailQue_id qid,void* mail);
-	osEvent (*get)(tch_mailQue_id qid,uint32_t millisec);
-	tchStatus (*free)(tch_mailQue_id qid,void* mail);
-	tchStatus (*destroy)(tch_mailQue_id qid);
+	tch_mailqId (*create)(size_t sz,uint32_t qlen);
+	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	tchStatus (*put)(tch_mailqId qid,void* mail);
+	osEvent (*get)(tch_mailqId qid,uint32_t millisec);
+	tchStatus (*free)(tch_mailqId qid,void* mail);
+	tchStatus (*destroy)(tch_mailqId qid);
 };
 
 #if defined(__cplusplus)

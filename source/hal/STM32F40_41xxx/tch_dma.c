@@ -235,7 +235,7 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
-	tch_async_id                dma_async;
+	tch_asyncId                dma_async;
 }tch_dma_handle_prototype;
 
 static void tch_dma_initCfg(tch_dma_cfg* cfg);
@@ -354,7 +354,8 @@ static tch_dma_handle* tch_dma_initHandle(tch* api,dma_t dma,uint8_t ch){
 	dma_handle->mtxId = api->Mtx->create();
 	dma_handle->condv = api->Condv->create();
 	tch_listInit(&dma_handle->wq);
-	dma_handle->dma_async = Async->create(tch_dma_trigger,dma_handle,Async->Prior.Normal);
+	// 	tch_asyncId (*create)(size_t q_sz);
+	dma_handle->dma_async = Async->create(10);
 
 	return (tch_dma_handle*)dma_handle;
 }
@@ -379,7 +380,10 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 	tch_dmaSetBusy(ins);
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;
 	dmaHw->NDTR = size;
-	Async->blockedstart(ins->dma_async,timeout);
+//	Async->start(ins->dma_async,timeout);
+	//	tchStatus (*wait)(tch_asyncId async,int id,tch_async_routine fn,uint32_t timeout,void* arg);
+
+	Async->wait(ins->dma_async,ins,tch_dma_trigger,timeout,ins->api);
 	Mtx->unlock(ins->mtxId);
 	return TRUE;
 }
@@ -547,40 +551,35 @@ static inline BOOL tch_dmaIsValid(tch_dma_handle_prototype* _handle){
 
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc){
 	uint32_t isr = *dma_desc->_isr >> dma_desc->ipos;
-	if(handle){
-		if(isr & DMA_FLAG_EvFE){
-
-		}
-		if(isr & DMA_FLAG_EvHT){
-
-		}
-		if(isr & DMA_FLAG_EvDME){
-
-		}
-		if(isr & DMA_FLAG_EvTC){
-
-		}
-		if(isr & DMA_FLAG_EvTE){
-
-		}
-	}else{
-		if(isr & DMA_FLAG_EvFE){
-
-		}
-		if(isr & DMA_FLAG_EvHT){
-
-		}
-		if(isr & DMA_FLAG_EvDME){
-
-		}
-		if(isr & DMA_FLAG_EvTC){
-
-		}
-		if(isr & DMA_FLAG_EvTE){
-
-		}
+	if(!handle){
+		dma_desc->_isr = *dma_desc->_isr; // clear interrupt
+		return FALSE;                     // return
 	}
-
+	if(handle->listener){
+		if(!handle->listener((tch_dma_handle*)handle,isr))
+			return FALSE;
+	}
+	tch* api = handle->api;
+	if(isr & DMA_FLAG_EvFE){
+		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
+		return FALSE;
+	}
+	if(isr & DMA_FLAG_EvHT){
+		return FALSE;
+	}
+	if(isr & DMA_FLAG_EvDME){
+		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
+		return FALSE;
+	}
+	if(isr & DMA_FLAG_EvTC){
+		api->Async->notify(handle->dma_async,(int)handle,osOK);
+		return FALSE;
+	}
+	if(isr & DMA_FLAG_EvTE){
+		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
+		return TRUE;
+	}
+	return FALSE;
 }
 
 

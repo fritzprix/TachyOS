@@ -68,7 +68,7 @@ tchStatus msgq_performTest(tch* api){
 	in->registerIoEvent(in,&evcfg,ioEventListener,osWaitForever);
 
 	const tch_thread_ix* Thread = api->Thread;
-	tch_thread_cfg tcfg;
+	tch_threadCfg tcfg;
 	tcfg._t_name = "sender";
 	tcfg._t_routine = sender;
 	tcfg._t_stack = sender_stk;

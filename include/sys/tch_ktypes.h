@@ -65,16 +65,14 @@ typedef struct tch_thread_queue{
 } tch_thread_queue;
 
 
-typedef struct tch_async_cb_t {
-	tch_lnode_t                     ln;
-	int (*fn)(uint32_t,void*);
-	void*                           arg;
-	volatile uint8_t                status;
-	uint8_t                         prior;
-	tch_thread_queue                wq;
-}tch_async_cb;
-
-
+typedef struct tch_sys_task_t {
+	tch_lnode_t        tsk_nd;    // list node for waiting system task queue
+	int                tsk_id;    //
+	void*              tsk_arg;
+	tchStatus          tsk_result;
+	tch_thread_prior   tsk_prior;
+	tchStatus (*tsk_fn)(int id,void* arg);
+}tch_sysTask;
 
 typedef struct tch_mtx_cb {
 	uint32_t            state;
@@ -102,10 +100,6 @@ typedef struct tch_mtx_cb {
 #define SV_MEM_MALLOC                    ((uint32_t) 0x27)
 #define SV_MEM_FREE                      ((uint32_t) 0x28)
 
-#define SV_ASYNC_START                   ((uint32_t) 0x2A)               ///< Supervisor call id to start async task
-#define SV_ASYNC_BLSTART                 ((uint32_t) 0x2B)               ///< Supervisor call id to start async task with blocking current execution
-#define SV_ASYNC_NOTIFY                  ((uint32_t) 0x2C)               ///< Supervisor call id to notify async task result
-
 #define SV_MSGQ_PUT                      ((uint32_t) 0x2D)               ///< Supervisor call id to put msg to msgq
 #define SV_MSGQ_GET                      ((uint32_t) 0x2E)               ///< Supervisor call id to get msg from msgq
 #define SV_MSGQ_DESTROY                  ((uint32_t) 0x2F)               ///< Supervisro call id to destoy msgq
@@ -117,6 +111,9 @@ typedef struct tch_mtx_cb {
 #define SV_MAILQ_FREE                    ((uint32_t) 0x33)               ///< Supervisor call id to free mail
 #define SV_MAILQ_DESTROY                 ((uint32_t) 0x34)               ///< Supervisor call id to destroy mailq
 
+#define SV_ASYNC_WAIT                    ((uint32_t) 0x36)               ///< Supervisor call id to post Async Kernel Task
+#define SV_ASYNC_NOTIFY                  ((uint32_t) 0x37)               ///< Supervisor call id to notify completion of async kernel task
+#define SV_ASYNC_DESTROY                 ((uint32_t) 0x38)               ///< Supervisor call id to destroy async
 
 
 

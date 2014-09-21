@@ -52,15 +52,15 @@ tch_mem_handle* tch_memInit(void* pool,size_t size){
 	obj->_pix.alloc = tch_mem_alloc;
 	obj->_pix.free = tch_mem_free;
 	tch_mem_header** header__p = &obj->memp_head;
-	obj--;
+	obj++;
 	void* np = (void*)((uint32_t)(obj + 3) & ~3);        /// Make sure pool address is 4 byte aligned address
-	size = (size + 3) & ~3;                              /// Make sure size is also 4 byte aligend
+	size = size & ~3;                              /// Make sure size is also 4 byte aligend
 	*header__p = (tch_mem_header*) np;                  /// Make Head At pool start point
 	(*header__p)->next = (uint8_t*) np + size - sizeof(tch_mem_header);       /// Make Tail At pool end point
 	(*header__p)->len = 0;
 	((tch_mem_header*)(*header__p)->next)->next = NULL; /// set up list tail so protect from heap request overrun into other memory area
 	((tch_mem_header*)(*header__p)->next)->len = 0;
-	return (tch_mem_handle*) ((tch_mem_instance*)++obj);
+	return (tch_mem_handle*) ((tch_mem_instance*)--obj);
 }
 
 

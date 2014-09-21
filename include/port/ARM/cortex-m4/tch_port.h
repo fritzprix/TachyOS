@@ -59,6 +59,7 @@ extern void tch_port_kernel_lock(void);
  */
 extern void tch_port_kernel_unlock(void);
 extern BOOL tch_port_isISR();
+extern BOOL tch_port_isISRSyscallHandled();
 extern void tch_port_switchContext(void* nth,void* cth) __attribute__((naked));
 extern void tch_port_jmpToKernelModeThread(void* routine,uword_t arg1,uword_t arg2,uword_t retv);
 extern int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2);

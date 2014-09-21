@@ -27,7 +27,7 @@ static DECLARE_THREADROUTINE(receiver);
 static tch_threadId receiver_id;
 
 
-tch_mailQue_id testmailq_id;
+tch_mailqId testmailq_id;
 
 tchStatus mailq_performTest(tch* api){
 	testmailq_id = api->MailQ->create(sizeof(person),10);
@@ -35,7 +35,7 @@ tchStatus mailq_performTest(tch* api){
 	uint8_t* snd_stk = api->Mem->alloc(sizeof(uint8_t) * (1 << 9));
 
 	const tch_thread_ix* Thread = api->Thread;
-	tch_thread_cfg tcfg;
+	tch_threadCfg tcfg;
 	tcfg._t_name = "sender";
 	tcfg._t_routine = sender;
 	tcfg._t_stack = snd_stk;

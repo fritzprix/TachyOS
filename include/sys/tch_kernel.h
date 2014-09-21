@@ -23,6 +23,7 @@
 #include "tch.h"
 #include "tch_ktypes.h"
 #include "tch_port.h"
+#include "tch_sched.h"
 #include "tch_hal.h"
 #include "tch_mem.h"
 #include "tch_list.h"
@@ -42,6 +43,7 @@ extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
 
 
+
 extern int Sys_Stack_Top asm("sys_stack_top");
 extern int Heap_Base asm("heap_base");
 extern int Heap_Limit asm("heap_limit");
@@ -54,6 +56,9 @@ extern int Idle_Stack_Limit asm("idle_stack_limit");
 
 
 extern tch_thread_header* tch_currentThread;
+extern tch_threadId sysThreadId;
+extern tch_thread_queue sysThreadPort;
+
 #ifndef __USE_MALLOC
 extern tch_mem_handle* Heap_Manager;
 #endif

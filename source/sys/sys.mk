@@ -13,11 +13,12 @@ KERNEL_SRCS=\
 	    tch_mem.c\
 	    tch_clibsysc.c\
 	    tch_nclib.c\
-	    tch_async.c\
 	    tch_bar.c\
 	    tch_condv.c\
 	    tch_msgq.c\
-	    tch_mailq.c
+	    tch_mailq.c\
+	    tch_btree.c\
+	    tch_async.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 

@@ -62,7 +62,7 @@ tchStatus monitor_performTest(tch* api){
 
 	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,osErrorOS);
 
-	tch_thread_cfg thcfg;
+	tch_threadCfg thcfg;
 	thcfg._t_name = "consumer1";
 	thcfg._t_routine = consumerRoutine;
 	thcfg._t_stack = cons1stk;

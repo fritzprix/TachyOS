@@ -27,9 +27,13 @@ typedef struct _tch_mailq_karg{
 	void*    chunk;
 }tch_mailq_karg;
 
-extern tchStatus tch_mailq_kalloc(tch_mailQue_id qid,tch_mailq_karg* arg);
-extern tchStatus tch_mailq_kfree(tch_mailQue_id qid,tch_mailq_karg* arg);
-extern tchStatus tch_mailq_kdestroy(tch_mailQue_id qid,tch_mailq_karg* arg);
+extern tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg);
+extern tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg);
+extern tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg);
+
+extern tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue);
+extern tchStatus tch_async_knotify(tch_asyncId async,void* res);
+extern tchStatus tch_async_kdestroy(tch_asyncId async);
 
 
 #if defined(__cplusplus)

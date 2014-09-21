@@ -30,7 +30,7 @@ tchStatus mtx_performTest(tch* api){
 	uint32_t* ch2Stack = api->Mem->alloc(512 * sizeof(uint8_t));
 
 	tch_thread_ix* Thread = api->Thread;
-	tch_thread_cfg thCfg;
+	tch_threadCfg thCfg;
 	thCfg._t_name = "child1_mtx";
 	thCfg._t_routine = child1Routine;
 	thCfg._t_stack = ch1Stack;

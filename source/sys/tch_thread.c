@@ -31,7 +31,7 @@
  *     -> LR point Entry Routine of Thread
  *
  */
-static tch_threadId tch_threadCreate(tch_thread_cfg* cfg,void* arg);
+static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
 static tchStatus tch_threadStart(tch_threadId thread);
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err);
 static tch_threadId tch_threadSelf();
@@ -59,7 +59,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 
 const tch_thread_ix* Thread = &tch_threadix;
 
-tch_threadId tch_threadCreate(tch_thread_cfg* cfg,void* arg){
+tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 
 	/**

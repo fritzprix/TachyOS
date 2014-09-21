@@ -48,12 +48,12 @@ static osEvent tch_msgQ_get(tch_msgQue_id,uint32_t millisec);
 static tchStatus tch_msgQ_destroy(tch_msgQue_id id);
 
 
-static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que);
-static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec);
-static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec);
-static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail);
-static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec);
-static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail);
+static tch_mailqId tch_mailQ_create(const tch_mailQueDef_t* que);
+static void* tch_mailQ_alloc(tch_mailqId qid,uint32_t millisec);
+static void* tch_mailQ_calloc(tch_mailqId qid,uint32_t millisec);
+static tchStatus tch_mailQ_put(tch_mailqId qid,void* mail);
+static osEvent tch_mailQ_get(tch_mailqId qid,uint32_t millisec);
+static tchStatus tch_mailQ_free(tch_mailqId qid,void* mail);
 
 
 /*
@@ -165,7 +165,7 @@ static tchStatus tch_msgQ_destroy(tch_msgQue_id id){
 
 
 
-static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
+static tch_mailqId tch_mailQ_create(const tch_mailQueDef_t* que){
 	memset(que->pool,0,que->item_sz * que->queue_sz);
 	tch_mailq_cb* mailq = (tch_mailq_cb*) que->pool - 1;
 	mailq->bfree = que->pool;
@@ -190,7 +190,7 @@ static tch_mailQue_id tch_mailQ_create(const tch_mailQueDef_t* que){
 	return mailq;
 }
 
-static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
+static void* tch_mailQ_alloc(tch_mailqId qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
@@ -210,7 +210,7 @@ static void* tch_mailQ_alloc(tch_mailQue_id qid,uint32_t millisec){
 	return free;
 }
 
-static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
+static void* tch_mailQ_calloc(tch_mailqId qid,uint32_t millisec){
 	if(tch_port_isISR()){
 		millisec = 0;
 	}
@@ -233,7 +233,7 @@ static void* tch_mailQ_calloc(tch_mailQue_id qid,uint32_t millisec){
 
 
 
-static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailQ_free(tch_mailqId qid,void* mail){
 	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	if((mailq->mailqDef->pool > mail) && (mailq->bend <= mail))
 		return osErrorValue;
@@ -249,7 +249,7 @@ static tchStatus tch_mailQ_free(tch_mailQue_id qid,void* mail){
 	return osOK;
 }
 
-static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
+static osEvent tch_mailQ_get(tch_mailqId qid,uint32_t millisec){
 	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	osEvent evt;
 	evt.status = osOK;
@@ -275,7 +275,7 @@ static osEvent tch_mailQ_get(tch_mailQue_id qid,uint32_t millisec){
 }
 
 
-static tchStatus tch_mailQ_put(tch_mailQue_id qid,void* mail){
+static tchStatus tch_mailQ_put(tch_mailqId qid,void* mail){
 	tch_mailq_cb* mailq = (tch_mailq_cb*) qid;
 	tch_port_kernel_lock();
 	mailq->psize++;

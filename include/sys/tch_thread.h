@@ -32,7 +32,7 @@ extern "C"{
  *  Thread relevant type definition
  */
 typedef void* tch_threadId;
-typedef struct _tch_thread_cfg_t tch_thread_cfg;
+typedef struct _tch_thread_cfg_t tch_threadCfg;
 typedef int (*tch_thread_routine)(tch* sys);
 
 typedef struct tch_msg{
@@ -71,7 +71,7 @@ struct _tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
-	tch_threadId (*create)(tch_thread_cfg* cfg,void* arg);
+	tch_threadId (*create)(tch_threadCfg* cfg,void* arg);
 	/**
 	 *  Start New Thread
 	 */

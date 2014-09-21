@@ -26,9 +26,6 @@ extern "C" {
 
 
 
-#define MTX_INIT_MARK                 ((uint32_t) 0x01)
-#define INIT_MTX                      {MTX_INIT_MARK,{INIT_LIST},NULL}
-
 /***
  *  mutex  types
  */

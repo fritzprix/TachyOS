@@ -25,6 +25,8 @@
  *
  */
 
+
+#define SCHED_THREAD_ALL             ((uint32_t) -1)
 /***
  *   Initialize Scheduler
  *    - typically called from kernel initialize routine
@@ -64,11 +66,10 @@ extern void tch_schedSleep(uint32_t timeout,tch_thread_state nextState);
  */
 extern void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout);
 
-/**
- *
- */
-extern tch_thread_header* tch_schedResume(tch_thread_queue* wq,tchStatus res);
-extern void tch_schedResumeAll(tch_thread_queue* wq,tchStatus res,BOOL preemt);
+extern int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt);   // resume specific thread in wait queue
+
+extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
+
 
 /**
  *

@@ -44,7 +44,7 @@ tchStatus barrier_performTest(tch* api){
 	child2Stk = api->Mem->alloc(512);
 	child3Stk = api->Mem->alloc(512);
 
-	tch_thread_cfg tcfg;
+	tch_threadCfg tcfg;
 	tcfg._t_name = "child1";
 	tcfg._t_routine = child1Routine;
 	tcfg._t_stack = child1Stk;

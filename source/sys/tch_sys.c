@@ -21,7 +21,6 @@
 #include "tch_kernel.h"
 #include "tch_sys.h"
 #include "tch_mem.h"
-#include "tch_sched.h"
 #include "tch_halcfg.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
@@ -29,20 +28,20 @@
 
 
 
-typedef struct tch_sysThread_cb_t{
-	tch_lnode_t asynTaskQ;
-	DECLARE_THREADSTACK(sThread_stack,1 << 10);
-	tch_lnode_t sThreadWaitNode;
-	tch_threadId sThread;
-}tch_sysThread_cb;
 
-static DECLARE_THREADROUTINE(sThread_routine);
-
-static tch_sysThread_cb sysThread;
+#define TCH_STHREAD_STK_SIZE   ((uint32_t) 1 << 11)
 
 
 static tch_kernel_instance tch_sys_instance;
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
+
+
+
+static DECLARE_THREADSTACK(sysThreadStk,TCH_STHREAD_STK_SIZE);
+static DECLARE_THREADROUTINE(sysTaskHandler);
+static tch_lnode_t sysTaskQue;
+tch_threadId sysThreadId;
+tch_thread_queue sysThreadPort;
 
 /***
  *  Initialize Kernel including...
@@ -67,6 +66,22 @@ void tch_kernelInit(void* arg){
 
 
 	tch_port_kernel_lock();
+
+	// create system task thread
+	tch_threadCfg sThcfg;
+	sThcfg._t_name = "Sys";
+	sThcfg._t_routine = sysTaskHandler;
+	sThcfg._t_stack = sysThreadStk;
+	sThcfg.t_proior = KThread;
+	sThcfg.t_stackSize = TCH_STHREAD_STK_SIZE;
+	sysThreadId = Thread->create(&sThcfg,&sysTaskQue);
+
+	tch_listInit(&sysTaskQue);
+
+
+	// put thread in wait queue
+	tch_listPutFirst(&sysThreadPort,&((tch_thread_header*)sysThreadId)->t_waitNode);
+
 #ifndef __USE_MALLOC
 	Heap_Manager = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
 #endif
@@ -84,17 +99,6 @@ void tch_kernelInit(void* arg){
 	api->MsgQ = MsgQ;
 	api->Mem = Mem;
 	api->Async = Async;
-
-	tch_listInit(&sysThread.sThreadWaitNode);
-	tch_thread_cfg th_Cfg;
-	th_Cfg._t_name = "SysThread";
-	th_Cfg._t_routine = sThread_routine;
-	th_Cfg._t_stack = sysThread.sThread_stack;
-	th_Cfg.t_proior = KThread;
-	th_Cfg.t_stackSize = (1 << 10);
-	sysThread.sThread = Thread->create(&th_Cfg,api);
-
-	tch_listPutFirst(&sysThread.sThreadWaitNode,((tch_lnode_t*)sysThread.sThread + 1));
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(&tch_sys_instance);
@@ -129,10 +133,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
 		return;
 	case SV_THREAD_RESUME:
-		tch_schedResume((tch_thread_queue*)arg1,arg2);
+	//	tch_schedResume((tch_thread_queue*)arg1,arg2);
+		tch_schedResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
 		return;
 	case SV_THREAD_RESUMEALL:
-		tch_schedResumeAll((tch_thread_queue*)arg1,arg2,TRUE);
+//		tch_schedResumeAll((tch_thread_queue*)arg1,arg2,TRUE);
+		tch_schedResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
 		return;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
@@ -148,7 +154,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		return;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
-		nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
+		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
+		//nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
 		return;
 	case SV_MEM_MALLOC:
 #ifndef __USE_MALLOC
@@ -159,25 +166,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 #ifndef __USE_MALLOC
 		tch_currentThread = Heap_Manager->free(Heap_Manager,(void*)arg1);
 #endif
-		return;
-	case SV_ASYNC_START:
-		if(!((tch_async_cb*)arg1)->fn){
-			tch_kernelSetResult(tch_currentThread,osOK);
-			return;
-		}
-		tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
-		tch_schedResume((uaddr_t)&sysThread.sThreadWaitNode,osOK);
-		return;
-	case SV_ASYNC_BLSTART:
-		if(((tch_async_cb*) arg1)->fn){
-			tch_listEnqueuePriority(&sysThread.asynTaskQ,(tch_lnode_t*)arg1,tch_async_comp);
-			if(!tch_listIsEmpty(&sysThread.sThreadWaitNode))
-				tch_schedReady((tch_threadId)tch_listDequeue(&sysThread.sThreadWaitNode));
-		}
-		tch_schedSuspend(&((tch_async_cb*)arg1)->wq,arg2);
-		return;
-	case SV_ASYNC_NOTIFY:
-		tch_schedResume(&((tch_async_cb*) arg1)->wq,arg2);
 		return;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;
@@ -203,20 +191,32 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy(arg1,0));
 		return;
+	case SV_ASYNC_WAIT:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_async_kwait(arg1,arg2,&sysTaskQue));
+		return;
+	case SV_ASYNC_NOTIFY:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_async_knotify(arg1,arg2));
+		return;
+	case SV_ASYNC_DESTROY:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
+		return;
 	}
 }
 
 
 
-static DECLARE_THREADROUTINE(sThread_routine){
-	//initiailize task q
-	tch_listInit(&sysThread.asynTaskQ);
+static DECLARE_THREADROUTINE(sysTaskHandler){
+	// initiate task queue
 	while(TRUE){
-		while(!tch_listIsEmpty(&sysThread.asynTaskQ)){ // perform tasks
-			tch_async_cb* cb = tch_listDequeue(&sysThread.asynTaskQ);
-			cb->fn(cb,cb->arg);
+		while(!tch_listIsEmpty(&sysTaskQue)){    //  thread perform task until task queue is empty
+			struct tch_sys_task_t* task = (struct tch_sys_task_t*) tch_listDequeue(&sysTaskQue);
+			task->tsk_result = task->tsk_fn(task->tsk_id,task->tsk_arg);
 		}
-		tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&sysThread.sThreadWaitNode,osWaitForever);  // suspend until new task available why osWaitfor
+		if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,&sysThreadPort,osWaitForever) != osOK)   // if there's no more task, thread will suspended
+			return osErrorOS;
 	}
 	return osOK;
 }
