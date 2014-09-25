@@ -31,7 +31,7 @@ extern "C"{
  */
 
 typedef uaddr_t tch_asyncId;
-typedef int (*tch_async_routine)(tch_asyncId id,void* arg);
+typedef tchStatus (*tch_async_routine)(int id,void* arg);
 
 typedef struct _tch_async_ix_t {
 	/*!
@@ -39,8 +39,8 @@ typedef struct _tch_async_ix_t {
 	 */
 	tch_asyncId (*create)(size_t q_sz);
 	tchStatus (*wait)(tch_asyncId async,int id,tch_async_routine fn,uint32_t timeout,void* arg);
-	void (*notify)(tch_asyncId async,int id,tchStatus res);
-	void (*destroy)(tch_asyncId async);
+	tchStatus (*notify)(tch_asyncId async,int id,tchStatus res);
+	tchStatus (*destroy)(tch_asyncId async);
 };
 
 
