@@ -39,6 +39,8 @@ void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(vo
 
 void* tch_listDequeue(tch_lnode_t* lentry){
 	tch_lnode_t* cnode = lentry->next;
+	if(tch_listIsEmpty(lentry))
+		return NULL;
 	lentry->next = cnode->next;
 	if(cnode->next)
 		((tch_lnode_t*)cnode->next)->prev = lentry;
@@ -49,13 +51,17 @@ void* tch_listDequeue(tch_lnode_t* lentry){
 
 void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
 	item->next = lentry->next;
+	if(!lentry)
+		return;
 	if(lentry->next)
 		((tch_lnode_t*)lentry->next)->prev = item;
 	item->prev = lentry;
 	lentry->next = item;
 }
 
-void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
+void tch_listPush(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(!lentry)
+		return;
 	if(lentry->prev){
 		((tch_lnode_t*)lentry->prev)->next = item;
 		item->prev = lentry->prev;
@@ -68,8 +74,22 @@ void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
 	lentry->prev = item;
 }
 
+void* tch_listRemoveLast(tch_lnode_t* lentry){
+	tch_lnode_t* last = NULL;
+	if(!lentry)
+		return NULL;
+	if(!lentry->prev)
+		return NULL;
+	last = lentry->prev;
+	lentry->prev = last->prev;
+	((tch_lnode_t*)lentry->prev)->next = NULL;
+	return last;
+}
+
 int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(tch_listIsEmpty(lentry))
+		return (1 < 0);
+	if(!item)
 		return (1 < 0);
 	tch_lnode_t* cnode = lentry->next;
 	while(cnode->next != NULL){

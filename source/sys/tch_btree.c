@@ -19,8 +19,6 @@ tch_btree_node* tch_btree_insert(tch_btree_node* root,tch_btree_node* item){
 	if(!item)
 		return NULL;
 	while(root){
-//		if(root->key == item->key)   // if there is another element with key which is same to new element
-//			return root;             // new element is not successfully inserted and return pre-existing element
 		if(root->key < item->key){
 			if(!root->right){
 				root->right = item;
@@ -115,5 +113,5 @@ tch_btree_node* tch_btree_split(tch_btree_node** rbr,int key){
 		else
 			root = root->left;
 	}
-	return p;
+	return NULL;
 }
