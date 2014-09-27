@@ -15,6 +15,9 @@
 extern "C"{
 #endif
 
+
+
+#define tch_ltreeIsEmpty(ltree)    (((tch_ltree_node*)ltree)->ln.next == NULL)
 typedef struct tch_ltree_node_t {
 	tch_btree_node trn;
 	tch_lnode_t    ln;

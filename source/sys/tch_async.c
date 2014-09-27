@@ -10,6 +10,7 @@
 #include "tch_async.h"
 #include "tch_sys.h"
 
+#include "tch_ltree.h"
 #include "tch_btree.h"
 
 
@@ -22,10 +23,9 @@
 #define SIG_TASK                      ((int) 0xFDA08)
 #define TCH_ASYNC_DMSTK_SIZE          ((uint32_t) 1 << 11)
 
-
-
 typedef struct tch_async_req_{
-	tch_btree_node        node;         // tree node
+	tch_ltree_node        node;         // tree node
+	tch_thread_queue      wq;
 	tch_sysTask           task;         // task
 	tch_threadId          requesterId;  // thread id of request
 	uint32_t              timeout;      // task timeout
@@ -41,12 +41,8 @@ typedef struct tch_async_nargs_t {
 typedef struct tch_async_cb_t {
 	uint32_t              tstatus;    // status
 	tch_mailqId           tmailqId;     // mail queue for communication with kernel
-	tch_thread_queue      twq;
-	tch_btree_node*       tmap;       // task ID - tch_asyncTask map
+	tch_ltree_node*       treqs;
 }tch_async_cb;
-
-
-
 
 
 
@@ -75,9 +71,8 @@ const tch_async_ix* Async = &ASYNC_StaticInstance;
 static tch_asyncId tch_async_create(size_t tq_size){
 	tch_async_cb* async = (tch_async_cb*) Mem->alloc(sizeof(tch_async_cb)); // allocate async handle
 	async->tmailqId = MailQ->create(sizeof(tch_asyncReq),tq_size);          // mailq to communicate to task handler thread
-	async->tmap = (tch_btree_node*) Mem->alloc(sizeof(tch_btree_node));     // binary search tree for lookup async request by id
-	tch_listInit((tch_lnode_t*)&async->twq);                                // initialize wait queue for thread
-	tch_btreeInit(async->tmap,TCH_ASYNC_CLASS_KEY);                         // initialize binary search tree
+	async->treqs = (tch_ltree_node*) Mem->alloc(sizeof(tch_ltree_node));
+	tch_ltreeInit(async->treqs,TCH_ASYNC_CLASS_KEY);
 	tch_asyncValidate(async);                                               // validate async handle
 	return (tch_asyncId) async;
 }
@@ -96,8 +91,9 @@ static tchStatus tch_async_wait(tch_asyncId async,int id,tch_async_routine fn,ui
 	//Initialize request
 	req->requesterId = Thread->self();   // set request thread
 	req->timeout = timeout;              // set timeout
-	tch_btreeInit(&req->node,id);        // initiate binary tree node (for mapping id to async req)
+	tch_ltreeInit(&req->node,id);        // initiate binary tree node (for mapping id to async req)
 	tch_listInit(&req->task.tsk_nd);     // initiate list node ( for waiting req queue of systhread)
+	tch_listInit(&req->wq);
 	req->task.tsk_fn = fn;               // assign task function
 	req->task.tsk_arg = arg;             // task arguement
 	req->task.tsk_id = id;               // set task id as same to request async request id(BST Node Key)
@@ -126,9 +122,9 @@ tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue){
 	tch_asyncReq* preq = NULL;
 	if(!tch_asyncIsValid(async))      // validity check of async id
 		return osErrorResource;
-	tch_btree_insert(cb->tmap,(tch_btree_node*) req);   // insert request into binary search
+	tch_ltreeInsert(cb->treqs,(tch_ltree_node*) req);
 	tch_listEnqueuePriority((tch_lnode_t*) task_queue,(tch_lnode_t*) &req->task,tch_asyncPriorityRule);  // enqueue task
-	tch_schedSuspend(&cb->twq,req->timeout);                            // suspend current thread
+	tch_schedSuspend(&req->wq,req->timeout);                            // suspend current thread
 	if(!tch_listIsEmpty(&sysThreadPort))                                // if task thread is in sleep, wake it up
 		tch_schedResumeM(&sysThreadPort,1,osOK,FALSE);
 	return osOK;
@@ -170,23 +166,15 @@ tchStatus tch_async_knotify(tch_asyncId async,void* args){
 	tch_async_narg* arg_p = (tch_async_narg*) args;
 	if(!tch_asyncIsValid(async))
 		return osErrorResource;
-	arg_p->req = (tch_asyncReq*) tch_btree_delete(&cb->tmap,arg_p->id);   // just delete it from request set
+	arg_p->req = (tch_asyncReq*) tch_ltreeRemove(&cb->treqs,arg_p->id);
 	if(!arg_p->req)
 		return osErrorParameter;    // given id isn't correct maybe..
-	if(tch_schedResumeThread(&cb->twq,arg_p->req->requesterId,arg_p->res,FALSE))
+	if(tch_schedResumeM(&arg_p->req->wq,SCHED_THREAD_ALL,arg_p->res,FALSE))
 		return osOK;
 	return osErrorTimeoutResource;          // there is no waiting thread to be notified
 }
 
 
-/**
- * 	tch_async_cb* async = (tch_async_cb*) Mem->alloc(sizeof(tch_async_cb)); // allocate async handle
-	async->tmailqId = MailQ->create(sizeof(tch_asyncReq),tq_size);          // mailq to communicate to task handler thread
-	async->tmap = (tch_btree_node*) Mem->alloc(sizeof(tch_btree_node));     // binary search tree for lookup async request by id
-	tch_listInit((tch_lnode_t*)&async->twq);                                // initialize wait queue for thread
-	tch_btreeInit(async->tmap,TCH_ASYNC_CLASS_KEY);                         // initialize binary search tree
-	tch_asyncValidate(async);
- */
 static tchStatus tch_async_destroy(tch_asyncId async){
 	tch_async_cb* cb = (tch_async_cb*) async;
 	tchStatus result = osOK;
@@ -197,7 +185,7 @@ static tchStatus tch_async_destroy(tch_asyncId async){
 	}
 	if((result = tch_port_enterSvFromUsr(SV_ASYNC_DESTROY,(uword_t)async,0)) != osOK)
 		return result;
-	Mem->free(cb->tmap);
+	Mem->free(cb->treqs);
 	if((result = MailQ->destroy(cb->tmailqId)) != osOK)
 		return result;
 	Mem->free(async);
@@ -208,10 +196,14 @@ static tchStatus tch_async_destroy(tch_asyncId async){
 
 tchStatus tch_async_kdestroy(tch_asyncId async){
 	tch_async_cb* cb = (tch_async_cb*) async;
+	tch_asyncReq* req = NULL;
 	if(!tch_asyncIsValid(async))
 		return osErrorResource;
 	tch_asyncInvalidate(async);
-	tch_schedResumeM(&cb->twq,SCHED_THREAD_ALL,osErrorResource,TRUE);
+	while(!tch_ltreeIsEmpty(cb->treqs)){
+		req = tch_ltreeRemoveHead(&cb->treqs);
+		tch_schedResumeM(&req->wq,SCHED_THREAD_ALL,osErrorResource,FALSE);
+	}
 	return osOK;
 }
 
@@ -219,6 +211,4 @@ tchStatus tch_async_kdestroy(tch_asyncId async){
 static LIST_CMP_FN(tch_asyncPriorityRule){
 	return ((tch_sysTask*) prior)->tsk_prior > ((tch_sysTask*) post)->tsk_prior;
 }
-
-
 

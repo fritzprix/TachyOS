@@ -46,7 +46,7 @@ tch_ltree_node* tch_ltreeRemoveHead(tch_ltree_node** rtp){
 
 tch_ltree_node* tch_ltreeRemoveTail(tch_ltree_node** rtp){
 	tch_ltree_node* root = *rtp;
-	root = tch_listRemoveLast(&root->ln);
+	root = tch_listPop(&root->ln);
 	if(!root)
 		return NULL;
 	root = (tch_ltree_node*)((tch_btree_node*)root - 1);
