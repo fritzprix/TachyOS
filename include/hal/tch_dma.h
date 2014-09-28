@@ -64,7 +64,7 @@ typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
 /*!
  * \brief DMA Configuration type
  */
-typedef struct _dma_cfg_t tch_dma_cfg;
+typedef struct _dma_cfg_t tch_DmaCfg;
 
 struct _tch_dma_str_t {
 	uint8_t      dma1;
@@ -160,6 +160,14 @@ typedef struct _tch_dma_targetAddress_t{
 	const uint8_t PeriTarget1;
 }tch_DmaTargetAddress;
 
+typedef struct _tch_dma_attr_t {
+	size_t      size;
+	uaddr_t     MemAddr[2];
+	BOOL        MemInc;
+	uaddr_t     PeriphAddr[2];
+	BOOL        PeriphInc;
+}tch_DmaAttr;
+
 
 /*!
  * \brief DMA handle object type
@@ -172,17 +180,24 @@ struct tch_dma_handle_t{
 	 * \param size size of data to be transfered by DMA
 	 * \return true if successful, otherwise false
 	 */
-	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size,uint32_t timeout);
+
+	void (*initCfg)(tch_DmaCfg* cfg);
+	void (*initAttr)(tch_DmaAttr* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
+#ifdef VERSION01
+	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size,uint32_t timeout,tchStatus* result);
+#else
+	BOOL (*beginXfer)(tch_dma_handle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
+#endif
 
 	/*!
 	 * \brief Set both source and target Address of DMA
 	 * \param \ref tch_dma_handle object which is obtained from \ref openStream
 	 * \param target which is among
 	 */
-	void (*setAddress)(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr);
-	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
-	void (*unregisterEventListener)(tch_dma_handle* self);
-	void (*setIncrementMode)(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
+//	void (*setAddress)(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr);
+//	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
+//	void (*unregisterEventListener)(tch_dma_handle* self);
+//	void (*setIncrementMode)(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
 	void (*close)(tch_dma_handle* self);
 };
 
@@ -201,7 +216,7 @@ struct tch_dma_ix_t {
 	 * \param cfg pointer of \ref tch_dma_cfg
 	 * \see tch_dma_cfg
 	 */
-	void (*initCfg)(tch_dma_cfg* cfg);
+	void (*initCfg)(tch_DmaCfg* cfg);
 
 	/*!
 	 * \brief open dma stream
@@ -211,7 +226,7 @@ struct tch_dma_ix_t {
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	tch_dma_handle* (*openStream)(tch* api,dma_t dma,tch_dma_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+	tch_dma_handle* (*openStream)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 
 	/*!
 	 * \brief get dma count of platform H/W

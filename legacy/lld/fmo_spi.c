@@ -296,7 +296,7 @@ BOOL tch_lld_spi_open(const tch_spi_instance* self,tch_spi_cfg* cfg,tch_pwrMgrCf
 	/**
 	 * tx dma initialize
 	 */
-	tch_dma_cfg dmacfg;
+	tch_DmaCfg dmacfg;
 	tch_lld_dma_cfginit(&dmacfg);
 	dmacfg.DMA_BufferMode = DMA_BufferMode_Normal;
 	dmacfg.DMA_Ch = spicfg->tx_dma_ch;

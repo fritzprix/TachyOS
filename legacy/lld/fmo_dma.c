@@ -230,11 +230,11 @@ __attribute__((section(".data"))) static dma_hw_descriptor DMA_HWs[] = {
 
 static __attribute__((section(".data"))) dma_com_hw_desc_t DMA_COM_HWs = {{0,0}};
 
-void tch_lld_dma_cfginit(tch_dma_cfg* cfg){
+void tch_lld_dma_cfginit(tch_DmaCfg* cfg){
 
 }
 
-tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_dma_cfg* dmacfg,tch_pwrMgrCfg cfg){
+tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_DmaCfg* dmacfg,tch_pwrMgrCfg cfg){
 	tch_dma_prototype* ins = &DMA_StaticInstances[dma];
 	dma_hw_descriptor* dhw = &DMA_HWs[dma];
 

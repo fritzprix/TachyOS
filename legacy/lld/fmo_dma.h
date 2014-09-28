@@ -117,7 +117,7 @@
 typedef uint8_t dma_t;
 typedef struct _dma_instance_t tch_dma_instance;
 typedef BOOL (*tch_dma_eventListener)(tch_dma_instance* ins,uint16_t evType);
-typedef struct _dma_cfg_t tch_dma_cfg;
+typedef struct _dma_cfg_t tch_DmaCfg;
 
 
 
@@ -144,8 +144,8 @@ struct _dma_cfg_t {
 	uint8_t DMA_FlowControl;
 };
 
-void tch_lld_dma_cfginit(tch_dma_cfg* cfg);
-tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_dma_cfg* dma_cfg,tch_pwrMgrCfg cfg);
+void tch_lld_dma_cfginit(tch_DmaCfg* cfg);
+tch_dma_instance* tch_lld_dma_init(dma_t dma,tch_DmaCfg* dma_cfg,tch_pwrMgrCfg cfg);
 
 
 

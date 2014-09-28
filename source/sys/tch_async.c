@@ -93,7 +93,7 @@ static tchStatus tch_async_wait(tch_asyncId async,int id,tch_async_routine fn,ui
 	req->timeout = timeout;              // set timeout
 	tch_ltreeInit(&req->node,id);        // initiate binary tree node (for mapping id to async req)
 	tch_listInit(&req->task.tsk_nd);     // initiate list node ( for waiting req queue of systhread)
-	tch_listInit(&req->wq);
+	tch_listInit((tch_lnode_t*)&req->wq);
 	req->task.tsk_fn = fn;               // assign task function
 	req->task.tsk_arg = arg;             // task arguement
 	req->task.tsk_id = id;               // set task id as same to request async request id(BST Node Key)
@@ -201,7 +201,7 @@ tchStatus tch_async_kdestroy(tch_asyncId async){
 		return osErrorResource;
 	tch_asyncInvalidate(async);
 	while(!tch_ltreeIsEmpty(cb->treqs)){
-		req = tch_ltreeRemoveHead(&cb->treqs);
+		req = (tch_asyncReq*) tch_ltreeRemoveHead(&cb->treqs);
 		tch_schedResumeM(&req->wq,SCHED_THREAD_ALL,osErrorResource,FALSE);
 	}
 	return osOK;

@@ -275,7 +275,7 @@ BOOL lld_usart_open(const tch_usart_instance* self,uint32_t brate,tch_pwrMgrCfg 
 
 	ins->gpiov_handle = tch_lld_gpio_init(uhw_cfg->port,(1 << uhw_cfg->tx_pin) | (1 << uhw_cfg->rx_pin),&io_cfg,pmopt);
 
-	tch_dma_cfg dma_cfg;
+	tch_DmaCfg dma_cfg;
 	if(uhw_cfg->tx_dma != DMA_NOT_USED){
 		tch_lld_dma_cfginit(&dma_cfg);
 		dma_cfg.DMA_BufferMode = DMA_BufferMode_Normal;

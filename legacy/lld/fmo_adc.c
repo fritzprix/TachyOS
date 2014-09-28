@@ -283,7 +283,7 @@ BOOL lld_adc_open(const tch_adc_instance* self,tch_adc_cfg* cfg,tch_pwrMgrCfg pc
 	}
 
 
-	tch_dma_cfg dmacfg;
+	tch_DmaCfg dmacfg;
 	tch_lld_dma_cfginit(&dmacfg);
 
 
