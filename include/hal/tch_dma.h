@@ -67,6 +67,7 @@ typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
 typedef struct _dma_cfg_t tch_DmaCfg;
 
 struct _tch_dma_str_t {
+	uint8_t      dma0;
 	uint8_t      dma1;
 	uint8_t      dma2;
 	uint8_t      dma3;
@@ -211,6 +212,7 @@ struct tch_dma_ix_t {
 	const tch_DmaFlowCtrl       FlowCtrl;                  ///< Flow Controller of DMA Operation. can be either DMA or Peripheral \note Value can be differ from each platform H/W
 	const tch_DmaAlign          Align;                     ///< Data Alignment of DMA Source and Target \note Value can be differ from each platform H/W
 	const tch_DmaTargetAddress  targetAddress;
+	const int                   DMA_CNT;
 	/*!
 	 * \brief Initialize DMA Configuration
 	 * \param cfg pointer of \ref tch_dma_cfg
@@ -228,11 +230,6 @@ struct tch_dma_ix_t {
 	 */
 	tch_dma_handle* (*openStream)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
 
-	/*!
-	 * \brief get dma count of platform H/W
-	 * \return total number of dma stream available
-	 */
-	int (*getDMACount)();
 };
 
 
