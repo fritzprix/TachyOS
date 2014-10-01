@@ -112,7 +112,7 @@ typedef struct tch_gpio_manager_internal_t {
 }tch_gpio_manager;
 
 typedef struct _tch_gpio_handle_prototype {
-	tch_gpio_handle              _pix;
+	tch_GpioHandle              _pix;
 	uint8_t                       idx;
 	uint32_t                       state;
 	uint8_t                       pin;
@@ -129,13 +129,13 @@ typedef struct _tch_gpio_handle_prototype {
 /**********************************************************************************************/
 /************************************  gpio driver public function  ***************************/
 /**********************************************************************************************/
-static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 static void tch_gpio_initCfg(tch_gpio_cfg* cfg);
 static void tch_gpio_initEvCfg(tch_gpio_evCfg* evcfg);
 static uint16_t tch_gpio_getPortCount();
 static uint16_t tch_gpio_getPincount(const gpIo_x port);
 static uint32_t tch_gpio_getPinAvailable(const gpIo_x port);
-static void tch_gpio_freeIo(tch_gpio_handle* IoHandle);
+static void tch_gpio_freeIo(tch_GpioHandle* IoHandle);
 
 
 /**********************************************************************************************/
@@ -196,7 +196,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticManager;
 
 
-static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
+static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	uint32_t pMsk = (1 << pin);
 	if(!gpio->_clkenr){                     /// given GPIO port is not supported in this H/W
@@ -236,7 +236,7 @@ static tch_gpio_handle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint8_
 	}
 	tch_gpio_handle_configure(instance,cfg);
 	tch_gpioValidate(instance);
-	return (tch_gpio_handle*) instance;
+	return (tch_GpioHandle*) instance;
 }
 
 static void tch_gpio_initCfg(tch_gpio_cfg* cfg){
@@ -266,7 +266,7 @@ static uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 	return GPIO_HWs[port].io_ocpstate;
 }
 
-static void tch_gpio_freeIo(tch_gpio_handle* IoHandle){
+static void tch_gpio_freeIo(tch_GpioHandle* IoHandle){
 	tch_gpio_handle_prototype* _handle = (tch_gpio_handle_prototype*) IoHandle;
 	if(!tch_gpioIsValid(_handle))
 		return;
@@ -498,7 +498,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 				return;
 			_handle = (tch_gpio_handle_prototype*)ioIntObj->io_occp;
 			if(_handle->cb)
-				_handle->cb((tch_gpio_handle*)_handle,_handle->pin);
+				_handle->cb((tch_GpioHandle*)_handle,_handle->pin);
 			EXTI->PR |= pMsk;
 			if(!tch_listIsEmpty(&ioIntObj->wq))
 				tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,&ioIntObj->wq,osOK);

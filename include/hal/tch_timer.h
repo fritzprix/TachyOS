@@ -36,7 +36,7 @@ struct _tch_gptimer_handle_t {
 struct _tch_gptimer_def_t {
 	uint32_t            unit_us;
 	tch_timer_callback  callback;
-	tch_pwr_def         pwr_cfg;
+	tch_PwrOpt         pwr_cfg;
 };
 
 struct _tch_pwm_handle_t {
@@ -49,7 +49,7 @@ struct _tch_pwm_handle_t {
 
 struct _tch_pwm_def_t {
 	uint32_t          period_us;
-	tch_pwr_def       pwr_cfg;
+	tch_PwrOpt       pwr_cfg;
 };
 
 struct _tch_tcapt_handle_t {

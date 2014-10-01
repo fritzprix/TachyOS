@@ -16,24 +16,26 @@ tchStatus gpio_performTest(tch* api){
 	uint8_t* evgen_stk = api->Mem->alloc(1 << 9);
 	uint8_t* wt_stk = api->Mem->alloc(1 << 9);
 
-	tch_gpio_cfg iocfg;
+	tch_GpioCfg iocfg;
 	tch_lld_gpio* gpio = api->Device->gpio;
 	iocfg.Mode = gpio->Mode.Out;
 	iocfg.Otype = gpio->Otype.PushPull;
 	iocfg.PuPd = gpio->PuPd.NoPull;
 	iocfg.Speed = gpio->Speed.Mid;
-	tch_gpio_handle* out = gpio->allocIo(api,gpio->Ports.gpio_0,0,&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* out = gpio->allocIo(api,gpio->Ports.gpio_0,1,&iocfg,osWaitForever,ActOnSleep);
 
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = gpio->Mode.In;
 	iocfg.PuPd = gpio->PuPd.PullUp;
 	iocfg.Speed = gpio->Speed.Mid;
-	tch_gpio_handle* in = gpio->allocIo(api,gpio->Ports.gpio_0,2,&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* in = gpio->allocIo(api,gpio->Ports.gpio_0,(1 << 2),&iocfg,osWaitForever,ActOnSleep);
 
-	tch_gpio_evCfg evcfg;
+	tch_GpioEvCfg evcfg;
+	gpio->initEvCfg(&evcfg);
 	evcfg.EvEdge = gpio->EvEdeg.Fall;
 	evcfg.EvType = gpio->EvType.Interrupt;
-	in->registerIoEvent(in,&evcfg,NULL,osWaitForever);
+	uint32_t evpin = 1 << 2;
+	in->registerIoEvent(in,&evcfg,&evpin);
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "evgen";
@@ -66,22 +68,22 @@ tchStatus gpio_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(evgenRoutine){
-	tch_gpio_handle* out = (tch_gpio_handle*) sys->Thread->getArg();
-	out->out(out,bSet);
+	tch_GpioHandle* out = (tch_GpioHandle*) sys->Thread->getArg();
+	out->out(out,1,bSet);
 	sys->Thread->sleep(50);
-	out->out(out,bClear);
+	out->out(out,1,bClear);
 	sys->Device->gpio->freeIo(out);
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(evconsRoutine){
-	tch_gpio_handle* in = (tch_gpio_handle*) sys->Thread->getArg();
-	if(!in->listen(in,osWaitForever))
+	tch_GpioHandle* in = (tch_GpioHandle*) sys->Thread->getArg();
+	if(!in->listen(in,2,osWaitForever))
 		return osErrorOS;
-	in->unregisterIoEvent(in);
-	if(in->listen(in,osWaitForever))
+	in->unregisterIoEvent(in,1 << 2);
+	if(in->listen(in,2,osWaitForever))
 		return osErrorOS;
-	in->unregisterIoEvent(in);
+	in->unregisterIoEvent(in,1 << 2);
 	sys->Device->gpio->freeIo(in);
 	return osOK;
 }

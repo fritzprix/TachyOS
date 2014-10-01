@@ -25,26 +25,31 @@ int main(tch* api) {
 
 //	tch* api = (tch*) arg;
 
-	tch_gpio_cfg iocfg;
-	tch_gpio_evCfg evcfg;
-	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
-	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
-
-
+	tch_GpioCfg iocfg;
+	tch_GpioEvCfg evcfg;
+	api->Device->gpio->initEvCfg(&evcfg);
 	api->Device->gpio->initCfg(&iocfg);
+
+
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
-	led = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,6,&iocfg,osWaitForever,NoActOnSleep);
+	led = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,(1 << 6),&iocfg,osWaitForever,NoActOnSleep);
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.In;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	btn = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,10,&iocfg,osWaitForever,NoActOnSleep);
+	btn = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,(1 << 10),&iocfg,osWaitForever,NoActOnSleep);
 
 	tch_assert(api,TRUE,osErrorISR);
 
+//	tchStatus (*registerIoEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* cfg,uint32_t* pmsk,uint32_t timeout);
 
-	btn->registerIoEvent(btn,&evcfg,onBtnPressed,osWaitForever);
+	uint32_t pmsk = 1 << 10;
+	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
+	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
+	btn->registerIoEvent(btn,&evcfg,&pmsk);
+
+	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 
 	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
@@ -53,15 +58,14 @@ int main(tch* api) {
 	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 
 	while(1){
-		led->out(led,bSet);
+		led->out(led,(1 << 6),bSet);
 		api->Thread->sleep(100);
-		led->out(led,bClear);
+		led->out(led,(1 << 6),bClear);
 		api->Thread->sleep(100);
-		btn->listen(btn,osWaitForever);
+		btn->listen(btn,10,osWaitForever);
 	}
 	return osOK;
 }

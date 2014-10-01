@@ -59,13 +59,13 @@ tchStatus async_performTest(tch* api){
 static DECLARE_THREADROUTINE(testRoutine1){
 	tch_lld_gpio* gpio = sys->Device->gpio;
 	api = sys;
-	tch_gpio_cfg iocfg;
+	tch_GpioCfg iocfg;
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = gpio->Mode.In;
 	iocfg.PuPd = gpio->PuPd.PullUp;
 	iocfg.Speed = gpio->Speed.Mid;
 
-	tch_gpio_handle* in = gpio->allocIo(sys,gpio->Ports.gpio_0,0,&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* in = gpio->allocIo(sys,gpio->Ports.gpio_0,(1 << 0),&iocfg,osWaitForever,ActOnSleep);
 
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = gpio->Mode.Out;
@@ -73,14 +73,15 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	iocfg.PuPd = gpio->PuPd.PullUp;
 	iocfg.Speed = gpio->Speed.Mid;
 
-	tch_gpio_handle* out = gpio->allocIo(sys,gpio->Ports.gpio_0,2,&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* out = gpio->allocIo(sys,gpio->Ports.gpio_0,(1 << 2),&iocfg,osWaitForever,ActOnSleep);
 
-	tch_gpio_evCfg evcfg;
+	tch_GpioEvCfg evcfg;
 	gpio->initEvCfg(&evcfg);
 	evcfg.EvEdge = gpio->EvEdeg.Fall;
 	evcfg.EvType = gpio->EvType.Interrupt;
-
-	in->registerIoEvent(in,&evcfg,testIoListener,osWaitForever);
+	evcfg.EvCallback = testIoListener;
+	uint32_t pmsk = 1 << 0;
+	in->registerIoEvent(in,&evcfg,&pmsk);
 	if(!async)
 		return osErrorOS;
 	if(sys->Async->wait(async,async,testAsyncNotWorkingRoutine,10,out) == osOK)
@@ -124,6 +125,9 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	sys->Mem->free(destroyerStk);
 	sys->Mem->free(competitorStk);
 
+	sys->Device->gpio->freeIo(in);
+	sys->Device->gpio->freeIo(out);
+
 	return result;
 }
 
@@ -135,7 +139,7 @@ static DECLARE_THREADROUTINE(destroyerRoutine){
 }
 
 static DECLARE_THREADROUTINE(competitorRoutine){
-	tch_gpio_handle* out = (tch_gpio_handle*)sys->Thread->getArg();
+	tch_GpioHandle* out = (tch_GpioHandle*)sys->Thread->getArg();
 	if(sys->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
 		return osErrorOS;
 	if(sys->Async->wait(async,competitorThread,testAsyncNotWorkingRoutine,osWaitForever,sys) != osErrorResource)   // blocked by async request
@@ -153,9 +157,9 @@ static DECLARE_IO_CALLBACK(testIoListener){
 }
 
 static DECL_ASYNC_TASK(testAsyncWorkingRoutine){
-	tch_gpio_handle* out = (tch_gpio_handle*) arg;
-	out->out(out,bClear);     // trigger interrupt
-	out->out(out,bSet);
+	tch_GpioHandle* out = (tch_GpioHandle*) arg;
+	out->out(out,1 << 2,bClear);     // trigger interrupt
+	out->out(out,1 << 2,bSet);
 	return osOK;
 }
 

@@ -229,7 +229,7 @@ typedef struct tch_dma_manager_t {
 
 
 typedef struct tch_dma_handle_prototype_t{
-	tch_dma_handle             _pix;
+	tch_DmaHandle             _pix;
 	tch*                        api;
 	dma_t                       dma;
 	uint8_t                     ch;
@@ -243,18 +243,18 @@ typedef struct tch_dma_handle_prototype_t{
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg);
-static tch_dma_handle* tch_dma_openStream(tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+static tch_DmaHandle* tch_dma_openStream(tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 #ifdef VERSION01
-static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeout,tchStatus* result);
+static BOOL tch_dma_beginXfer(tch_DmaHandle* self,uint32_t size,uint32_t timeout,tchStatus* result);
 #else
-static BOOL tch_dma_beginXfer(tch_dma_handle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
+static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
 #endif
-static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr);
-static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
-static void tch_dma_unregisterEventListener(tch_dma_handle* self);
-static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
-static void tch_dma_close(tch_dma_handle* self);
-static tch_dma_handle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch);
+static void tch_dma_setAddress(tch_DmaHandle* self,uint8_t targetAddress,uint32_t addr);
+static void tch_dma_registerEventListener(tch_DmaHandle* self,tch_dma_eventListener listener,uint16_t evType);
+static void tch_dma_unregisterEventListener(tch_DmaHandle* self);
+static void tch_dma_setIncrementMode(tch_DmaHandle* self,uint8_t targetAddress,BOOL enable);
+static void tch_dma_close(tch_DmaHandle* self);
+static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch);
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc);
 
 
@@ -304,7 +304,7 @@ static void tch_dma_initCfg(tch_DmaCfg* cfg){
 }
 
 
-static tch_dma_handle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_pwr_def pcfg){
+static tch_DmaHandle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	if(dma == DMA_NOT_USED)
 		return NULL;
 
@@ -346,13 +346,13 @@ static tch_dma_handle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uin
 	NVIC_EnableIRQ(dma_desc->irq);
 	dma_desc->_handle = tch_dma_createHandle(api,dma,cfg->Ch);             // initializing dma handle object
 	tch_dmaValidate(dma_desc->_handle);
-	return (tch_dma_handle*)dma_desc->_handle;
+	return (tch_DmaHandle*)dma_desc->_handle;
 }
 
 /*
  */
 
-static tch_dma_handle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
+static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	tch_dma_handle_prototype* dma_handle = (tch_dma_handle_prototype*) api->Mem->alloc(sizeof(tch_dma_handle_prototype));
 	dma_handle->_pix.beginXfer = tch_dma_beginXfer;
 	dma_handle->_pix.close = tch_dma_close;
@@ -369,11 +369,11 @@ static tch_dma_handle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	tch_listInit(&dma_handle->wq);
 	dma_handle->dma_async = Async->create(1);
 
-	return (tch_dma_handle*)dma_handle;
+	return (tch_DmaHandle*)dma_handle;
 }
 
 #ifdef VERSION01
-static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeout,tchStatus* result){
+static BOOL tch_dma_beginXfer(tch_DmaHandle* self,uint32_t size,uint32_t timeout,tchStatus* result){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus lresult = osOK;
 	if(!result)
@@ -404,7 +404,7 @@ static BOOL tch_dma_beginXfer(tch_dma_handle* self,uint32_t size,uint32_t timeou
 }
 #else
 
-static BOOL tch_dma_beginXfer(tch_dma_handle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result){
+static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result){
 	if(!tch_dmaIsValid(self))
 		return FALSE;
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
@@ -473,7 +473,7 @@ static DECL_ASYNC_TASK(tch_dma_trigger){
  */
 
 #ifdef VERSION01
-static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr){
+static void tch_dma_setAddress(tch_DmaHandle* self,uint8_t targetAddress,uint32_t addr){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*)self;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 	if(!tch_dmaIsValid(self))
@@ -500,7 +500,7 @@ static void tch_dma_setAddress(tch_dma_handle* self,uint8_t targetAddress,uint32
 }
 /*
  */
-static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType){
+static void tch_dma_registerEventListener(tch_DmaHandle* self,tch_dma_eventListener listener,uint16_t evType){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	if(!tch_dmaIsValid(ins))
 		return;
@@ -524,7 +524,7 @@ static void tch_dma_registerEventListener(tch_dma_handle* self,tch_dma_eventList
 /*
  *
  */
-static void tch_dma_unregisterEventListener(tch_dma_handle* self){
+static void tch_dma_unregisterEventListener(tch_DmaHandle* self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	if(!tch_dmaIsValid(ins))
 		return;
@@ -546,7 +546,7 @@ static void tch_dma_unregisterEventListener(tch_dma_handle* self){
 }
 
 
-static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,BOOL enable){
+static void tch_dma_setIncrementMode(tch_DmaHandle* self,uint8_t targetAddress,BOOL enable){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	if(!tch_dmaIsValid(ins))
 		return;
@@ -624,7 +624,7 @@ static void tch_dma_setIncrementMode(tch_dma_handle* self,uint8_t targetAddress,
 	tch_dmaValidate(dma_desc->_handle);
 	return (tch_dma_handle*)dma_desc->_handle;
  */
-static void tch_dma_close(tch_dma_handle* self){
+static void tch_dma_close(tch_DmaHandle* self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	if(!tch_dmaIsValid(ins))
 		return;
@@ -679,7 +679,7 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 		return FALSE;                     // return
 	}
 	if(handle->listener){
-		if(!handle->listener((tch_dma_handle*)handle,isr))
+		if(!handle->listener((tch_DmaHandle*)handle,isr))
 			return FALSE;
 	}
 	tch* api = handle->api;

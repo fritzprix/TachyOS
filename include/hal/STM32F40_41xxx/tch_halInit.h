@@ -93,101 +93,107 @@ __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 				0
 		}
 };
-
+/*
+ * 	void*                     io_occp;
+	tch_condvId               condv;
+	tch_barId                 evbar;
+	IRQn_Type                 irq;
+ */
 __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI0_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI1_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI2_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI3_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI4_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI9_5_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI15_10_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI15_10_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI15_10_IRQn
 		},
 		{
+				0,
 				NULL,
-				INIT_LIST,
+				NULL,
 				EXTI15_10_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI15_10_IRQn
 		},
 		{
+				0,
 				NULL,
 				NULL,
-				INIT_LIST,
 				EXTI15_10_IRQn
 		}
 };

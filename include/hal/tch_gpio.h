@@ -22,11 +22,13 @@ extern "C" {
 #endif
 
 
-#define DECLARE_IO_CALLBACK(name) BOOL name(tch_gpio_handle* self,uint8_t pin)
+#define DECLARE_IO_CALLBACK(name) BOOL name(tch_GpioHandle* self,uint8_t pin)
 
 
 typedef uint8_t gpIo_x;
-typedef struct tch_gpio_handle tch_gpio_handle;
+typedef struct tch_gpio_handle tch_GpioHandle;
+typedef BOOL (*tch_IoEventCallback_t) (tch_GpioHandle* self,uint8_t pin);
+
 
 /**
  * gpio handle interface
@@ -58,10 +60,12 @@ typedef struct _tch_gpio_ev_Type{
 	const uint8_t Event;
 }tch_gpioEvType;
 
-typedef struct tch_gpio_evCfg {
+typedef struct tch_gpio_evcfg_t {
 	uint8_t EvEdge;
 	uint8_t EvType;
-}tch_gpio_evCfg;
+	tch_IoEventCallback_t EvCallback;
+	uint32_t EvTimeout;
+}tch_GpioEvCfg;
 
 
 
@@ -90,29 +94,60 @@ typedef struct _tch_gpio_pupd_t{
 	const uint8_t NoPull;
 }tch_gpioPuPd;
 
-typedef struct tch_gpio_cfg {
+typedef struct tch_gpio_cfg_t {
 	uint8_t Mode;
 	uint8_t Otype;
 	uint8_t Speed;
 	uint8_t PuPd;
 	uint8_t Af;
-}tch_gpio_cfg;
+}tch_GpioCfg;
 
-typedef BOOL (*tch_IoEventCallback_t) (tch_gpio_handle* self,uint8_t pin);
 
 typedef struct tch_gpio_handle {
-	/**
-	 * write gpio port's output value
-	 * @param self handle object
-	 * @param val bit flags value to be written into gpio(s)
+	/*! \brief write gpio port's output value
+	 *  \param[in] self handle object
+	 *  \param[in] pmsk bit flags value to be written into gpio(s)
+	 *  \param[in] nstate new state for given pin
 	 */
-	void (*out)(tch_gpio_handle* self,tch_bState nstate);
-	tch_bState (*in)(tch_gpio_handle* self);
-	tchStatus (*registerIoEvent)(tch_gpio_handle* self,const tch_gpio_evCfg* cfg,const tch_IoEventCallback_t callback,uint32_t timeout);
-	tchStatus (*unregisterIoEvent)(tch_gpio_handle* self);
-	tchStatus (*configure)(tch_gpio_handle* self,const tch_gpio_evCfg* cfg);
-	BOOL (*listen)(tch_gpio_handle* self,uint32_t timeout);
-}tch_gpio_handle;
+ 	void (*out)(tch_GpioHandle* self,uint32_t pmsk,tch_bState nstate);
+ 	/*!
+ 	 *
+ 	 */
+	tch_bState (*in)(tch_GpioHandle* self,uint32_t pmsk);
+	/*! \brief enable io interrupt for given io pin & register io event listener
+	 *  enable interrupt for io event, pmsk should be provided which is non-zero.
+	 *  if io interrupt is already used by another handle, it try to wait it to be released as long as given timeout
+	 *  when timeout is expired, it return with error, marking unobtained io in pmsk parameter.
+	 *
+	 *  \param[in] self self instance of gpio handle
+	 *  \param[in] cfg pointer of \sa tch_GpioEvCfg which is event configuration type
+	 *  \param[in] pmsk pin(s) to be configured as event input, presenting as comb pattern
+	 *  \param[in] timeout when requested interrupt is already in use, wait given amount of time
+	 *
+	 */
+	tchStatus (*registerIoEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* cfg,uint32_t* pmsk);
+
+	/*!
+	 *
+	 */
+	tchStatus (*unregisterIoEvent)(tch_GpioHandle* self,uint32_t pmsk);
+
+	/*!
+	 *
+	 */
+	tchStatus (*configureEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* evcfg,uint32_t pmsk);
+
+	/*!
+	 *
+	 */
+	tchStatus (*configure)(tch_GpioHandle* self,const tch_GpioCfg* cfg,uint32_t pmsk);
+
+	/*!
+	 *
+	 */
+	BOOL (*listen)(tch_GpioHandle* self,uint8_t pin,uint32_t timeout);
+
+}tch_GpioHandle;
 
 
 typedef struct tch_lld_gpio {
@@ -123,13 +158,13 @@ typedef struct tch_lld_gpio {
 	tch_gpioPuPd PuPd;
 	tch_gpioEvEdge EvEdeg;
 	tch_gpioEvType EvType;
-	tch_gpio_handle* (*allocIo)(const tch* api,const gpIo_x port,uint8_t pin,const tch_gpio_cfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
-	void (*initCfg)(tch_gpio_cfg* cfg);
-	void (*initEvCfg)(tch_gpio_evCfg* evcfg);
+	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	void (*initCfg)(tch_GpioCfg* cfg);
+	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
 	uint16_t (*getPortCount)();
 	uint16_t (*getPincount)(const gpIo_x port);
 	uint32_t (*getPinAvailable)(const gpIo_x port);
-	void (*freeIo)(tch_gpio_handle* IoHandle);
+	void (*freeIo)(tch_GpioHandle* IoHandle);
 }tch_lld_gpio;
 
 extern const tch_lld_gpio* tch_gpio_instance;

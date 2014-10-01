@@ -53,13 +53,13 @@ typedef struct tch_dma_ix_t tch_dma_ix;
  *  \brief DMA Handle
  *   DMA Operation handle which can be obtained by \ref tch_dma_ix
  */
-typedef struct tch_dma_handle_t tch_dma_handle;
+typedef struct tch_dma_handle_t tch_DmaHandle;
 
 /*!
  *  \brief dma event listener type
  *   DMA event Listener type. fist arg is \ref dma_handle
  */
-typedef BOOL (*tch_dma_eventListener)(tch_dma_handle* ins,uint16_t evType);
+typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle* ins,uint16_t evType);
 
 /*!
  * \brief DMA Configuration type
@@ -185,9 +185,9 @@ struct tch_dma_handle_t{
 	void (*initCfg)(tch_DmaCfg* cfg);
 	void (*initAttr)(tch_DmaAttr* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
 #ifdef VERSION01
-	BOOL (*beginXfer)(tch_dma_handle* self,uint32_t size,uint32_t timeout,tchStatus* result);
+	BOOL (*beginXfer)(tch_DmaHandle* self,uint32_t size,uint32_t timeout,tchStatus* result);
 #else
-	BOOL (*beginXfer)(tch_dma_handle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
+	BOOL (*beginXfer)(tch_DmaHandle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
 #endif
 
 	/*!
@@ -199,7 +199,7 @@ struct tch_dma_handle_t{
 //	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
 //	void (*unregisterEventListener)(tch_dma_handle* self);
 //	void (*setIncrementMode)(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
-	void (*close)(tch_dma_handle* self);
+	void (*close)(tch_DmaHandle* self);
 };
 
 struct tch_dma_ix_t {
@@ -228,7 +228,7 @@ struct tch_dma_ix_t {
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	tch_dma_handle* (*openStream)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_pwr_def pcfg);
+	tch_DmaHandle* (*openStream)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 
 };
 

@@ -27,8 +27,8 @@ static DECLARE_IO_CALLBACK(ioEventListener);
 static tch_msgQue_id mid;
 static tch_barId mBar;
 
-static tch_gpio_handle* out;
-static tch_gpio_handle* in;
+static tch_GpioHandle* out;
+static tch_GpioHandle* in;
 
 static volatile tch* Api;
 static int irqcnt;
@@ -48,24 +48,27 @@ tchStatus msgq_performTest(tch* api){
 	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
 
-	tch_gpio_cfg iocfg;
+	tch_GpioCfg iocfg;
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.OpenDrain;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
 	iocfg.Speed = api->Device->gpio->Speed.Mid;
-	out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,2,&iocfg,osWaitForever,ActOnSleep);
-	out->out(out,bSet);
+	out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,1 << 2,&iocfg,osWaitForever,ActOnSleep);
+	out->out(out,1 << 2,bSet);
 
 	iocfg.Mode = api->Device->gpio->Mode.In;
 	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
 	iocfg.Speed = api->Device->gpio->Speed.Mid;
-	in = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,0,&iocfg,osWaitForever,ActOnSleep);
+	in = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,1 << 0,&iocfg,osWaitForever,ActOnSleep);
 
-	tch_gpio_evCfg evcfg;
+	tch_GpioEvCfg evcfg;
+	api->Device->gpio->initEvCfg(&evcfg);
 	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
-	in->registerIoEvent(in,&evcfg,ioEventListener,osWaitForever);
+	evcfg.EvCallback = ioEventListener;
+	uint32_t pmsk = 1 << 0;
+	in->registerIoEvent(in,&evcfg,&pmsk);
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg tcfg;
@@ -92,7 +95,7 @@ tchStatus msgq_performTest(tch* api){
 	api->Mem->free(sender_stk);
 	api->Mem->free(receiver_stk);
 
-	in->unregisterIoEvent(in);
+	in->unregisterIoEvent(in,1 << 0);
 
 	api->Device->gpio->freeIo(out);
 	api->Device->gpio->freeIo(in);
@@ -106,9 +109,9 @@ static DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	while(cnt < 50){
 		sys->MsgQ->put(mid,0xFF,osWaitForever);
-		out->out(out,bClear);
+		out->out(out,1 << 2,bClear);
 		sys->Thread->sleep(1);
-		out->out(out,bSet);
+		out->out(out,1 << 2,bSet);
 		sys->Thread->sleep(1);
 		cnt++;
 	}
