@@ -101,6 +101,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t* sz,uint32_t timeout);
 
 
+static BOOL tch_uartHandleInterrupt(tch_UartHandlePrototype* _handle,void* _hw);
 static inline void tch_uartValidate(tch_UartHandlePrototype* _handle);
 static inline void tch_uartInvalidate(tch_UartHandlePrototype* _handle);
 static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle);
@@ -207,6 +208,9 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 
 	tch_DmaCfg dmaCfg;
 	tch_lld_dma* DMA = (tch_lld_dma*)env->Device->dma;
+
+	uins->txDma = NULL;
+	uins->rxDma = NULL;
 
 	if(ubs->txdma != DMA_NOT_USED){ // setup tx dma
 		dmaCfg.BufferType = DMA->BufferType.Normal;
@@ -327,20 +331,20 @@ static tchStatus tch_uartPutc(tch_UartHandle* handle,uint8_t c){
 	if(env->Device->interrupt->isISR())
 		return osErrorISR;
 
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
-		return osErrorResource;
+	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
+		return result;
 	while(!(uhw->SR & USART_SR_TXE)){
-		if(env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever) != osOK)
-			return osErrorResource;
+		if((result = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != osOK)
+			return result;
 	}
 	struct tch_lld_usart_arg_t args;
 	*args.c = c;
 	args.handle = handle;
+	result = env->Async->wait(ins->ast,TCH_UTX_ID,tch_uartTxAsyncTask,osWaitForever,&args);
 
-	if((result = env->Async->wait(ins->ast,TCH_UTX_ID,tch_uartTxAsyncTask,osWaitForever,&args)) != osOK)
-		return osErrorOS;
-
-	return env->Mtx->unlock(ins->txMtx);
+	env->Condv->wakeAll(ins->txCondv);
+	env->Mtx->unlock(ins->txMtx);
+	return result;
 }
 
 static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout){
@@ -353,11 +357,18 @@ static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeou
 		return osErrorResource;
 	if(env->Device->interrupt->isISR())
 		return osErrorISR;
-	if(env->Mtx->lock(ins->rxMtx,timeout) != osOK)
-		return osErrorResource;
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+		return result;
+	while(!(uhw->SR & USART_SR_RXNE)){
+		if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != osOK)
+			return result;
+	}
 	if((result = env->Async->wait(ins->ast,TCH_URX_ID,tch_uartRxAsyncTask,osWaitForever,handle)) != osOK)
 		return result;
-	*rc = uhw->DR;
+	*rc = uhw->DR;    // read data from data register, and hw clear rxne flag in status register
+	uhw->SR &= ~USART_SR_RXNE;
+	env->Condv->wakeAll(ins->rxCondv);
+
 	return env->Mtx->unlock(ins->rxMtx);
 }
 
@@ -378,14 +389,15 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 	size_t idx = 0;
 	for(;idx < sz;idx++){
 		while(!(uhw->SR & USART_SR_TXE)){
-			if(env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever) != osOK)
-				return osErrorResource;
+			if((result = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != osOK)
+				return result;
 		}
 		args.c = (uint8_t*) bp + idx;
-		if((result = env->Async->wait(ins->ast,TCH_UTX_ID,tch_uartTxAsyncTask,osWaitForever,&args)) != osOK)
-			return result;
+		result = env->Async->wait(ins->ast,TCH_UTX_ID,tch_uartTxAsyncTask,osWaitForever,&args);
 	}
-	return env->Mtx->unlock(ins->txMtx);
+	env->Condv->wakeAll(ins->txCondv);
+	env->Mtx->unlock(ins->txMtx);
+	return result;
 }
 
 static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t* sz,uint32_t timeout){
@@ -399,14 +411,18 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t* sz,uin
 		return osErrorResource;
 	if(!env->Device->interrupt->isISR())
 		return osErrorISR;
-	if(env->Mtx->lock(ins->rxMtx,timeout) != osOK)
-		return osErrorResource;
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+		return result;
 	for(;idx < *sz;idx++){
-		if((result = env->Async->wait(ins->ast,TCH_URX_ID,tch_uartRxAsyncTask,timeout,handle)) != osOK)
-			return result;
+		while(!(uhw->SR & USART_SR_RXNE)){
+			if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != osOK)
+				return result;
+		}
+		result = env->Async->wait(ins->ast,TCH_URX_ID,tch_uartRxAsyncTask,timeout,handle);
 		*(bp + idx) = uhw->DR;
 	}
-	return env->Mtx->unlock(ins->rxMtx);
+	env->Mtx->unlock(ins->rxMtx);
+	return result;
 }
 
 
@@ -463,6 +479,33 @@ static DECL_ASYNC_TASK(tch_uartRxAsyncTask){
 	uhw->CR1 |= USART_CR1_RXNEIE;
 }
 
+static BOOL tch_uartHandleInterrupt(tch_UartHandlePrototype* _handle,void* _hw){
+	USART_TypeDef* uhw = (USART_TypeDef*) _hw;
+	tch* env = _handle->env;
+	if(uhw->SR & USART_SR_RXNE){
+		if(_handle->rxDma)
+			return FALSE;
+		uhw->CR1 &= ~USART_CR1_RXNEIE;    // disable rxne interrupt
+	}
+	if(uhw->SR & USART_SR_TC){
+		if(_handle->txDma)
+			return FALSE;
+		uhw->SR &= ~USART_SR_TC;
+		env->Async->notify(_handle->ast,TCH_UTX_ID,osOK);
+		return TRUE;
+	}
+	if(uhw->SR & USART_SR_ORE){
+
+	}
+	if(uhw->SR & USART_SR_FE){
+
+	}
+	if(uhw->SR & USART_SR_PE){
+
+	}
+}
+
+
 void USART1_IRQHandler(void){
 	tch_uart_descriptor* uDesc = &UART_HWs[0];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
@@ -470,7 +513,10 @@ void USART1_IRQHandler(void){
 	if(!ins){ // if handle is not bound to io, clear raised interrupt
 		uint8_t dummy = uhw->DR;
 		uhw->SR = 0;
+		return;
 	}
+
+
 
 }
 
