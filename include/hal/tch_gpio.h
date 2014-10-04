@@ -22,6 +22,22 @@ extern "C" {
 #endif
 
 
+#define _GPIO_0              ((gpIo_x) 0)
+#define _GPIO_1              ((gpIo_x) 1)
+#define _GPIO_2              ((gpIo_x) 2)
+#define _GPIO_3              ((gpIo_x) 3)
+#define _GPIO_4              ((gpIo_x) 4)
+#define _GPIO_5              ((gpIo_x) 5)
+#define _GPIO_6              ((gpIo_x) 6)
+#define _GPIO_7              ((gpIo_x) 7)
+#define _GPIO_8              ((gpIo_x) 8)
+#define _GPIO_9              ((gpIo_x) 9)
+#define _GPIO_10             ((gpIo_x) 10)
+#define _GPIO_11             ((gpIo_x) 11)
+
+
+
+
 #define DECLARE_IO_CALLBACK(name) BOOL name(tch_GpioHandle* self,uint8_t pin)
 
 

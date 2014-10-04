@@ -6,6 +6,7 @@
  * @bug    No Known Bug
  */
 
+
 /*
  * tch_halcfg.h
  *
@@ -19,6 +20,9 @@
  *  Created on: 2014. 6. 15.
  *      Author: innocentevil
  */
+
+#include "tch_dma.h"
+#include "tch_gpio.h"
 
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
@@ -161,7 +165,105 @@
 #define MFEATURE_DMA_Ch             (8)
 #endif
 
+#ifndef MFEATURE_UART
+#define MFEATURE_UART               (4)
+#endif
 
+
+typedef struct _tch_uart_bs_t {
+	dma_t          txdma;
+	dma_t          rxdma;
+	uint8_t        txch;
+	uint8_t        rxch;
+	gpIo_x         port;
+	uint8_t        txp;
+	uint8_t        rxp;
+	uint8_t        ctsp;
+	uint8_t        rtsp;
+	uint8_t        afv;
+}tch_uart_bs;
+
+
+/*
+ * 	{
+				DMA2_Str7,
+				DMA_NOT_USED,
+				DMA_Ch4,
+				DMA_Ch4,
+				GPIO_A,
+				9,
+				10
+		},
+		{
+				DMA1_Str6,
+				DMA_NOT_USED,
+				DMA_Ch4,
+				DMA_Ch4,
+				GPIO_A,
+				2,
+				3
+		},
+		{
+				DMA1_Str4,
+				DMA_NOT_USED,
+				DMA_Ch7,
+				DMA_Ch4,
+				GPIO_B,
+				10,
+				11
+		}
+ */
+
+__attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
+		{
+				DMA_Str15,
+				DMA_NOT_USED,
+				DMA_Ch4,
+				DMA_Ch4,
+				_GPIO_0,
+				9,
+				10,
+				11,
+				12,
+				7
+		},
+		{
+				DMA_Str6,
+				DMA_NOT_USED,
+				DMA_Ch4,
+				DMA_Ch4,
+				_GPIO_0,
+				2,
+				3,
+				0,
+				1,
+				7
+		},
+		{
+				DMA_Str4,
+				DMA_NOT_USED,
+				DMA_Ch7,
+				DMA_Ch4,
+				_GPIO_1,
+				10,
+				11,
+				13,
+				14,
+				7
+		},
+		{
+				DMA_Str4,
+				DMA_NOT_USED,
+				DMA_Ch4,
+				DMA_Ch4,
+				_GPIO_0,
+				0,
+				1,
+				-1,
+				-1,
+				8
+		}
+};
 
 #include "stm32f4xx.h"
 

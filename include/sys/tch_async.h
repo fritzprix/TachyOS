@@ -25,7 +25,7 @@
 extern "C"{
 #endif
 
-#define DECL_ASYNC_TASK(fn)      int fn(tch_asyncId id, void* arg)
+#define DECL_ASYNC_TASK(fn)      tchStatus fn(int id, void* arg)
 
 /**
  */
@@ -33,7 +33,7 @@ extern "C"{
 typedef uaddr_t tch_asyncId;
 typedef tchStatus (*tch_async_routine)(int id,void* arg);
 
-typedef struct _tch_async_ix_t {
+struct _tch_async_ix_t {
 	/*!
 	 *
 	 */

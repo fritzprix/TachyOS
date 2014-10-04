@@ -30,24 +30,45 @@
 #ifndef TCH_DMA_H_
 #define TCH_DMA_H_
 
-#include "tch_Typedef.h"
+#include "tch.h"
 
-#if defined(__cpluspls)
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
+#define DMA_Str0                  (dma_t) 0    ///< DMA Stream #0
+#define DMA_Str1                  (dma_t) 1    ///< DMA Stream #1
+#define DMA_Str2                  (dma_t) 2    ///< DMA Stream #2
+#define DMA_Str3                  (dma_t) 3    ///< DMA Stream #3
+#define DMA_Str4                  (dma_t) 4    ///< DMA Stream #4
+#define DMA_Str5                  (dma_t) 5    ///< DMA Stream #5
+#define DMA_Str6                  (dma_t) 6    ///< DMA Stream #6
+#define DMA_Str7                  (dma_t) 7    ///< DMA Stream #7
+#define DMA_Str8                  (dma_t) 8    ///< DMA Stream #8
+#define DMA_Str9                  (dma_t) 9    ///< DMA Stream #9
+#define DMA_Str10                 (dma_t) 10   ///< DMA Stream #10
+#define DMA_Str11                 (dma_t) 11   ///< DMA Stream #11
+#define DMA_Str12                 (dma_t) 12   ///< DMA Stream #12
+#define DMA_Str13                 (dma_t) 13   ///< DMA Stream #13
+#define DMA_Str14                 (dma_t) 14   ///< DMA Stream #14
+#define DMA_Str15                 (dma_t) 15   ///< DMA Stream #15
+#define DMA_NOT_USED              (dma_t) -1   ///< DMA Stream is not used
 
+#define DMA_Ch0                   (uint8_t) 0  ///< DMA Channel #0
+#define DMA_Ch1                   (uint8_t) 1  ///< DMA Channel #1
+#define DMA_Ch2                   (uint8_t) 2  ///< DMA Channel #2
+#define DMA_Ch3                   (uint8_t) 3  ///< DMA Channel #3
+#define DMA_Ch4                   (uint8_t) 4  ///< DMA Channel #4
+#define DMA_Ch5                   (uint8_t) 5  ///< DMA Channel #5
+#define DMA_Ch6                   (uint8_t) 6  ///< DMA Channel #6
+#define DMA_Ch7                   (uint8_t) 7  ///< DMA Channel #7
 /*!
  *  \brief DMA Type
  *   DMA Stream Type
  */
 typedef uint8_t dma_t;
 
-/*!
- *  \brief DMA HAL Interface
- *   DMA HAL Interface which is accessible from \ref tch object
- */
-typedef struct tch_dma_ix_t tch_dma_ix;
+
 
 /*!
  *  \brief DMA Handle
@@ -64,7 +85,7 @@ typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle* ins,uint16_t evType);
 /*!
  * \brief DMA Configuration type
  */
-typedef struct _dma_cfg_t tch_DmaCfg;
+typedef struct dma_cfg_t tch_DmaCfg;
 
 struct _tch_dma_str_t {
 	uint8_t      dma0;
@@ -161,13 +182,13 @@ typedef struct _tch_dma_targetAddress_t{
 	const uint8_t PeriTarget1;
 }tch_DmaTargetAddress;
 
-typedef struct _tch_dma_attr_t {
+typedef struct _tch_dma_req_t {
 	size_t      size;
 	uaddr_t     MemAddr[2];
 	BOOL        MemInc;
 	uaddr_t     PeriphAddr[2];
 	BOOL        PeriphInc;
-}tch_DmaAttr;
+}tch_DmaReqDef;
 
 
 /*!
@@ -181,13 +202,9 @@ struct tch_dma_handle_t{
 	 * \param size size of data to be transfered by DMA
 	 * \return true if successful, otherwise false
 	 */
-
-	void (*initCfg)(tch_DmaCfg* cfg);
-	void (*initAttr)(tch_DmaAttr* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
 #ifdef VERSION01
 	BOOL (*beginXfer)(tch_DmaHandle* self,uint32_t size,uint32_t timeout,tchStatus* result);
 #else
-	BOOL (*beginXfer)(tch_DmaHandle* self,tch_DmaAttr* attr,uint32_t timeout,tchStatus* result);
 #endif
 
 	/*!
@@ -199,10 +216,14 @@ struct tch_dma_handle_t{
 //	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
 //	void (*unregisterEventListener)(tch_dma_handle* self);
 //	void (*setIncrementMode)(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
-	void (*close)(tch_DmaHandle* self);
 };
 
-struct tch_dma_ix_t {
+
+/*!
+ *  \brief DMA HAL Interface
+ *   DMA HAL Interface which is accessible from \ref tch object
+ */
+typedef struct tch_lld_dma {
 	const struct _tch_dma_str_t Stream;
 	const struct _tch_dma_ch_t  Ch;
 	const tch_DmaBufferType     BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
@@ -228,15 +249,18 @@ struct tch_dma_ix_t {
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	tch_DmaHandle* (*openStream)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
+	tch_DmaHandle* (*allocDma)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	BOOL (*beginXfer)(tch_DmaHandle* self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
+	tchStatus (*freeDma)(tch_DmaHandle* handle);
 
-};
+}tch_lld_dma;
 
 
 /*
  *
  */
-struct _dma_cfg_t {
+struct dma_cfg_t {
 	uint8_t                Ch;
 	uint8_t                BufferType;
 	uint8_t                Dir;
@@ -250,9 +274,9 @@ struct _dma_cfg_t {
 	BOOL                   pInc;
 };
 
-extern const tch_dma_ix* Dma;
+extern const tch_lld_dma* tch_dma_instance;
 
-#if defined(__cpluspls)
+#if defined(__cplusplus)
 }
 #endif
 

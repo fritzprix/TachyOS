@@ -18,7 +18,7 @@
 #include "tch_halcfg.h"
 
 
-
+#include "tch_dma.h"
 #include "tch_usart.h"
 #include "tch_spi.h"
 #include "tch_i2c.h"
@@ -35,7 +35,12 @@ struct tch_hal_t{
 	const tch_lld_gpio*  gpio;
 #endif
 	const tch_lld_timer* timer;
+#if MFEATURE_UART
 	const tch_lld_usart* usart;
+#endif
+#if MFEATURE_DMA
+	const tch_lld_dma*   dma;
+#endif
 	const tch_lld_spi*   spi;
 	const tch_lld_i2c*   i2c;
 	const tch_lld_adc*   adc;

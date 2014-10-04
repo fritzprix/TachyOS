@@ -64,6 +64,18 @@ typedef struct _tch_dma_descriptor {
 	IRQn_Type            irq;
 }tch_dma_descriptor;
 
+typedef struct _tch_uart_descriptor {
+	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint16_t*  _isr;
+	volatile uint16_t*  _icr;
+	IRQn_Type            irq;
+}tch_uart_descriptor;
+
 /////////////////////////////  Platform specific mapping  ////////////////////////////
 
 

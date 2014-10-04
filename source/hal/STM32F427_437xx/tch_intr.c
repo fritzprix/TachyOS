@@ -17,6 +17,8 @@ static void tch_intr_enable(uint32_t irq);
 static void tch_intr_disable(uint32_t irq);
 static void tch_intr_setPriority(uint32_t irq,uint32_t priorty);
 static uint32_t tch_intr_getPriority(uint32_t irq);
+static int tch_intr_isISR();
+
 
 
 __attribute__((section(".data"))) static tch_lld_intr INTERRUPT_StaticInstance = {
@@ -24,7 +26,9 @@ __attribute__((section(".data"))) static tch_lld_intr INTERRUPT_StaticInstance =
 		tch_intr_enable,
 		tch_intr_disable,
 		tch_intr_setPriority,
-		tch_intr_getPriority
+		tch_intr_getPriority,
+		tch_intr_isISR
+
 };
 
 const tch_lld_intr* tch_interrupt_instance = &INTERRUPT_StaticInstance;
@@ -44,4 +48,8 @@ static void tch_intr_setPriority(uint32_t irq,uint32_t priorty){
 
 static uint32_t tch_intr_getPriority(uint32_t irq){
 	return NVIC_GetPriority((IRQn_Type)irq);
+}
+
+static int tch_intr_isISR(){
+	return tch_port_isISR();
 }

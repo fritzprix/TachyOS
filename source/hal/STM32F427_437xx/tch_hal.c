@@ -34,6 +34,9 @@ const tch_hal* tch_kernel_initHAL(){
 #if MFEATURE_GPIO
 	tch_hal_instance.gpio  = tch_gpio_instance;
 #endif
+#if MFEATURE_DMA
+	tch_hal_instance.dma = tch_dma_instance;
+#endif
 
 	tch_hal_instance.timer = tch_timer_instance;
 	tch_hal_instance.usart = tch_usart_instance;

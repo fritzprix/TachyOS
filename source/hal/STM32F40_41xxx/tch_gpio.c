@@ -62,7 +62,20 @@
 #define GPIO_EvType_Interrupt          ((uint8_t) 1)
 #define GPIO_EvType_Event              ((uint8_t) 2)
 
-#define INIT_GPIOPORT_TYPE             {0,1,2,3,4,5,6,7,8,9,10}
+#define INIT_GPIOPORT_TYPE             {\
+	                                     _GPIO_0,\
+	                                     _GPIO_1,\
+	                                     _GPIO_2,\
+	                                     _GPIO_3,\
+	                                     _GPIO_4,\
+	                                     _GPIO_5,\
+	                                     _GPIO_6,\
+	                                     _GPIO_7,\
+	                                     _GPIO_8,\
+	                                     _GPIO_9,\
+	                                     _GPIO_10,\
+	                                     _GPIO_11\
+}
 
 
 #define INIT_GPIOMODE_TYPE             {GPIO_Mode_OUT,\

@@ -406,4 +406,62 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 };
 
 
+/**
+ * 	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint32_t*  _isr;
+	volatile uint32_t*  _icr;
+	IRQn_Type            irq;
+ */
+__attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
+		{
+				USART1,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_USART1EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_USART1LPEN,
+				&USART1->SR,
+				&USART1->SR,
+				USART1_IRQn
+		},
+		{
+				USART2,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_USART2EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_USART2LPEN,
+				&USART2->SR,
+				&USART2->SR,
+				USART2_IRQn
+		},
+		{
+				USART3,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_USART3EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_USART3LPEN,
+				&USART3->SR,
+				&USART3->SR,
+				USART3_IRQn
+		},
+		{
+				UART4,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_UART4EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_UART4LPEN,
+				&UART4->SR,
+				&UART4->SR,
+				UART4_IRQn
+		}
+};
+
 #endif /* TCH_HALOBJS_H_ */

@@ -30,6 +30,7 @@ typedef struct tch_lld_intr {
 	void (*disable)(uint32_t irq);
 	void (*setPriority)(uint32_t irq,uint32_t priorty);
 	uint32_t (*getPriority)(uint32_t irq);
+	int (*isISR)();
 }tch_lld_intr;
 
 extern const tch_lld_intr* tch_interrupt_instance;
