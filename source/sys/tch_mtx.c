@@ -101,6 +101,7 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 	}
 	if(result == osOK){
 		mcb->svdPrior = Thread->getPriorty((tch_threadId) tid);
+		mcb->own = tid;
 		return osOK;
 	}
 	tch_kAssert(TRUE,osErrorOS);
@@ -157,6 +158,6 @@ static inline void tch_mtxInvalidate(tch_mtxId mtx){
 	((tch_mtx*) mtx)->state &= ~(0xFFFF << 2);
 }
 static inline BOOL tch_mtxIsValid(tch_mtxId mtx){
-	return ((((tch_mtx*) mtx)->state >> 2) & 0xFFFF) ^ TCH_MTX_CLASS_KEY == ((uint32_t)mtx & 0xFFFF);
+	return (((((tch_mtx*) mtx)->state >> 2) & 0xFFFF) ^ TCH_MTX_CLASS_KEY) == ((uint32_t)mtx & 0xFFFF);
 }
 

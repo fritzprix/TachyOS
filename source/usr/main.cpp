@@ -58,6 +58,7 @@ int main(tch* api) {
 	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
 
 //	tch_UartHandle* (*open)(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 	tch_UartCfg ucfg;
@@ -67,10 +68,10 @@ int main(tch* api) {
 	ucfg.StopBit = api->Device->usart->StopBit.StopBit1B;
 	ucfg.UartCh = 2;
 
-	tch_UartHandle* seriwal = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
+	tch_UartHandle* serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 	uint8_t buf[100];
 	while(1){
-		seriwal->write(seriwal,"Serial Port Working",18);/*
+		serial->write(serial,"Serial Port Working",18);/*
 		seriwal->read(seriwal,buf,10,osWaitForever);
 		seriwal->write(seriwal,buf,10);
 		led->out(led,(1 << 6),bSet);

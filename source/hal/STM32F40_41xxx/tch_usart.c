@@ -26,7 +26,6 @@
 #define TCH_URX_QSZ                         ((size_t) 10)
 
 #define TCH_UTX_ID                          ((uint32_t) 0x5D)
-#define TCH_URX_ID                          ((uint32_t) 0x5F)
 
 #define USART_Parity_Pos_CR1                (uint8_t) (9)
 #define USART_Parity_NON                    (uint8_t) (0 << 1 | 0 << 0)
@@ -110,7 +109,6 @@ static inline void tch_uartValidate(tch_UartHandlePrototype* _handle);
 static inline void tch_uartInvalidate(tch_UartHandlePrototype* _handle);
 static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle);
 static DECL_ASYNC_TASK(tch_uartTxAsyncTask);
-static DECL_ASYNC_TASK(tch_uartRxAsyncTask);
 
 __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInstance = {
 		{
@@ -299,6 +297,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 static BOOL tch_uartClose(tch_UartHandle* handle){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	tch_uart_descriptor* uDesc = &UART_HWs[ins->idx];
+	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
 	tch* env = ins->env;
 	if(!tch_uartIsValid(ins))
 		return FALSE;
@@ -306,7 +305,8 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 		return FALSE;
 	if(env->Mtx->lock(ins->rxMtx,osWaitForever) != osOK)
 		return FALSE;
-
+	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
+		return FALSE;
 	if(ins->txDma){
 		env->Device->dma->freeDma(ins->txDma);
 	}
@@ -318,15 +318,21 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 	tch_uartInvalidate(ins);
 	env->Condv->destroy(ins->rxCondv);
 	env->Mtx->destroy(ins->rxMtx);
-	env->Device->gpio->freeIo(ins->ioHandle);
 
+	env->Condv->destroy(ins->txCondv);
+	env->Mtx->destroy(ins->txMtx);
+
+	env->Device->gpio->freeIo(ins->ioHandle);
+	env->Async->destroy(ins->ast);
 
 	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != osOK){
 		return FALSE;
 	}
-
 	UART_StaticInstance.occp_state &= ~(1 << ins->idx); // clear Occupation flag
 	UART_StaticInstance.lpoccp_state &= ~(1 << ins->idx);
+	*uDesc->_clkenr &= ~uDesc->clkmsk;
+	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
+	env->Device->interrupt->disable(uDesc->irq);
 	env->Condv->wake(UART_StaticInstance.condv);
 
 	env->Mtx-> unlock(UART_StaticInstance.mtx);
@@ -513,7 +519,7 @@ static inline void tch_uartInvalidate(tch_UartHandlePrototype* _handle){
 }
 
 static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle){
-	return (_handle->status & 0xFFFF) == (((uint32_t) _handle) & 0xFFFF) ^ TCH_UART_CLASS_KEY;
+	return (_handle->status & 0xFFFF) == ((((uint32_t) _handle) & 0xFFFF) ^ TCH_UART_CLASS_KEY);
 }
 
 static DECL_ASYNC_TASK(tch_uartTxAsyncTask){
@@ -521,13 +527,6 @@ static DECL_ASYNC_TASK(tch_uartTxAsyncTask){
 	tch_UartHandlePrototype* handle = (tch_UartHandlePrototype*)arg_u->handle;
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[handle->idx]._hw;
 	uhw->DR = *arg_u->c;
-	return TRUE;
-}
-
-static DECL_ASYNC_TASK(tch_uartRxAsyncTask){
-	tch_UartHandlePrototype* handle = (tch_UartHandlePrototype*) arg;
-	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[handle->idx]._hw;
-	uhw->CR1 |= USART_CR1_RXNEIE;
 	return TRUE;
 }
 

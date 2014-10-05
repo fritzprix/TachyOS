@@ -33,6 +33,7 @@ extern "C" {
 #include "async_test.h"
 
 #include "gpio_test.h"
+#include "uart_test.h"
 
 #ifdef __cplusplus
 }

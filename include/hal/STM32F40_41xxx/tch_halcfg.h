@@ -240,8 +240,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				7
 		},
 		{
-				//DMA_Str4,
-				DMA_NOT_USED,
+				DMA_Str4,
 				DMA_NOT_USED,
 				DMA_Ch7,
 				DMA_Ch4,

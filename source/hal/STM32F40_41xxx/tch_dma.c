@@ -466,8 +466,8 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 
 
 	//wait mem sync (because mem store op. has some amount of delay)
+	__ISB();
 	__DMB();
-	__DSB();
 	return TRUE;
 
 }
@@ -613,7 +613,6 @@ static void tch_dma_close(tch_DmaHandle* self){
 	tch_dmaInvalidate(ins);
 	api->Async->destroy(ins->dma_async);
 	api->Condv->destroy(ins->condv);
-	api->Mtx->unlock(ins->mtxId);
 	api->Mtx->destroy(ins->mtxId);
 
 
@@ -626,8 +625,10 @@ static void tch_dma_close(tch_DmaHandle* self){
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 	//check unused dma stream
 
-	dmaHw->CR = 0;
-	dmaHw->FCR = 0;
+	*dma_desc->_clkenr &= ~dma_desc->clkmsk;
+	*dma_desc->_lpclkenr &= ~dma_desc->lpcklmsk;
+	api->Device->interrupt->disable(dma_desc->irq);
+
 	DMA_HWs[ins->dma]._handle = NULL;
 
 	api->Condv->wakeAll(DMA_StaticInstance.condvId);     // notify dma has been released
@@ -646,7 +647,7 @@ static inline void tch_dmaInvalidate(tch_dma_handle_prototype* _handle){
 }
 
 static inline BOOL tch_dmaIsValid(tch_dma_handle_prototype* _handle){
-	return (_handle->status & 0xFFFF) == (((uint32_t) _handle) & 0xFFFF) ^ TCH_DMA_CLASS_KEY;
+	return (_handle->status & 0xFFFF) == ((((uint32_t) _handle) & 0xFFFF) ^ TCH_DMA_CLASS_KEY);
 }
 
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc){
