@@ -17,6 +17,12 @@
 
 #include "tch.h"
 
+#if defined(_cplusplus)
+extern "C"{
+#endif
+
+
+
 typedef struct _tch_lld_uart_handle_t tch_UartHandle;
 typedef struct _tch_lld_uart_cfg_t tch_UartCfg;
 
@@ -49,7 +55,7 @@ struct _tch_lld_uart_handle_t{
 	tchStatus (*putc)(tch_UartHandle* handle,uint8_t c);
 	tchStatus (*getc)(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
 	tchStatus (*write)(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
-	tchStatus (*read)(tch_UartHandle* handle,uint8_t* bp, size_t* sz,uint32_t timeout);
+	tchStatus (*read)(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
 	tchStatus (*writeCstr)(tch_UartHandle* handle,const char* cstr);
 	tchStatus (*readCstr)(tch_UartHandle* handle,char* cstr,uint32_t timeout);
 };
@@ -64,5 +70,11 @@ typedef struct tch_lld_usart {
 }tch_lld_usart;
 
 extern const tch_lld_usart* tch_usart_instance;
+
+
+#if defined(_cplusplus)
+}
+#endif
+
 
 #endif /* TCH_USART_H_ */

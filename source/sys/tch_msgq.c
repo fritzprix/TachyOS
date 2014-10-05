@@ -81,7 +81,7 @@ static tchStatus tch_msgq_putApi(tch_msgQue_id mqId, uword_t msg,uint32_t millis
 			msgqCb->updated++;
 
 			//tch_schedResumeAll(&msgqCb->cwq,osEventMessage);
-			tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osEventMessage,TRUE);
+			tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osOK,TRUE);
 			return osOK;
 		}
 		return osErrorResource;

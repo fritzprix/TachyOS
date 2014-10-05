@@ -59,11 +59,24 @@ int main(tch* api) {
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 
+//	tch_UartHandle* (*open)(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tch_UartCfg ucfg;
+	ucfg.Buadrate = 115200;
+	ucfg.FlowCtrl = FALSE;
+	ucfg.Parity = api->Device->usart->Parity.Parity_Non;
+	ucfg.StopBit = api->Device->usart->StopBit.StopBit1B;
+	ucfg.UartCh = 2;
+
+	tch_UartHandle* seriwal = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
+	uint8_t buf[100];
 	while(1){
+		seriwal->write(seriwal,"Serial Port Working",18);
+		seriwal->read(seriwal,buf,10,osWaitForever);
+		seriwal->write(seriwal,buf,10);
 		led->out(led,(1 << 6),bSet);
-		api->Thread->sleep(100);
+		api->Thread->sleep(10);
 		led->out(led,(1 << 6),bClear);
-		api->Thread->sleep(100);
+		api->Thread->sleep(10);
 		btn->listen(btn,10,osWaitForever);
 	}
 	return osOK;

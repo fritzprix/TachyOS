@@ -456,13 +456,13 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	if(attr->MemInc)
 		dmaHw->CR |= DMA_SxCR_MINC;
 	else
-		dmaHw->CR &= DMA_SxCR_MINC;
+		dmaHw->CR &= ~DMA_SxCR_MINC;
 
 
 	if(attr->PeriphInc)
 		dmaHw->CR |= DMA_SxCR_PINC;
 	else
-		dmaHw->CR &= DMA_SxCR_PINC;
+		dmaHw->CR &= ~DMA_SxCR_PINC;
 
 
 	//wait mem sync (because mem store op. has some amount of delay)
@@ -479,7 +479,7 @@ static DECL_ASYNC_TASK(tch_dma_trigger){
 	tch_DmaReqArgs* dargs = (tch_DmaReqArgs*) arg;
 	DMA_Stream_TypeDef* _hw = DMA_HWs[((tch_dma_handle_prototype*) dargs->self)->dma]._hw;
 	tch_dmaSetDmaAttr(_hw,dargs->attr);
-	((DMA_Stream_TypeDef*)arg)->CR |= DMA_SxCR_EN;   // trigger dma tranfer in system task thread
+	_hw->CR |= DMA_SxCR_EN;   // trigger dma tranfer in system task thread
 	return osOK;
 }
 
@@ -650,7 +650,7 @@ static inline BOOL tch_dmaIsValid(tch_dma_handle_prototype* _handle){
 }
 
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc){
-	uint32_t isr = (*dma_desc->_isr >> dma_desc->ipos) & 31;
+	uint32_t isr = (*dma_desc->_isr >> dma_desc->ipos) & 63;
 	uint32_t isrclr = *dma_desc->_isr;
 	if(!handle){
 		*dma_desc->_isr = isrclr;
@@ -663,11 +663,11 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	tch* api = handle->api;
 	if(isr & DMA_FLAG_EvTC){
 		api->Async->notify(handle->dma_async,(int)handle,osOK);
-		*dma_desc->_isr = isrclr;
+		*dma_desc->_icr = isrclr;
 		return TRUE;
 	}else{
 		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
-		*dma_desc->_isr = isrclr;
+		*dma_desc->_icr = isrclr;
 		return FALSE;
 	}
 }
