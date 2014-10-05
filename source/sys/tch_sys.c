@@ -133,11 +133,9 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
 		return;
 	case SV_THREAD_RESUME:
-	//	tch_schedResume((tch_thread_queue*)arg1,arg2);
 		tch_schedResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
 		return;
 	case SV_THREAD_RESUMEALL:
-//		tch_schedResumeAll((tch_thread_queue*)arg1,arg2,TRUE);
 		tch_schedResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
 		return;
 	case SV_THREAD_SUSPEND:
@@ -155,7 +153,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
 		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
-		//nth = tch_schedResume((tch_thread_queue*)&cth->t_sig.sig_wq,osOK);
 		return;
 	case SV_MEM_MALLOC:
 #ifndef __USE_MALLOC

@@ -70,14 +70,14 @@ int main(tch* api) {
 	tch_UartHandle* seriwal = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 	uint8_t buf[100];
 	while(1){
-		seriwal->write(seriwal,"Serial Port Working",18);
+		seriwal->write(seriwal,"Serial Port Working",18);/*
 		seriwal->read(seriwal,buf,10,osWaitForever);
 		seriwal->write(seriwal,buf,10);
 		led->out(led,(1 << 6),bSet);
 		api->Thread->sleep(10);
 		led->out(led,(1 << 6),bClear);
 		api->Thread->sleep(10);
-		btn->listen(btn,10,osWaitForever);
+		btn->listen(btn,10,osWaitForever);*/
 	}
 	return osOK;
 }

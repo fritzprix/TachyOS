@@ -269,21 +269,21 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		0
 };
 
-extern const tch_lld_dma* tch_dma_instacne = &DMA_StaticInstance;
+const tch_lld_dma* tch_dma_instance = &DMA_StaticInstance;
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg){
-	cfg->BufferType = tch_dma_instacne->BufferType.Normal;
+	cfg->BufferType = tch_dma_instance->BufferType.Normal;
 	cfg->Ch = 0;
-	cfg->Dir = tch_dma_instacne->Dir.MemToPeriph;
-	cfg->FlowCtrl = tch_dma_instacne->FlowCtrl.DMA;
-	cfg->Priority = tch_dma_instacne->Priority.Normal;
-	cfg->mAlign = tch_dma_instacne->Align.Byte;
-	cfg->pAlign = tch_dma_instacne->Align.Byte;
+	cfg->Dir = tch_dma_instance->Dir.MemToPeriph;
+	cfg->FlowCtrl = tch_dma_instance->FlowCtrl.DMA;
+	cfg->Priority = tch_dma_instance->Priority.Normal;
+	cfg->mAlign = tch_dma_instance->Align.Byte;
+	cfg->pAlign = tch_dma_instance->Align.Byte;
 	cfg->mInc = FALSE;
 	cfg->pInc = FALSE;
-	cfg->mBurstSize = tch_dma_instacne->BurstSize.Burst1;
-	cfg->pBurstSize = tch_dma_instacne->BurstSize.Burst1;
+	cfg->mBurstSize = tch_dma_instance->BurstSize.Burst1;
+	cfg->pBurstSize = tch_dma_instance->BurstSize.Burst1;
 }
 
 static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size){
@@ -456,13 +456,13 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	if(attr->MemInc)
 		dmaHw->CR |= DMA_SxCR_MINC;
 	else
-		dmaHw->CR &= DMA_SxCR_MINC;
+		dmaHw->CR &= ~DMA_SxCR_MINC;
 
 
 	if(attr->PeriphInc)
 		dmaHw->CR |= DMA_SxCR_PINC;
 	else
-		dmaHw->CR &= DMA_SxCR_PINC;
+		dmaHw->CR &= ~DMA_SxCR_PINC;
 
 
 	//wait mem sync (because mem store op. has some amount of delay)
@@ -479,7 +479,7 @@ static DECL_ASYNC_TASK(tch_dma_trigger){
 	tch_DmaReqArgs* dargs = (tch_DmaReqArgs*) arg;
 	DMA_Stream_TypeDef* _hw = DMA_HWs[((tch_dma_handle_prototype*) dargs->self)->dma]._hw;
 	tch_dmaSetDmaAttr(_hw,dargs->attr);
-	((DMA_Stream_TypeDef*)arg)->CR |= DMA_SxCR_EN;   // trigger dma tranfer in system task thread
+	_hw->CR |= DMA_SxCR_EN;   // trigger dma tranfer in system task thread
 	return osOK;
 }
 
@@ -650,7 +650,7 @@ static inline BOOL tch_dmaIsValid(tch_dma_handle_prototype* _handle){
 }
 
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc){
-	uint32_t isr = (*dma_desc->_isr >> dma_desc->ipos) & 31;
+	uint32_t isr = (*dma_desc->_isr >> dma_desc->ipos) & 63;
 	uint32_t isrclr = *dma_desc->_isr;
 	if(!handle){
 		*dma_desc->_isr = isrclr;
@@ -663,11 +663,11 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	tch* api = handle->api;
 	if(isr & DMA_FLAG_EvTC){
 		api->Async->notify(handle->dma_async,(int)handle,osOK);
-		*dma_desc->_isr = isrclr;
+		*dma_desc->_icr = isrclr;
 		return TRUE;
 	}else{
 		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
-		*dma_desc->_isr = isrclr;
+		*dma_desc->_icr = isrclr;
 		return FALSE;
 	}
 }

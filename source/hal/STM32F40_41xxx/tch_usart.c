@@ -287,9 +287,10 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}
 
 
-	tch_uartValidate(uins);
-	env->Device->interrupt->enable(uDesc->irq);
 	uhw->CR1 |= USART_CR1_UE;
+	uhw->SR = 0;
+	env->Device->interrupt->enable(uDesc->irq);
+	tch_uartValidate(uins);
 	return (tch_UartHandle*) uins;
 }
 

@@ -141,9 +141,7 @@ static tchStatus tch_async_notify(tch_asyncId async,int id,tchStatus res){
 	arg.id = id;
 	arg.req = NULL;
 	if(tch_port_isISR()){
-		tch_port_kernel_lock();
 		tch_async_knotify(async,&arg);
-		tch_port_kernel_unlock();
 		return result;
 	}
 	while((result = tch_port_enterSvFromUsr(SV_ASYNC_NOTIFY,(uword_t)async,(uword_t)&arg)) != osOK){

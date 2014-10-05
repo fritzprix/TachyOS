@@ -177,13 +177,21 @@ static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
 
 
 /**
- * 	tch_gpioMode Mode;
+ * 		tch_gpioPorts Ports;
+	tch_gpioMode Mode;
 	tch_gpioOtype Otype;
 	tch_gpioSpeed Speed;
 	tch_gpioPuPd PuPd;
 	tch_gpioEvEdge EvEdeg;
 	tch_gpioEvType EvType;
- */
+	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	void (*initCfg)(tch_GpioCfg* cfg);
+	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
+	uint16_t (*getPortCount)();
+	uint16_t (*getPincount)(const gpIo_x port);
+	uint32_t (*getPinAvailable)(const gpIo_x port);
+	void (*freeIo)(tch_GpioHandle* IoHandle);
+	*/
 
 __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 
@@ -454,9 +462,13 @@ static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,co
 				break;
 			case GPIO_Mode_AF:
 				ioctrl_regs->MODER |= (GPIO_Mode_AF << (pin << 1));
-
-				ioctrl_regs->AFR[pin / 8] &= ~(0xF << (pin << 2));
-				ioctrl_regs->AFR[pin / 8] |= (cfg->Af << (pin << 2));
+				if(pin < 8){
+					ioctrl_regs->AFR[0] &= ~(0xF << (pin << 2));
+					ioctrl_regs->AFR[0] |= (cfg->Af << (pin << 2));
+				}else{
+					ioctrl_regs->AFR[1] &= ~(0xF << ((pin - 8) << 2));
+					ioctrl_regs->AFR[1] |= (cfg->Af << ((pin - 8) << 2));
+				}
 			}
 		}
 		pin++;
