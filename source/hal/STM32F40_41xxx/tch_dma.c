@@ -211,7 +211,6 @@ typedef struct tch_dma_handle_prototype_t{
 	uint8_t                     ch;
 	tch_mtxId                   mtxId;
 	tch_condvId                 condv;
-	tch_lnode_t                 wq;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
 	tch_asyncId                 dma_async;
@@ -231,7 +230,7 @@ static void tch_dma_setIncrementMode(tch_DmaHandle* self,uint8_t targetAddress,B
 static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
 #endif
 
-static void tch_dma_close(tch_DmaHandle* self);
+static tchStatus tch_dma_close(tch_DmaHandle* self);
 static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch);
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc);
 
@@ -358,7 +357,6 @@ static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	dma_handle->status = 0;
 	dma_handle->mtxId = api->Mtx->create();
 	dma_handle->condv = api->Condv->create();
-	tch_listInit(&dma_handle->wq);
 	dma_handle->dma_async = Async->create(1);
 
 	return (tch_DmaHandle*)dma_handle;
@@ -598,17 +596,18 @@ static void tch_dma_setIncrementMode(tch_DmaHandle* self,uint8_t targetAddress,B
 
 /**
  */
-static void tch_dma_close(tch_DmaHandle* self){
+static tchStatus tch_dma_close(tch_DmaHandle* self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	tchStatus result = osOK;
 	if(!tch_dmaIsValid(ins))
-		return;
+		return osErrorResource;
 	tch* api = ins->api;
 	// wait until dma is busy
-	if(api->Mtx->lock(ins->mtxId,osWaitForever) != osOK)
-		return;
+	if((result = api->Mtx->lock(ins->mtxId,osWaitForever)) != osOK)
+		return result;
 	while(tch_dmaIsBusy(ins)){
-		if(api->Condv->wait(ins->condv,ins->mtxId,osWaitForever) != osOK)
-			return;
+		if((result = api->Condv->wait(ins->condv,ins->mtxId,osWaitForever)) != osOK)
+			return result;
 	}
 	tch_dmaInvalidate(ins);
 	api->Async->destroy(ins->dma_async);
@@ -616,8 +615,8 @@ static void tch_dma_close(tch_DmaHandle* self){
 	api->Mtx->destroy(ins->mtxId);
 
 
-	if(api->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever) != osOK)
-		return;
+	if((result = api->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever)) != osOK)
+		return result;
 	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
 	DMA_StaticInstance.lpoccp_state &= ~(1 << ins->dma);
 	DMA_StaticInstance.occp_state &= ~(1 << ins->dma);
@@ -635,6 +634,7 @@ static void tch_dma_close(tch_DmaHandle* self){
 	api->Mtx->unlock(DMA_StaticInstance.mtxId);          // unlock DMA Singleton
 
 	api->Mem->free(ins);
+	return result;
 }
 
 
