@@ -34,6 +34,7 @@
 
 static tch_kernel_instance tch_sys_instance;
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
+tch_mem_handle* Heap_Manager;
 
 
 

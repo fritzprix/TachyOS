@@ -184,8 +184,7 @@ static tchStatus tch_async_destroy(tch_asyncId async){
 	if((result = tch_port_enterSvFromUsr(SV_ASYNC_DESTROY,(uword_t)async,0)) != osOK)
 		return result;
 	Mem->free(cb->treqs);
-	if((result = MailQ->destroy(cb->tmailqId)) != osOK)
-		return result;
+	MailQ->destroy(cb->tmailqId);
 	Mem->free(async);
 
 	return osOK;

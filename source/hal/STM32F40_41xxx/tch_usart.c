@@ -293,7 +293,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 }
 
 
-
 static BOOL tch_uartClose(tch_UartHandle* handle){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	tch_uart_descriptor* uDesc = &UART_HWs[ins->idx];
@@ -333,9 +332,9 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 	env->Device->interrupt->disable(uDesc->irq);
-	env->Condv->wake(UART_StaticInstance.condv);
-
-	env->Mtx-> unlock(UART_StaticInstance.mtx);
+	env->Condv->wakeAll(UART_StaticInstance.condv);
+	env->Mem->free(handle);
+	env->Mtx->unlock(UART_StaticInstance.mtx);
 	return TRUE;
 }
 

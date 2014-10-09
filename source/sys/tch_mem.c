@@ -114,7 +114,7 @@ int tch_mem_free(tch_mem_handle* self,void* fp){
 #ifndef __USE_MALLOC
 void* tch_apic_mem_alloc(size_t size){
 	if(__get_IPSR()){
-		return Heap_Manager->alloc(Sys->tch_heap_handle,size);
+		return Heap_Manager->alloc(Heap_Manager,size);
 	}else{
 		return (void*)tch_port_enterSvFromUsr(SV_MEM_MALLOC,size,0);
 	}
@@ -122,7 +122,7 @@ void* tch_apic_mem_alloc(size_t size){
 
 int tch_apic_free(void* p){
 	if(__get_IPSR()){
-		return Heap_Manager->free(Sys->tch_heap_handle,p);
+		return Heap_Manager->free(Heap_Manager,p);
 	}else{
 		return tch_port_enterSvFromUsr(SV_MEM_FREE,(uint32_t)p,0);
 	}

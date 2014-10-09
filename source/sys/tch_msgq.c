@@ -230,7 +230,7 @@ tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 /*	tch_schedResumeAll(&msgqCb->cwq,osErrorResource,FALSE);
 	tch_schedResumeAll(&msgqCb->pwq,osErrorResource,TRUE);*/
 	tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorResource,FALSE);
-	tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
+	tch_schedResumeM(&msgqCb->pwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 	return osOK;
 }
 

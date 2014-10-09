@@ -203,6 +203,7 @@ static tchStatus tch_mailq_destroy(tch_mailqId qid){
 	if((result = tch_port_enterSvFromUsr(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
 		return result;
 	MsgQ->destroy(mailqcb->msgq);
+	Mem->free(qid);
 	return osOK;
 }
 

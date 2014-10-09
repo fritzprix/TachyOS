@@ -74,7 +74,7 @@ typedef uint8_t dma_t;
  *  \brief DMA Handle
  *   DMA Operation handle which can be obtained by \ref tch_dma_ix
  */
-typedef struct tch_dma_handle_t tch_DmaHandle;
+typedef void* tch_DmaHandle;
 
 /*!
  *  \brief dma event listener type
@@ -195,28 +195,6 @@ typedef struct _tch_dma_req_t {
  * \brief DMA handle object type
  * Interface used to access control of dma H/W
  */
-struct tch_dma_handle_t{
-	/*!
-	 * \brief Begine DMA Transfer
-	 * \param \ref tch_dma_handle object which is obtained from \ref openStream
-	 * \param size size of data to be transfered by DMA
-	 * \return true if successful, otherwise false
-	 */
-#ifdef VERSION01
-	BOOL (*beginXfer)(tch_DmaHandle* self,uint32_t size,uint32_t timeout,tchStatus* result);
-#else
-#endif
-
-	/*!
-	 * \brief Set both source and target Address of DMA
-	 * \param \ref tch_dma_handle object which is obtained from \ref openStream
-	 * \param target which is among
-	 */
-//	void (*setAddress)(tch_dma_handle* self,uint8_t targetAddress,uint32_t addr);
-//	void (*registerEventListener)(tch_dma_handle* self,tch_dma_eventListener listener,uint16_t evType);
-//	void (*unregisterEventListener)(tch_dma_handle* self);
-//	void (*setIncrementMode)(tch_dma_handle* self,uint8_t targetAddress,BOOL enable);
-};
 
 
 /*!

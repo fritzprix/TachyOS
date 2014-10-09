@@ -173,7 +173,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getListNode(nth)->prev = tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
-	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*)wq;
+	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*) wq;
 	tch_currentThread = nth;
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,getThreadHeader(nth)->t_kRet);
 }
