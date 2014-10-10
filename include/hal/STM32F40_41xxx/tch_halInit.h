@@ -464,4 +464,152 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 		}
 };
 
+
+/**
+ * 	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint16_t*  _isr;
+	volatile uint16_t*  _icr;
+	const uint8_t        channelCnt;
+	const uint8_t        precision;
+	IRQn_Type            irq;
+ * */
+__attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
+		{
+				TIM2,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM2EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM2LPEN,
+				&TIM2->SR,
+				&TIM2->SR,
+				4,
+				32,
+				TIM2_IRQn
+		},
+		{
+				TIM3,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM3EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM3LPEN,
+				&TIM3->SR,
+				&TIM3->SR,
+				4,
+				16,
+				TIM3_IRQn
+		},
+		{
+				TIM4,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM4EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM4LPEN,
+				&TIM4->SR,
+				&TIM4->SR,
+				4,
+				16,
+				TIM4_IRQn
+		},
+		{
+				TIM5,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM5EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM5LPEN,
+				&TIM5->SR,
+				&TIM5->SR,
+				4,
+				32,
+				TIM5_IRQn
+		},
+		{
+				TIM6,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM6EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM6LPEN,
+				&TIM6->SR,
+				&TIM6->SR,
+				1,
+				16,
+				TIM6_IRQn
+		},
+		{
+				TIM7,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM7EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_TIM7LPEN,
+				&TIM7->SR,
+				&TIM7->SR,
+				1,
+				16,
+				TIM7_IRQn
+		},
+		{
+				TIM9,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_TIM9EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_TIM9LPEN,
+				&TIM9->SR,
+				&TIM9->SR,
+				2,
+				16,
+				TIM9_IRQn
+		},
+		{
+				TIM10,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_TIM10EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_TIM10LPEN,
+				&TIM10->SR,
+				&TIM10->SR,
+				1,
+				16,
+				TIM10_IRQn
+		},
+		{
+				TIM11,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_TIM11EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_TIM11LPEN,
+				&TIM11->SR,
+				&TIM11->SR,
+				1,
+				16,
+				TIM11_IRQn
+		},
+		{
+				TIM12,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM12EN,
+				&RCC->APB2LPENR,
+				RCC_APB1LPENR_TIM12LPEN,
+				&TIM12->SR,
+				&TIM12->SR,
+				2,
+				16,
+				TIM12_IRQn
+		}
+};
+
+
 #endif /* TCH_HALOBJS_H_ */

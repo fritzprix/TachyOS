@@ -20,9 +20,9 @@ typedef struct tch_lld_timer_prototype {
 } tch_lld_timer_prototype;
 
 
-static tch_gptimer_handle* tch_lld_timer_openGpTimer(tch_timer timer,tch_gptimer_def* tdef);
-static tch_pwm_handle* tch_lld_timer_openPWM(tch_timer timer,tch_pwm_def* tdef);
-static tch_tcapt_handle* tch_lld_timer_openTimerCapture(tch_timer timer,tch_tcapt_def* tdef);
+static tch_gptimerHandle* tch_lld_timer_openGpTimer(tch_timer timer,tch_gptimerDef* tdef);
+static tch_pwmHandle* tch_lld_timer_openPWM(tch_timer timer,tch_pwmDef* tdef);
+static tch_tcaptHandle* tch_lld_timer_openTimerCapture(tch_timer timer,tch_tcaptDef* tdef);
 static void tch_lld_timer_close(tch_timer timer);
 
 
@@ -37,15 +37,15 @@ const tch_lld_timer* tch_timer_instance = (tch_lld_timer*) &TIMER_StaticInstance
 
 
 
-tch_gptimer_handle* tch_lld_timer_openGpTimer(tch_timer timer,tch_gptimer_def* tdef){
+tch_gptimerHandle* tch_lld_timer_openGpTimer(tch_timer timer,tch_gptimerDef* tdef){
 
 }
 
-tch_pwm_handle* tch_lld_timer_openPWM(tch_timer timer,tch_pwm_def* tdef){
+tch_pwmHandle* tch_lld_timer_openPWM(tch_timer timer,tch_pwmDef* tdef){
 
 }
 
-tch_tcapt_handle* tch_lld_timer_openTimerCapture(tch_timer timer,tch_tcapt_def* tdef){
+tch_tcaptHandle* tch_lld_timer_openTimerCapture(tch_timer timer,tch_tcaptDef* tdef){
 
 }
 

@@ -169,6 +169,10 @@
 #define MFEATURE_UART               (4)
 #endif
 
+#ifndef MFEATURE_TIMER
+#define MFEATURE_TIMER              (10)
+#endif
+
 
 typedef struct _tch_uart_bs_t {
 	dma_t          txdma;
