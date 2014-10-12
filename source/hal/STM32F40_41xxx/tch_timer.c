@@ -29,6 +29,7 @@
 }
 
 
+/*     class identifier for checking validity of instance    */
 #define TIMER_GP_CLASS_KEY       ((uint16_t) 0x6401)
 #define TIMER_PWM_CLASS_KEY      ((uint16_t) 0x6411)
 #define TIMER_CAPTURE_CLASS_KEY  ((uint16_t) 0x6421)
@@ -42,6 +43,30 @@
 }while(0)
 
 #define tch_timer_GPtIsValid(gpt_ins)    (((tch_gptimer_handle_proto*) gpt_ins)->key == ((gpt_ins & 0xFFFF) ^ TIMER_GP_CLASS_KEY))
+
+
+#define tch_timer_PWMValidate(pwm_ins)           do{\
+	((tch_pwm_handle_proto*) pwm_ins)->key = ((pwm_ins & 0xFFFF) ^ TIMER_PWM_CLASS_KEY);\
+}while(0)
+
+#define tch_timer_PWMInvalidate(pwm_ins)        do{\
+	((tch_pwm_handle_proto*) pwm_ins)->key = 0;\
+}while(0)
+
+#define tch_timer_PWMIsValid(pwm_ins)    (((tch_pwm_handle_proto*) pwm_ins)->key == ((pwm_ins & 0xFFFF) ^ TIMER_PWM_CLASS_KEY))
+
+
+#define tch_timer_tCaptValidate(capt_ins)           do{\
+	((tch_tcapt_handle_proto*) capt_ins)->key = ((capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY);\
+}while(0)
+
+#define tch_timer_tCaptInvalidate(capt_ins)        do{\
+	((tch_tcapt_handle_proto*) capt_ins)->key = 0;\
+}while(0)
+
+#define tch_timer_tCaptIsValid(capt_ins)    (((tch_tcapt_handle_proto*) capt_ins)->key == ((capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY))
+
+
 
 typedef struct tch_timer_mgr_t {
 	tch_lld_timer                     pix;
@@ -63,7 +88,15 @@ typedef struct tch_gptimer_handle_proto_t {
 	const tch*             env;
 }tch_gptimer_handle_proto;
 
+typedef struct tch_pwm_handle_proto_t{
+	tch_pwmHandle         _pix;
+	uint16_t               key;
+}tch_pwm_handle_proto;
 
+typedef struct tch_tcapt_handle_proto_t{
+	tch_tcaptHandle       _pix;
+	uint16_t               key;
+}tch_tcapt_handle_proto;
 
 
 ///////            Timer Manager Function               ///////
@@ -72,12 +105,16 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
 static uint32_t tch_timer_getChannelCount(tch_timer timer);
 static uint8_t tch_timer_getPrecision(tch_timer timer);
+static void tch_timer_handleInterrupt(tch_timer timer);
+
+
 
 
 //////         General Purpose Timer Function           ///////
 static DECL_ASYNC_TASK(tch_gptimer_trigger);
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
+static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
 
 
 //////            PWM fucntion                        //////
@@ -91,6 +128,8 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self);
 /////             Pulse Capture Function                /////
 static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
 static tchStatus tch_tcapt_close(tch_tcaptHandle* self);
+
+
 
 
 __attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance = {
@@ -136,6 +175,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	ins->async = env->Async->create(timDesc->channelCnt);
 	ins->env = env;
 	ins->timer = timer;
+	tch_timer_GPtValidate(ins);
 
 	timDesc->_handle = ins;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)timDesc->_hw;
@@ -247,7 +287,7 @@ static DECL_ASYNC_TASK(tch_gptimer_trigger){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) gpt_arg->ins;
 	TIM_TypeDef* thw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
 	uint32_t vcnt = thw->CNT + gpt_arg->utick;
-	switch(id - 1){
+	switch(id){
 	case 0:
 		thw->DIER |= TIM_DIER_CC1IE;
 		return TRUE;
@@ -267,6 +307,8 @@ static DECL_ASYNC_TASK(tch_gptimer_trigger){
 // Not Thread-Safe
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
+	if(!tch_timer_GPtIsValid(ins))
+		return FALSE;
 	tch_timer_descriptor* thw = &TIMER_HWs[ins->timer];
 	TIM_TypeDef* timerHw = thw->_hw;
 	uint8_t idx = 0;
@@ -276,11 +318,11 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	struct tch_gptimer_req_t req;
 	req.ins = self;
 	req.utick = utick;
-	while(idx++ < thw->channelCnt){
+	do{
 		if(!(chmsk & 1)){
-			thw->ch_occp |= (1 << (idx - 1)); // set occp bit
+			thw->ch_occp |= (1 << idx); // set occp bit
 			id = idx;
-			switch(idx - 1){
+			switch(idx){
 			case 0:
 				timerHw->CCR1 = timerHw->CNT + utick;
 				break;
@@ -297,7 +339,7 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 			return env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req) == osOK? TRUE : FALSE;
 		}
 		chmsk >>= 1;
-	}
+	}while(idx++ < thw->channelCnt);
 	return FALSE;   // couldn't find available timer channel ( all occupied)
 }
 
@@ -353,43 +395,73 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 
 }
 
-void TIM2_IRQHandler(void){                   /* TIM2                         */
+static void tch_timer_handleInterrupt(tch_timer timer){
+	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
+	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
+	uint32_t isr = timerHw->SR;
+	if((!timDesc->_handle)){
+		timerHw->SR &= ~isr;          // clear all raised interrupt
+		return;
+	}
+	if(tch_timer_GPtIsValid(timDesc->_handle)){
+		if(tch_timer_handle_gptInterrupt(timDesc->_handle,timDesc))
+			return;
+	}
+	timerHw->SR &= ~isr;          // clear all raised interrupt
+}
 
+static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc){
+	uint8_t idx = 0;
+	TIM_TypeDef* timerHw = (TIM_TypeDef*) desc->_hw;
+	tch* env = ins->env;
+	while(idx++ < desc->channelCnt){
+		if(timerHw->SR & (idx << 1)){
+			timerHw->SR &= ~(idx << 1);        // clear raised interrupt
+			timerHw->DIER &= ~(idx << 1);      // clear interrupt enable
+			env->Async->notify(ins->async,idx,osOK);  // notify to waiting thread
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void TIM2_IRQHandler(void){                   /* TIM2                         */
+	tch_timer_handleInterrupt(0);
 }
 
 void TIM3_IRQHandler(void){
-
+	tch_timer_handleInterrupt(1);
 }
 
 void TIM4_IRQHandler(void){
-
+	tch_timer_handleInterrupt(2);
 }
 
 void TIM5_IRQHandler(void){
-
+	tch_timer_handleInterrupt(3);
 }
 
 void TIM1_BRK_TIM9_IRQHandler(void){
-
+	tch_timer_handleInterrupt(4);
 }
 
 void TIM1_UP_TIM10_IRQHandler(void){
-
+	tch_timer_handleInterrupt(5);
 }
 
 void TIM1_TRG_COM_TIM11_IRQHandler(void){
-
+	tch_timer_handleInterrupt(6);
 }
 
 void TIM8_BRK_TIM12_IRQHandler(void){         /* TIM8 Break and TIM12         */
-
+	tch_timer_handleInterrupt(7);
 }
 
 void TIM8_UP_TIM13_IRQHandler(void){          /* TIM8 Update and TIM13        */
-
+	tch_timer_handleInterrupt(8);
 }
 
 void TIM8_TRG_COM_TIM14_IRQHandler(void){     /* TIM8 Trigger and Commutation and TIM14 */
-
+	tch_timer_handleInterrupt(9);
 }
 
