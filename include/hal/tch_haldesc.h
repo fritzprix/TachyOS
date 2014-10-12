@@ -79,6 +79,7 @@ typedef struct _tch_timer_descriptor {
 	volatile uint16_t*  _icr;
 	const uint8_t        channelCnt;
 	const uint8_t        precision;
+	uint8_t              ch_occp;
 	IRQn_Type            irq;
 }tch_timer_descriptor;
 

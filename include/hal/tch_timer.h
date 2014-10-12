@@ -84,12 +84,13 @@ struct _tch_tcapt_def_t {
 };
 
 typedef struct tch_lld_timer {
-	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def);
-	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,tch_pwmDef* tdef);
-	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,tch_tcaptDef* tdef);
+	struct _tch_timer_utime_t UnitTime;
+	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
+	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
+	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
 	uint32_t (*getChannelCount)(tch_timer timer);
 	uint8_t (*getPrecision)(tch_timer timer);
-}tch_lld_timer;
+} tch_lld_timer;
 
 extern const tch_lld_timer* tch_timer_instance;
 

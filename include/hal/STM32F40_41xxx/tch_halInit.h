@@ -490,6 +490,7 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM2->SR,
 				4,
 				32,
+				0,
 				TIM2_IRQn
 		},
 		{
@@ -503,6 +504,7 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM3->SR,
 				4,
 				16,
+				0,
 				TIM3_IRQn
 		},
 		{
@@ -516,6 +518,7 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM4->SR,
 				4,
 				16,
+				0,
 				TIM4_IRQn
 		},
 		{
@@ -529,33 +532,8 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM5->SR,
 				4,
 				32,
+				0,
 				TIM5_IRQn
-		},
-		{
-				TIM6,
-				NULL,
-				&RCC->APB1ENR,
-				RCC_APB1ENR_TIM6EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM6LPEN,
-				&TIM6->SR,
-				&TIM6->SR,
-				1,
-				16,
-				TIM6_IRQn
-		},
-		{
-				TIM7,
-				NULL,
-				&RCC->APB1ENR,
-				RCC_APB1ENR_TIM7EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM7LPEN,
-				&TIM7->SR,
-				&TIM7->SR,
-				1,
-				16,
-				TIM7_IRQn
 		},
 		{
 				TIM9,
@@ -568,7 +546,8 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM9->SR,
 				2,
 				16,
-				TIM9_IRQn
+				0,
+				TIM1_BRK_TIM9_IRQn
 		},
 		{
 				TIM10,
@@ -581,7 +560,8 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM10->SR,
 				1,
 				16,
-				TIM10_IRQn
+				0,
+				TIM1_UP_TIM10_IRQn
 		},
 		{
 				TIM11,
@@ -594,7 +574,8 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM11->SR,
 				1,
 				16,
-				TIM11_IRQn
+				0,
+				TIM1_TRG_COM_TIM11_IRQn
 		},
 		{
 				TIM12,
@@ -607,7 +588,36 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				&TIM12->SR,
 				2,
 				16,
-				TIM12_IRQn
+				0,
+				TIM8_BRK_TIM12_IRQn
+		},
+		{
+				TIM13,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM13EN,
+				&RCC->APB2LPENR,
+				RCC_APB1LPENR_TIM13LPEN,
+				&TIM13->SR,
+				&TIM13->SR,
+				1,
+				16,
+				0,
+				TIM8_UP_TIM13_IRQn
+		},
+		{
+				TIM14,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_TIM14EN,
+				&RCC->APB2LPENR,
+				RCC_APB1LPENR_TIM14LPEN,
+				&TIM14->SR,
+				&TIM14->SR,
+				1,
+				16,
+				0,
+				TIM8_TRG_COM_TIM14_IRQn
 		}
 };
 
