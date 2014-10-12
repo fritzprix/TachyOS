@@ -134,12 +134,13 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self);
 
 __attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance = {
 		{
-		INIT_UNTITIME_STR,
-		tch_timer_allocGptimerUnit,
-		tch_timer_allocPWMUnit,
-		tch_timer_allocCaptureUnit,
-		tch_timer_getChannelCount,
-		tch_timer_getPrecision
+				{0,1,2,3,4,5,6,7,8,9},
+				INIT_UNTITIME_STR,
+				tch_timer_allocGptimerUnit,
+				tch_timer_allocPWMUnit,
+				tch_timer_allocCaptureUnit,
+				tch_timer_getChannelCount,
+				tch_timer_getPrecision
 		},
 		NULL,
 		NULL

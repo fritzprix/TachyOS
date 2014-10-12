@@ -14,6 +14,7 @@ tchStatus timer_performTest(tch* env){
 	gptDef.UnitTime = env->Device->timer->UnitTime.uSec;
 	gptDef.pwrOpt = ActOnSleep;
 
+	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,env->Device->timer->timer.timer0,&gptDef,osWaitForever);
 
 }
 
