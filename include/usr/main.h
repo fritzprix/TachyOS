@@ -34,6 +34,7 @@ extern "C" {
 
 #include "gpio_test.h"
 #include "uart_test.h"
+#include "timer_test.h"
 
 #ifdef __cplusplus
 }

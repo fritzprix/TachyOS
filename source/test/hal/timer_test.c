@@ -15,6 +15,19 @@ tchStatus timer_performTest(tch* env){
 	gptDef.pwrOpt = ActOnSleep;
 
 	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,env->Device->timer->timer.timer0,&gptDef,osWaitForever);
+	gptimer->wait(gptimer,1000);
+	gptimer->wait(gptimer,1000);
+
+	gptimer->close(gptimer);
+
+	gptDef.UnitTime = env->Device->timer->UnitTime.mSec;
+	gptimer = env->Device->timer->openGpTimer(env,env->Device->timer->timer.timer0,&gptDef,osWaitForever);
+	gptimer->wait(gptimer,200000);
+	gptimer->wait(gptimer,200000);
+	gptimer->wait(gptimer,200000);
+	gptimer->wait(gptimer,200000);
+	gptimer->close(gptimer);
+	return osOK;
 
 }
 

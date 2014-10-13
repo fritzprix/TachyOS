@@ -48,10 +48,8 @@ struct _tch_gptimer_handle_t {
 };
 
 struct _tch_pwm_handle_t {
-	BOOL (*start)(tch_pwmHandle* self,uint32_t ch);
-	BOOL (*stop)(tch_pwmHandle* self,uint32_t ch);
-	uint32_t (*setDuty)(tch_pwmHandle* self,uint32_t ch);
-	uint32_t (*getDuty)(tch_pwmHandle* self,uint32_t ch);
+	BOOL (*setDuty)(tch_pwmHandle* self,uint32_t ch,float duty);
+	float (*getDuty)(tch_pwmHandle* self,uint32_t ch);
 	tchStatus (*close)(tch_pwmHandle* self);
 };
 
@@ -73,7 +71,7 @@ struct _tch_gptimer_def_t {
 
 struct _tch_pwm_def_t {
 	uint8_t UnitTime;
-	uint32_t PeriondInUnitTime;
+	uint32_t PeriodInUnitTime;
 	tch_PwrOpt pwrOpt;
 };
 

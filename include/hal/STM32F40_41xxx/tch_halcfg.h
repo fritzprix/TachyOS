@@ -188,35 +188,15 @@ typedef struct _tch_uart_bs_t {
 }tch_uart_bs;
 
 
-/*
- * 	{
-				DMA2_Str7,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				GPIO_A,
-				9,
-				10
-		},
-		{
-				DMA1_Str6,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				GPIO_A,
-				2,
-				3
-		},
-		{
-				DMA1_Str4,
-				DMA_NOT_USED,
-				DMA_Ch7,
-				DMA_Ch4,
-				GPIO_B,
-				10,
-				11
-		}
- */
+typedef struct _tch_timer_bs_t {
+	gpIo_x         port;
+	uint8_t        ch1p;
+	uint8_t        ch2p;
+	uint8_t        ch3p;
+	uint8_t        ch4p;
+	uint8_t        afv;
+}tch_timer_bs;
+
 
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
@@ -268,6 +248,100 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				8
 		}
 };
+
+/**
+ * 	gpIo_x         port;
+	uint8_t        ch1p;
+	uint8_t        ch2p;
+	uint8_t        ch3p;
+	uint8_t        ch4p;
+	uint8_t        afv;
+ */
+
+__attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
+		{// TIM2
+				_GPIO_0,
+				0,
+				1,
+				2,
+				3,
+				1,
+		},
+		{// TIM3
+				_GPIO_1,
+				4,
+				5,
+				0,
+				1,
+				2
+		},
+		{// TIM4
+				_GPIO_1,
+				6,
+				7,
+				8,
+				9,
+				2
+		},
+		{// TIM5
+				_GPIO_7,
+				10,
+				11,
+				12,
+				-1,
+				2
+		},
+		{// TIM9
+				_GPIO_4,
+				5,
+				6,
+				-1,
+				-1,
+				3
+		},
+		{// TIM10
+				_GPIO_1,
+				8,
+				-1,
+				-1,
+				-1,
+				3
+		},
+		{// TIM11
+				_GPIO_1,
+				9,
+				-1,
+				-1,
+				-1,
+				3
+		},
+		{// TIM12
+				_GPIO_1,
+				14,
+				15,
+				-1,
+				-1,
+				9
+		},
+		{// TIM13
+				_GPIO_5,
+				8,
+				-1,
+				-1,
+				-1,
+				9
+		},
+		{// TIM14
+				_GPIO_5,
+				9,
+				-1,
+				-1,
+				-1,
+				9
+		}
+};
+
+
 
 #include "stm32f4xx.h"
 

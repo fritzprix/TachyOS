@@ -19,15 +19,10 @@
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
-static int cnt1;
-static int cnt2;
-static int cnt3;
 
 static void loop();
 int main(tch* api) {
 
-	cnt1 = cnt2 = cnt3 = 0;
-//	tch* api = (tch*) arg;
 
 	tch_GpioCfg iocfg;
 	tch_GpioEvCfg evcfg;
@@ -64,6 +59,7 @@ int main(tch* api) {
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
@@ -76,9 +72,7 @@ int main(tch* api) {
 	tch_UartHandle* serial = NULL;
 	const char* msg = "This is Msg\n\r";
 	int size = api->uStdLib->string->strlen(msg);
-	char* u =NULL;
 	while(1){
-		cnt1++;
 		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,msg,size);
 		api->Device->usart->close(serial);
@@ -86,10 +80,4 @@ int main(tch* api) {
 	}
 	return osOK;
 }
-
-static void loop(){
-	while(1)
-		;
-}
-
 
