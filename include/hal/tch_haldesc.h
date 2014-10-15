@@ -75,6 +75,8 @@ typedef struct _tch_timer_descriptor {
 	const uint32_t       clkmsk;
 	volatile uint32_t*  _lpclkenr;
 	const uint32_t       lpclkmsk;
+	volatile uint32_t*   rstr;
+	const uint32_t       rstmsk;
 	volatile uint16_t*  _isr;
 	volatile uint16_t*  _icr;
 	const uint8_t        channelCnt;

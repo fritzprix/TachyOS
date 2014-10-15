@@ -17,6 +17,10 @@
 #include "tch_halInit.h"
 
 
+#ifndef TIMER_DBG
+#define TIMER_DBG    (0)
+#endif
+
 
 #define TIMER_UNITTIME_mSEC      ((uint8_t) 0)
 #define TIMER_UNITTIME_uSEC      ((uint8_t) 1)
@@ -188,6 +192,9 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	if(gpt_def->pwrOpt == ActOnSleep)
 		*timDesc->_lpclkenr |= timDesc->lpclkmsk;
 
+	*timDesc->rstr |= timDesc->rstmsk;
+	*timDesc->rstr &= ~timDesc->rstmsk;
+
 	uint32_t psc = 2;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
 		psc = 4;
@@ -200,6 +207,8 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	case TIMER_UNITTIME_uSEC:
 		timerHw->PSC = SYS_CLK / psc / 1000000;
 	}
+	timerHw->EGR |= TIM_EGR_UG;
+
 
 	if(timDesc->channelCnt > 0){   // if requested timer h/w supprot channel 1 initialize its related registers
 
@@ -259,11 +268,10 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		timerHw->CCMR2 = tmpccmr;
 		timerHw->CCR4 = 0;
 	}
-	timerHw->CNT = 0;
 	timerHw->ARR = 0xFFFF;
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
-	timerHw->CR1 = TIM_CR1_CEN;
+	timerHw->CR1 |= TIM_CR1_CEN;
 	env->Device->interrupt->enable(timDesc->irq);
 
 	return (tch_gptimerHandle*) ins;
@@ -329,6 +337,9 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	*timDesc->_clkenr |= timDesc->clkmsk;
 	if(tdef->pwrOpt == ActOnSleep)
 		*timDesc->_lpclkenr |= timDesc->lpclkmsk;
+
+	*timDesc->rstr |= timDesc->rstmsk;
+	*timDesc->rstr &= ~timDesc->rstmsk;
 
 	uint32_t psc = 2;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
@@ -417,7 +428,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	}
 	timerHw->EGR |= TIM_EGR_UG;
 	timerHw->ARR = tdef->PeriodInUnitTime;
-	timerHw->CNT = 0;
+	timerHw->CNT = 1;
 	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
 
 	return (tch_pwmHandle*) ins;
@@ -508,7 +519,10 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	const tch* env = ins->env;
 	tchStatus result = osOK;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
-	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
+	timerHw->CR1 = 0;                // disable timer count
+	timerHw->SR = 0;
+	timerHw->CNT = 0;
+	timerHw->DIER = 0;
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;

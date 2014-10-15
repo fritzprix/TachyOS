@@ -68,15 +68,36 @@ int main(tch* api) {
 	ucfg.StopBit = api->Device->usart->StopBit.StopBit1B;
 	ucfg.UartCh = 2;
 
+	api->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = api->Device->gpio->Mode.Out;
+	iocfg.Otype = api->Device->gpio->Otype.PushPull;
+	iocfg.Speed = api->Device->gpio->Speed.VeryHigh;
+	tch_gpio_handle* out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 3),&iocfg,osWaitForever,ActOnSleep);
+	out->out(out,1 << 3,bSet);
+
+	tch_gptimerDef gptdef;
+	gptdef.UnitTime = api->Device->timer->UnitTime.uSec;
+	gptdef.pwrOpt = ActOnSleep;
+
+	tch_gptimerHandle* timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
+
 
 	tch_UartHandle* serial = NULL;
 	const char* msg = "This is Msg\n\r";
 	int size = api->uStdLib->string->strlen(msg);
 	while(1){
+		out->out(out,1 << 3,bClear);
+		timer->wait(timer,10);
+		out->out(out,1 << 3,bSet);
+		timer->wait(timer,50);
+		out->out(out,1 << 3,bClear);
+		timer->wait(timer,10);
 		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,msg,size);
 		api->Device->usart->close(serial);
 		api->Thread->sleep(1);
+		out->out(out,1 << 3,bSet);
+		timer->wait(timer,50);
 	}
 	return osOK;
 }

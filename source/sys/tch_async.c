@@ -167,7 +167,7 @@ tchStatus tch_async_knotify(tch_asyncId async,void* args){
 	arg_p->req = (tch_asyncReq*) tch_ltreeRemove(&cb->treqs,arg_p->id);
 	if(!arg_p->req)
 		return osErrorParameter;    // given id isn't correct maybe..
-	if(tch_schedResumeM(&arg_p->req->wq,SCHED_THREAD_ALL,arg_p->res,FALSE))
+	if(tch_schedResumeM(&arg_p->req->wq,SCHED_THREAD_ALL,arg_p->res,TRUE))
 		return osOK;
 	return osErrorTimeoutResource;          // there is no waiting thread to be notified
 }
