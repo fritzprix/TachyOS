@@ -18,7 +18,7 @@
 
 
 #ifndef TIMER_DBG
-#define TIMER_DBG    (0)
+#define TIMER_DBG    (1)
 #endif
 
 
@@ -153,6 +153,7 @@ __attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance
 
 
 const tch_lld_timer* tch_timer_instance = (tch_lld_timer*) &TIMER_StaticInstance;
+tch_GpioHandle* iohandle;
 
 ///////            Timer Manager Function               ///////
 static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
@@ -161,6 +162,18 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		TIMER_StaticInstance.condv = env->Condv->create();
 	if(!TIMER_StaticInstance.mtx)
 		TIMER_StaticInstance.mtx = env->Mtx->create();
+
+#if TIMER_DBG
+	if(!iohandle){
+		tch_GpioCfg iocfg;
+		env->Device->gpio->initCfg(&iocfg);
+		iocfg.Mode = env->Device->gpio->Mode.Out;
+		iocfg.Otype = env->Device->gpio->Otype.PushPull;
+		iocfg.Speed = env->Device->gpio->Speed.VeryHigh;
+		iohandle = env->Device->gpio->allocIo(env,env->Device->gpio->Ports.gpio_2,1 << 1,&iocfg,osWaitForever,ActOnSleep);
+	}
+#endif
+
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
@@ -195,9 +208,9 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	*timDesc->rstr |= timDesc->rstmsk;
 	*timDesc->rstr &= ~timDesc->rstmsk;
 
-	uint32_t psc = 2;
+	uint32_t psc = 1;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
-		psc = 4;
+		psc = 2;
 
 	switch(gpt_def->UnitTime){
 	case TIMER_UNITTIME_mSEC:
@@ -455,6 +468,9 @@ static DECL_ASYNC_TASK(tch_gptimer_trigger){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) gpt_arg->ins;
 	TIM_TypeDef* thw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
 	uint32_t vcnt = thw->CNT + gpt_arg->utick;
+#if TIMER_DBG
+	iohandle->out(iohandle,1 << 1,bSet);
+#endif
 	switch(id){
 	case 0:
 		thw->DIER |= TIM_DIER_CC1IE;
@@ -486,6 +502,7 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	struct tch_gptimer_req_t req;
 	req.ins = self;
 	req.utick = utick;
+	BOOL result = FALSE;
 	do{
 		if(!(chmsk & 1)){
 			thw->ch_occp |= (1 << idx); // set occp bit
@@ -504,7 +521,11 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 				timerHw->CCR4 = timerHw->CNT + utick;
 				break;
 			}
-			return env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req) == osOK? TRUE : FALSE;
+			result = env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req);
+#if TIMER_DBG
+			iohandle->out(iohandle,1 << 1,bClear);
+#endif
+			return result;
 		}
 		chmsk >>= 1;
 	}while(idx++ < thw->channelCnt);

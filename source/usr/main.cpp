@@ -57,7 +57,7 @@ int main(tch* api) {
 	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
 
@@ -72,7 +72,7 @@ int main(tch* api) {
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.VeryHigh;
-	tch_gpio_handle* out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 3),&iocfg,osWaitForever,ActOnSleep);
+	tch_gpio_handle* out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
 	out->out(out,1 << 3,bSet);
 
 	tch_gptimerDef gptdef;
@@ -86,18 +86,18 @@ int main(tch* api) {
 	const char* msg = "This is Msg\n\r";
 	int size = api->uStdLib->string->strlen(msg);
 	while(1){
-		out->out(out,1 << 3,bClear);
-		timer->wait(timer,10);
-		out->out(out,1 << 3,bSet);
-		timer->wait(timer,50);
-		out->out(out,1 << 3,bClear);
-		timer->wait(timer,10);
+		out->out(out,1 << 14,bClear);
+		timer->wait(timer,100);
+		out->out(out,1 << 14,bSet);
+		timer->wait(timer,100);
+		out->out(out,1 << 14,bClear);
+		timer->wait(timer,100);
 		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,msg,size);
 		api->Device->usart->close(serial);
 		api->Thread->sleep(1);
-		out->out(out,1 << 3,bSet);
-		timer->wait(timer,50);
+		out->out(out,1 << 14,bSet);
+		timer->wait(timer,800);
 	}
 	return osOK;
 }

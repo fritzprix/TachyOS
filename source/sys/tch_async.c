@@ -116,6 +116,7 @@ static tchStatus tch_async_wait(tch_asyncId async,int id,tch_async_routine fn,ui
 	return result;                                                        // ... free request and return
 }
 
+
 tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue){
 	tch_async_cb* cb = (tch_async_cb*) async;
 	tch_asyncReq* req = (tch_asyncReq*) async_req;
@@ -123,10 +124,16 @@ tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue){
 	if(!tch_asyncIsValid(async))      // validity check of async id
 		return osErrorResource;
 	tch_ltreeInsert(cb->treqs,(tch_ltree_node*) req);
+
+
+	tch_thread_header* nth = NULL;
 	tch_listEnqueuePriority((tch_lnode_t*) task_queue,(tch_lnode_t*) &req->task,tch_asyncPriorityRule);  // enqueue task
-	tch_schedSuspend(&req->wq,req->timeout);                            // suspend current thread
-	if(!tch_listIsEmpty(&sysThreadPort))                                // if task thread is in sleep, wake it up
-		tch_schedResumeM(&sysThreadPort,1,osOK,FALSE);
+	if(!tch_listIsEmpty(&sysThreadPort)){
+		nth = (tch_thread_header*)((tch_lnode_t*) tch_listDequeue(&sysThreadPort) - 1);
+		tch_kernelSetResult(nth,osOK);
+		tch_schedReady(nth);
+	}
+	tch_schedSuspend(&req->wq,req->timeout);
 	return osOK;
 }
 
