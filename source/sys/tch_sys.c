@@ -118,89 +118,91 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
 		tch_port_setThreadSP((uint32_t)sp);
+		__DMB();
+		__ISB();
 		tch_port_kernel_unlock();
-		return;
+		break;
 	case SV_THREAD_START:              // start thread first time
 		tch_schedStartThread((tch_threadId) arg1);
-		return;
+		break;
 	case SV_THREAD_SLEEP:
 		tch_schedSleep(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
-		return;
+		break;
 	case SV_THREAD_JOIN:
 		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
 			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
-			return;
+			break;
 		}
 		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
-		return;
+		break;
 	case SV_THREAD_RESUME:
 		tch_schedResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
-		return;
+		break;
 	case SV_THREAD_RESUMEALL:
 		tch_schedResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
-		return;
+		break;
 	case SV_THREAD_SUSPEND:
 		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
-		return;
+		break;
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
 		tch_schedTerminate((tch_threadId) cth,arg2);
-		return;
+		break;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
 		cth->t_sig.match_target = arg1;                         ///< update thread signal pattern
 		tch_schedSuspend((tch_thread_queue*)&cth->t_sig.sig_wq,arg2);///< suspend to signal wq
-		return;
+		break;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
 		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
-		return;
+		break;
 	case SV_MEM_MALLOC:
 #ifndef __USE_MALLOC
 		tch_kernelSetResult(tch_currentThread,(uint32_t)Heap_Manager->alloc(Heap_Manager,arg1));
 #endif
-		return;
+		break;
 	case SV_MEM_FREE:
 #ifndef __USE_MALLOC
 		tch_currentThread = Heap_Manager->free(Heap_Manager,(void*)arg1);
 #endif
-		return;
+		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_msgq_kput(arg1,arg2));
-		return;
+		break;
 	case SV_MSGQ_GET:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_msgq_kget(arg1,arg2));
-		return;
+		break;
 	case SV_MSGQ_DESTROY:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_msgq_kdestroy(arg1));
-		return;
+		break;
 	case SV_MAILQ_ALLOC:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kalloc(arg1,arg2));
-		return;
+		break;
 	case SV_MAILQ_FREE:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kfree(arg1,arg2));
-		return;
+		break;
 	case SV_MAILQ_DESTROY:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy(arg1,0));
-		return;
+		break;
 	case SV_ASYNC_WAIT:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_async_kwait(arg1,arg2,&sysTaskQue));
-		return;
+		break;
 	case SV_ASYNC_NOTIFY:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_async_knotify(arg1,arg2));
-		return;
+		break;
 	case SV_ASYNC_DESTROY:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
-		return;
+		break;
 	}
 }
 

@@ -35,11 +35,6 @@ typedef void* tch_threadId;
 typedef struct _tch_thread_cfg_t tch_threadCfg;
 typedef int (*tch_thread_routine)(tch* sys);
 
-typedef struct tch_msg{
-	tch_threadId thread;
-	uint32_t      msg;
-	void*        _arg;
-} tch_msg;
 
 
 typedef enum {

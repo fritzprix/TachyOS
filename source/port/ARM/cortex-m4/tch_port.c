@@ -158,6 +158,8 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
+	__DMB();
+	__ISB();
 	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
 }
 
@@ -167,7 +169,7 @@ int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
 			"dmb\n"
 			"isb\n"
-			"svc #0"   : : : "r0","r1","r2");        // return from sv interrupt and get result from register #0
+			"svc #0"   : : : );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_header*)tch_currentThread)->t_kRet;
 }
 /***

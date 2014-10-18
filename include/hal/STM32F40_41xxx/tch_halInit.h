@@ -425,6 +425,8 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB2ENR_USART1EN,
 				&RCC->APB2LPENR,
 				RCC_APB2LPENR_USART1LPEN,
+				&RCC->APB2RSTR,
+				RCC_APB2RSTR_USART1RST,
 				&USART1->SR,
 				&USART1->SR,
 				USART1_IRQn
@@ -436,6 +438,8 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1ENR_USART2EN,
 				&RCC->APB1LPENR,
 				RCC_APB1LPENR_USART2LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_USART2RST,
 				&USART2->SR,
 				&USART2->SR,
 				USART2_IRQn
@@ -447,6 +451,8 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1ENR_USART3EN,
 				&RCC->APB1LPENR,
 				RCC_APB1LPENR_USART3LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_USART3RST,
 				&USART3->SR,
 				&USART3->SR,
 				USART3_IRQn
@@ -458,6 +464,8 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1ENR_UART4EN,
 				&RCC->APB1LPENR,
 				RCC_APB1LPENR_UART4LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_UART4RST,
 				&UART4->SR,
 				&UART4->SR,
 				UART4_IRQn

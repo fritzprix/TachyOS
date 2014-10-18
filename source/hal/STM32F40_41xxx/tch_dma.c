@@ -325,8 +325,10 @@ static tch_DmaHandle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint
 	dmaHw->CR |= cfg->Priority << DMA_Prior_Pos;
 	dmaHw->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
 
-	NVIC_SetPriority(dma_desc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(dma_desc->irq);
+	api->Device->interrupt->setPriority(dma_desc->irq,api->Device->interrupt->Priority.Normal);
+	api->Device->interrupt->enable(dma_desc->irq);
+	__DMB();
+	__ISB();
 	dma_desc->_handle = tch_dma_createHandle(api,dma,cfg->Ch);             // initializing dma handle object
 	tch_dmaValidate(dma_desc->_handle);
 	return (tch_DmaHandle*)dma_desc->_handle;

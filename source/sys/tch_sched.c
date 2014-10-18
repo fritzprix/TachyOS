@@ -135,7 +135,7 @@ void tch_schedStartThread(tch_threadId nth){
  * put new thread into ready queue
  */
 void tch_schedReady(tch_threadId th){
-	tch_thread_header* thr_p = th;
+       	tch_thread_header* thr_p = th;
 	getThreadHeader(th)->t_state = READY;
 	tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(thr_p),tch_schedReadyQRule);
 }

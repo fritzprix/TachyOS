@@ -87,17 +87,17 @@ int main(tch* api) {
 	int size = api->uStdLib->string->strlen(msg);
 	while(1){
 		out->out(out,1 << 14,bClear);
-		timer->wait(timer,100);
+		timer->wait(timer,150);
 		out->out(out,1 << 14,bSet);
-		timer->wait(timer,100);
+		timer->wait(timer,150);
 		out->out(out,1 << 14,bClear);
-		timer->wait(timer,100);
+		timer->wait(timer,150);
 		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,msg,size);
 		api->Device->usart->close(serial);
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);
-		timer->wait(timer,800);
+		timer->wait(timer,200);
 	}
 	return osOK;
 }

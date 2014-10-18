@@ -69,7 +69,7 @@ endif
 ifeq ($(OPT_FLAG),)
 	OPT_FLAG=-O0 -g3
 ifeq ($(PUBLISH_TYPE),Release)
-	OPT_FLAG=-O2 -g
+	OPT_FLAG=-O1 -g3
 endif
 endif
 
