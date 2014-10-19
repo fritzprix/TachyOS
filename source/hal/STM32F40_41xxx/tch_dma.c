@@ -196,9 +196,17 @@ typedef struct tch_dma_manager_t {
 #define TCH_DMA_CLASS_KEY             ((uint16_t) 0x3D01)
 #define TCH_DMA_BUSY                  ((uint32_t) 1 << 16)
 
-#define TCH_SET_BUSY(ins)             ((tch_dma_handle_prototype))
-#define TCH_CLR_BUSY(ins)
-#define TCH_IS_BUSY(ins)
+#define DMA_SET_BUSY(ins)\
+	do{\
+		((tch_dma_handle_prototype*) ins)->status |= TCH_DMA_BUSY;\
+	}while(0)
+
+#define DMA_CLR_BUSY(ins)\
+	do{\
+		((tch_dma_handle_prototype*) ins)->status &= ~TCH_DMA_BUSY;\
+	}while(0)
+
+#define DMA_IS_BUSY(ins)              (((tch_dma_handle_prototype*) ins)->status & TCH_DMA_BUSY) == TCH_DMA_BUSY
 
 
 
@@ -213,7 +221,8 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_condvId                 condv;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
-	tch_asyncId                 dma_async;
+//	tch_asyncId                 dma_async;
+	tch_msgQue_id               dma_mq;
 }tch_dma_handle_prototype;
 
 
@@ -357,14 +366,15 @@ static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	dma_handle->status = 0;
 	dma_handle->mtxId = api->Mtx->create();
 	dma_handle->condv = api->Condv->create();
-	dma_handle->dma_async = api->Async->create(1);
+//	dma_handle->dma_async = api->Async->create(1);
+	dma_handle->dma_mq = api->MsgQ->create(1);
 	dma_handle->listener = NULL;
 
 	return (tch_DmaHandle*)dma_handle;
 }
 
 
-
+/*
 static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
 	if(!tch_dmaIsValid(self))
 		return FALSE;
@@ -405,7 +415,50 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t t
 	ins->api->Mtx->unlock(ins->mtxId);
 	return TRUE;
 }
+*/
 
+static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
+	if(!tch_dmaIsValid(self))
+		return FALSE;
+	uint8_t err_cnt = 0;
+	osEvent evt;
+	evt.status = osOK;
+	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	tchStatus lresult = osOK;
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+
+	if((*result = ins->api->Mtx->lock(ins->mtxId,timeout)) != osOK)
+		return FALSE;
+	while(DMA_IS_BUSY(ins)){
+		if((*result = ins->api->Condv->wait(ins->condv,ins->mtxId,timeout)) != osOK)
+			return FALSE;
+	}
+	DMA_SET_BUSY(ins);
+	ins->api->Mtx->unlock(ins->mtxId);
+	if(!result)
+		result = &lresult;
+
+	tch_dmaSetDmaAttr(dmaHw,attr);  // configure DMA
+	__ISB();
+	__DMB();
+	dmaHw->CR |= DMA_SxCR_EN;       // trigger dma tranfer in system task thread
+
+
+	evt = ins->api->MsgQ->get(ins->dma_mq,osWaitForever);
+	*result = evt.status;
+	if(evt.status != osEventMessage){
+		return FALSE;
+	}
+
+	if((*result = ins->api->Mtx->lock(ins->mtxId,timeout)) != osOK)   // lock mutex for condition variable operation
+		return FALSE;
+	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
+	ins->api->Condv->wakeAll(ins->condv);
+	if(ins->api->Mtx->unlock(ins->mtxId) != osOK) // unlock mutex
+		return FALSE;
+
+	return TRUE;
+}
 
 static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) _dmaHw;
@@ -429,25 +482,20 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 
 
 	//wait mem sync (because mem store op. has some amount of delay)
-	__ISB();
-	__DMB();
 	return TRUE;
 
 }
 
-
+/*
 static DECL_ASYNC_TASK(tch_dma_trigger){
 	if(!arg)
 		return osErrorParameter;
 	tch_DmaReqArgs* dargs = (tch_DmaReqArgs*) arg;
 	DMA_Stream_TypeDef* _hw = DMA_HWs[((tch_dma_handle_prototype*) dargs->self)->dma]._hw;
-	tch_dmaSetDmaAttr(_hw,dargs->attr);
-	__ISB();
-	__DMB();
-	_hw->CR |= DMA_SxCR_EN;   // trigger dma tranfer in system task thread
+
 	return osOK;
 }
-
+*/
 
 /**
  * typedef struct tch_dma_handle_prototype_t{
@@ -473,10 +521,15 @@ static tchStatus tch_dma_close(tch_DmaHandle* self){
 	// wait until dma is busy
 	if((result = api->Mtx->lock(ins->mtxId,osWaitForever)) != osOK)
 		return result;
+	while(DMA_IS_BUSY(ins)){
+		if((result = api->Condv->wait(ins->condv,ins->mtxId,osWaitForever)) != osOK)
+			return result;
+	}
 	tch_dmaInvalidate(ins);
-	api->Async->destroy(ins->dma_async);
-	api->Condv->destroy(ins->condv);
+//	api->Async->destroy(ins->dma_async);
 	api->Mtx->destroy(ins->mtxId);
+	api->MsgQ->destroy(ins->dma_mq);
+	api->Condv->destroy(ins->condv);
 
 
 	if((result = api->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever)) != osOK)
@@ -526,11 +579,13 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	}
 	tch* api = handle->api;
 	if(isr & DMA_FLAG_EvTC){
-		api->Async->notify(handle->dma_async,(int)handle,osOK);
+		//api->Async->notify(handle->dma_async,(int)handle,osOK);
+		api->MsgQ->put(handle->dma_mq,osOK,0);
 		*dma_desc->_icr = isrclr;
 		return TRUE;
 	}else{
-		api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
+	//	api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
+		api->MsgQ->put(handle->dma_mq,osErrorOS,0);
 		*dma_desc->_icr = isrclr;
 		return FALSE;
 	}

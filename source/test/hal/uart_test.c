@@ -36,7 +36,7 @@ tchStatus uart_performTest(tch* env){
 	tch_threadId printer = env->Thread->create(&thcfg,serial);
 	env->Thread->start(printer);
 
-	mcnt = 100;
+	mcnt = 50;
 	const char* openMsg = "UART Opened By Main Thread \n\r";
 	const char* myname = "I'm Main Thread \n\r";
 	int size = env->uStdLib->string->strlen(myname);
@@ -50,7 +50,6 @@ tchStatus uart_performTest(tch* env){
 		env->Device->usart->close(serial);
 	}
 
-	mcnt++;
 	if(env->Thread->join(printer,osWaitForever) != osOK)
 		return osErrorOS;
 	env->Device->usart->close(serial);
@@ -59,7 +58,7 @@ tchStatus uart_performTest(tch* env){
 
 
 static DECLARE_THREADROUTINE(printerThreadRoutine){
-	pcnt = 100;
+	pcnt = 50;
 	const char* openedMsg = "UART Opened by Printer \r\n";
 	const char* myname = "I'm Printer Thread \r\n";
 	int size = sys->uStdLib->string->strlen(myname);

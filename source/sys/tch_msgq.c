@@ -12,7 +12,7 @@
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
 #define tch_msgqValidate(msgq)        ((tch_msgq_cb*)msgq)->state = TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF)
 #define tch_msgqInvalidate(msgq)      ((tch_msgq_cb*)msgq)->state &= ~(0xFFFF)
-#define tch_msgqIsValid(msgq)         (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF))
+//#define tch_msgqIsValid(msgq)         (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF))
 
 
 
@@ -37,6 +37,8 @@ static tch_msgQue_id tch_msgq_createApi(size_t len);
 static tchStatus tch_msgq_putApi(tch_msgQue_id,uint32_t msg,uint32_t millisec);
 static osEvent tch_msgq_getApi(tch_msgQue_id,uint32_t millisec);
 static tchStatus tch_msgq_destroyApi(tch_msgQue_id);
+static BOOL tch_msgqIsValid(tch_msgQue_id);
+
 
 
 
@@ -220,6 +222,12 @@ static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
 	}
 	return osOK;
 }
+
+static BOOL tch_msgqIsValid(tch_msgQue_id msgq){
+	return (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
+
+}
+
 
 tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
