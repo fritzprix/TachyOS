@@ -82,7 +82,6 @@ static tchStatus tch_msgq_putApi(tch_msgQue_id mqId, uword_t msg,uint32_t millis
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
 
-			//tch_schedResumeAll(&msgqCb->cwq,osEventMessage);
 			tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osOK,TRUE);
 			return osOK;
 		}
@@ -118,7 +117,6 @@ tchStatus tch_msgq_kput(tch_msgQue_id mqId,tch_msgq_karg* arg){
 			if(msgqCb->pidx >= msgqCb->sz)
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
-			//tch_schedResumeAll(&msgqCb->cwq,osOK,TRUE);
 			tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osOK,TRUE);
 			return osOK;
 	}
@@ -150,7 +148,6 @@ static osEvent tch_msgq_getApi(tch_msgQue_id mqId,uint32_t millisec){
 		if(msgqCb->gidx >= msgqCb->sz)
 			msgqCb->gidx = 0;
 		msgqCb->updated--;
-		//tch_schedResumeAll(&msgqCb->pwq,osErrorNoMemory,TRUE);
 		tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
 		evt.status = osOK;
 		return evt;
@@ -195,7 +192,6 @@ tchStatus tch_msgq_kget(tch_msgQue_id mqId,tch_msgq_karg* arg){
 	if(msgqCb->gidx >= msgqCb->sz)
 		msgqCb->gidx = 0;
 	msgqCb->updated--;
-//	tch_schedResumeAll(&msgqCb->pwq,osErrorNoMemory,TRUE);
 	tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
 	return osEventMessage;
 }
@@ -210,8 +206,6 @@ static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
 		msgqCb->bp = NULL;
 		msgqCb->gidx = 0;
 		msgqCb->pidx = 0;
-	/*	tch_schedResumeAll(&msgqCb->pwq,osErrorResource,FALSE);
-		tch_schedResumeAll(&msgqCb->cwq,osErrorResource,TRUE);  */
 		tch_schedResumeM(&msgqCb->pwq,SCHED_THREAD_ALL,osErrorResource,FALSE);
 		tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 		msgqCb->updated = 0;
@@ -235,8 +229,6 @@ tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
-/*	tch_schedResumeAll(&msgqCb->cwq,osErrorResource,FALSE);
-	tch_schedResumeAll(&msgqCb->pwq,osErrorResource,TRUE);*/
 	tch_schedResumeM(&msgqCb->cwq,SCHED_THREAD_ALL,osErrorResource,FALSE);
 	tch_schedResumeM(&msgqCb->pwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 	return osOK;

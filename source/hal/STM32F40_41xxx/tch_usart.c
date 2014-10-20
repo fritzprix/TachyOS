@@ -95,7 +95,6 @@ struct tch_lld_usart_arg_t {
 typedef struct tch_lld_usart_handle_prototype_t {
 	tch_UartHandle                    pix;
 	uint8_t                           idx;
-//	tch_DmaHandle*                    txDma;
 	union {
 		tch_DmaHandle* txDma;
 		tch_msgQue_id txQ;
@@ -104,7 +103,6 @@ typedef struct tch_lld_usart_handle_prototype_t {
 		tch_DmaHandle* rxDma;
 		tch_msgQue_id rxQ;
 	} rxCh;
-//	tch_msgQue_id                     mq;
 	tch_GpioHandle*                   ioHandle;
 	tch_mtxId                         rxMtx;
 	tch_condvId                       rxCondv;
@@ -191,11 +189,9 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}
 	UART_StaticInstance.occp_state |= umskb;
 	env->Mtx->unlock(UART_StaticInstance.mtx);
-
 	tch_uart_descriptor* uDesc = &UART_HWs[cfg->UartCh];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
 	tch_uart_bs* ubs = &UART_BD_CFGs[cfg->UartCh];
-
 	tch_GpioCfg iocfg;
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = env->Device->gpio->Mode.Func;
@@ -216,7 +212,11 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		return NULL;
 	}
 
+
 	tch_UartHandlePrototype* uins = env->Mem->alloc(sizeof(tch_UartHandlePrototype));   // if successfully get io handle, create uart handle instance
+	env->uStdLib->string->memset(uins,0,sizeof(tch_UartHandlePrototype));
+
+	test1++;
 	uins->rxMtx = env->Mtx->create();
 	uins->rxCondv = env->Condv->create();
 	uins->txMtx = env->Mtx->create();
@@ -267,6 +267,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 //	uins->mq = NULL;
 	BOOL rxDma = FALSE;
 	BOOL txDma = FALSE;
+	test2++;
 
 	if(ubs->txdma != DMA_NOT_USED){ // setup tx dma
 		dmaCfg.BufferType = DMA->BufferType.Normal;
@@ -288,6 +289,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		uins->txCh.txQ = env->MsgQ->create(1);
 	}
 
+	test3++;                    ///////////////////////////////////////////////////////////////////////////
 
 	if(ubs->rxdma != DMA_NOT_USED){ // setup rx dma
 		dmaCfg.BufferType = DMA->BufferType.Normal;
@@ -309,6 +311,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		uins->rxCh.rxQ = env->MsgQ->create(TCH_URX_QSZ);
 	}
 
+	test4++;                    ///////////////////////////////////////////////////////////////////////////
 
 	if(txDma){ // if tx dma is non-null (available), uart handle routines supporting dma are bound
 		uins->pix.putc = tch_uartPutcDma;
@@ -347,6 +350,10 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 
 	env->Device->interrupt->setPriority(uDesc->irq,env->Device->interrupt->Priority.Normal);
 	env->Device->interrupt->enable(uDesc->irq);
+	__DMB();
+	__ISB();
+
+
 	tch_uartValidate(uins);
 	return (tch_UartHandle*) uins;
 }
@@ -378,7 +385,6 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 		env->Condv->wait(ins->rxCondv,ins->rxMtx,osWaitForever);
 	}
 	UART_SET_RXBUSY(ins);
-
 
 	test2++;
 
@@ -557,8 +563,9 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	req.PeriphInc = FALSE;
 	uhw->SR &= ~USART_SR_TC;    // clear tc
 	while(!dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
-		if(result == osErrorResource)
+		if(result == osErrorResource){
 			return result;
+		}
 	}
 
 	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)

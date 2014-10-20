@@ -106,7 +106,7 @@ int main(tch* api) {
 		ptr = serial;
 		api->Device->usart->close(serial);
 		cnt3++;
-	//	api->Thread->sleep(1);
+		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,200);
 	}

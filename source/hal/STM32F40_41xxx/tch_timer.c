@@ -90,7 +90,8 @@ typedef struct tch_gptimer_handle_proto_t {
 	tch_timer              timer;
 	const tch*             env;
 	tch_asyncId            async;
-	tch_msgQue_id          msgq;
+//	tch_msgQue_id*         msgq;
+	tch_msgQue_id*         msgqs;
 }tch_gptimer_handle_proto;
 
 typedef struct tch_pwm_handle_proto_t{
@@ -119,7 +120,6 @@ static void tch_timer_handleInterrupt(tch_timer timer);
 
 
 //////         General Purpose Timer Function           ///////
-static DECL_ASYNC_TASK(tch_gptimer_trigger);
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
 static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
@@ -178,6 +178,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
+	env->uStdLib->string->memset(ins,0,sizeof(tch_gptimer_handle_proto));
 	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != osOK){
 		env->Mem->free(ins);
 		return NULL;
@@ -195,7 +196,9 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	ins->_pix.close = tch_gptimer_close;
 	ins->_pix.wait = tch_gptimer_wait;
 	ins->async = env->Async->create(timDesc->channelCnt);
-	ins->msgq = env->MsgQ->create(1);
+	ins->msgqs = env->Mem->alloc(timDesc->channelCnt * sizeof(tch_msgQue_id));
+
+//	ins->msgq = env->MsgQ->create(1);
 	ins->env = env;
 	ins->timer = timer;
 	tch_timer_GPtValidate(ins);
@@ -233,11 +236,13 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		tmpccer = timerHw->CCER;
 		tmpccmr = timerHw->CCMR1;
 
+
 		tmpccer &= ~(TIM_CCER_CC1NP | TIM_CCER_CC1P);
 		tmpccmr &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_OC1M);   //* set capture/compare as frozen mode and configured as output
 		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS1 | TIM_CR2_OIS1N);
 		}
+		ins->msgqs[0] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
 		timerHw->CCR1 = 0;
@@ -253,6 +258,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS2 | TIM_CR2_OIS2N);
 		}
+		ins->msgqs[1] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
 		timerHw->CCR2 = 0;
@@ -267,6 +273,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS3 | TIM_CR2_OIS3N);
 		}
+		ins->msgqs[2] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
 		timerHw->CCR3 = 0;
@@ -281,6 +288,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS4);
 		}
+		ins->msgqs[3] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
 		timerHw->CCR4 = 0;
@@ -289,6 +297,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
+
 	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
 	env->Device->interrupt->enable(timDesc->irq);
 	__DMB();
@@ -470,33 +479,6 @@ static uint8_t tch_timer_getPrecision(tch_timer timer){
 
 //////         General Purpose Timer Function           ///////
 
-static DECL_ASYNC_TASK(tch_gptimer_trigger){
-	struct tch_gptimer_req_t* gpt_arg = (struct tch_gptimer_req_t*) arg;
-	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) gpt_arg->ins;
-	TIM_TypeDef* thw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
-#if TIMER_DBG
-	iohandle->out(iohandle,1 << 1,bSet);
-#endif
-	switch(id){
-	case 0:
-		thw->CCR1 = thw->CNT + gpt_arg->utick;
-		thw->DIER |= TIM_DIER_CC1IE;
-		return TRUE;
-	case 1:
-		thw->CCR2 = thw->CNT + gpt_arg->utick;
-		thw->DIER |= TIM_DIER_CC2IE;
-		return TRUE;
-	case 2:
-		thw->CCR3 = thw->CNT + gpt_arg->utick;
-		thw->DIER |= TIM_DIER_CC3IE;
-		return TRUE;
-	case 3:
-		thw->CCR4 = thw->CNT + gpt_arg->utick;
-		thw->DIER |= TIM_DIER_CC4IE;
-		return TRUE;
-	}
-	return FALSE;
-}
 
 // Not Thread-Safe
 /*
@@ -565,12 +547,14 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 #if TIMER_DBG
 	iohandle->out(iohandle,1 << 1,bSet);
 #endif
-			osEvent evt = env->MsgQ->get(ins->msgq,osWaitForever);
+			osEvent evt = env->MsgQ->get(ins->msgqs[id],osWaitForever);
+//	        osEvent evt = env->MsgQ->get(ins->msgq,osWaitForever);
 			if(evt.status != osEventMessage)
 				return FALSE;
 #if TIMER_DBG
 			iohandle->out(iohandle,1 << 1,bClear);
 #endif
+			thw->ch_occp &= ~(1 << id);
 			return TRUE;
 		}
 		chmsk >>= 1;
@@ -580,6 +564,7 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
+	int chIdx = 0;
 	if(!tch_timer_GPtIsValid(ins))
 		return osErrorResource;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
@@ -601,7 +586,11 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
 
 //	env->Async->destroy(ins->async);
-	env->MsgQ->destroy(ins->msgq);
+//	env->MsgQ->destroy(ins->msgq);
+	do{
+		env->MsgQ->destroy(ins->msgqs[chIdx]);
+	}while(chIdx++ < timDesc->channelCnt);
+	env->Mem->free(ins->msgqs);
 	env->Mem->free(ins);
 	return osOK;
 }
@@ -713,9 +702,10 @@ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_time
 		if(timerHw->SR & (idx << 1)){
 			timerHw->SR &= ~(idx << 1);        // clear raised interrupt
 			timerHw->DIER &= ~(idx << 1);      // clear interrupt enable
-			desc->ch_occp &= ~(1 << (idx - 1));
+	//		desc->ch_occp &= ~(1 << (idx - 1));
 	//		env->Async->notify(ins->async,idx - 1,osOK);  // notify to waiting thread
-			env->MsgQ->put(ins->msgq,osOK,0);
+			env->MsgQ->put(ins->msgqs[idx - 1],osOK,0);
+	//		env->MsgQ->put(ins->msgq,osOK,0);
 			return TRUE;
 		}
 	}while(idx++ < desc->channelCnt + 1);

@@ -178,5 +178,5 @@ static inline void tch_condvInvalidate(tch_condvId condId){
 }
 
 static inline BOOL tch_condvIsValid(tch_condvId condv){
-	return ((((tch_condv*) condv)->state & 0xFFFF) >> 2) ==  ((((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY);
+	return ((((tch_condv*) condv)->state  >> 2) & 0xFFFF) ==  ((((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY);
 }
