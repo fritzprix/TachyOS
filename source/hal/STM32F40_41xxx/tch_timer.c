@@ -90,7 +90,6 @@ typedef struct tch_gptimer_handle_proto_t {
 	tch_timer              timer;
 	const tch*             env;
 	tch_asyncId            async;
-//	tch_msgQue_id*         msgq;
 	tch_msgQue_id*         msgqs;
 }tch_gptimer_handle_proto;
 
@@ -198,7 +197,6 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	ins->async = env->Async->create(timDesc->channelCnt);
 	ins->msgqs = env->Mem->alloc(timDesc->channelCnt * sizeof(tch_msgQue_id));
 
-//	ins->msgq = env->MsgQ->create(1);
 	ins->env = env;
 	ins->timer = timer;
 	tch_timer_GPtValidate(ins);
@@ -482,32 +480,6 @@ static uint8_t tch_timer_getPrecision(tch_timer timer){
 
 // Not Thread-Safe
 /*
-static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
-	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
-	if(!tch_timer_GPtIsValid(ins))
-		return FALSE;
-	tch_timer_descriptor* thw = &TIMER_HWs[ins->timer];
-	TIM_TypeDef* timerHw = thw->_hw;
-	int id = 0;
-	uint8_t chmsk = thw->ch_occp;
-	const tch* env = ins->env;
-	struct tch_gptimer_req_t req;
-	req.ins = self;
-	req.utick = utick;
-	BOOL result = FALSE;
-	do{
-		if(!(chmsk & 1)){
-			thw->ch_occp |= (1 << id); // set occp bit
-			result = env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req);
-#if TIMER_DBG
-			iohandle->out(iohandle,1 << 1,bClear);
-#endif
-			return result;
-		}
-		chmsk >>= 1;
-	}while(id++ < thw->channelCnt);
-	return FALSE;   // couldn't find available timer channel ( all occupied)
-}
 */
 
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
@@ -543,12 +515,10 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 				timerHw->DIER |= TIM_DIER_CC4IE;
 				break;
 			}
-			//result = env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req);
 #if TIMER_DBG
 	iohandle->out(iohandle,1 << 1,bSet);
 #endif
 			osEvent evt = env->MsgQ->get(ins->msgqs[id],osWaitForever);
-//	        osEvent evt = env->MsgQ->get(ins->msgq,osWaitForever);
 			if(evt.status != osEventMessage)
 				return FALSE;
 #if TIMER_DBG
@@ -585,8 +555,6 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
 
-//	env->Async->destroy(ins->async);
-//	env->MsgQ->destroy(ins->msgq);
 	do{
 		env->MsgQ->destroy(ins->msgqs[chIdx]);
 	}while(chIdx++ < timDesc->channelCnt);

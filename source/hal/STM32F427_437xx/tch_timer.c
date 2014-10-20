@@ -90,6 +90,7 @@ typedef struct tch_gptimer_handle_proto_t {
 	tch_timer              timer;
 	const tch*             env;
 	tch_asyncId            async;
+	tch_msgQue_id*         msgqs;
 }tch_gptimer_handle_proto;
 
 typedef struct tch_pwm_handle_proto_t{
@@ -118,7 +119,6 @@ static void tch_timer_handleInterrupt(tch_timer timer);
 
 
 //////         General Purpose Timer Function           ///////
-static DECL_ASYNC_TASK(tch_gptimer_trigger);
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
 static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
@@ -177,6 +177,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
+	env->uStdLib->string->memset(ins,0,sizeof(tch_gptimer_handle_proto));
 	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != osOK){
 		env->Mem->free(ins);
 		return NULL;
@@ -194,6 +195,8 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	ins->_pix.close = tch_gptimer_close;
 	ins->_pix.wait = tch_gptimer_wait;
 	ins->async = env->Async->create(timDesc->channelCnt);
+	ins->msgqs = env->Mem->alloc(timDesc->channelCnt * sizeof(tch_msgQue_id));
+
 	ins->env = env;
 	ins->timer = timer;
 	tch_timer_GPtValidate(ins);
@@ -208,17 +211,19 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	*timDesc->rstr |= timDesc->rstmsk;
 	*timDesc->rstr &= ~timDesc->rstmsk;
 
+	DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP;
+
 	uint32_t psc = 1;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
 		psc = 2;
 
 	switch(gpt_def->UnitTime){
 	case TIMER_UNITTIME_mSEC:
-		timerHw->PSC = SYS_CLK / psc / 1000;
+		timerHw->PSC = SYS_CLK / psc / 1000 - 1;
 		break;
 	case TIMER_UNITTIME_nSEC:   // out of capability
 	case TIMER_UNITTIME_uSEC:
-		timerHw->PSC = SYS_CLK / psc / 1000000;
+		timerHw->PSC = SYS_CLK / psc / 1000000 - 1;
 	}
 	timerHw->EGR |= TIM_EGR_UG;
 
@@ -229,11 +234,13 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		tmpccer = timerHw->CCER;
 		tmpccmr = timerHw->CCMR1;
 
+
 		tmpccer &= ~(TIM_CCER_CC1NP | TIM_CCER_CC1P);
 		tmpccmr &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_OC1M);   //* set capture/compare as frozen mode and configured as output
-		if((timerHw == TIM2) || (timerHw == TIM8)){
+		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS1 | TIM_CR2_OIS1N);
 		}
+		ins->msgqs[0] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
 		timerHw->CCR1 = 0;
@@ -246,9 +253,10 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 		tmpccer &= ~(TIM_CCER_CC2NP | TIM_CCER_CC2P);
 		tmpccmr &= ~(TIM_CCMR1_CC2S | TIM_CCMR1_OC2M);
-		if((timerHw == TIM2) || (timerHw == TIM8)){
+		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS2 | TIM_CR2_OIS2N);
 		}
+		ins->msgqs[1] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
 		timerHw->CCR2 = 0;
@@ -260,9 +268,10 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 		tmpccer &= ~(TIM_CCER_CC3NP | TIM_CCER_CC3P);
 		tmpccmr &= ~(TIM_CCMR2_CC3S | TIM_CCMR2_OC3M);
-		if((timerHw == TIM2) || (timerHw == TIM8)){
+		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS3 | TIM_CR2_OIS3N);
 		}
+		ins->msgqs[2] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
 		timerHw->CCR3 = 0;
@@ -274,9 +283,10 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 		tmpccer &= ~(TIM_CCER_CC4NP | TIM_CCER_CC4P);
 		tmpccmr &= ~(TIM_CCMR2_CC4S | TIM_CCMR2_OC4M);
-		if((timerHw == TIM2) || (timerHw == TIM8)){
+		if((timerHw == TIM1) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS4);
 		}
+		ins->msgqs[3] = env->MsgQ->create(1);
 		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
 		timerHw->CCR4 = 0;
@@ -285,7 +295,11 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
+
+	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
 	env->Device->interrupt->enable(timDesc->irq);
+	__DMB();
+	__ISB();
 
 	return (tch_gptimerHandle*) ins;
 }
@@ -354,17 +368,17 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	*timDesc->rstr |= timDesc->rstmsk;
 	*timDesc->rstr &= ~timDesc->rstmsk;
 
-	uint32_t psc = 2;
+	uint32_t psc = 1;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
-		psc = 4;
+		psc = 2;
 
 	switch(tdef->UnitTime){
 	case TIMER_UNITTIME_mSEC:
-		timerHw->PSC = SYS_CLK / psc / 1000;
+		timerHw->PSC = (SYS_CLK / psc / 1000) - 1;
 		break;
 	case TIMER_UNITTIME_nSEC:   // out of capability
 	case TIMER_UNITTIME_uSEC:
-		timerHw->PSC = SYS_CLK / psc / 1000000;
+		timerHw->PSC = (SYS_CLK / psc / 1000000) - 1;
 	}
 
 	timerHw->CR1 |= TIM_CR1_ARPE;// set auto preload enable @ CR1 (Set ARPE bit)
@@ -463,77 +477,64 @@ static uint8_t tch_timer_getPrecision(tch_timer timer){
 
 //////         General Purpose Timer Function           ///////
 
-static DECL_ASYNC_TASK(tch_gptimer_trigger){
-	struct tch_gptimer_req_t* gpt_arg = (struct tch_gptimer_req_t*) arg;
-	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) gpt_arg->ins;
-	TIM_TypeDef* thw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
-	uint32_t vcnt = thw->CNT + gpt_arg->utick;
-#if TIMER_DBG
-	iohandle->out(iohandle,1 << 1,bSet);
-#endif
-	switch(id){
-	case 0:
-		thw->DIER |= TIM_DIER_CC1IE;
-		return TRUE;
-	case 1:
-		thw->DIER |= TIM_DIER_CC2IE;
-		return TRUE;
-	case 2:
-		thw->DIER |= TIM_DIER_CC3IE;
-		return TRUE;
-	case 3:
-		thw->DIER |= TIM_DIER_CC4IE;
-		return TRUE;
-	}
-	return FALSE;
-}
 
 // Not Thread-Safe
+/*
+*/
+
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
 	if(!tch_timer_GPtIsValid(ins))
 		return FALSE;
 	tch_timer_descriptor* thw = &TIMER_HWs[ins->timer];
 	TIM_TypeDef* timerHw = thw->_hw;
-	uint8_t idx = 0;
 	int id = 0;
 	uint8_t chmsk = thw->ch_occp;
 	const tch* env = ins->env;
 	struct tch_gptimer_req_t req;
 	req.ins = self;
 	req.utick = utick;
-	BOOL result = FALSE;
 	do{
 		if(!(chmsk & 1)){
-			thw->ch_occp |= (1 << idx); // set occp bit
-			id = idx;
-			switch(idx){
+			thw->ch_occp |= (1 << id); // set occp bit
+			switch(id){
 			case 0:
 				timerHw->CCR1 = timerHw->CNT + utick;
+				timerHw->DIER |= TIM_DIER_CC1IE;
 				break;
 			case 1:
 				timerHw->CCR2 = timerHw->CNT + utick;
+				timerHw->DIER |= TIM_DIER_CC2IE;
 				break;
 			case 2:
 				timerHw->CCR3 = timerHw->CNT + utick;
+				timerHw->DIER |= TIM_DIER_CC3IE;
 				break;
 			case 3:
 				timerHw->CCR4 = timerHw->CNT + utick;
+				timerHw->DIER |= TIM_DIER_CC4IE;
 				break;
 			}
-			result = env->Async->wait(ins->async,id,tch_gptimer_trigger,osWaitForever,&req);
+#if TIMER_DBG
+	iohandle->out(iohandle,1 << 1,bSet);
+#endif
+			osEvent evt = env->MsgQ->get(ins->msgqs[id],osWaitForever);
+			if(evt.status != osEventMessage)
+				return FALSE;
 #if TIMER_DBG
 			iohandle->out(iohandle,1 << 1,bClear);
 #endif
-			return result;
+			thw->ch_occp &= ~(1 << id);
+			return TRUE;
 		}
 		chmsk >>= 1;
-	}while(idx++ < thw->channelCnt);
+	}while(id++ < thw->channelCnt);
 	return FALSE;   // couldn't find available timer channel ( all occupied)
 }
 
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
+	int chIdx = 0;
 	if(!tch_timer_GPtIsValid(ins))
 		return osErrorResource;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
@@ -554,7 +555,10 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
 
-	env->Async->destroy(ins->async);
+	do{
+		env->MsgQ->destroy(ins->msgqs[chIdx]);
+	}while(chIdx++ < timDesc->channelCnt);
+	env->Mem->free(ins->msgqs);
 	env->Mem->free(ins);
 	return osOK;
 }
@@ -666,8 +670,10 @@ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_time
 		if(timerHw->SR & (idx << 1)){
 			timerHw->SR &= ~(idx << 1);        // clear raised interrupt
 			timerHw->DIER &= ~(idx << 1);      // clear interrupt enable
-			desc->ch_occp &= ~(1 << (idx - 1));
-			env->Async->notify(ins->async,idx - 1,osOK);  // notify to waiting thread
+	//		desc->ch_occp &= ~(1 << (idx - 1));
+	//		env->Async->notify(ins->async,idx - 1,osOK);  // notify to waiting thread
+			env->MsgQ->put(ins->msgqs[idx - 1],osOK,0);
+	//		env->MsgQ->put(ins->msgq,osOK,0);
 			return TRUE;
 		}
 	}while(idx++ < desc->channelCnt + 1);

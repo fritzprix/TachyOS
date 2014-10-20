@@ -155,11 +155,6 @@ __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInsta
 		0
 };
 
-static int test1 = 0;
-static int test2 = 0;
-static int test3 = 0;
-static int test4 = 0;
-static int test5 = 0;
 
 
 const tch_lld_usart* tch_usart_instance = (const tch_lld_usart*) &UART_StaticInstance;
@@ -175,11 +170,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		return NULL;
 	uint32_t umskb = 1 << cfg->UartCh;
 
-	test1 = 0;
-	test2 = 0;
-	test3 = 0;
-	test4 = 0;
-	test5 = 0;
 
 	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != osOK)
 		return NULL;
@@ -216,7 +206,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	tch_UartHandlePrototype* uins = env->Mem->alloc(sizeof(tch_UartHandlePrototype));   // if successfully get io handle, create uart handle instance
 	env->uStdLib->string->memset(uins,0,sizeof(tch_UartHandlePrototype));
 
-	test1++;
 	uins->rxMtx = env->Mtx->create();
 	uins->rxCondv = env->Condv->create();
 	uins->txMtx = env->Mtx->create();
@@ -261,13 +250,10 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	tch_DmaCfg dmaCfg;
 	tch_lld_dma* DMA = (tch_lld_dma*)env->Device->dma;
 
-//	uins->txDma = NULL;
 	uins->txCh.txDma = NULL;
 	uins->rxCh.rxDma = NULL;
-//	uins->mq = NULL;
 	BOOL rxDma = FALSE;
 	BOOL txDma = FALSE;
-	test2++;
 
 	if(ubs->txdma != DMA_NOT_USED){ // setup tx dma
 		dmaCfg.BufferType = DMA->BufferType.Normal;
@@ -289,7 +275,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		uins->txCh.txQ = env->MsgQ->create(1);
 	}
 
-	test3++;                    ///////////////////////////////////////////////////////////////////////////
 
 	if(ubs->rxdma != DMA_NOT_USED){ // setup rx dma
 		dmaCfg.BufferType = DMA->BufferType.Normal;
@@ -310,8 +295,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}else{
 		uins->rxCh.rxQ = env->MsgQ->create(TCH_URX_QSZ);
 	}
-
-	test4++;                    ///////////////////////////////////////////////////////////////////////////
 
 	if(txDma){ // if tx dma is non-null (available), uart handle routines supporting dma are bound
 		uins->pix.putc = tch_uartPutcDma;
@@ -366,7 +349,6 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 	tch* env = ins->env;
 	if(!tch_uartIsValid(ins))
 		return FALSE;
-	test1++;
 	if(env->Device->interrupt->isISR())
 		return FALSE;
 
@@ -386,8 +368,6 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 	}
 	UART_SET_RXBUSY(ins);
 
-	test2++;
-
 	tch_uartInvalidate(ins);       // invalidate instance
 	env->Mtx->destroy(ins->rxMtx);
 	env->Condv->destroy(ins->rxCondv);
@@ -402,12 +382,7 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 		env->Device->dma->freeDma(ins->rxCh.rxDma);
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
-	test3++;
 	env->Device->gpio->freeIo(ins->ioHandle);
-	test4++;
-//	if(ins->mq)
-//		env->MsgQ->destroy(ins->mq);
-	test5++;
 	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != osOK){
 		return FALSE;
 	}

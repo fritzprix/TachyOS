@@ -18,18 +18,10 @@
 
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
-static int cnt1 = 0;
-static int cnt2 = 0;
-static int cnt3 = 0;
-static void* ptr = 0;
 
 int main(tch* api) {
 
 
-	cnt1 = 0;
-	cnt2 = 0;
-	cnt3 = 0;
-	ptr = NULL;
 
 	tch_GpioCfg iocfg;
 	tch_GpioEvCfg evcfg;
@@ -90,7 +82,7 @@ int main(tch* api) {
 
 
 	tch_UartHandle* serial = NULL;
-	const char* msg = "This is Msg\n\r";
+	const char* msg = "T";
 	int size = api->uStdLib->string->strlen(msg);
 	while(1){
 		out->out(out,1 << 14,bClear);
@@ -99,13 +91,9 @@ int main(tch* api) {
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,150);
-		cnt1++;
 		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
-		cnt2++;
 		serial->write(serial,msg,size);
-		ptr = serial;
 		api->Device->usart->close(serial);
-		cnt3++;
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,200);
