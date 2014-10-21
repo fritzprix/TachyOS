@@ -16,18 +16,18 @@
 #include <stdlib.h>
 
 
-typedef struct _tch_memp_header {
+typedef struct _tch_chunk_cb_t {
 	void* next;
 	size_t len;
-}tch_mem_header __attribute__((aligned(4)));
+}tch_chunk_cb __attribute__((aligned(4)));
 
-typedef struct _tch_memp_instance {
+typedef struct _tch_memp_cb_t {
 	tch_mem_handle                  _pix;
-	tch_mem_header*             memp_head;
-}tch_mem_instance;
+	tch_chunk_cb*             memp_head;
+}tch_mem_cb;
 
 static void* tch_apic_mem_alloc(size_t size);
-static int tch_apic_free(void* p);
+static int tch_apic_mem_free(void* p);
 
 static void* tch_mem_alloc(tch_mem_handle* self,size_t size);
 static int tch_mem_free(tch_mem_handle* self,void*);
@@ -35,7 +35,7 @@ static int tch_mem_free(tch_mem_handle* self,void*);
 __attribute__((section(".data")))static tch_mem_ix MEM_StaticInstance = {
 #ifndef __USE_MALLOC
 		tch_apic_mem_alloc,
-		tch_apic_free
+		tch_apic_mem_free
 #else
 		malloc,
 		free
@@ -48,19 +48,19 @@ const tch_mem_ix* Mem = &MEM_StaticInstance;
 
 
 tch_mem_handle* tch_memInit(void* pool,size_t size){
-	tch_mem_instance* obj = (tch_mem_instance*) pool;
+	tch_mem_cb* obj = (tch_mem_cb*) pool;
 	obj->_pix.alloc = tch_mem_alloc;
 	obj->_pix.free = tch_mem_free;
-	tch_mem_header** header__p = &obj->memp_head;
+	tch_chunk_cb** header__p = &obj->memp_head;
 	obj++;
 	void* np = (void*)((uint32_t)(obj + 3) & ~3);        /// Make sure pool address is 4 byte aligned address
 	size = size & ~3;                              /// Make sure size is also 4 byte aligend
-	*header__p = (tch_mem_header*) np;                  /// Make Head At pool start point
-	(*header__p)->next = (uint8_t*) np + size - sizeof(tch_mem_header);       /// Make Tail At pool end point
+	*header__p = (tch_chunk_cb*) np;                  /// Make Head At pool start point
+	(*header__p)->next = (uint8_t*) np + size - sizeof(tch_chunk_cb);       /// Make Tail At pool end point
 	(*header__p)->len = 0;
-	((tch_mem_header*)(*header__p)->next)->next = NULL; /// set up list tail so protect from heap request overrun into other memory area
-	((tch_mem_header*)(*header__p)->next)->len = 0;
-	return (tch_mem_handle*) ((tch_mem_instance*)--obj);
+	((tch_chunk_cb*)(*header__p)->next)->next = NULL; /// set up list tail so protect from heap request overrun into other memory area
+	((tch_chunk_cb*)(*header__p)->next)->len = 0;
+	return (tch_mem_handle*) ((tch_mem_cb*)--obj);
 }
 
 
@@ -68,10 +68,10 @@ void* tch_mem_alloc(tch_mem_handle* self,size_t size){
 	void* p = NULL;
 	if(!size)
 		return NULL;
-	tch_mem_instance* obj = (tch_mem_instance*) self;
-	tch_mem_header* heap_head = obj->memp_head;
-	tch_mem_header* p_sidx = heap_head;
-	tch_mem_header* prev = NULL;
+	tch_mem_cb* obj = (tch_mem_cb*) self;
+	tch_chunk_cb* heap_head = obj->memp_head;
+	tch_chunk_cb* p_sidx = heap_head;
+	tch_chunk_cb* prev = NULL;
 	size = (size + 3) & ~3;                 ///ensure size is 4 byte aligned
 	size_t holesz = ((uint8_t*)p_sidx->next - (uint8_t*)p_sidx - p_sidx->len);
 	while(size > holesz){
@@ -85,23 +85,23 @@ void* tch_mem_alloc(tch_mem_handle* self,size_t size){
 		p_sidx->len = size;
 		return p_sidx + 1;
 	}
-	p = ((uint8_t*) p_sidx + p_sidx->len + size - sizeof(tch_mem_header));
-	((tch_mem_header*) p)->next = p_sidx->next;
-	((tch_mem_header*) p)->len = size;
+	p = ((uint8_t*) p_sidx + p_sidx->len + size - sizeof(tch_chunk_cb));
+	((tch_chunk_cb*) p)->next = p_sidx->next;
+	((tch_chunk_cb*) p)->len = size;
 	p_sidx->next = p;
-	return (void*)((tch_mem_header*) p + 1);
+	return (void*)((tch_chunk_cb*) p + 1);
 }
 
 int tch_mem_free(tch_mem_handle* self,void* fp){
 	if(!fp)
 		return (1);
-	tch_mem_instance* obj = (tch_mem_instance*) self;
-	tch_mem_header* s_prev = NULL;
-	tch_mem_header* s_idx = obj->memp_head;
-	tch_mem_header* mhd = ((tch_mem_header*) fp - 1);
+	tch_mem_cb* obj = (tch_mem_cb*) self;
+	tch_chunk_cb* s_prev = NULL;
+	tch_chunk_cb* s_idx = obj->memp_head;
+	tch_chunk_cb* mhd = ((tch_chunk_cb*) fp - 1);
 	while(mhd != s_idx){
 		s_prev = s_idx;
-		s_idx = (tch_mem_header*) s_idx->next;
+		s_idx = (tch_chunk_cb*) s_idx->next;
 	}
 	if(s_prev == NULL){
 		s_idx->len = 0;
@@ -120,7 +120,7 @@ void* tch_apic_mem_alloc(size_t size){
 	}
 }
 
-int tch_apic_free(void* p){
+int tch_apic_mem_free(void* p){
 	if(__get_IPSR()){
 		return Heap_Manager->free(Heap_Manager,p);
 	}else{

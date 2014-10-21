@@ -59,6 +59,7 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 tch_mtxId tch_mtx_create(){
 	tch_mtx* mcb = (tch_mtx*) Mem->alloc(sizeof(tch_mtx));
+	uStdLib->string->memset(mcb,0,sizeof(tch_mtx));
 	mcb->key = 0;
 	tch_listInit((tch_lnode_t*)&mcb->que);
 	mcb->own = NULL;

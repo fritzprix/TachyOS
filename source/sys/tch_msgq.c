@@ -10,11 +10,6 @@
 #include "tch_msgq.h"
 
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
-#define tch_msgqValidate(msgq)        ((tch_msgq_cb*)msgq)->state = TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF)
-#define tch_msgqInvalidate(msgq)      ((tch_msgq_cb*)msgq)->state &= ~(0xFFFF)
-//#define tch_msgqIsValid(msgq)         (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF))
-
-
 
 typedef struct _tch_msgq_cb {
 	uint32_t state;
@@ -33,10 +28,13 @@ tchStatus tch_msgq_kput(tch_msgQue_id,tch_msgq_karg* arg);
 tchStatus tch_msgq_kget(tch_msgQue_id,tch_msgq_karg* arg);
 tchStatus tch_msgq_kdestroy(tch_msgQue_id);
 
-static tch_msgQue_id tch_msgq_createApi(size_t len);
-static tchStatus tch_msgq_putApi(tch_msgQue_id,uint32_t msg,uint32_t millisec);
-static osEvent tch_msgq_getApi(tch_msgQue_id,uint32_t millisec);
-static tchStatus tch_msgq_destroyApi(tch_msgQue_id);
+static tch_msgQue_id tch_msgq_create(size_t len);
+static tchStatus tch_msgq_put(tch_msgQue_id,uint32_t msg,uint32_t millisec);
+static osEvent tch_msgq_get(tch_msgQue_id,uint32_t millisec);
+static tchStatus tch_msgq_destroy(tch_msgQue_id);
+
+static void tch_msgqValidate(tch_msgQue_id);
+static void tch_msgqInvalidate(tch_msgQue_id);
 static BOOL tch_msgqIsValid(tch_msgQue_id);
 
 
@@ -44,21 +42,25 @@ static BOOL tch_msgqIsValid(tch_msgQue_id);
 
 
 __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
-		tch_msgq_createApi,
-		tch_msgq_putApi,
-		tch_msgq_getApi,
-		tch_msgq_destroyApi
+		tch_msgq_create,
+		tch_msgq_put,
+		tch_msgq_get,
+		tch_msgq_destroy
 };
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 
-static tch_msgQue_id tch_msgq_createApi(size_t len){
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) Mem->alloc(sizeof(tch_msgq_cb) + len * sizeof(uaddr_t));
+static tch_msgQue_id tch_msgq_create(size_t len){
+	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) Mem->alloc(sz);
+	uStdLib->string->memset(msgqCb,0,sz);
+
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
 	msgqCb->sz = len;
+	msgqCb->state = 0;
 	tch_listInit(&msgqCb->cwq);
 	tch_listInit(&msgqCb->pwq);
 
@@ -68,7 +70,7 @@ static tch_msgQue_id tch_msgq_createApi(size_t len){
 
 
 
-static tchStatus tch_msgq_putApi(tch_msgQue_id mqId, uword_t msg,uint32_t millisec){
+static tchStatus tch_msgq_put(tch_msgQue_id mqId, uword_t msg,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tchStatus result = osOK;
 	if(!tch_msgqIsValid(msgqCb))
@@ -125,7 +127,7 @@ tchStatus tch_msgq_kput(tch_msgQue_id mqId,tch_msgq_karg* arg){
 }
 
 
-static osEvent tch_msgq_getApi(tch_msgQue_id mqId,uint32_t millisec){
+static osEvent tch_msgq_get(tch_msgQue_id mqId,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	osEvent evt;
 	evt.def = mqId;
@@ -196,7 +198,7 @@ tchStatus tch_msgq_kget(tch_msgQue_id mqId,tch_msgq_karg* arg){
 	return osEventMessage;
 }
 
-static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
+static tchStatus tch_msgq_destroy(tch_msgQue_id mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_header* nth = NULL;
 	if(!tch_msgqIsValid(msgqCb))
@@ -217,11 +219,6 @@ static tchStatus tch_msgq_destroyApi(tch_msgQue_id mqId){
 	return osOK;
 }
 
-static BOOL tch_msgqIsValid(tch_msgQue_id msgq){
-	return (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
-
-}
-
 
 tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
@@ -233,4 +230,19 @@ tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 	tch_schedResumeM(&msgqCb->pwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 	return osOK;
 }
+
+static void tch_msgqValidate(tch_msgQue_id mqId){
+	((tch_msgq_cb*) mqId)->state |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
+}
+
+static void tch_msgqInvalidate(tch_msgQue_id mqId){
+	((tch_msgq_cb*) mqId)->state &= ~(0xFFFF);
+}
+
+static BOOL tch_msgqIsValid(tch_msgQue_id msgq){
+	return (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
+
+}
+
+
 

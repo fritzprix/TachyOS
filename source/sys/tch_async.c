@@ -16,9 +16,6 @@
 
 
 #define TCH_ASYNC_CLASS_KEY           ((uint16_t) 0x2D0A)
-#define tch_asyncValidate(async)      ((tch_async_cb*) async)->tstatus = (((uint32_t) async & 0xFFFF) ^ TCH_ASYNC_CLASS_KEY)
-#define tch_asyncInvalidate(async)    ((tch_async_cb*) async)->tstatus &= ~(0xFFFF)
-#define tch_asyncIsValid(async)       (((tch_async_cb*) async)->tstatus & 0xFFFF) ==  (((uint32_t) async & 0xFFFF) ^ TCH_ASYNC_CLASS_KEY)
 
 #define SIG_TASK                      ((int) 0xFDA08)
 #define TCH_ASYNC_DMSTK_SIZE          ((uint32_t) 1 << 11)
@@ -51,6 +48,10 @@ static tchStatus tch_async_wait(tch_asyncId async,int id,tch_async_routine fn,ui
 static tchStatus tch_async_notify(tch_asyncId async,int id,tchStatus res);
 static tchStatus tch_async_destroy(tch_asyncId async);
 
+static void tch_asyncValidate(tch_asyncId async);
+static void tch_asyncInvalidate(tch_asyncId async);
+static BOOL tch_asyncIsValid(tch_asyncId async);
+
 static LIST_CMP_FN(tch_asyncPriorityRule);
 
 
@@ -70,6 +71,7 @@ const tch_async_ix* Async = &ASYNC_StaticInstance;
 
 static tch_asyncId tch_async_create(size_t tq_size){
 	tch_async_cb* async = (tch_async_cb*) Mem->alloc(sizeof(tch_async_cb)); // allocate async handle
+	uStdLib->string->memset(async,0,sizeof(tch_async_cb));
 	async->tmailqId = MailQ->create(sizeof(tch_asyncReq),tq_size);          // mailq to communicate to task handler thread
 	async->treqs = (tch_ltree_node*) Mem->alloc(sizeof(tch_ltree_node));
 	tch_ltreeInit(async->treqs,TCH_ASYNC_CLASS_KEY);
@@ -211,6 +213,18 @@ tchStatus tch_async_kdestroy(tch_asyncId async){
 	return osOK;
 }
 
+
+static void tch_asyncValidate(tch_asyncId async){
+	((tch_async_cb*) async)->tstatus |= (((uint32_t) async & 0xFFFF) ^ TCH_ASYNC_CLASS_KEY);
+}
+
+static void tch_asyncInvalidate(tch_asyncId async){
+	((tch_async_cb*) async)->tstatus &= ~(0xFFFF);
+}
+
+static BOOL tch_asyncIsValid(tch_asyncId async){
+	return (((tch_async_cb*) async)->tstatus & 0xFFFF) == (((uint32_t) async & 0xFFFF) ^ TCH_ASYNC_CLASS_KEY);
+}
 
 static LIST_CMP_FN(tch_asyncPriorityRule){
 	return ((tch_sysTask*) prior)->tsk_prior > ((tch_sysTask*) post)->tsk_prior;

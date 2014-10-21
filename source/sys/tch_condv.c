@@ -14,9 +14,6 @@
 #define CONDV_WAIT         ((uint8_t) 2)
 
 #define TCH_CONDV_CLASS_KEY           ((uint16_t) 0x2D01)
-//#define tch_condvValidate(condv)      ((tch_condv*) condv)->state = ((((uint32_t)condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY) << 2
-//#define tch_condvInvalidate(condv)    ((tch_condv*) condv)->state &= ~(0xFFFF << 2)
-//#define tch_condvIsValid(condv)       (((((tch_condv*) condv)->state >> 2) & 0xFFFF) == (((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY)
 
 #define tch_condvSetWait(condv)       ((tch_condv*) condv)->state |= CONDV_WAIT
 #define tch_condvClrWait(condv)       ((tch_condv*) condv)->state &= ~CONDV_WAIT
@@ -58,6 +55,7 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 static tch_condvId tch_condv_create(){
 	tch_condv* condv = (tch_condv*)Mem->alloc(sizeof(tch_condv));
+	uStdLib->string->memset(condv,0,sizeof(tch_condv));
 	tch_listInit((tch_lnode_t*)&condv->wq);
 	condv->wakeMtx = NULL;
 	tch_condvValidate(condv);
@@ -170,7 +168,7 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 }
 
 static inline void tch_condvValidate(tch_condvId condId){
-	((tch_condv*) condId)->state = (((((uint32_t) condId) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY) << 2);
+	((tch_condv*) condId)->state |= (((((uint32_t) condId) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY) << 2);
 }
 
 static inline void tch_condvInvalidate(tch_condvId condId){

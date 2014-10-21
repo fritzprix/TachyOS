@@ -16,10 +16,13 @@
 #include "tch_thread.h"
 #include "tch_sched.h"
 
+
+
+
+
 static int32_t tch_signal_set(tch_threadId thread,int32_t signals);
 static int32_t tch_signal_clear(tch_threadId thread,int32_t signals);
 static tchStatus tch_signal_wait(int32_t signals,uint32_t millisec);
-
 
 
 

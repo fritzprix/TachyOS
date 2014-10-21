@@ -12,17 +12,24 @@
 #include "tch_list.h"
 
 
-#define SET_INIT(sem_p)          ((tch_semDef*)sem_p)->key = tch_semaphore_magicNumber
-#define IS_INIT(sem_p)           ((((tch_semDef*)sem_p)->key) == tch_semaphore_magicNumber)
-
-static tch_sem_id tch_semaphore_create(tch_semDef* sem,uint32_t count);
-static tchStatus tch_semaphore_wait(tch_sem_id sid,uint32_t timeout);
-static tchStatus tch_semaphore_unlock(tch_sem_id sid);
-static tchStatus tch_semaphore_destroy(tch_sem_id sid);
+#define TCH_SEMAPHORE_CLASS_KEY                      ((uint16_t) 0x1A0A)
 
 
+typedef struct _tch_sem_t {
+	uint32_t          state;
+	uint32_t          count;
+	tch_lnode_t       wq;
+} tch_semaphore_cb;
 
-static const uint32_t tch_semaphore_magicNumber = 0x1A;
+static tch_semId tch_semaphore_create(uint32_t count);
+static tchStatus tch_semaphore_wait(tch_semId sid,uint32_t timeout);
+static tchStatus tch_semaphore_unlock(tch_semId sid);
+static tchStatus tch_semaphore_destroy(tch_semId sid);
+
+static void tch_semaphoreValidate(tch_semId sid);
+static void tch_semaphoreInvalidate(tch_semId sid);
+static BOOL tch_semaphoreIsValid(tch_semId sid);
+
 
 
 __attribute__((section(".data"))) static tch_semaph_ix Semaphore_StaticInstance = {
@@ -36,23 +43,26 @@ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
 
 
 
-static tch_sem_id tch_semaphore_create(tch_semDef* sem,uint32_t count){
+static tch_semId tch_semaphore_create(uint32_t count){
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) Mem->alloc(sizeof(tch_semaphore_cb));
+	if(!sem)
+		return NULL;
 	sem->count = count;
-	SET_INIT(sem);
 	tch_listInit(&sem->wq);
-	return (tch_sem_id) sem;
+	tch_semaphoreValidate(sem);
+	return (tch_semId) sem;
 }
 
-static tchStatus tch_semaphore_wait(tch_sem_id id,uint32_t timeout){
+static tchStatus tch_semaphore_wait(tch_semId id,uint32_t timeout){
 	if(tch_port_isISR())
 		return osErrorISR;
-	if(!IS_INIT(id))
+	if(!tch_semaphoreIsValid(id))
 		return osErrorResource;
-	tch_semDef* sem = (tch_semDef*) id;
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	tchStatus result = osOK;
 	while(!tch_port_exclusiveCompareDecrement((int*)&sem->count,0)){                // try to exclusively decrement count value
 		result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&sem->wq,timeout);
-		if(!IS_INIT(id))                                                            // validity of semaphore is double-checked because waiting thread is siganled and in ready state before semaphore destroyed
+		if(!tch_semaphoreIsValid(id))                                                            // validity of semaphore is double-checked because waiting thread is siganled and in ready state before semaphore destroyed
 			return osErrorResource;
 		switch(result){
 		case osEventTimeout:                                   // if timeout expires, sv call will return osEventTimeout
@@ -66,10 +76,10 @@ static tchStatus tch_semaphore_wait(tch_sem_id id,uint32_t timeout){
 	return osErrorOS;                      // unreachable code
 }
 
-static tchStatus tch_semaphore_unlock(tch_sem_id id){
-	if(!IS_INIT(id))
+static tchStatus tch_semaphore_unlock(tch_semId id){
+	if(!tch_semaphoreIsValid(id))
 		return osErrorResource;
-	tch_semDef* sem = (tch_semDef*) id;
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
@@ -80,12 +90,13 @@ static tchStatus tch_semaphore_unlock(tch_sem_id id){
 	return osOK;
 }
 
-static tchStatus tch_semaphore_destroy(tch_sem_id id){
-	if(!IS_INIT(id))
+static tchStatus tch_semaphore_destroy(tch_semId id){
+	if(!tch_semaphoreIsValid(id))
 		return osErrorParameter;
-	tch_semDef* sem = (tch_semDef*) id;
-	sem->key = 0;
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
+	sem->state = 0;
 	sem->count = 0;
+	tch_semaphoreInvalidate(id);
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
@@ -93,4 +104,17 @@ static tchStatus tch_semaphore_destroy(tch_sem_id id){
 			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
 	}
 	return  osOK;
+}
+
+
+static void tch_semaphoreValidate(tch_semId sid){
+	((tch_semaphore_cb*) sid)->state |= (((uint32_t) sid & 0xFFFF) ^ TCH_SEMAPHORE_CLASS_KEY);
+}
+
+static void tch_semaphoreInvalidate(tch_semId sid){
+	((tch_semaphore_cb*) sid)->state &= ~(0xFFFF);
+}
+
+static BOOL tch_semaphoreIsValid(tch_semId sid){
+	return (((tch_semaphore_cb*) sid)->state & 0xFFFF) == (((uint32_t) sid & 0xFFFF) ^ TCH_SEMAPHORE_CLASS_KEY);
 }

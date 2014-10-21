@@ -23,8 +23,7 @@ static tch_threadId ch3Id;
 
 static volatile BOOL spin;
 
-static tch_semDef tsd;
-static tch_sem_id ts;
+static tch_semId ts;
 static uint16_t shVar;
 
 tchStatus semaphore_performTest(tch* api){
@@ -54,7 +53,7 @@ tchStatus semaphore_performTest(tch* api){
 	thcfg._t_stack = th3Stk;
 	ch3Id = api->Thread->create(&thcfg,api);
 
-	ts = api->Sem->create(&tsd,1);
+	ts = api->Sem->create(1);
 	if(api->Sem->lock(ts,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(ch1Id);

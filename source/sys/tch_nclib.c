@@ -266,7 +266,8 @@ const tch_math_ix MATH_StaticObj = {
 
 };
 
-static tch_ulib_ix NLIB_Instance;
+static tch_ulib_ix NLIB_Instance ;
+extern const tch_ustdlib_ix* uStdLib = &NLIB_Instance;
 
 tch_ustdlib_ix* tch_initCrt(void* arg){
 	NLIB_Instance.stdio = &STDIO_StaticObj;

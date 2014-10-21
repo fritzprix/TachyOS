@@ -11,6 +11,9 @@
  */
 
 #include "tch.h"
+#include "monitor_test.h"
+
+
 #define MAX_SZ    ((uint32_t) -1)
 #define MIN_SZ    ((uint32_t) 0)
 

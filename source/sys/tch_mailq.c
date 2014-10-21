@@ -12,12 +12,6 @@
 #include "tch_mailq.h"
 
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
-#define tch_mailqValidate(mailq)         ((tch_mailq_cb*) mailq)->bstate = (((uint32_t) mailq & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
-#define tch_mailqInvalidate(mailq)       ((tch_mailq_cb*) mailq)->bstate &= ~(0xFFFF)
-#define tch_mailqIsValid(mailq)          ((((tch_mailq_cb*) mailq)->bstate & 0xFFFF) == (((uint32_t) mailq & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY))
-
-
-
 
 typedef struct _tch_mailq_cb {
 	uint32_t      bstate;         // state
@@ -40,6 +34,10 @@ static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
 static tchStatus tch_mailq_destroy(tch_mailqId qid);
 
+static void tch_mailqValidate(tch_mailqId qid);
+static void tch_mailqInvalidate(tch_mailqId qid);
+static BOOL tch_mailqIsValid(tch_mailqId qid);
+
 
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		tch_mailq_create,
@@ -55,6 +53,7 @@ const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) Mem->alloc(sizeof(tch_mailq_cb));
+	uStdLib->string->memset(mailqcb,0,sizeof(tch_mailq_cb));
 	mailqcb->blen = qlen;
 	mailqcb->bsz = sz;
 	mailqcb->pidx = 0;
@@ -80,9 +79,9 @@ static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result
 	tchStatus lresult = osOK;
 	if(!result)
 		result = &lresult;
+	if(!tch_mailqIsValid(mailqcb))
+		return NULL;
 	if(tch_port_isISR()){
-		if(!tch_mailqIsValid(mailqcb))
-			return NULL;
 		return Mempool->alloc(mailqcb->bpool);
 	}else{
 		tch_mailq_karg karg;
@@ -117,7 +116,7 @@ tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg){
 	arg->chunk = Mempool->alloc(mailqcb->bpool);
 	if(arg->chunk)
 		return osOK;
-	tch_schedSuspend(&mailqcb->wq,arg->timeout);
+	tch_schedSuspend((tch_thread_queue*)&mailqcb->wq,arg->timeout);
 	return osErrorNoMemory;
 }
 
@@ -185,8 +184,7 @@ tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg){
 		return osErrorResource;
 	if(Mempool->free(((tch_mailq_cb*)qid)->bpool,arg->chunk) != osOK)
 		return osErrorParameter;
-//	tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorNoMemory);
-	tch_schedResumeM(&((tch_mailq_cb*)qid)->wq,SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
+	tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq),SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
 	return osOK;
 }
 
@@ -214,10 +212,20 @@ tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg){
 	result = Mempool->destroy(((tch_mailq_cb*)qid)->bpool);
 	if(result == osOK){
 		tch_mailqInvalidate(qid);
-//		tch_schedResumeAll(&((tch_mailq_cb*)qid)->wq,osErrorResource,TRUE);
-		tch_schedResumeM(&((tch_mailq_cb*)qid)->wq,SCHED_THREAD_ALL,osErrorResource,TRUE);
+		tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq) ,SCHED_THREAD_ALL,osErrorResource,TRUE);
 		return osOK;
 	}
 	return osErrorParameter;
 }
 
+static void tch_mailqValidate(tch_mailqId qid){
+	((tch_mailq_cb*) qid)->bstate |= (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
+}
+
+static void tch_mailqInvalidate(tch_mailqId qid){
+	((tch_mailq_cb*) qid)->bstate &= ~(0xFFFF);
+}
+
+static BOOL tch_mailqIsValid(tch_mailqId qid){
+	return (((tch_mailq_cb*) qid)->bstate & 0xFFFF) == (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
+}

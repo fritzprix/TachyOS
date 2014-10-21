@@ -20,10 +20,12 @@
 
 
 #define TCH_MPOOL_CLASS_KEY             ((uint16_t) 0x2D05)
+
+/*
 #define tch_mpoolValidate(mpcb)         ((tch_mpool_cb*) mpcb)->bstate = ((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY
 #define tch_mpoolInvalidate(mpcb)       ((tch_mpool_cb*) mpcb)->bstate &= ~(0xFFFF)
 #define tch_mpoolIsValid(mpcb)          (((tch_mpool_cb*) mpcb)->bstate & 0xFFFF) == (((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY)
-
+*/
 
 typedef struct tch_mpool_cb_t {
 	uint32_t             bstate;
@@ -40,6 +42,9 @@ static void* tch_mpool_calloc(tch_mpoolId mpool);
 static tchStatus tch_mpool_free(tch_mpoolId mpool,void* block);
 static tchStatus tch_mpool_destroy(tch_mpoolId mpool);
 
+static void tch_mpoolValidate(tch_mpoolId mp);
+static void tch_mpoolInvalidate(tch_mpoolId mp);
+static BOOL tch_mpoolIsValid(tch_mpoolId mp);
 
 __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 		tch_mpool_create,
@@ -53,6 +58,7 @@ const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
 tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
 	tch_mpool_cb* mpcb = (tch_mpool_cb*) Mem->alloc(sizeof(tch_mpool_cb) + sz * plen);
+	uStdLib->string->memset(mpcb,0,sizeof(tch_mpool_cb) + sz * plen);
 	mpcb->bpool = (tch_mpool_cb*) mpcb + 1;
 	mpcb->bcount = plen;
 	mpcb->balign = sz;
@@ -121,3 +127,17 @@ static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
 	Mem->free(mcb);
 	return osOK;
 }
+
+
+static void tch_mpoolValidate(tch_mpoolId mp){
+	((tch_mpool_cb*) mp)->bstate |= (((uint32_t) mp & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY);
+}
+
+static void tch_mpoolInvalidate(tch_mpoolId mp){
+	((tch_mpool_cb*) mp)->bstate &= ~(0xFFFF);
+}
+
+static BOOL tch_mpoolIsValid(tch_mpoolId mp){
+	return (((tch_mpool_cb*) mp)->bstate & 0xFFFF) == (((uint32_t) mp & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY);
+}
+
