@@ -211,7 +211,6 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	*timDesc->rstr |= timDesc->rstmsk;
 	*timDesc->rstr &= ~timDesc->rstmsk;
 
-	DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP;
 
 	uint32_t psc = 1;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
@@ -318,6 +317,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	env->Device->gpio->initCfg(&iocfg);
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
 
+	iocfg.Mode = env->Device->gpio->Mode.Func;
 	iocfg.Af = timBcfg->afv;
 
 	uint32_t pmsk = 0;
@@ -333,6 +333,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 	iocfg.Mode = env->Device->gpio->Mode.Func;
 	ins->iohandle = env->Device->gpio->allocIo(env,timBcfg->port,pmsk,&iocfg,timeout,tdef->pwrOpt);
+
 	if(!ins->iohandle){
 		env->Mem->free(ins);
 		return NULL;
@@ -397,8 +398,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		if((timerHw == TIM2) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS1 | TIM_CR2_OIS1N);
 		}
-		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
+		timerHw->CCER = tmpccer;
 		timerHw->CCR1 = 0;
 	}
 
@@ -415,8 +416,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		if((timerHw == TIM2) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS2 | TIM_CR2_OIS2N);
 		}
-		timerHw->CCER = tmpccer;
 		timerHw->CCMR1 = tmpccmr;
+		timerHw->CCER = tmpccer;
 		timerHw->CCR2 = 0;
 	}
 	if(timDesc->channelCnt > 2){   //.. for channel 3
@@ -432,8 +433,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		if((timerHw == TIM2) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS3 | TIM_CR2_OIS3N);
 		}
-		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
+		timerHw->CCER = tmpccer;
 		timerHw->CCR3 = 0;
 	}
 	if(timDesc->channelCnt > 3){   // .. for channel 4
@@ -449,13 +450,12 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		if((timerHw == TIM2) || (timerHw == TIM8)){
 			timerHw->CR2 &= ~(TIM_CR2_OIS4);
 		}
-		timerHw->CCER = tmpccer;
 		timerHw->CCMR2 = tmpccmr;
+		timerHw->CCER = tmpccer;
 		timerHw->CCR4 = 0;
 	}
-	timerHw->EGR |= TIM_EGR_UG;
 	timerHw->ARR = tdef->PeriodInUnitTime;
-	timerHw->CNT = 1;
+	timerHw->EGR |= TIM_EGR_UG;
 	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
 
 	return (tch_pwmHandle*) ins;
@@ -484,6 +484,8 @@ static uint8_t tch_timer_getPrecision(tch_timer timer){
 
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
+	if(!self)
+		return FALSE;
 	if(!tch_timer_GPtIsValid(ins))
 		return FALSE;
 	tch_timer_descriptor* thw = &TIMER_HWs[ins->timer];
@@ -535,6 +537,8 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
 	int chIdx = 0;
+	if(!self)
+		return osErrorParameter;
 	if(!tch_timer_GPtIsValid(ins))
 		return osErrorResource;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
@@ -571,7 +575,7 @@ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
 	if(!(ch < TIMER_HWs[ins->timer].channelCnt))
 		return FALSE;
-	if(!tch_timer_GPtIsValid(ins))
+	if(!tch_timer_PWMIsValid(ins))
 		return FALSE;
 	uint32_t dutyd = timerHw->ARR;
 	dutyd = (uint32_t) ((float) dutyd * duty);
@@ -595,7 +599,7 @@ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	float tmparr, tmpccr = 0.f;
-	if(!tch_timer_GPtIsValid(ins))
+	if(!tch_timer_PWMIsValid(ins))
 		return 0.f;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	tmparr = (float)timerHw->ARR;
@@ -618,6 +622,10 @@ static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 }
 
 static tchStatus tch_pwm_close(tch_pwmHandle* self){
+	if(!self)
+		return osErrorParameter;
+	if(!tch_timer_PWMIsValid(self))
+		return osErrorParameter;
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	const tch* env = ins->env;
