@@ -99,6 +99,7 @@ typedef struct tch_pwm_handle_proto_t{
 	tch_timer              timer;
 	const tch*             env;
 	tch_GpioHandle*        iohandle;
+	tch_barId              uev_bar;
 }tch_pwm_handle_proto;
 
 typedef struct tch_tcapt_handle_proto_t{
@@ -122,10 +123,13 @@ static void tch_timer_handleInterrupt(tch_timer timer);
 static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
 static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
 static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
+static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_descriptor* desc);
+
 
 
 //////            PWM fucntion                        //////
 static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty);
+static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
 static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch);
 static tchStatus tch_pwm_close(tch_pwmHandle* self);
 
@@ -173,7 +177,6 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		iohandle = env->Device->gpio->allocIo(env,env->Device->gpio->Ports.gpio_2,1 << 1,&iocfg,osWaitForever,ActOnSleep);
 	}
 #endif
-
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
@@ -354,9 +357,13 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 	ins->_pix.getDuty = tch_pwm_getDuty;
 	ins->_pix.setDuty = tch_pwm_setDuty;
+	ins->_pix.write = tch_pwm_write;
 	ins->_pix.close = tch_pwm_close;
 	ins->timer = timer;
 	ins->env = env;
+	ins->uev_bar = env->Barrier->create();
+
+
 	tch_timer_PWMValidate(ins);
 
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)timDesc->_hw;
@@ -368,6 +375,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 	*timDesc->rstr |= timDesc->rstmsk;
 	*timDesc->rstr &= ~timDesc->rstmsk;
+
 
 	uint32_t psc = 1;
 	if(timDesc->_clkenr == &RCC->APB1ENR)
@@ -454,6 +462,10 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		timerHw->CCER = tmpccer;
 		timerHw->CCR4 = 0;
 	}
+
+	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
+	env->Device->interrupt->enable(timDesc->irq);
+
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
 	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
@@ -573,10 +585,13 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
-	if(!(ch < TIMER_HWs[ins->timer].channelCnt))
+	if(!self)
 		return FALSE;
 	if(!tch_timer_PWMIsValid(ins))
 		return FALSE;
+	if(!(ch < TIMER_HWs[ins->timer].channelCnt))
+		return FALSE;
+
 	uint32_t dutyd = timerHw->ARR;
 	dutyd = (uint32_t) ((float) dutyd * duty);
 	switch(ch){
@@ -595,6 +610,46 @@ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 	}
 	return FALSE;
 }
+
+static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz){
+	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
+	tch_timer_descriptor* timDesc = (tch_timer_descriptor*) &TIMER_HWs[ins->timer];
+	tchStatus result = osOK;
+	if(!self)
+		return osErrorParameter;
+	if(!tch_timer_PWMIsValid(ins))
+		return osErrorParameter;
+	if(!(ch < TIMER_HWs[ins->timer].channelCnt))
+		return osErrorParameter;
+	TIM_TypeDef* TimerHw = (TIM_TypeDef*)timDesc->_hw;
+	TimerHw->DIER |= TIM_DIER_UIE;    // enable update
+	volatile uint32_t* ccr = NULL;
+	switch(ch){
+	case 0:
+		ccr = &TimerHw->CCR1;
+		break;
+	case 1:
+		ccr = &TimerHw->CCR2;
+		break;
+	case 2:
+		ccr = &TimerHw->CCR3;
+		break;
+	case 3:
+		ccr = &TimerHw->CCR4;
+		break;
+	}
+	while(sz--){
+		uint32_t dutyd = TimerHw->ARR;
+		dutyd = (uint32_t) (*(fduty++) * dutyd);
+		*ccr = dutyd;
+		if(sz){
+			result = ins->env->Barrier->wait(ins->uev_bar,osWaitForever);
+		}
+	}
+	TimerHw->DIER &= ~TIM_DIER_UIE;
+	return result;
+}
+
 
 static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
@@ -632,11 +687,13 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	tchStatus result = osOK;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
+	env->Barrier->destroy(ins->uev_bar);
 	env->Device->gpio->freeIo(ins->iohandle);    // free io resource
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
+	env->Device->interrupt->disable(timDesc->irq);
 	timDesc->_handle = NULL;
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
@@ -667,6 +724,11 @@ static void tch_timer_handleInterrupt(tch_timer timer){
 		if(tch_timer_handle_gptInterrupt(timDesc->_handle,timDesc))
 			return;
 	}
+	if(tch_timer_PWMIsValid(timDesc->_handle)){
+		if(tch_timer_handle_pwmInterrupt(timDesc->_handle,timDesc))
+			return;
+
+	}
 	timerHw->SR &= ~isr;          // clear all raised interrupt
 }
 
@@ -678,15 +740,19 @@ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_time
 		if(timerHw->SR & (idx << 1)){
 			timerHw->SR &= ~(idx << 1);        // clear raised interrupt
 			timerHw->DIER &= ~(idx << 1);      // clear interrupt enable
-	//		desc->ch_occp &= ~(1 << (idx - 1));
-	//		env->Async->notify(ins->async,idx - 1,osOK);  // notify to waiting thread
 			env->MsgQ->put(ins->msgqs[idx - 1],osOK,0);
-	//		env->MsgQ->put(ins->msgq,osOK,0);
 			return TRUE;
 		}
 	}while(idx++ < desc->channelCnt + 1);
 	return FALSE;
 }
+
+static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_descriptor* desc){
+	TIM_TypeDef* timerHw = (TIM_TypeDef*)desc->_hw;
+	timerHw->SR &= ~TIM_SR_UIF;
+	return ins->env->Barrier->signal(ins->uev_bar,osOK) == osOK;
+}
+
 
 void TIM2_IRQHandler(void){                   /* TIM2                         */
 	tch_timer_handleInterrupt(0);

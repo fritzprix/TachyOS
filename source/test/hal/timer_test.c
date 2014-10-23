@@ -68,9 +68,15 @@ tchStatus timer_performTest(tch* env){
 	pwmDef.PeriodInUnitTime = 1000;
 	pwmDef.UnitTime = env->Device->timer->UnitTime.uSec;
 	pwmDef.pwrOpt = ActOnSleep;
-	tch_pwmHandle* pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
+	int cnt = 100000;
+	tch_pwmHandle* pwmDrv = NULL;
+	while(cnt--){
+		pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
+		if(pwmDrv)
+			pwmDrv->close(pwmDrv);
+	}
 
-
+	pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
 	thcfg._t_name = "PulseDrv1";
 	thcfg._t_routine = pulsDrv1Run;
 	thcfg._t_stack = waiterThread1Stk;
@@ -132,9 +138,10 @@ static DECLARE_THREADROUTINE(pulsDrv1Run){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
 		sys->Thread->sleep(1);
 	}
+	cnt = 0;
 	return osOK;
 }
-
+float fvs[1000];
 static DECLARE_THREADROUTINE(pulsDrv2Run){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
 	int cnt = 1000;
@@ -142,5 +149,11 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
 		sys->Thread->sleep(1);
 	}
+	cnt = 0;
+	do{
+		fvs[cnt] = cnt * 0.005f;
+	}while(cnt++ < 200);
+
+	pwmDrv->write(pwmDrv,1,fvs,200);
 	return osOK;
 }

@@ -83,8 +83,6 @@ static tchStatus tch_bar_destroy(tch_barId barId){
 	tch_bar_cb* bar = (tch_bar_cb*) barId;
 	if((!bar) || (!tch_barIsValid(bar)))
 		return osErrorParameter;
-	if(tch_listIsEmpty(&bar->wq))
-		return osOK;
 	tch_barInvalidate(bar);
 	if(tch_port_isISR())
 		return osErrorISR;
