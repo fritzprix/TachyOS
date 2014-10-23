@@ -449,7 +449,7 @@ static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,co
 	uint32_t p_msk = 1;
 	while(pmsk){
 		if(pmsk & 0x01){
-			ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << pin);
+			ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << (pin << 1));
 			switch(cfg->Mode){
 			case GPIO_Mode_OUT:             /// gpio configure to output
 				ioctrl_regs->MODER |= (GPIO_Mode_OUT << (pin << 1));

@@ -126,20 +126,21 @@ static DECLARE_THREADROUTINE(waiter2Run){
 
 static DECLARE_THREADROUTINE(pulsDrv1Run){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
-	int cnt = 100;
+	int cnt = 1000;
+	float a = 0.f;
 	while(cnt--){
-		pwmDrv->setDuty(pwmDrv,1,(float)cnt / 100.f);
-		sys->Thread->sleep(2);
+		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
+		sys->Thread->sleep(1);
 	}
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(pulsDrv2Run){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
-	int cnt = 100;
+	int cnt = 1000;
 	while(cnt--){
-		pwmDrv->setDuty(pwmDrv,1,(float)cnt / 100.f);
-		sys->Thread->sleep(2);
+		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
+		sys->Thread->sleep(1);
 	}
 	return osOK;
 }
