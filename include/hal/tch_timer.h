@@ -65,6 +65,12 @@ struct _tch_timer_utime_t{
 	uint8_t nSec;
 };
 
+
+struct _tch_timer_polarity_t{
+	uint8_t positive;
+	uint8_t negative;
+};
+
 struct _tch_gptimer_def_t {
 	uint8_t UnitTime;
 	tch_PwrOpt pwrOpt;
@@ -79,12 +85,16 @@ struct _tch_pwm_def_t {
 
 
 struct _tch_tcapt_def_t {
+	uint8_t Polarity;
 	uint8_t UnitTime;
+	uint32_t periodInUnitTime;
+	tch_PwrOpt pwrOpt;
 };
 
 typedef struct tch_lld_timer {
 	struct _tch_timer_str_t timer;
 	struct _tch_timer_utime_t UnitTime;
+	struct _tch_timer_polarity_t Polarity;
 	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
 	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
 	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);

@@ -151,9 +151,9 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 	}
 	cnt = 0;
 	do{
-		fvs[cnt] = cnt * 0.005f;
-	}while(cnt++ < 200);
+		fvs[cnt] = cnt * 0.001f;
+	}while(cnt++ < 1000);
 
-	pwmDrv->write(pwmDrv,1,fvs,200);
+	pwmDrv->write(pwmDrv,1,fvs,1000);
 	return osOK;
 }

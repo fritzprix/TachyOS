@@ -17,9 +17,6 @@
 #include "tch_halInit.h"
 
 
-#ifndef TIMER_DBG
-#define TIMER_DBG    (1)
-#endif
 
 
 #define TIMER_UNITTIME_mSEC      ((uint8_t) 0)
@@ -162,18 +159,6 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		TIMER_StaticInstance.condv = env->Condv->create();
 	if(!TIMER_StaticInstance.mtx)
 		TIMER_StaticInstance.mtx = env->Mtx->create();
-
-#if TIMER_DBG
-	if(!iohandle){
-		tch_GpioCfg iocfg;
-		env->Device->gpio->initCfg(&iocfg);
-		iocfg.Mode = env->Device->gpio->Mode.Out;
-		iocfg.Otype = env->Device->gpio->Otype.PushPull;
-		iocfg.Speed = env->Device->gpio->Speed.VeryHigh;
-		iohandle = env->Device->gpio->allocIo(env,env->Device->gpio->Ports.gpio_2,1 << 1,&iocfg,osWaitForever,ActOnSleep);
-	}
-#endif
-
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
@@ -515,15 +500,9 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 				timerHw->DIER |= TIM_DIER_CC4IE;
 				break;
 			}
-#if TIMER_DBG
-	iohandle->out(iohandle,1 << 1,bSet);
-#endif
 			osEvent evt = env->MsgQ->get(ins->msgqs[id],osWaitForever);
 			if(evt.status != osEventMessage)
 				return FALSE;
-#if TIMER_DBG
-			iohandle->out(iohandle,1 << 1,bClear);
-#endif
 			thw->ch_occp &= ~(1 << id);
 			return TRUE;
 		}
@@ -670,10 +649,7 @@ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_time
 		if(timerHw->SR & (idx << 1)){
 			timerHw->SR &= ~(idx << 1);        // clear raised interrupt
 			timerHw->DIER &= ~(idx << 1);      // clear interrupt enable
-	//		desc->ch_occp &= ~(1 << (idx - 1));
-	//		env->Async->notify(ins->async,idx - 1,osOK);  // notify to waiting thread
 			env->MsgQ->put(ins->msgqs[idx - 1],osOK,0);
-	//		env->MsgQ->put(ins->msgq,osOK,0);
 			return TRUE;
 		}
 	}while(idx++ < desc->channelCnt + 1);
