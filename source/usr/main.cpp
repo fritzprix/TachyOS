@@ -47,17 +47,17 @@ int main(tch* api) {
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
-	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 
-	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
 	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
 
 	tch_UartCfg ucfg;

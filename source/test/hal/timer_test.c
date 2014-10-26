@@ -19,7 +19,7 @@ static DECLARE_THREADROUTINE(pulsDrv2Run);
 static DECLARE_THREADROUTINE(pulseGenRun);
 static DECLARE_THREADROUTINE(pulseConRun);
 static float fvs[1000];
-static float ffvs[1000];
+static int ffvs[1000];
 
 tchStatus timer_performTest(tch* env){
 
@@ -128,7 +128,7 @@ tchStatus timer_performTest(tch* env){
 		return osErrorOS;
 
 	tch_tcaptDef captDef;
-	captDef.Polarity = env->Device->timer->Polarity.positive;
+	captDef.Polarity = env->Device->timer->Polarity.negative;
 	captDef.UnitTime = env->Device->timer->UnitTime.uSec;
 	captDef.periodInUnitTime = 1000;
 	captDef.pwrOpt = ActOnSleep;
@@ -228,6 +228,6 @@ static DECLARE_THREADROUTINE(pulseGenRun){
 
 static DECLARE_THREADROUTINE(pulseConRun){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) sys->Thread->getArg();
-	capt->read(capt,1,ffvs,1000,osWaitForever);
+	capt->read(capt,0,ffvs,1000,osWaitForever);
 	return osOK;
 }

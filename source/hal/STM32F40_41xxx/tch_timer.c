@@ -573,30 +573,28 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		timerHw->PSC = (SYS_CLK / psc / 1000000) - 1;
 	}
 
-
+	timerHw->SMCR &= ~(TIM_SMCR_TS | TIM_SMCR_SMS);
+	timerHw->SMCR |= (TIM_SMCR_TS_2 | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2);
 	if(timDesc->channelCnt > 1){   // if requested timer h/w supprot channel 1 initialize its related registers
 		timerHw->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
-		timerHw->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC1NP | TIM_CCER_CC2P | TIM_CCER_CC2NP);
-		timerHw->SMCR &= ~(TIM_SMCR_TS | TIM_SMCR_SMS);
+		timerHw->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC1NP | TIM_CCER_CC2P | TIM_CCER_CC2NP | TIM_CCER_CC1E | TIM_CCER_CC2E);
 
-		timerHw->CCMR1 |= (TIM_CCMR1_CC1S_0 | TIM_CCMR1_CC2S_1);
+		timerHw->CCMR1 |= (TIM_CCMR1_CC1S_0 | TIM_CCMR1_CC2S_1 | TIM_CCMR1_IC1F_0);
 		if(tdef->Polarity == TIMER_POLARITY_NEGATIVE){
 			timerHw->CCER |= TIM_CCER_CC2P;
 		}else{
 			timerHw->CCER |= TIM_CCER_CC1P;
 		}
 
-		timerHw->SMCR |= (TIM_SMCR_TS_2 | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2);
 		timerHw->CCER |= (TIM_CCER_CC1E | TIM_CCER_CC2E);
 		timerHw->DIER |= TIM_DIER_CC1IE;
 	}
 
 	if(timDesc->channelCnt > 3){   // same as above for channel 2
 		timerHw->CCMR2 &= ~(TIM_CCMR2_CC3S | TIM_CCMR2_CC4S);
-		timerHw->CCER &= ~(TIM_CCER_CC3P | TIM_CCER_CC3NP | TIM_CCER_CC4P | TIM_CCER_CC4NP);
-		timerHw->SMCR &= ~(TIM_SMCR_TS | TIM_SMCR_SMS);
+		timerHw->CCER &= ~(TIM_CCER_CC3P | TIM_CCER_CC3NP | TIM_CCER_CC4P | TIM_CCER_CC4NP | TIM_CCER_CC3E | TIM_CCER_CC4E);
 
-		timerHw->CCMR2 |= (TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1);
+		timerHw->CCMR2 |= (TIM_CCMR2_CC3S_0 | TIM_CCMR2_CC4S_1 | TIM_CCMR2_IC3F_0);
 		if(tdef->Polarity == TIMER_POLARITY_NEGATIVE){
 			timerHw->CCER |= TIM_CCER_CC4P;
 		}else{
@@ -604,8 +602,7 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 			timerHw->CCER |= TIM_CCER_CC3P;
 		}
 
-		timerHw->SMCR |= (TIM_SMCR_TS_2 | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2);
-		timerHw->CCER |= (TIM_CCER_CC1E | TIM_CCER_CC2E);
+		timerHw->CCER |= (TIM_CCER_CC3E | TIM_CCER_CC4E);
 		timerHw->DIER |= TIM_DIER_CC3IE;
 	}
 
