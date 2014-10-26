@@ -64,14 +64,14 @@
 
 
 #define tch_timer_tCaptValidate(capt_ins)           do{\
-	((tch_tcapt_handle_proto*) capt_ins)->key = ((capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY);\
+	((tch_tcapt_handle_proto*) capt_ins)->key = (((uint32_t)capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY);\
 }while(0)
 
 #define tch_timer_tCaptInvalidate(capt_ins)        do{\
 	((tch_tcapt_handle_proto*) capt_ins)->key = 0;\
 }while(0)
 
-#define tch_timer_tCaptIsValid(capt_ins)    (((tch_tcapt_handle_proto*) capt_ins)->key == ((capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY))
+#define tch_timer_tCaptIsValid(capt_ins)    (((tch_tcapt_handle_proto*) capt_ins)->key == (((uint32_t)capt_ins & 0xFFFF) ^ TIMER_CAPTURE_CLASS_KEY))
 
 
 
@@ -405,7 +405,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 		tmpccer &= ~(TIM_CCER_CC1NP | TIM_CCER_CC1P);
 		tmpccmr &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_OC1M);   //* set capture/compare as frozen mode and configured as output
-		tmpccmr |= ((6 << 12) | TIM_CCMR1_OC1PE);         // set to pwm mode @ CCMRx (OCxM / OCxPE)
+		tmpccmr |= ((6 << 4) | TIM_CCMR1_OC1PE);         // set to pwm mode @ CCMRx (OCxM / OCxPE)
 		tmpccer |= TIM_CCER_CC1E;                      // set polarity of output(Active High) and enable it  @ CCER (CCxP / CCxE)
 
 		if((timerHw == TIM2) || (timerHw == TIM8)){
@@ -509,7 +509,7 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		pmsk |= (1 << tbs->ch1p);
 	}
 
-	if((tbs->ch2p != -1) && (timDesc->channelCnt > 3)){
+	if((tbs->ch3p != -1) && (timDesc->channelCnt > 3)){
 		pmsk |= (1 << tbs->ch3p);
 	}
 
@@ -524,11 +524,15 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		return NULL;
 	}
 
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,timeout)) != osOK)
-		return result;
+	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,timeout)) != osOK){
+		env->Mem->free(ins);
+		return NULL;
+	}
 	while(timDesc->_handle){
-		if((result = env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout)) != osOK)
-			return result;
+		if((result = env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout)) != osOK){
+			env->Mem->free(ins);
+			return NULL;
+		}
 	}
 	timDesc->_handle = ins;
 	timDesc->ch_occp = 0;
@@ -610,7 +614,6 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	env->Device->interrupt->enable(timDesc->irq);
 
 
-	timerHw->DIER |= (TIM_DIER_CC1IE | TIM_DIER_CC3IE);
 	timerHw->CNT = 0;
 	timerHw->CR1 = TIM_CR1_CEN;
 
@@ -817,11 +820,14 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 		return osErrorParameter;
 	if(!tch_timer_PWMIsValid(self))
 		return osErrorParameter;
+	tchStatus result = osOK;
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
+	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
+		return result;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	const tch* env = ins->env;
-	tchStatus result = osOK;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
+	env->Mtx->destroy(ins->mtx);
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
 	env->Barrier->destroy(ins->uev_bar);
 	env->Device->gpio->freeIo(ins->iohandle);    // free io resource
@@ -851,7 +857,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 		return osErrorISR;
 	osEvent evt;
 	evt.status = osOK;
-	tch_timer_descriptor* timDesc = TIMER_HWs[ins->timer];
+	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	uint8_t chMsk = 0;
 	if(ch > 2){
 		chMsk = 3 << 2;
@@ -879,7 +885,8 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 		msgq = ins->msgqs[2];
 	}
 	while(size--){
-		if((evt = env->MsgQ->get(msgq,timeout)) != osEventMessage)
+		evt = env->MsgQ->get(msgq,timeout);
+		if(evt.status != osEventMessage)
 			return evt.status;
 		*buf++ = evt.value.v;
 	}

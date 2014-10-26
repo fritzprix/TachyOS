@@ -16,10 +16,16 @@ static DECLARE_THREADROUTINE(waiter2Run);
 static DECLARE_THREADROUTINE(pulsDrv1Run);
 static DECLARE_THREADROUTINE(pulsDrv2Run);
 
+static DECLARE_THREADROUTINE(pulseGenRun);
+static DECLARE_THREADROUTINE(pulseConRun);
+static float fvs[1000];
+static float ffvs[1000];
+
 tchStatus timer_performTest(tch* env){
 
 	tchStatus result = osOK;
 
+	// ************* Start of test for Basic Timer Function ********************** //
 	tch_gptimerDef gptDef;
 	gptDef.UnitTime = env->Device->timer->UnitTime.mSec;
 	gptDef.pwrOpt = ActOnSleep;
@@ -60,9 +66,14 @@ tchStatus timer_performTest(tch* env){
 
 	gptimer->close(gptimer);   // gptimer test complete
 
+	// ************* End of test for Basic Timer Function ********************** //
+
+
 	if(result != osOK)
 		return osErrorOS;
 
+
+	// ************* Start of test for PWM Out Function ********************** //
 
 	tch_pwmDef pwmDef;
 	pwmDef.PeriodInUnitTime = 1000;
@@ -100,12 +111,62 @@ tchStatus timer_performTest(tch* env){
 	result = env->Thread->join(waiterThread1,osWaitForever);
 	result = env->Thread->join(waiterThread2,osWaitForever);
 
+
+
+
 	pwmDrv->close(pwmDrv);
 
 
+	// ************* End of test for PWM Out Function ********************** //
+
+	pwmDef.PeriodInUnitTime = 1000;
+	pwmDef.UnitTime = env->Device->timer->UnitTime.uSec;
+	pwmDef.pwrOpt = ActOnSleep;
+
+	pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer2,&pwmDef,osWaitForever);
+	if(!pwmDrv)
+		return osErrorOS;
+
+	tch_tcaptDef captDef;
+	captDef.Polarity = env->Device->timer->Polarity.positive;
+	captDef.UnitTime = env->Device->timer->UnitTime.uSec;
+	captDef.periodInUnitTime = 1000;
+	captDef.pwrOpt = ActOnSleep;
+
+	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,env->Device->timer->timer.timer0,&captDef,osWaitForever);
+	if(!capt)
+		return osErrorOS;
+
+	thcfg._t_name = "Pgen";
+	thcfg._t_routine = pulseGenRun;
+	thcfg._t_stack = waiterThread1Stk;
+	thcfg.t_proior = Normal;
+	thcfg.t_stackSize = 1 << 9;
+
+	tch_threadId pgenThread = env->Thread->create(&thcfg,pwmDrv);
+
+	thcfg._t_name = "Pcon";
+	thcfg._t_routine = pulseConRun;
+	thcfg._t_stack = waiterThread2Stk;
+	thcfg.t_proior = Normal;
+	thcfg.t_stackSize = 1 << 9;
+
+	tch_threadId pconThread = env->Thread->create(&thcfg,capt);
+
+	env->Thread->start(pgenThread);
+	env->Thread->start(pconThread);
+
+	env->Thread->join(pgenThread,osWaitForever);
+	env->Thread->join(pconThread,osWaitForever);
 
 	env->Mem->free(waiterThread1Stk);
 	env->Mem->free(waiterThread2Stk);
+
+	capt->close(capt);
+	pwmDrv->close(pwmDrv);
+
+	// ************* Start of test for PWM Input Function ****************** //
+
 
 
 	return result;
@@ -141,7 +202,7 @@ static DECLARE_THREADROUTINE(pulsDrv1Run){
 	cnt = 0;
 	return osOK;
 }
-float fvs[1000];
+
 static DECLARE_THREADROUTINE(pulsDrv2Run){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
 	int cnt = 1000;
@@ -155,5 +216,18 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 	}while(cnt++ < 1000);
 
 	pwmDrv->write(pwmDrv,1,fvs,1000);
+	return osOK;
+}
+
+
+static DECLARE_THREADROUTINE(pulseGenRun){
+	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
+	pwmDrv->write(pwmDrv,0,fvs,1000);
+	return osOK;
+}
+
+static DECLARE_THREADROUTINE(pulseConRun){
+	tch_tcaptHandle* capt = (tch_tcaptHandle*) sys->Thread->getArg();
+	capt->read(capt,1,ffvs,1000,osWaitForever);
 	return osOK;
 }
