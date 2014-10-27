@@ -222,6 +222,7 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 
 static DECLARE_THREADROUTINE(pulseGenRun){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) sys->Thread->getArg();
+	pwmDrv->setDuty(pwmDrv,2,0.5);
 	pwmDrv->write(pwmDrv,0,fvs,1000);
 	return osOK;
 }

@@ -75,6 +75,8 @@
 
 
 
+
+
 typedef struct tch_timer_mgr_t {
 	tch_lld_timer                     pix;
 	tch_mtxId                         mtx;
@@ -107,7 +109,7 @@ typedef struct tch_pwm_handle_proto_t{
 
 typedef struct tch_tcapt_handle_proto_t{
 	tch_tcaptHandle       _pix;
-	uint16_t               key;
+	uint32_t               key;
 	tch_timer              timer;
 	const tch*             env;
 	tch_GpioHandle*        iohandle;
@@ -542,10 +544,10 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	ins->_pix.read = tch_tcapt_read;
 	ins->env = env;
 
-	ins->msgqs = (tch_msgQue_id*) env->Mem->alloc(sizeof(tch_msgQue_id) * timDesc->channelCnt);
-
+	ins->msgqs = (tch_msgQue_id*) env->Mem->alloc(sizeof(tch_msgQue_id) * 2);
 	ins->msgqs[0] = env->MsgQ->create(1);
-	ins->msgqs[2] = env->MsgQ->create(1);
+	ins->msgqs[1] = env->MsgQ->create(1);
+
 	ins->mtx = env->Mtx->create();
 	ins->condv = env->Condv->create();
 	ins->timer = timer;
@@ -874,13 +876,13 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	timDesc->ch_occp |= chMsk;
 	env->Mtx->unlock(ins->mtx);
 
-	evt.status = osOK;
 	tch_msgQue_id msgq = NULL;
 	if(chMsk == 3){
 		msgq = ins->msgqs[0];
 	}else if(chMsk == (3 << 2)){
 		msgq = ins->msgqs[2];
 	}
+
 	while(size--){
 		evt = env->MsgQ->get(msgq,timeout);
 		if(evt.status != osEventMessage)
@@ -904,7 +906,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 		return osErrorParameter;
 	if(!tch_timer_tCaptIsValid(ins))
 		return osErrorParameter;
-	tch* env = ins->env;
+	const tch* env = ins->env;
 	if(env->Device->interrupt->isISR())
 		return osErrorISR;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
@@ -916,9 +918,10 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
 	uint8_t idx = 0;
-	do{
-		env->MsgQ->destroy(ins->msgqs[idx]);
-	}while(idx++ < timDesc->channelCnt);
+
+	env->MsgQ->destroy(ins->msgqs[0]);
+	env->MsgQ->destroy(ins->msgqs[1]);
+	env->Mem->free(ins->msgqs);
 
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;
@@ -994,7 +997,7 @@ static BOOL tch_timer_handle_tcaptInterrupt(tch_tcapt_handle_proto* ins, tch_tim
 		return TRUE;
 	}else if(sr & TIM_SR_CC3IF){
 		v = timerHw->CCR3;
-		env->MsgQ->put(ins->msgqs[2],timerHw->CCR4,0);
+		env->MsgQ->put(ins->msgqs[1],timerHw->CCR4,0);
 		return TRUE;
 	}
 	return FALSE;
