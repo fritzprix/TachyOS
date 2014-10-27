@@ -17,9 +17,11 @@ static DECLARE_THREADROUTINE(pulsDrv1Run);
 static DECLARE_THREADROUTINE(pulsDrv2Run);
 
 static DECLARE_THREADROUTINE(pulseGenRun);
-static DECLARE_THREADROUTINE(pulseConRun);
+static DECLARE_THREADROUTINE(pulseCon1Run);
+static DECLARE_THREADROUTINE(pulseCon2Run);
 static float fvs[1000];
 static int ffvs[1000];
+static int ffvs1[1000];
 
 tchStatus timer_performTest(tch* env){
 
@@ -145,22 +147,35 @@ tchStatus timer_performTest(tch* env){
 
 	tch_threadId pgenThread = env->Thread->create(&thcfg,pwmDrv);
 
-	thcfg._t_name = "Pcon";
-	thcfg._t_routine = pulseConRun;
+	thcfg._t_name = "Pcon1";
+	thcfg._t_routine = pulseCon1Run;
 	thcfg._t_stack = waiterThread2Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
-	tch_threadId pconThread = env->Thread->create(&thcfg,capt);
+	tch_threadId pcon1Thread = env->Thread->create(&thcfg,capt);
+
+	uint8_t* pconStk = env->Mem->alloc(1 << 9);
+
+	thcfg._t_name = "Pcon2";
+	thcfg._t_routine = pulseCon2Run;
+	thcfg._t_stack = pconStk;
+	thcfg.t_stackSize = 1 << 9;
+	thcfg.t_proior = Normal;
+
+	tch_threadId pcon2Thread = env->Thread->create(&thcfg,capt);
 
 	env->Thread->start(pgenThread);
-	env->Thread->start(pconThread);
+	env->Thread->start(pcon1Thread);
+	env->Thread->start(pcon2Thread);
 
 	env->Thread->join(pgenThread,osWaitForever);
-	env->Thread->join(pconThread,osWaitForever);
+	env->Thread->join(pcon1Thread,osWaitForever);
+	env->Thread->join(pcon2Thread,osWaitForever);
 
 	env->Mem->free(waiterThread1Stk);
 	env->Mem->free(waiterThread2Stk);
+	env->Mem->free(pconStk);
 
 	capt->close(capt);
 	pwmDrv->close(pwmDrv);
@@ -227,8 +242,15 @@ static DECLARE_THREADROUTINE(pulseGenRun){
 	return osOK;
 }
 
-static DECLARE_THREADROUTINE(pulseConRun){
+static DECLARE_THREADROUTINE(pulseCon1Run){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) sys->Thread->getArg();
 	capt->read(capt,0,ffvs,1000,osWaitForever);
 	return osOK;
 }
+
+static DECLARE_THREADROUTINE(pulseCon2Run){
+	tch_tcaptHandle* capt = (tch_tcaptHandle*) sys->Thread->getArg();
+	capt->read(capt,2,ffvs1,1000,osWaitForever);
+	return osOK;
+}
+

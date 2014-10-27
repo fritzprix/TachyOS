@@ -578,6 +578,8 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	timerHw->SMCR &= ~(TIM_SMCR_TS | TIM_SMCR_SMS);
 	timerHw->SMCR |= (TIM_SMCR_TS_2 | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2);
 	if(timDesc->channelCnt > 1){   // if requested timer h/w supprot channel 1 initialize its related registers
+		timerHw->CCR1 = 0;
+		timerHw->CCR2 = 0;
 		timerHw->CCMR1 &= ~(TIM_CCMR1_CC1S | TIM_CCMR1_CC2S);
 		timerHw->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC1NP | TIM_CCER_CC2P | TIM_CCER_CC2NP | TIM_CCER_CC1E | TIM_CCER_CC2E);
 
@@ -590,9 +592,12 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 
 		timerHw->CCER |= (TIM_CCER_CC1E | TIM_CCER_CC2E);
 		timerHw->DIER |= TIM_DIER_CC1IE;
+
 	}
 
 	if(timDesc->channelCnt > 3){   // same as above for channel 2
+		timerHw->CCR3 = 0;
+		timerHw->CCR4 = 0;
 		timerHw->CCMR2 &= ~(TIM_CCMR2_CC3S | TIM_CCMR2_CC4S);
 		timerHw->CCER &= ~(TIM_CCER_CC3P | TIM_CCER_CC3NP | TIM_CCER_CC4P | TIM_CCER_CC4NP | TIM_CCER_CC3E | TIM_CCER_CC4E);
 
@@ -858,7 +863,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	evt.status = osOK;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	uint8_t chMsk = 0;
-	if(ch > 2){
+	if(ch > 1){
 		chMsk = 3 << 2;
 	}else{
 		chMsk = 3;
@@ -880,7 +885,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	if(chMsk == 3){
 		msgq = ins->msgqs[0];
 	}else if(chMsk == (3 << 2)){
-		msgq = ins->msgqs[2];
+		msgq = ins->msgqs[1];
 	}
 
 	while(size--){
