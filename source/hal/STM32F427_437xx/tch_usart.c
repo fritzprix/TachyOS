@@ -183,6 +183,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
 	tch_uart_bs* ubs = &UART_BD_CFGs[cfg->UartCh];
 	tch_GpioCfg iocfg;
+
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = env->Device->gpio->Mode.Func;
 	iocfg.Af = ubs->afv;
