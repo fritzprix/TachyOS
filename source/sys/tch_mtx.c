@@ -24,6 +24,15 @@
 
 #include "tch_kernel.h"
 
+typedef struct tch_mtx_cb {
+	uint32_t            state;
+	uint32_t            key;
+	tch_thread_queue    que;
+	void*               own;
+	tch_thread_prior    svdPrior;
+}tch_mtx;
+
+
 
 static tch_mtxId tch_mtx_create();
 static tchStatus tch_mtx_lock(tch_mtxId mtx,uint32_t timeout);

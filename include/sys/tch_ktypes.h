@@ -74,13 +74,6 @@ typedef struct tch_sys_task_t {
 	tchStatus (*tsk_fn)(int id,void* arg);
 }tch_sysTask;
 
-typedef struct tch_mtx_cb {
-	uint32_t            state;
-	uint32_t            key;
-	tch_thread_queue    que;
-	void*               own;
-	tch_thread_prior    svdPrior;
-}tch_mtx;
 
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)

@@ -173,6 +173,9 @@
 #define MFEATURE_TIMER              (10)
 #endif
 
+#ifndef MFEATURE_SPI
+#define MFEATURE_SPI                (3)
+#endif
 
 typedef struct _tch_uart_bs_t {
 	dma_t          txdma;
@@ -196,6 +199,15 @@ typedef struct _tch_timer_bs_t {
 	uint8_t        ch4p;
 	uint8_t        afv;
 }tch_timer_bs;
+
+typedef struct _tch_spi_bs_t {
+	dma_t          txdma;
+	dma_t          rxdma;
+	gpIo_x         port;
+	uint8_t        mosi;
+	uint8_t        miso;
+	uint8_t        sck;
+}tch_spi_bs;
 
 
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
@@ -342,6 +354,42 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 		}
 };
 
+/**
+ * 	spi_t          spi;
+	dma_t          txdma;
+	dma_t          rxdma;
+	gpIo_x         port;
+	uint8_t        mosi;
+	uint8_t        miso;
+	uint8_t        sck;
+ */
+
+__attribute__((section(".data"))) static tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
+		{
+				DMA_Str13,    //dma2_stream5
+				DMA_Str10,    //dma2_stream2
+				0,            // port A (0)
+				7,            // pin  7
+				6,            // pin  6
+				5             // pin  5
+		},
+		{
+				DMA_Str4,     //dma1_stream4
+				DMA_Str3,     //dma1_stream3
+				1,            // port B (1)
+				15,           // pin  15
+				14,           // pin  14
+				13            // pin  13
+		},
+		{
+				DMA_Str7,     //dma1_stream7
+				DMA_Str2,     //dma1_stream2
+				2,            // port C (2)
+				12,           // pin  12
+				11,           // pin  11
+				10            // pin  10
+		}
+};
 
 
 #include "stm32f4xx.h"

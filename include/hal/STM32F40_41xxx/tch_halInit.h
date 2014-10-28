@@ -652,5 +652,60 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 		}
 };
 
+/**
+ * 	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint32_t*  _rstr;
+	const uint32_t       rstmsk;
+	volatile uint16_t*  _isr;
+	volatile uint16_t*  _icr;
+	IRQn_Type            irq;
+ */
+__attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI] = {
+		{
+				SPI1,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_SPI1EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_SPI1LPEN,
+				&RCC->APB2RSTR,
+				RCC_APB2RSTR_SPI1RST,
+				&SPI1->SR,
+				&SPI1->SR,
+				SPI1_IRQn
+		},
+		{
+				SPI2,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_SPI2EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_SPI2LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_SPI2RST,
+				&SPI2->SR,
+				&SPI2->SR,
+				SPI2_IRQn
+		},
+		{
+				SPI3,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_SPI3EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_SPI3LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_SPI3RST,
+				&SPI3->SR,
+				&SPI3->SR,
+				SPI3_IRQn
+		}
+};
+
 
 #endif /* TCH_HALOBJS_H_ */
