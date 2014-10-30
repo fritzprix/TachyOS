@@ -130,8 +130,6 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr);
 static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout);
 
-static tchStatus tch_uartPutcDma(tch_UartHandle* handle,uint8_t c);
-static tchStatus tch_uartGetcDma(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
 static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
 
@@ -298,7 +296,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}
 
 	if(txDma){ // if tx dma is non-null (available), uart handle routines supporting dma are bound
-		uins->pix.putc = tch_uartPutcDma;
+		uins->pix.putc = tch_uartPutc;
 		uins->pix.write = tch_uartWriteDma;
 		uins->pix.writeCstr = tch_uartWriteCstr;
 
@@ -314,7 +312,7 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}
 
 	if(rxDma){
-		uins->pix.getc = tch_uartGetcDma;
+		uins->pix.getc = tch_uartGetc;
 		uins->pix.read = tch_uartReadDma;
 		uins->pix.readCstr = tch_uartReadCstr;
 
@@ -400,11 +398,11 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 
 
 static tchStatus tch_uartPutc(tch_UartHandle* handle,uint8_t c){
-	return tch_uartWrite(handle,&c,1);
+	return handle->write(handle,&c,1);
 }
 
 static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout){
-	return tch_uartRead(handle,rc,1,timeout);
+	return handle->read(handle,rc,1,timeout);
 }
 
 static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t sz){
@@ -503,13 +501,7 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 	return evt.status;
 }
 
-static tchStatus tch_uartPutcDma(tch_UartHandle* handle,uint8_t c){
-	return tch_uartWriteDma(handle,&c,1);
-}
 
-static tchStatus tch_uartGetcDma(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout){
-	return tch_uartReadDma(handle,rc,1,timeout);
-}
 
 static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_t sz){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;

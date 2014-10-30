@@ -82,7 +82,7 @@ typedef struct tch_lld_spi {
 	struct _tch_spi_opmode_t OpMode;
 	struct _tch_spi_baudrate_t Baudrate;
 	void (*initCfg)(tch_spiCfg* cfg);
-	tch_spiHandle* (*open)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout);
+	tch_spiHandle* (*open)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_spi;
 
 extern const  tch_lld_spi* tch_spi_instance;
