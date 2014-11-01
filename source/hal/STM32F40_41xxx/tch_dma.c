@@ -441,11 +441,12 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t t
 	__DMB();
 	dmaHw->CR |= DMA_SxCR_EN;       // trigger dma tranfer in system task thread
 
-
-	evt = ins->api->MsgQ->get(ins->dma_mq,timeout);
-	*result = evt.status;
-	if(evt.status != osEventMessage){
-		return FALSE;
+	if(timeout){
+		evt = ins->api->MsgQ->get(ins->dma_mq,timeout);
+		*result = evt.status;
+		if(evt.status != osEventMessage){
+			return FALSE;
+		}
 	}
 
 	if((*result = ins->api->Mtx->lock(ins->mtxId,timeout)) != osOK)   // lock mutex for condition variable operation

@@ -208,6 +208,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 
 	tch_GpioCfg iocfg;
 	iocfg.Af = spibs->afv;
+	iocfg.Speed = env->Device->gpio->Speed.High;
 	iocfg.Mode = env->Device->gpio->Mode.Func;
 
 	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout,popt);
@@ -404,8 +405,8 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return evt.status;
 	SPI_clrBusy(hnd);
-	if((evt.status = env->Condv->wakeAll(hnd->condv)) != osOK)
-		return evt.status;
+	evt.status = env->Condv->wakeAll(hnd->condv);
+	env->Mtx->unlock(hnd->mtx);
 	return osOK;
 }
 
@@ -521,7 +522,7 @@ static void tch_spiInvalidate(tch_spi_handle_prototype* ins){
 static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc){
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	const tch* env = ins->env;
-	if(spiDesc->_handle)
+	if(!spiDesc->_handle)
 		return FALSE;
 	if(spiHw->SR & SPI_SR_RXNE){
 		env->MsgQ->put(ins->rxCh.mq,spiHw->DR,0);

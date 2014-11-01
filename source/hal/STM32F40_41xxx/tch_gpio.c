@@ -450,6 +450,8 @@ static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,co
 	while(pmsk){
 		if(pmsk & 0x01){
 			ioctrl_regs->MODER &= ~(GPIO_Mode_Msk << (pin << 1));
+			ioctrl_regs->OSPEEDR &= ~(GPIO_OSpeed_Msk << (pin << 1));
+			ioctrl_regs->OSPEEDR |= (cfg->Speed << (pin << 1));
 			switch(cfg->Mode){
 			case GPIO_Mode_OUT:             /// gpio configure to output
 				ioctrl_regs->MODER |= (GPIO_Mode_OUT << (pin << 1));
@@ -460,8 +462,6 @@ static tchStatus tch_gpio_handle_configure(tch_gpio_handle_prototype* _handle,co
 				}else{
 					ioctrl_regs->OTYPER &= ~(0 << pin);
 				}
-				ioctrl_regs->OSPEEDR &= ~(GPIO_OSpeed_Msk << (pin << 1));
-				ioctrl_regs->OSPEEDR |= (cfg->Speed << (pin << 1));
 				break;
 			case GPIO_Mode_IN:
 				ioctrl_regs->MODER |= (GPIO_Mode_IN << (pin << 1));

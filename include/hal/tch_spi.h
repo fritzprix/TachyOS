@@ -55,7 +55,7 @@ struct _tch_spi_clkmode_t {
 
 struct _tch_spi_baudrate_t {
 	uint8_t High;
-	uint8_t Normal;
+	uint8_t Mid;
 	uint8_t Low;
 };
 

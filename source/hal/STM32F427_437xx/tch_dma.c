@@ -242,8 +242,6 @@ static inline void tch_dmaInvalidate(tch_dma_handle_prototype* _handle);
 static inline BOOL tch_dmaIsValid(tch_dma_handle_prototype* _handle);
 static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 
-static DECL_ASYNC_TASK(tch_dma_trigger);
-
 
 __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		{
@@ -443,11 +441,12 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t t
 	__DMB();
 	dmaHw->CR |= DMA_SxCR_EN;       // trigger dma tranfer in system task thread
 
-
-	evt = ins->api->MsgQ->get(ins->dma_mq,osWaitForever);
-	*result = evt.status;
-	if(evt.status != osEventMessage){
-		return FALSE;
+	if(timeout){
+		evt = ins->api->MsgQ->get(ins->dma_mq,timeout);
+		*result = evt.status;
+		if(evt.status != osEventMessage){
+			return FALSE;
+		}
 	}
 
 	if((*result = ins->api->Mtx->lock(ins->mtxId,timeout)) != osOK)   // lock mutex for condition variable operation
@@ -462,7 +461,7 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t t
 
 static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) _dmaHw;
-	if(!(attr->size && attr->MemAddr[0]))
+	if(!attr->size)
 		return FALSE;
 	dmaHw->NDTR = attr->size;
 	dmaHw->M0AR = attr->MemAddr[0];

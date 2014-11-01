@@ -369,8 +369,10 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 
 __attribute__((section(".data"))) static tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
-				DMA_Str13,    //dma2_stream5
-				DMA_Str10,    //dma2_stream2
+			//	DMA_Str13,    //dma2_stream5
+			//	DMA_Str10,    //dma2_stream2
+				DMA_NOT_USED,
+				DMA_NOT_USED,
 				3,            //dma channel 3
 				3,            //dma channel 3
 				0,            // port A (0)
