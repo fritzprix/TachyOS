@@ -68,10 +68,9 @@ typedef struct tch_spi_cfg_t {
 }tch_spiCfg;
 
 struct tch_spi_handle_t {
-	tchStatus (*write)(tch_spiHandle* self,const void* wb,size_t sz, uint32_t timeout);
+	tchStatus (*write)(tch_spiHandle* self,const void* wb,size_t sz);
 	tchStatus (*read)(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
 	tchStatus (*transceive)(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
-	tchStatus (*close)(tch_spiHandle* self);
 };
 
 typedef struct tch_lld_spi {
@@ -82,7 +81,8 @@ typedef struct tch_lld_spi {
 	struct _tch_spi_opmode_t OpMode;
 	struct _tch_spi_baudrate_t Baudrate;
 	void (*initCfg)(tch_spiCfg* cfg);
-	tch_spiHandle* (*open)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tch_spiHandle* (*allocSpi)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tchStatus (*freeSpi)(tch_spiHandle* self);
 }tch_lld_spi;
 
 extern const  tch_lld_spi* tch_spi_instance;

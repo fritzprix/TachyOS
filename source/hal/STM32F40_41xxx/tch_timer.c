@@ -927,6 +927,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	env->MsgQ->destroy(ins->msgqs[0]);
 	env->MsgQ->destroy(ins->msgqs[1]);
 	env->Mem->free(ins->msgqs);
+	env->Device->gpio->freeIo(ins->iohandle);
 
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;
@@ -940,6 +941,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Mem->free(ins);
 
 	return result;
 

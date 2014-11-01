@@ -1,6 +1,7 @@
 HAL_TEST_SRC = gpio_test.c\
                uart_test.c\
-               timer_test.c
+               timer_test.c\
+               spi_test.c
                
 HAL_TEST_OBJS=$(HAL_TEST_SRC:%.c=$(GEN_DIR)/test/hal/%.o)
 HAL_TEST_CPPOBJS=

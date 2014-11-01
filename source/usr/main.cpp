@@ -58,7 +58,8 @@ int main(tch* api) {
 //	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
