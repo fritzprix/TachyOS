@@ -63,7 +63,7 @@ typedef struct tch_spi_cfg_t {
 	uint8_t ClkMode;
 	uint8_t FrmFormat;
 	uint8_t FrmOrient;
-	uint8_t OpMode;
+	uint8_t Role;
 	uint8_t Baudrate;
 }tch_spiCfg;
 
@@ -78,7 +78,7 @@ typedef struct tch_lld_spi {
 	struct _tch_spi_clkmode_t ClkMode;
 	struct _tch_spi_frame_format_t FrmFormat;
 	struct _tch_spi_frame_orient_t FrmOrient;
-	struct _tch_spi_opmode_t OpMode;
+	struct _tch_spi_opmode_t Role;
 	struct _tch_spi_baudrate_t Baudrate;
 	void (*initCfg)(tch_spiCfg* cfg);
 	tch_spiHandle* (*allocSpi)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);

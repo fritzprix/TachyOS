@@ -101,6 +101,22 @@ typedef struct _tch_spi_descriptor {
 	IRQn_Type            irq;
 }tch_spi_descriptor;
 
+typedef struct _tch_iic_descriptor {
+	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint32_t*  _rstr;
+	const uint32_t       rstmsk;
+	volatile uint16_t*  _isr;
+	volatile uint16_t*  _icr;
+	IRQn_Type            irq;
+}tch_iic_descriptor;
+
+
+
 /////////////////////////////  Platform specific mapping  ////////////////////////////
 
 

@@ -43,7 +43,6 @@ extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
 
 
-
 extern int Sys_Stack_Top asm("sys_stack_top");
 extern int Heap_Base asm("heap_base");
 extern int Heap_Limit asm("heap_limit");

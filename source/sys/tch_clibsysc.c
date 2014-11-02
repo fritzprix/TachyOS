@@ -3,8 +3,14 @@
  *
  *  Created on: 2014. 7. 23.
  *      Author: innocentevil
+ *
  */
 
+
+/*  Implementation of Basic Set of  Unix System Call Stub (for Using C Standard library)  */
+/*
+ *
+ */
 
 #include "tch_kernel.h"
 #include <stdio.h>
@@ -20,10 +26,16 @@ extern int errno;
 char* __env[1] = {0};
 char** environ = __env;
 
-__attribute__((section(".data")))static char* heap_end = NULL;
+
+//__attribute__((section(".data")))static char* heap_end = NULL;
 
 
 char* _sbrk_r(struct _reent* reent,size_t incr){
+	if(tch_port_isISR()){
+		return tch_port_enterSvFromIsr(SV_UNIX_SBRK,reent,incr);
+	}else{
+		return tch_port_enterSvFromUsr(SV_UNIX_SBRK,reent,incr);
+	}/*
 	if(heap_end == NULL)
 		heap_end = (char*)&Heap_Base;
 	char *prev_heap_end;
@@ -33,6 +45,7 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 	}
 	heap_end += incr;
 	return prev_heap_end;
+	*/
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){

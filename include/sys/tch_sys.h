@@ -17,9 +17,9 @@ typedef struct _tch_msgq_karg_t{
 	uint32_t    timeout;
 }tch_msgq_karg;
 
-extern tchStatus tch_msgq_kput(tch_msgQue_id,tch_msgq_karg* arg);
-extern tchStatus tch_msgq_kget(tch_msgQue_id,tch_msgq_karg* arg);
-extern tchStatus tch_msgq_kdestroy(tch_msgQue_id);
+extern tchStatus tch_msgq_kput(tch_msgqId,tch_msgq_karg* arg);
+extern tchStatus tch_msgq_kget(tch_msgqId,tch_msgq_karg* arg);
+extern tchStatus tch_msgq_kdestroy(tch_msgqId);
 
 
 typedef struct _tch_mailq_karg{
@@ -34,6 +34,8 @@ extern tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg);
 extern tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue);
 extern tchStatus tch_async_knotify(tch_asyncId async,void* res);
 extern tchStatus tch_async_kdestroy(tch_asyncId async);
+
+extern void* tch_sbrk_k(struct _reent* reent,size_t sz);
 
 
 #if defined(__cplusplus)

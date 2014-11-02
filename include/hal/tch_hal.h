@@ -42,7 +42,7 @@ struct tch_hal_t{
 	const tch_lld_dma*   dma;
 #endif
 	const tch_lld_spi*   spi;
-	const tch_lld_i2c*   i2c;
+	const tch_lld_iic*   i2c;
 	const tch_lld_adc*   adc;
 	const tch_lld_rtc*   rtc;
 	const tch_lld_intr*  interrupt;

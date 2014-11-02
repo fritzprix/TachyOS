@@ -94,7 +94,7 @@ typedef struct tch_gptimer_handle_proto_t {
 	uint16_t               key;
 	tch_timer              timer;
 	const tch*             env;
-	tch_msgQue_id*         msgqs;
+	tch_msgqId*         msgqs;
 }tch_gptimer_handle_proto;
 
 typedef struct tch_pwm_handle_proto_t{
@@ -113,7 +113,7 @@ typedef struct tch_tcapt_handle_proto_t{
 	tch_timer              timer;
 	const tch*             env;
 	tch_GpioHandle*        iohandle;
-	tch_msgQue_id*         msgqs;
+	tch_msgqId*         msgqs;
 	tch_mtxId              mtx;
 	tch_condvId            condv;
 }tch_tcapt_handle_proto;
@@ -199,7 +199,7 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	/* bind instance method and internal member var  */
 	ins->_pix.close = tch_gptimer_close;
 	ins->_pix.wait = tch_gptimer_wait;
-	ins->msgqs = env->Mem->alloc(timDesc->channelCnt * sizeof(tch_msgQue_id));
+	ins->msgqs = env->Mem->alloc(timDesc->channelCnt * sizeof(tch_msgqId));
 
 	ins->env = env;
 	ins->timer = timer;
@@ -544,7 +544,7 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	ins->_pix.read = tch_tcapt_read;
 	ins->env = env;
 
-	ins->msgqs = (tch_msgQue_id*) env->Mem->alloc(sizeof(tch_msgQue_id) * 2);
+	ins->msgqs = (tch_msgqId*) env->Mem->alloc(sizeof(tch_msgqId) * 2);
 	ins->msgqs[0] = env->MsgQ->create(1);
 	ins->msgqs[1] = env->MsgQ->create(1);
 
@@ -881,7 +881,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	timDesc->ch_occp |= chMsk;
 	env->Mtx->unlock(ins->mtx);
 
-	tch_msgQue_id msgq = NULL;
+	tch_msgqId msgq = NULL;
 	if(chMsk == 3){
 		msgq = ins->msgqs[0];
 	}else if(chMsk == (3 << 2)){

@@ -150,7 +150,7 @@
 
 
 #ifndef MFEATURE_GPIO
-#define MFEATURE_GPIO               (6)                     ///  define number of gpio port your platform
+#define MFEATURE_GPIO               (6)          ///  define number of gpio port your platform
 #endif
 
 #ifndef MFEATURE_PINCOUNT_pPORT                            ///   define number of pin count per each gpio port
@@ -175,6 +175,10 @@
 
 #ifndef MFEATURE_SPI
 #define MFEATURE_SPI                (3)
+#endif
+
+#ifndef MFEATURE_IIC
+#define MFEATURE_IIC                (3)
 #endif
 
 typedef struct _tch_uart_bs_t {
@@ -211,6 +215,17 @@ typedef struct _tch_spi_bs_t {
 	uint8_t        sck;
 	uint8_t        afv;
 }tch_spi_bs;
+
+typedef struct _tch_iic_bs_t {
+	dma_t         txdma;
+	dma_t         rxdma;
+	uint8_t       txch;
+	uint8_t       rxch;
+	gpIo_x        port;
+	uint8_t       scl;
+	uint8_t       sda;
+	uint8_t       afv;
+}tch_iic_bs;
 
 
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
@@ -369,10 +384,8 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 
 __attribute__((section(".data"))) static tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
-			//	DMA_Str13,    //dma2_stream5
-			//	DMA_Str10,    //dma2_stream2
-				DMA_NOT_USED,
-				DMA_NOT_USED,
+				DMA_Str13,    //dma2_stream5
+				DMA_Str10,    //dma2_stream2
 				3,            //dma channel 3
 				3,            //dma channel 3
 				0,            // port A (0)
@@ -404,6 +417,50 @@ __attribute__((section(".data"))) static tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = 
 				6
 		}
 };
+/**
+ * 	dma_t         txdma;
+	dma_t         rxdma;
+	uint8_t       txch;
+	uint8_t       rxch;
+	gpIo_x        port;
+	uint8_t       scl;
+	uint8_t       sda;
+	uint8_t       afv;
+ */
+
+__attribute__((section(".data"))) static tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = {
+		{      // IIC 1
+				DMA_Str6,    // dma1_stream 6
+				DMA_Str5,    // dma1_stream 5
+				1,           // dma channel 1
+				1,           // dma channel 1
+				1,           // port B(1)
+				6,           // pin 6
+				7,           // pin 7
+				4            // afv
+		},
+		{
+				DMA_Str2,   // dma1_stream 2
+				DMA_Str7,   // dma1_stream 7
+				7,          // dma channel 7
+				7,          // dma channel 7
+				5,          // port B(1)
+				0,          // pin 10
+				1,          // pin 11
+				4           // afv
+		},
+		{
+				DMA_Str2,   // dma1 stream 2
+				DMA_Str4,   // dma1 stream 4
+				3,          // dma channel 3
+				3,          // dma channel 3
+				7,          // port H(7)
+				7,          // pin 7
+				8,          // pin 8
+				4           // afv
+		}
+};
+
 
 
 #include "stm32f4xx.h"

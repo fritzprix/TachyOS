@@ -20,7 +20,7 @@ tchStatus spi_performTest(tch* env){
 	spiCfg.ClkMode = env->Device->spi->ClkMode.Mode0;
 	spiCfg.FrmFormat = env->Device->spi->FrmFormat.Frame8B;
 	spiCfg.FrmOrient = env->Device->spi->FrmOrient.LSBFirst;
-	spiCfg.OpMode = env->Device->spi->OpMode.Master;
+	spiCfg.Role = env->Device->spi->Role.Master;
 
 
 	do{

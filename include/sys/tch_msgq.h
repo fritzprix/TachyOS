@@ -12,7 +12,7 @@
 extern "C"{
 #endif
 
-typedef void* tch_msgQue_id;
+typedef void* tch_msgqId;
 
 /**
  *    CMSIS RTOS Compatible message queue
@@ -28,7 +28,7 @@ struct _tch_msgque_ix_t {
 	 *  @return queue ID
 	 *
 	 */
-	tch_msgQue_id (*create)(size_t len);
+	tch_msgqId (*create)(size_t len);
 
 	/**
 	 * put message in the message queue (for producer side)
@@ -42,7 +42,7 @@ struct _tch_msgque_ix_t {
 	 *          osErrorTimeoutResource  : no memory in the queue was available during the given time limit.
 	 *          osErrorParameter  : a parameter is invalid or outside of a permitted
 	 */
-	tchStatus (*put)(tch_msgQue_id,uint32_t msg,uint32_t millisec);
+	tchStatus (*put)(tch_msgqId,uint32_t msg,uint32_t millisec);
 
 	/**
 	 * Get a Message or Wait for a Message from a Queue
@@ -55,12 +55,12 @@ struct _tch_msgque_ix_t {
 	 *           osEventMessage: message received, value.p contains the pointer to message.
 	 *           osErrorParameter: a parameter is invalid or outside of a permitted range.
 	 */
-	osEvent (*get)(tch_msgQue_id,uint32_t millisec);
+	osEvent (*get)(tch_msgqId,uint32_t millisec);
 
 	/*!
 	 * \brief destroy msg queue
 	 */
-	tchStatus (*destroy)(tch_msgQue_id);
+	tchStatus (*destroy)(tch_msgqId);
 };
 
 

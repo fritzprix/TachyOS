@@ -90,9 +90,6 @@ typedef struct tch_sys_task_t {
 #define SV_THREAD_RESUME                 ((uint32_t) 0x25)
 #define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
 
-#define SV_MEM_MALLOC                    ((uint32_t) 0x27)
-#define SV_MEM_FREE                      ((uint32_t) 0x28)
-
 #define SV_MSGQ_PUT                      ((uint32_t) 0x2D)               ///< Supervisor call id to put msg to msgq
 #define SV_MSGQ_GET                      ((uint32_t) 0x2E)               ///< Supervisor call id to get msg from msgq
 #define SV_MSGQ_DESTROY                  ((uint32_t) 0x2F)               ///< Supervisro call id to destoy msgq
@@ -107,6 +104,8 @@ typedef struct tch_sys_task_t {
 #define SV_ASYNC_WAIT                    ((uint32_t) 0x36)               ///< Supervisor call id to post Async Kernel Task
 #define SV_ASYNC_NOTIFY                  ((uint32_t) 0x37)               ///< Supervisor call id to notify completion of async kernel task
 #define SV_ASYNC_DESTROY                 ((uint32_t) 0x38)               ///< Supervisor call id to destroy async
+
+#define SV_UNIX_SBRK                     ((uint32_t) 0x3A)               ///< Supervisor call id for unix system call : sbrk
 
 
 

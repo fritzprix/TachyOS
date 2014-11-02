@@ -97,11 +97,11 @@ typedef struct tch_lld_usart_handle_prototype_t {
 	uint8_t                           idx;
 	union {
 		tch_DmaHandle* txDma;
-		tch_msgQue_id txQ;
+		tch_msgqId txQ;
 	}txCh;
 	union {
 		tch_DmaHandle* rxDma;
-		tch_msgQue_id rxQ;
+		tch_msgqId rxQ;
 	} rxCh;
 	tch_GpioHandle*                   ioHandle;
 	tch_mtxId                         rxMtx;

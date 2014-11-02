@@ -24,18 +24,18 @@ typedef struct _tch_msgq_cb {
 
 
 
-tchStatus tch_msgq_kput(tch_msgQue_id,tch_msgq_karg* arg);
-tchStatus tch_msgq_kget(tch_msgQue_id,tch_msgq_karg* arg);
-tchStatus tch_msgq_kdestroy(tch_msgQue_id);
+tchStatus tch_msgq_kput(tch_msgqId,tch_msgq_karg* arg);
+tchStatus tch_msgq_kget(tch_msgqId,tch_msgq_karg* arg);
+tchStatus tch_msgq_kdestroy(tch_msgqId);
 
-static tch_msgQue_id tch_msgq_create(size_t len);
-static tchStatus tch_msgq_put(tch_msgQue_id,uint32_t msg,uint32_t millisec);
-static osEvent tch_msgq_get(tch_msgQue_id,uint32_t millisec);
-static tchStatus tch_msgq_destroy(tch_msgQue_id);
+static tch_msgqId tch_msgq_create(size_t len);
+static tchStatus tch_msgq_put(tch_msgqId,uint32_t msg,uint32_t millisec);
+static osEvent tch_msgq_get(tch_msgqId,uint32_t millisec);
+static tchStatus tch_msgq_destroy(tch_msgqId);
 
-static void tch_msgqValidate(tch_msgQue_id);
-static void tch_msgqInvalidate(tch_msgQue_id);
-static BOOL tch_msgqIsValid(tch_msgQue_id);
+static void tch_msgqValidate(tch_msgqId);
+static void tch_msgqInvalidate(tch_msgqId);
+static BOOL tch_msgqIsValid(tch_msgqId);
 
 
 
@@ -50,7 +50,7 @@ __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 
-static tch_msgQue_id tch_msgq_create(size_t len){
+static tch_msgqId tch_msgq_create(size_t len){
 	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) Mem->alloc(sz);
 	uStdLib->string->memset(msgqCb,0,sz);
@@ -65,12 +65,12 @@ static tch_msgQue_id tch_msgq_create(size_t len){
 	tch_listInit(&msgqCb->pwq);
 
 	tch_msgqValidate(msgqCb);
-	return (tch_msgQue_id) msgqCb;
+	return (tch_msgqId) msgqCb;
 }
 
 
 
-static tchStatus tch_msgq_put(tch_msgQue_id mqId, uword_t msg,uint32_t millisec){
+static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tchStatus result = osOK;
 	if(!tch_msgqIsValid(msgqCb))
@@ -109,7 +109,7 @@ static tchStatus tch_msgq_put(tch_msgQue_id mqId, uword_t msg,uint32_t millisec)
 	return osErrorOS;
 }
 
-tchStatus tch_msgq_kput(tch_msgQue_id mqId,tch_msgq_karg* arg){
+tchStatus tch_msgq_kput(tch_msgqId mqId,tch_msgq_karg* arg){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_header* cth = tch_currentThread;
 	if(!tch_msgqIsValid(msgqCb))
@@ -127,7 +127,7 @@ tchStatus tch_msgq_kput(tch_msgQue_id mqId,tch_msgq_karg* arg){
 }
 
 
-static osEvent tch_msgq_get(tch_msgQue_id mqId,uint32_t millisec){
+static osEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	osEvent evt;
 	evt.def = mqId;
@@ -181,7 +181,7 @@ static osEvent tch_msgq_get(tch_msgQue_id mqId,uint32_t millisec){
 	return evt;
 }
 
-tchStatus tch_msgq_kget(tch_msgQue_id mqId,tch_msgq_karg* arg){
+tchStatus tch_msgq_kget(tch_msgqId mqId,tch_msgq_karg* arg){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_header* cth = tch_currentThread;
 	if(!tch_msgqIsValid(msgqCb))
@@ -198,7 +198,7 @@ tchStatus tch_msgq_kget(tch_msgQue_id mqId,tch_msgq_karg* arg){
 	return osEventMessage;
 }
 
-static tchStatus tch_msgq_destroy(tch_msgQue_id mqId){
+static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_header* nth = NULL;
 	if(!tch_msgqIsValid(msgqCb))
@@ -220,7 +220,7 @@ static tchStatus tch_msgq_destroy(tch_msgQue_id mqId){
 }
 
 
-tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
+tchStatus tch_msgq_kdestroy(tch_msgqId mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_header* nth = NULL;
 	msgqCb->gidx = 0;
@@ -231,15 +231,15 @@ tchStatus tch_msgq_kdestroy(tch_msgQue_id mqId){
 	return osOK;
 }
 
-static void tch_msgqValidate(tch_msgQue_id mqId){
+static void tch_msgqValidate(tch_msgqId mqId){
 	((tch_msgq_cb*) mqId)->state |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
 }
 
-static void tch_msgqInvalidate(tch_msgQue_id mqId){
+static void tch_msgqInvalidate(tch_msgqId mqId){
 	((tch_msgq_cb*) mqId)->state &= ~(0xFFFF);
 }
 
-static BOOL tch_msgqIsValid(tch_msgQue_id msgq){
+static BOOL tch_msgqIsValid(tch_msgqId msgq){
 	return (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
 
 }

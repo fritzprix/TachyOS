@@ -24,7 +24,7 @@ static tch_threadId receiver_id;
 
 static DECLARE_IO_CALLBACK(ioEventListener);
 
-static tch_msgQue_id mid;
+static tch_msgqId mid;
 static tch_barId mBar;
 
 static tch_GpioHandle* out;

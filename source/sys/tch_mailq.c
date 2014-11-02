@@ -21,7 +21,7 @@ typedef struct _tch_mailq_cb {
 	size_t        pidx;
 	size_t        gidx;
 	tch_mpoolId   bpool;
-	tch_msgQue_id msgq;
+	tch_msgqId msgq;
 	tch_lnode_t   wq;
 }tch_mailq_cb;
 

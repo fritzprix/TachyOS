@@ -34,7 +34,6 @@
 
 static tch_kernel_instance tch_sys_instance;
 const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
-tch_mem_handle* Heap_Manager;
 
 
 
@@ -83,9 +82,6 @@ void tch_kernelInit(void* arg){
 	// put thread in wait queue
 	tch_listPutFirst(&sysThreadPort,&((tch_thread_header*)sysThreadId)->t_waitNode);
 
-#ifndef __USE_MALLOC
-	Heap_Manager = tch_memInit((uint8_t*)&Heap_Base,(uint32_t)&Heap_Limit - (uint32_t)&Heap_Base);
-#endif
 	/*Bind API Object*/
 	tch* api = (tch*) &tch_sys_instance;
 	api->uStdLib = tch_initCrt(NULL);
@@ -157,16 +153,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
 		break;
-	case SV_MEM_MALLOC:
-#ifndef __USE_MALLOC
-		tch_kernelSetResult(tch_currentThread,(uint32_t)Heap_Manager->alloc(Heap_Manager,arg1));
-#endif
-		break;
-	case SV_MEM_FREE:
-#ifndef __USE_MALLOC
-		tch_currentThread = Heap_Manager->free(Heap_Manager,(void*)arg1);
-#endif
-		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_msgq_kput(arg1,arg2));
@@ -202,6 +188,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_ASYNC_DESTROY:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
+		break;
+	case SV_UNIX_SBRK:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,(tchStatus)tch_sbrk_k(arg1,arg2));
+		if(cth->t_kRet == NULL)
+			tch_schedTerminate(cth,osErrorNoMemory);
 		break;
 	}
 }

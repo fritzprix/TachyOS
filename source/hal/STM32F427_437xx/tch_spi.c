@@ -121,11 +121,11 @@ struct _tch_spi_handle_prototype {
 	const tch*                env;
 	union {
 		tch_DmaHandle*        dma;
-		tch_msgQue_id         mq;
+		tch_msgqId         mq;
 	}txCh;
 	union {
 		tch_DmaHandle*        dma;
-		tch_msgQue_id         mq;
+		tch_msgqId         mq;
 	}rxCh;
 	uint32_t                  status;
 	tch_GpioHandle*           iohandle;

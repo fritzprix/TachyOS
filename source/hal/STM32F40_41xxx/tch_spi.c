@@ -121,11 +121,11 @@ struct _tch_spi_handle_prototype {
 	const tch*                env;
 	union {
 		tch_DmaHandle*        dma;
-		tch_msgQue_id         mq;
+		tch_msgqId         mq;
 	}txCh;
 	union {
 		tch_DmaHandle*        dma;
-		tch_msgQue_id         mq;
+		tch_msgqId         mq;
 	}rxCh;
 	uint32_t                  status;
 	tch_GpioHandle*           iohandle;
@@ -161,7 +161,7 @@ static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->ClkMode = SPI_CLKMODE_0;
 	cfg->FrmFormat = SPI_FRM_FORMAT_8B;
 	cfg->FrmOrient = SPI_FRM_ORI_MSBFIRST;
-	cfg->OpMode = SPI_OPMODE_MASTER;
+	cfg->Role = SPI_OPMODE_MASTER;
 }
 
 static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
@@ -316,7 +316,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 	if(cfg->ClkMode & 1)
 		spiHw->CR1 |= SPI_CR1_CPHA;
 
-	if(cfg->OpMode == SPI_OPMODE_MASTER){
+	if(cfg->Role == SPI_OPMODE_MASTER){
 		spiHw->CR1 &= ~SPI_CR1_BR;
 		spiHw->CR1 |= (cfg->Baudrate << 3);
 		spiHw->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI;

@@ -11,122 +11,30 @@
  *      Author: innocentevil
  */
 #include "tch_kernel.h"
+#include "tch_sys.h"
 #include "tch_halcfg.h"
 #include "tch.h"
 #include <stdlib.h>
 
 
-typedef struct _tch_chunk_cb_t {
-	void* next;
-	size_t len;
-}tch_chunk_cb __attribute__((aligned(4)));
-
-typedef struct _tch_memp_cb_t {
-	tch_mem_handle                  _pix;
-	tch_chunk_cb*             memp_head;
-}tch_mem_cb;
-
-static void* tch_apic_mem_alloc(size_t size);
-static int tch_apic_mem_free(void* p);
-
-static void* tch_mem_alloc(tch_mem_handle* self,size_t size);
-static int tch_mem_free(tch_mem_handle* self,void*);
-
 __attribute__((section(".data")))static tch_mem_ix MEM_StaticInstance = {
-#ifndef __USE_MALLOC
-		tch_apic_mem_alloc,
-		tch_apic_mem_free
-#else
 		malloc,
 		free
-#endif
-
 };
 
-
 const tch_mem_ix* Mem = &MEM_StaticInstance;
+__attribute__((section(".data")))static char* heap_end = NULL;
 
 
-tch_mem_handle* tch_memInit(void* pool,size_t size){
-	tch_mem_cb* obj = (tch_mem_cb*) pool;
-	obj->_pix.alloc = tch_mem_alloc;
-	obj->_pix.free = tch_mem_free;
-	tch_chunk_cb** header__p = &obj->memp_head;
-	obj++;
-	void* np = (void*)((uint32_t)(obj + 3) & ~3);        /// Make sure pool address is 4 byte aligned address
-	size = size & ~3;                              /// Make sure size is also 4 byte aligend
-	*header__p = (tch_chunk_cb*) np;                  /// Make Head At pool start point
-	(*header__p)->next = (uint8_t*) np + size - sizeof(tch_chunk_cb);       /// Make Tail At pool end point
-	(*header__p)->len = 0;
-	((tch_chunk_cb*)(*header__p)->next)->next = NULL; /// set up list tail so protect from heap request overrun into other memory area
-	((tch_chunk_cb*)(*header__p)->next)->len = 0;
-	return (tch_mem_handle*) ((tch_mem_cb*)--obj);
-}
-
-
-void* tch_mem_alloc(tch_mem_handle* self,size_t size){
-	void* p = NULL;
-	if(!size)
+void* tch_sbrk_k(struct _reent* reent,size_t incr){
+	if(heap_end == NULL)
+		heap_end = (char*)&Heap_Base;
+	char *prev_heap_end;
+	prev_heap_end = heap_end;
+	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
 		return NULL;
-	tch_mem_cb* obj = (tch_mem_cb*) self;
-	tch_chunk_cb* heap_head = obj->memp_head;
-	tch_chunk_cb* p_sidx = heap_head;
-	tch_chunk_cb* prev = NULL;
-	size = (size + 3) & ~3;                 ///ensure size is 4 byte aligned
-	size_t holesz = ((uint8_t*)p_sidx->next - (uint8_t*)p_sidx - p_sidx->len);
-	while(size > holesz){
-		prev = p_sidx;
-		p_sidx = p_sidx->next;
-		holesz = ((uint8_t*)p_sidx->next - (uint8_t*)p_sidx - p_sidx->len);
-		if(p_sidx == NULL)                  /// reached to end of mem block returns null
-			return NULL;
 	}
-	if(!p_sidx->len){
-		p_sidx->len = size;
-		return p_sidx + 1;
-	}
-	p = ((uint8_t*) p_sidx + p_sidx->len + size - sizeof(tch_chunk_cb));
-	((tch_chunk_cb*) p)->next = p_sidx->next;
-	((tch_chunk_cb*) p)->len = size;
-	p_sidx->next = p;
-	return (void*)((tch_chunk_cb*) p + 1);
+	heap_end += incr;
+	return prev_heap_end;
 }
-
-int tch_mem_free(tch_mem_handle* self,void* fp){
-	if(!fp)
-		return (1);
-	tch_mem_cb* obj = (tch_mem_cb*) self;
-	tch_chunk_cb* s_prev = NULL;
-	tch_chunk_cb* s_idx = obj->memp_head;
-	tch_chunk_cb* mhd = ((tch_chunk_cb*) fp - 1);
-	while(mhd != s_idx){
-		s_prev = s_idx;
-		s_idx = (tch_chunk_cb*) s_idx->next;
-	}
-	if(s_prev == NULL){
-		s_idx->len = 0;
-	}else{
-		s_prev->next = s_idx->next;
-	}
-	return (0);
-}
-
-#ifndef __USE_MALLOC
-void* tch_apic_mem_alloc(size_t size){
-	if(__get_IPSR()){
-		return Heap_Manager->alloc(Heap_Manager,size);
-	}else{
-		return (void*)tch_port_enterSvFromUsr(SV_MEM_MALLOC,size,0);
-	}
-}
-
-int tch_apic_mem_free(void* p){
-	if(__get_IPSR()){
-		return Heap_Manager->free(Heap_Manager,p);
-	}else{
-		return tch_port_enterSvFromUsr(SV_MEM_FREE,(uint32_t)p,0);
-	}
-}
-#endif
-
 

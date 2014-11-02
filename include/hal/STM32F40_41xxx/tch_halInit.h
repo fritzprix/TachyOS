@@ -94,10 +94,6 @@ __attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
 		}
 };
 /*
- * 	void*                     io_occp;
-	tch_condvId               condv;
-	tch_barId                 evbar;
-	IRQn_Type                 irq;
  */
 __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
@@ -200,15 +196,6 @@ __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_
 
 
 /**
- * 	void*               _hw;
-	uint32_t*           _clkenr;
-	const uint32_t       clkmsk;
-	uint32_t*           _lpclkenr;
-	const uint32_t       lpcklmsk;
-	uint32_t*           _isr;
-	uint32_t*           _icr;
-	uint32_t             ipos;
-	IRQn_Type            irq;
  */
 __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 		{
@@ -407,15 +394,6 @@ __attribute__((section(".data"))) static tch_dma_descriptor DMA_HWs[] ={
 
 
 /**
- * 	void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*  _isr;
-	volatile uint32_t*  _icr;
-	IRQn_Type            irq;
  */
 __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
 		{
@@ -652,19 +630,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 		}
 };
 
-/**
- * 	void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*  _rstr;
-	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
-	IRQn_Type            irq;
- */
 __attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI] = {
 		{
 				SPI1,
@@ -704,6 +669,62 @@ __attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI
 				&SPI3->SR,
 				&SPI3->SR,
 				SPI3_IRQn
+		}
+};
+
+/*
+ * 	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	volatile uint32_t*  _lpclkenr;
+	const uint32_t       lpclkmsk;
+	volatile uint32_t*  _rstr;
+	const uint32_t       rstmsk;
+	volatile uint16_t*  _isr;
+	volatile uint16_t*  _icr;
+	IRQn_Type            irq;
+ */
+
+__attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
+		{
+				I2C1,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_I2C1EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_I2C1LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_I2C1RST,
+				&I2C1->SR1,
+				&I2C1->SR2,
+				I2C1_EV_IRQn
+		},
+		{
+				I2C2,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_I2C2EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_I2C2LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_I2C2RST,
+				&I2C2->SR1,
+				&I2C2->SR2,
+				I2C2_EV_IRQn
+		},
+		{
+				I2C3,
+				NULL,
+				&RCC->APB1ENR,
+				RCC_APB1ENR_I2C3EN,
+				&RCC->APB1LPENR,
+				RCC_APB1LPENR_I2C3LPEN,
+				&RCC->APB1RSTR,
+				RCC_APB1RSTR_I2C3RST,
+				&I2C3->SR1,
+				&I2C3->SR2,
+				I2C3_EV_IRQn
 		}
 };
 

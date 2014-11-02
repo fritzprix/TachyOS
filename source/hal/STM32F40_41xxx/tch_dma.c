@@ -222,7 +222,7 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
 //	tch_asyncId                 dma_async;
-	tch_msgQue_id               dma_mq;
+	tch_msgqId               dma_mq;
 }tch_dma_handle_prototype;
 
 
