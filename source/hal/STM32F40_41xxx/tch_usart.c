@@ -582,11 +582,11 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 }
 
 static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr){
-
+	return osErrorOS;
 }
 
 static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout){
-
+	return osErrorOS;
 }
 
 static inline void tch_uartValidate(tch_UartHandlePrototype* _handle){

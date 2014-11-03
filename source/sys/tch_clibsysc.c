@@ -27,7 +27,6 @@ char* __env[1] = {0};
 char** environ = __env;
 
 
-//__attribute__((section(".data")))static char* heap_end = NULL;
 
 
 char* _sbrk_r(struct _reent* reent,size_t incr){
@@ -35,17 +34,7 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 		return tch_port_enterSvFromIsr(SV_UNIX_SBRK,reent,incr);
 	}else{
 		return tch_port_enterSvFromUsr(SV_UNIX_SBRK,reent,incr);
-	}/*
-	if(heap_end == NULL)
-		heap_end = (char*)&Heap_Base;
-	char *prev_heap_end;
-	prev_heap_end = heap_end;
-	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
-		return NULL;
 	}
-	heap_end += incr;
-	return prev_heap_end;
-	*/
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){

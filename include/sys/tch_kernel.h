@@ -58,10 +58,6 @@ extern tch_thread_header* tch_currentThread;
 extern tch_threadId sysThreadId;
 extern tch_thread_queue sysThreadPort;
 
-#ifndef __USE_MALLOC
-extern tch_mem_handle* Heap_Manager;
-#endif
-
 
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));

@@ -187,7 +187,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 			return NULL;
 	}
 
-	spiDesc->_handle = 1;            // occupy spi h/w
+	spiDesc->_handle = ((void*) 1);            // occupy spi h/w
 	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != osOK){
 		return NULL;
 	}
@@ -338,7 +338,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 
 	spiHw->CR1 |= SPI_CR1_SPE;
 
-	tch_spiValidate((tch_spiHandle*) hnd);
+	tch_spiValidate((tch_spi_handle_prototype*) hnd);
 	SPI_clrBusy(hnd);
 	return (tch_spiHandle*) hnd;
 }
@@ -436,14 +436,14 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 		dmaReq.MemInc = TRUE;
 	else
 		dmaReq.MemInc = FALSE;
-	dmaReq.PeriphAddr[0] = &spiHw->DR;
+	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
 	env->Device->dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result);
 
-	dmaReq.MemAddr[0] = wb;
+	dmaReq.MemAddr[0] = (uaddr_t)wb;
 	dmaReq.MemInc = TRUE;
-	dmaReq.PeriphAddr[0] = &spiHw->DR;
+	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
 	result = env->Device->dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result);

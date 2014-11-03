@@ -198,12 +198,12 @@ void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
-	exc_sp->R0 = th_header;
+	exc_sp->R0 = (uint32_t)th_header;
 	exc_sp->R1 = osOK;
 #if MFEATURE_HFLOAT
 	exc_sp->S0 = (float)0.2f;
 #endif
-	exc_sp = ((uint32_t*) exc_sp + 2);
+	exc_sp = (tch_exc_stack*)((uint32_t*) exc_sp + 2);
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	memset(th_ctx,0,sizeof(tch_thread_context) - 8);

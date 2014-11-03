@@ -221,7 +221,6 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_condvId                 condv;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
-//	tch_asyncId                 dma_async;
 	tch_msgqId               dma_mq;
 }tch_dma_handle_prototype;
 
@@ -267,7 +266,7 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		0
 };
 
-const tch_lld_dma* tch_dma_instance = &DMA_StaticInstance;
+const tch_lld_dma* tch_dma_instance = (tch_lld_dma*)&DMA_StaticInstance;
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg){
@@ -341,20 +340,6 @@ static tch_DmaHandle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint
 	return (tch_DmaHandle*)dma_desc->_handle;
 }
 
-/*
- * typedef struct tch_dma_handle_prototype_t{
-	tch_DmaHandle             _pix;
-	tch*                        api;
-	dma_t                       dma;
-	uint8_t                     ch;
-	tch_mtxId                   mtxId;
-	tch_condvId                 condv;
-	tch_dma_eventListener       listener;
-	uint32_t                    status;
-	tch_asyncId                 dma_async;
-}tch_dma_handle_prototype;
- *
- */
 
 static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	tch_dma_handle_prototype* dma_handle = (tch_dma_handle_prototype*) api->Mem->alloc(sizeof(tch_dma_handle_prototype));
@@ -364,7 +349,6 @@ static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	dma_handle->status = 0;
 	dma_handle->mtxId = api->Mtx->create();
 	dma_handle->condv = api->Condv->create();
-//	dma_handle->dma_async = api->Async->create(1);
 	dma_handle->dma_mq = api->MsgQ->create(1);
 	dma_handle->listener = NULL;
 
@@ -372,51 +356,9 @@ static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 }
 
 
-/*
-static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
-	if(!tch_dmaIsValid(self))
-		return FALSE;
-	uint8_t err_cnt = 0;
-	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	tchStatus lresult = osOK;
-	tch_DmaReqArgs args;      // dma request arg types
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
-	args.attr = attr;
-	args.self = self;
-
-
-	if((*result = ins->api->Mtx->lock(ins->mtxId,timeout)) != osOK)
-		return FALSE;
-	while(dmaHw->CR & DMA_SxCR_EN){
-		if((*result = ins->api->Condv->wait(ins->condv,ins->mtxId,timeout)) != osOK)
-			return FALSE;
-	}
-
-	if(!result)
-		result = &lresult;
-	while((*result = ins->api->Async->wait(ins->dma_async,ins,tch_dma_trigger,timeout,&args))!= osOK){
-		if(!tch_dmaIsValid(ins))
-			return FALSE;
-		switch(*result){
-		case osErrorResource:
-			return FALSE;
-		case osErrorTimeoutResource:
-			return FALSE;
-		case osErrorOS:
-			if(timeout != osWaitForever)
-				return FALSE;
-			if(err_cnt++ >= DMA_MAX_ERR_CNT)
-				return FALSE;
-		}
-	}
-	ins->api->Condv->wakeAll(ins->condv);
-	ins->api->Mtx->unlock(ins->mtxId);
-	return TRUE;
-}
-*/
 
 static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
-	if(!tch_dmaIsValid(self))
+	if(!tch_dmaIsValid((tch_dma_handle_prototype*)self))
 		return FALSE;
 	uint8_t err_cnt = 0;
 	osEvent evt;
@@ -464,52 +406,23 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	if(!attr->size)
 		return FALSE;
 	dmaHw->NDTR = attr->size;
-	dmaHw->M0AR = attr->MemAddr[0];
-	dmaHw->M1AR = attr->MemAddr[1];
-	dmaHw->PAR = attr->PeriphAddr[0];
+	dmaHw->M0AR = (uint32_t)attr->MemAddr[0];
+	dmaHw->M1AR = (uint32_t)attr->MemAddr[1];
+	dmaHw->PAR = (uint32_t)attr->PeriphAddr[0];
 
 	if(attr->MemInc)
 		dmaHw->CR |= DMA_SxCR_MINC;
 	else
 		dmaHw->CR &= ~DMA_SxCR_MINC;
 
-
 	if(attr->PeriphInc)
 		dmaHw->CR |= DMA_SxCR_PINC;
 	else
 		dmaHw->CR &= ~DMA_SxCR_PINC;
-
-
-	//wait mem sync (because mem store op. has some amount of delay)
 	return TRUE;
 
 }
 
-/*
-static DECL_ASYNC_TASK(tch_dma_trigger){
-	if(!arg)
-		return osErrorParameter;
-	tch_DmaReqArgs* dargs = (tch_DmaReqArgs*) arg;
-	DMA_Stream_TypeDef* _hw = DMA_HWs[((tch_dma_handle_prototype*) dargs->self)->dma]._hw;
-
-	return osOK;
-}
-*/
-
-/**
- * typedef struct tch_dma_handle_prototype_t{
-	tch_DmaHandle             _pix;
-	tch*                        api;
-	dma_t                       dma;
-	uint8_t                     ch;
-	tch_mtxId                   mtxId;
-	tch_condvId                 condv;
-	tch_dma_eventListener       listener;
-	uint32_t                    status;
-	tch_asyncId                 dma_async;
-}tch_dma_handle_prototype;
- *
- */
 static tchStatus tch_dma_close(tch_DmaHandle* self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus result = osOK;
@@ -578,12 +491,10 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	}
 	tch* api = handle->api;
 	if(isr & DMA_FLAG_EvTC){
-		//api->Async->notify(handle->dma_async,(int)handle,osOK);
 		api->MsgQ->put(handle->dma_mq,osOK,0);
 		*dma_desc->_icr = isrclr;
 		return TRUE;
 	}else{
-	//	api->Async->notify(handle->dma_async,(int)handle,osErrorOS);
 		api->MsgQ->put(handle->dma_mq,osErrorOS,0);
 		*dma_desc->_icr = isrclr;
 		return FALSE;
