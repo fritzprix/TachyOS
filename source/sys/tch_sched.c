@@ -86,14 +86,14 @@ void tch_schedInit(void* arg){
 	tch_port_enableSysTick();                    ///< enable system timer tick
 
 	tch_threadCfg thcfg;
-	thcfg._t_routine = main;
+	thcfg._t_routine = (tch_thread_routine) main;
 	thcfg._t_stack = &Main_Stack_Limit;
 	thcfg.t_stackSize = (uint32_t) &Main_Stack_Top - (uint32_t) &Main_Stack_Limit;
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
 	MainThread_id = Thread->create(&thcfg,_sys);
 
-	thcfg._t_routine = idle;
+	thcfg._t_routine = (tch_thread_routine) idle;
 	thcfg._t_stack = &Idle_Stack_Limit;
 	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
 	thcfg.t_proior = Idle;

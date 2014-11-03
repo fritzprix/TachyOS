@@ -63,10 +63,10 @@ DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = sys->MailQ->calloc(testmailq_id,osWaitForever,NULL);
+		p = env->MailQ->calloc(testmailq_id,osWaitForever,NULL);
 		p->age = 0;
 		p->sex = 1;
-		sys->MailQ->put(testmailq_id,p);
+		env->MailQ->put(testmailq_id,p);
 		cnt++;
 	}
 	return osOK;
@@ -76,8 +76,8 @@ DECLARE_THREADROUTINE(receiver){
 	uint32_t cnt = 0;
 	osEvent evt;
 	while(cnt < 100){
-		evt = sys->MailQ->get(testmailq_id,osWaitForever);
-		sys->MailQ->free(testmailq_id,(void*)evt.value.v);
+		evt = env->MailQ->get(testmailq_id,osWaitForever);
+		env->MailQ->free(testmailq_id,(void*)evt.value.v);
 		if(evt.status == osEventMail)
 			cnt++;
 	}

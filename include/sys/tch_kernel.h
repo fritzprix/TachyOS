@@ -31,6 +31,10 @@
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
 #define tch_kAssert(b,error)  if(!b){__tch_printError(error);Thread->terminate(tch_currentThread,error);}
 
+
+#define TCH_SYSTASK_QSIZE                     (10)
+
+
 /*!
  * \brief
  */

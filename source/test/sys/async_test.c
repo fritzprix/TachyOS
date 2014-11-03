@@ -57,15 +57,15 @@ tchStatus async_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(testRoutine1){
-	tch_lld_gpio* gpio = sys->Device->gpio;
-	api = sys;
+	tch_lld_gpio* gpio = env->Device->gpio;
+	api = env;
 	tch_GpioCfg iocfg;
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = gpio->Mode.In;
 	iocfg.PuPd = gpio->PuPd.PullUp;
 	iocfg.Speed = gpio->Speed.Mid;
 
-	tch_GpioHandle* in = gpio->allocIo(sys,gpio->Ports.gpio_0,(1 << 0),&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* in = gpio->allocIo(env,gpio->Ports.gpio_0,(1 << 0),&iocfg,osWaitForever,ActOnSleep);
 
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = gpio->Mode.Out;
@@ -73,7 +73,7 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	iocfg.PuPd = gpio->PuPd.PullUp;
 	iocfg.Speed = gpio->Speed.Mid;
 
-	tch_GpioHandle* out = gpio->allocIo(sys,gpio->Ports.gpio_0,(1 << 2),&iocfg,osWaitForever,ActOnSleep);
+	tch_GpioHandle* out = gpio->allocIo(env,gpio->Ports.gpio_0,(1 << 2),&iocfg,osWaitForever,ActOnSleep);
 
 	tch_GpioEvCfg evcfg;
 	gpio->initEvCfg(&evcfg);
@@ -84,14 +84,14 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	in->registerIoEvent(in,&evcfg,&pmsk);
 	if(!async)
 		return osErrorOS;
-	if(sys->Async->wait(async,async,testAsyncNotWorkingRoutine,10,out) == osOK)
+	if(env->Async->wait(async,async,testAsyncNotWorkingRoutine,10,out) == osOK)
 		return osErrorOS;
-	if(sys->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
+	if(env->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
 		return osErrorOS;
 	//create child thread to destroy async
 
-	uint8_t* destroyerStk = sys->Mem->alloc(1 << 9);
-	uint8_t* competitorStk = sys->Mem->alloc(1 << 9);
+	uint8_t* destroyerStk = env->Mem->alloc(1 << 9);
+	uint8_t* competitorStk = env->Mem->alloc(1 << 9);
 
 
 	tch_threadCfg thcfg;
@@ -100,7 +100,7 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	thcfg._t_stack = destroyerStk;
 	thcfg.t_stackSize = 1 << 9;
 	thcfg.t_proior = Normal;
-	destroyerThread = sys->Thread->create(&thcfg,async);
+	destroyerThread = env->Thread->create(&thcfg,async);
 
 
 	thcfg._t_name = "Competitor";
@@ -108,41 +108,41 @@ static DECLARE_THREADROUTINE(testRoutine1){
 	thcfg._t_stack = competitorStk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
-	competitorThread = sys->Thread->create(&thcfg,out);
+	competitorThread = env->Thread->create(&thcfg,out);
 
-	sys->Thread->start(competitorThread);
+	env->Thread->start(competitorThread);
 
-	if(sys->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
+	if(env->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
 		return osErrorOS;
 
 
-	sys->Thread->start(destroyerThread);
+	env->Thread->start(destroyerThread);
 	tchStatus result = osOK;
-	if((result = sys->Async->wait(async,testThread,testAsyncNotWorkingRoutine,osWaitForever,out)) == osOK)   // blocked by async request
+	if((result = env->Async->wait(async,testThread,testAsyncNotWorkingRoutine,osWaitForever,out)) == osOK)   // blocked by async request
 		return osErrorOS;
 
-	result = sys->Thread->join(competitorThread,osWaitForever);
-	sys->Mem->free(destroyerStk);
-	sys->Mem->free(competitorStk);
+	result = env->Thread->join(competitorThread,osWaitForever);
+	env->Mem->free(destroyerStk);
+	env->Mem->free(competitorStk);
 
-	sys->Device->gpio->freeIo(in);
-	sys->Device->gpio->freeIo(out);
+	env->Device->gpio->freeIo(in);
+	env->Device->gpio->freeIo(out);
 
 	return result;
 }
 
 
 static DECLARE_THREADROUTINE(destroyerRoutine){
-	sys->Thread->sleep(10);
-	sys->Async->destroy((tch_asyncId)sys->Thread->getArg());   // destroy and wakeup waiting thread
+	env->Thread->sleep(10);
+	env->Async->destroy((tch_asyncId)env->Thread->getArg());   // destroy and wakeup waiting thread
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(competitorRoutine){
-	tch_GpioHandle* out = (tch_GpioHandle*)sys->Thread->getArg();
-	if(sys->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
+	tch_GpioHandle* out = (tch_GpioHandle*)env->Thread->getArg();
+	if(env->Async->wait(async,async,testAsyncWorkingRoutine,osWaitForever,out) != osOK)
 		return osErrorOS;
-	if(sys->Async->wait(async,competitorThread,testAsyncNotWorkingRoutine,osWaitForever,sys) != osErrorResource)   // blocked by async request
+	if(env->Async->wait(async,competitorThread,testAsyncNotWorkingRoutine,osWaitForever,env) != osErrorResource)   // blocked by async request
 		return osErrorOS;
 	return osOK;
 }

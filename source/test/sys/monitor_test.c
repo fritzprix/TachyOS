@@ -163,8 +163,8 @@ static BOOL produce(tch* api,struct VBuf* vb,uint32_t timeout){
 static DECLARE_THREADROUTINE(producerRoutine){
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		produce(sys,&tstBuf,osWaitForever);
-		sys->Thread->sleep(0);
+		produce(env,&tstBuf,osWaitForever);
+		env->Thread->sleep(0);
 	}
 	return osOK;
 }
@@ -172,10 +172,10 @@ static DECLARE_THREADROUTINE(producerRoutine){
 static DECLARE_THREADROUTINE(consumerRoutine){
 	uint8_t cnt = 0;
 	for(cnt = 0; cnt < 200; cnt++){
-		consume(sys,&tstBuf,osWaitForever);
-		sys->Thread->sleep(0);
+		consume(env,&tstBuf,osWaitForever);
+		env->Thread->sleep(0);
 	}
-	if(!consume(sys,&tstBuf,osWaitForever))
+	if(!consume(env,&tstBuf,osWaitForever))
 		return osOK;
 	return osErrorOS;
 }

@@ -56,8 +56,6 @@ struct _tch_lld_uart_handle_t{
 	tchStatus (*getc)(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
 	tchStatus (*write)(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 	tchStatus (*read)(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
-	tchStatus (*writeCstr)(tch_UartHandle* handle,const char* cstr);
-	tchStatus (*readCstr)(tch_UartHandle* handle,char* cstr,uint32_t timeout);
 };
 
 

@@ -298,14 +298,12 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	if(txDma){ // if tx dma is non-null (available), uart handle routines supporting dma are bound
 		uins->pix.putc = tch_uartPutc;
 		uins->pix.write = tch_uartWriteDma;
-		uins->pix.writeCstr = tch_uartWriteCstr;
 
 		uhw->CR1 &= ~USART_CR1_TCIE;
 		uhw->CR3 |= USART_CR3_DMAT;
 	}else{  // otherwise, non-dma routines are bound
 		uins->pix.putc = tch_uartPutc;
 		uins->pix.write = tch_uartWrite;
-		uins->pix.writeCstr = tch_uartWriteCstr;
 
 		uhw->CR3 &= ~USART_CR3_DMAT;
 		uhw->CR1 |= USART_CR1_TCIE;
@@ -314,14 +312,12 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	if(rxDma){
 		uins->pix.getc = tch_uartGetc;
 		uins->pix.read = tch_uartReadDma;
-		uins->pix.readCstr = tch_uartReadCstr;
 
 		uhw->CR1 &= ~USART_CR1_RXNEIE;
 		uhw->CR3 |= USART_CR3_DMAR;
 	}else{
 		uins->pix.getc = tch_uartGetc;
 		uins->pix.read = tch_uartRead;
-		uins->pix.readCstr = tch_uartReadCstr;
 
 		uhw->CR3 &= ~USART_CR3_DMAR;
 	}

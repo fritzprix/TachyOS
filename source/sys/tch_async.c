@@ -131,7 +131,7 @@ tchStatus tch_async_kwait(tch_asyncId async,void* async_req,void* task_queue){
 	tch_thread_header* nth = NULL;
 	tch_listEnqueuePriority((tch_lnode_t*) task_queue,(tch_lnode_t*) &req->task,tch_asyncPriorityRule);  // enqueue task
 	if(!tch_listIsEmpty(&sysThreadPort)){
-		nth = (tch_thread_header*)((tch_lnode_t*) tch_listDequeue(&sysThreadPort) - 1);
+		nth = (tch_thread_header*)((tch_lnode_t*) tch_listDequeue((tch_lnode_t*) &sysThreadPort) - 1);
 		tch_kernelSetResult(nth,osOK);
 		tch_schedReady(nth);
 	}

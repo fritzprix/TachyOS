@@ -17,7 +17,7 @@ tchStatus gpio_performTest(tch* api){
 	uint8_t* wt_stk = api->Mem->alloc(1 << 9);
 
 	tch_GpioCfg iocfg;
-	tch_lld_gpio* gpio = api->Device->gpio;
+	const tch_lld_gpio* gpio = api->Device->gpio;
 	iocfg.Mode = gpio->Mode.Out;
 	iocfg.Otype = gpio->Otype.PushPull;
 	iocfg.PuPd = gpio->PuPd.NoPull;
@@ -68,22 +68,22 @@ tchStatus gpio_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(evgenRoutine){
-	tch_GpioHandle* out = (tch_GpioHandle*) sys->Thread->getArg();
+	tch_GpioHandle* out = (tch_GpioHandle*) env->Thread->getArg();
 	out->out(out,1,bSet);
-	sys->Thread->sleep(50);
+	env->Thread->sleep(50);
 	out->out(out,1,bClear);
-	sys->Device->gpio->freeIo(out);
+	env->Device->gpio->freeIo(out);
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(evconsRoutine){
-	tch_GpioHandle* in = (tch_GpioHandle*) sys->Thread->getArg();
+	tch_GpioHandle* in = (tch_GpioHandle*) env->Thread->getArg();
 	if(!in->listen(in,2,osWaitForever))
 		return osErrorOS;
 	in->unregisterIoEvent(in,1 << 2);
 	if(in->listen(in,2,osWaitForever))
 		return osErrorOS;
 	in->unregisterIoEvent(in,1 << 2);
-	sys->Device->gpio->freeIo(in);
+	env->Device->gpio->freeIo(in);
 	return osOK;
 }

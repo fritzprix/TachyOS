@@ -137,11 +137,12 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) env->Mem->alloc(sizeof(tch_iic_handle_prototype));
 	if(!ins){
-
+		env->Mtx->lock(IIC_StaticInstance.mtx,osWaitForever);
+		iicHw->_handle = NULL;
+		env->Condv->wakeAll(IIC_StaticInstance.condv);
 	}
 	env->uStdLib->string->memset(ins,0,sizeof(tch_iic_handle_prototype));
 	ins->env = env;
-
 
 
 

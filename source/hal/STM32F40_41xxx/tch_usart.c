@@ -127,8 +127,6 @@ static tchStatus tch_uartPutc(tch_UartHandle* handle,uint8_t c);
 static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
 static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
-static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr);
-static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout);
 
 static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
@@ -298,14 +296,12 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	if(txDma){ // if tx dma is non-null (available), uart handle routines supporting dma are bound
 		uins->pix.putc = tch_uartPutc;
 		uins->pix.write = tch_uartWriteDma;
-		uins->pix.writeCstr = tch_uartWriteCstr;
 
 		uhw->CR1 &= ~USART_CR1_TCIE;
 		uhw->CR3 |= USART_CR3_DMAT;
 	}else{  // otherwise, non-dma routines are bound
 		uins->pix.putc = tch_uartPutc;
 		uins->pix.write = tch_uartWrite;
-		uins->pix.writeCstr = tch_uartWriteCstr;
 
 		uhw->CR3 &= ~USART_CR3_DMAT;
 		uhw->CR1 |= USART_CR1_TCIE;
@@ -314,14 +310,12 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	if(rxDma){
 		uins->pix.getc = tch_uartGetc;
 		uins->pix.read = tch_uartReadDma;
-		uins->pix.readCstr = tch_uartReadCstr;
 
 		uhw->CR1 &= ~USART_CR1_RXNEIE;
 		uhw->CR3 |= USART_CR3_DMAR;
 	}else{
 		uins->pix.getc = tch_uartGetc;
 		uins->pix.read = tch_uartRead;
-		uins->pix.readCstr = tch_uartReadCstr;
 
 		uhw->CR3 &= ~USART_CR3_DMAR;
 	}
@@ -581,13 +575,6 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	return osOK;
 }
 
-static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr){
-	return osErrorOS;
-}
-
-static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout){
-	return osErrorOS;
-}
 
 static inline void tch_uartValidate(tch_UartHandlePrototype* _handle){
 	_handle->status = (((uint32_t) _handle) & 0xFFFF) ^ TCH_UART_CLASS_KEY;

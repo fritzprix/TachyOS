@@ -100,26 +100,26 @@ tchStatus barrier_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(sys->Barrier->wait(bid,osWaitForever) != osOK)
+	if(env->Barrier->wait(bid,osWaitForever) != osOK)
 		return osErrorOS;
-	if(sys->Barrier->wait(bid,osWaitForever) != osErrorResource)
+	if(env->Barrier->wait(bid,osWaitForever) != osErrorResource)
 		return osErrorOS;
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
-	if(sys->Barrier->wait(bid,osWaitForever) != osOK)
+	if(env->Barrier->wait(bid,osWaitForever) != osOK)
 		return osErrorOS;
-	if(sys->Barrier->wait(bid,osWaitForever) != osErrorResource)
+	if(env->Barrier->wait(bid,osWaitForever) != osErrorResource)
 		return osErrorOS;
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
-	sys->Sig->set(mainId,1);
-	if(sys->Barrier->wait(bid,osWaitForever) != osOK)
+	env->Sig->set(mainId,1);
+	if(env->Barrier->wait(bid,osWaitForever) != osOK)
 		return osErrorOS;
-	sys->Thread->sleep(20);
-	sys->Barrier->destroy(bid);
+	env->Thread->sleep(20);
+	env->Barrier->destroy(bid);
 	return osOK;
 }

@@ -24,7 +24,7 @@ extern "C"{
 
 
 
-#define DECLARE_THREADROUTINE(fn)                    int fn(tch* sys)
+#define DECLARE_THREADROUTINE(fn)                    int fn(tch* env)
 #define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[(sizeinbyte) >> 3]
 
 
@@ -33,7 +33,7 @@ extern "C"{
  */
 typedef void* tch_threadId;
 typedef struct _tch_thread_cfg_t tch_threadCfg;
-typedef int (*tch_thread_routine)(tch* sys);
+typedef int (*tch_thread_routine)(tch* env);
 
 
 

@@ -111,11 +111,10 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 	}
 	if(result == osOK){
 		mcb->svdPrior = Thread->getPriorty((tch_threadId) tid);
-		mcb->own = tid;
+		mcb->own = (tch_threadId) tid;
 		return osOK;
 	}
-	tch_kAssert(TRUE,osErrorOS);
-	return osErrorOS;
+	return result;
 }
 
 

@@ -69,7 +69,7 @@ typedef struct _tch_bar_ix_t tch_bar_ix;
 typedef struct tch_hal_t tch_hal;
 
 
-typedef struct _tch_t {
+typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
 	const tch_signal_ix* Sig;
 	const tch_timer_ix* Timer;

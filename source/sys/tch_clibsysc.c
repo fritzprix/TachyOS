@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/times.h>
 #include <errno.h>
@@ -28,7 +29,6 @@ char** environ = __env;
 
 
 
-
 char* _sbrk_r(struct _reent* reent,size_t incr){
 	if(tch_port_isISR()){
 		return tch_port_enterSvFromIsr(SV_UNIX_SBRK,reent,incr);
@@ -38,6 +38,14 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
+	switch(fd){
+	case STDIN_FILENO:
+		return cnt;
+	case STDERR_FILENO:
+		return cnt;
+	case STDOUT_FILENO:
+		return cnt;
+	}
 	return cnt;
 }
 

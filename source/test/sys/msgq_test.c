@@ -108,16 +108,16 @@ tchStatus msgq_performTest(tch* api){
 static DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	while(cnt < 50){
-		sys->MsgQ->put(mid,0xFF,osWaitForever);
+		env->MsgQ->put(mid,0xFF,osWaitForever);
 		out->out(out,1 << 2,bClear);
-		sys->Thread->sleep(1);
+		env->Thread->sleep(1);
 		out->out(out,1 << 2,bSet);
-		sys->Thread->sleep(1);
+		env->Thread->sleep(1);
 		cnt++;
 	}
-	sys->Barrier->wait(mBar,osWaitForever);
-	sys->Thread->sleep(10);
-	sys->MsgQ->destroy(mid);
+	env->Barrier->wait(mBar,osWaitForever);
+	env->Thread->sleep(10);
+	env->MsgQ->destroy(mid);
 	return osOK;
 }
 
@@ -127,7 +127,7 @@ static DECLARE_THREADROUTINE(receiver){
 	uint32_t mval = 0;
 	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
-		evt = sys->MsgQ->get(mid,osWaitForever);
+		evt = env->MsgQ->get(mid,osWaitForever);
 		totalMsgcnt++;
 		if(evt.status == osEventMessage){
 			cnt++;
@@ -141,11 +141,11 @@ static DECLARE_THREADROUTINE(receiver){
 			}
 		}
 	}
-	evt = sys->MsgQ->get(mid,10);
+	evt = env->MsgQ->get(mid,10);
 	if(evt.status != osErrorTimeoutResource)
 		return osErrorOS;
-	sys->Barrier->signal(mBar,osOK);
-	evt = sys->MsgQ->get(mid,osWaitForever);
+	env->Barrier->signal(mBar,osOK);
+	evt = env->MsgQ->get(mid,osWaitForever);
 	if(evt.status != osErrorResource)
 		return osErrorResource;
 	return osOK;
