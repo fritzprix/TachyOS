@@ -62,18 +62,18 @@ typedef struct tch_thread_queue{
 
 
 typedef struct tch_sys_task_t {
-//	tch_lnode_t        tsk_nd;    // list node for waiting system task queue
+	tch_lnode_t        tsk_nd;    // list node for waiting system task queue
 	int                tsk_id;    //
 	void*              tsk_arg;
 	tchStatus          tsk_result;
-//	tch_thread_prior   tsk_prior;
+	tch_thread_prior   tsk_prior;
 	tchStatus (*tsk_fn)(int id,void* arg);
 }tch_sysTask;
 
 
-typedef struct tch_kernel_instance_t{
+typedef struct tch_sys_instance_t{
 	tch                     tch_api;
-} tch_kernel_instance;
+} tch_sys_instance;
 
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)

@@ -48,9 +48,11 @@ const tch_stdio_ix STDIO_StaticObj =  {
 	                                            setbuf,
 	                                            setvbuf,
 	                                            fiscanf,
-	                                            siscanf,
+	     //                                       siscanf,
 	                                            fiprintf,
-	                                            siprintf,
+	     //                                       siprintf,
+	             	                            iprintf,
+	             	                            iscanf,
 #endif
 #ifdef POSIX_LIBSET
 	                                            fileno,
@@ -111,8 +113,10 @@ const tch_stdio_ix STDIO_StaticObj =  {
 	                                            putchar,
 	                                            puts,
 	                                            gets,
-	                                            iprintf,
-	                                            iscanf
+	                           //                 iprintf,
+	                           //                 iscanf
+	                                            siscanf,
+	                                            siprintf
 };
 
 const tch_stdlib_ix STDLIB_StaticObj = {
@@ -269,7 +273,7 @@ const tch_math_ix MATH_StaticObj = {
 static tch_ulib_ix NLIB_Instance ;
 const tch_ustdlib_ix* uStdLib = &NLIB_Instance;
 
-tch_ustdlib_ix* tch_initCrt(void* arg){
+tch_ustdlib_ix* tch_initStdLib(void){
 	NLIB_Instance.stdio = &STDIO_StaticObj;
 	NLIB_Instance.stdlib = &STDLIB_StaticObj;
 	NLIB_Instance.string = &STRING_StaticObj;

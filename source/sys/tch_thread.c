@@ -40,6 +40,7 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
+static BOOL tch_threadIsValid(tch_threadId id);
 
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
@@ -53,7 +54,8 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadJoin,
 		tch_threadSetPriority,
 		tch_threadGetPriorty,
-		tch_threadGetArg
+		tch_threadGetArg,
+		tch_threadIsValid
 };
 
 
@@ -151,14 +153,14 @@ static void* tch_threadGetArg(){
 }
 
 
-
-
-BOOL tch_kernelThreadIntegrityCheck(tch_threadId thrtochk){
-	tch_thread_header* th_p = (tch_thread_header*) thrtochk;
+static BOOL tch_threadIsValid(tch_threadId id){
+	tch_thread_header* th_p = NULL;
+	if(!id)
+		th_p = tch_currentThread;
+	else
+		th_p = (tch_thread_header*) id;
 	return th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
-
 }
-
 
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
@@ -168,7 +170,7 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 	_force_fctx += 0.1f;
 #endif
 	thr_p->t_state = RUNNING;
-	int result = thr_p->t_fn(Sys);
+	int result = (int) thr_p->t_fn(Sys);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 

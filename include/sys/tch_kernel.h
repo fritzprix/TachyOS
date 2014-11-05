@@ -41,8 +41,6 @@
 extern void tch_kernelInit(void* arg);
 extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
-extern BOOL tch_kernelThreadIntegrityCheck(tch_threadId thrtochk);
-extern uint64_t tch_kernelCurrentSystick();
 extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
 
@@ -56,13 +54,6 @@ extern int Main_Stack_Limit asm("main_stack_limit");
 
 extern int Idle_Stack_Top asm("idle_stack_top");
 extern int Idle_Stack_Limit asm("idle_stack_limit");
-
-
-extern tch_thread_header* tch_currentThread;
-extern tch_threadId sysThreadId;
-extern tch_thread_queue sysThreadPort;
-
-
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
@@ -84,7 +75,9 @@ extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* Mem;
 extern const tch_hal* Hal;
 
-extern const tch_kernel_instance* Sys;
+
+extern tch_thread_header* tch_currentThread;
+extern const tch_sys_instance* Sys;
 
 
 

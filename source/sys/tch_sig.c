@@ -39,7 +39,7 @@ const tch_signal_ix* Sig = &Signal_StaticInstance;
 
 
 int32_t tch_signal_set(tch_threadId thread,int32_t signals){
-	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
+	if((signals >= (1 << (osFeature_Signals + 1))) || !Thread->isValid(thread)){
 		return 0x80000000;
 	}
 	tch_thread_header* th_p = (tch_thread_header*) thread;
@@ -57,7 +57,7 @@ int32_t tch_signal_set(tch_threadId thread,int32_t signals){
 }
 
 int32_t tch_signal_clear(tch_threadId thread,int32_t signals){
-	if((signals >= (1 << (osFeature_Signals + 1))) || !tch_kernelThreadIntegrityCheck(thread)){
+	if((signals >= (1 << (osFeature_Signals + 1))) || !Thread->isValid(thread)){
 		return 0x80000000;
 	}
 	tch_thread_header* th_p = (tch_thread_header*) thread;

@@ -59,7 +59,7 @@ int main(tch* api) {
 //	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
-	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
@@ -85,6 +85,7 @@ int main(tch* api) {
 	tch_UartHandle* serial = NULL;
 	const char* msg = "T";
 	int size = api->uStdLib->string->strlen(msg);
+	char cb[20];
 	while(1){
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,150);

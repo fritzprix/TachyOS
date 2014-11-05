@@ -61,8 +61,8 @@ static tch_thread_queue tch_readyQue;        ///< thread wait to become running 
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
 
 
-static tch_kernel_instance*   _sys;
-static uint64_t               tch_systimeTick;
+static tch_sys_instance*   _sys;
+static uint64_t tch_systimeTick;
 tch_thread_header* tch_currentThread;
 
 
@@ -71,7 +71,7 @@ tch_thread_header* tch_currentThread;
 
 
 void tch_schedInit(void* arg){
-	_sys = (tch_kernel_instance*) arg;
+	_sys = (tch_sys_instance*) arg;
 
 	/**
 	 *  Initialize ready & pend queue
@@ -334,7 +334,7 @@ int idle(void* arg){
 	 * - idle indicator init
 	 */
 
-	tch_kernel_instance* _sys = (tch_kernel_instance*) arg;
+	tch_sys_instance* _sys = (tch_sys_instance*) arg;
 	_sys->tch_api.Thread->start(MainThread_id);
 	while(TRUE){
 		__DMB();

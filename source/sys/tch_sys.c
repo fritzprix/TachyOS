@@ -29,20 +29,10 @@
 
 
 
-#define TCH_STHREAD_STK_SIZE   ((uint32_t) 1 << 11)
 
 
-static tch_kernel_instance tch_sys_instance;
-const tch_kernel_instance* Sys = (const tch_kernel_instance*)&tch_sys_instance;
-
-
-
-static DECLARE_THREADSTACK(sysThreadStk,TCH_STHREAD_STK_SIZE);
-static DECLARE_THREADROUTINE(sysTaskHandler);
-//static tch_lnode_t sysTaskQue;
-static tch_threadId sysThreadId;
-static tch_thread_queue sysThreadPort;
-static tch_mailqId sysTaskQue;
+static tch_sys_instance Sys_StaticInstance;
+const tch_sys_instance* Sys = (const tch_sys_instance*)&Sys_StaticInstance;
 
 /***
  *  Initialize Kernel including...
@@ -53,29 +43,11 @@ static tch_mailqId sysTaskQue;
  */
 void tch_kernelInit(void* arg){
 
-	/**
-	 *  dynamic binding of dependecy
-	 */
-	tch_sys_instance.tch_api.Device = tch_kernel_initHAL();
-	if(!tch_sys_instance.tch_api.Device)
-		tch_kernel_errorHandler(FALSE,osErrorValue);
-
-
-	if(!tch_kernel_initPort()){
-		tch_kernel_errorHandler(FALSE,osErrorOS);
-	}
-
-
-	tch_port_kernel_lock();
-
-
-
-	// put thread in wait queue
-	tch_listPutFirst((tch_lnode_t*)&sysThreadPort,(tch_lnode_t*) &((tch_thread_header*)sysThreadId)->t_waitNode);
 
 	/*Bind API Object*/
-	tch* api = (tch*) &tch_sys_instance;
-	api->uStdLib = tch_initCrt(NULL);
+	tch* api = (tch*) &Sys_StaticInstance;
+
+	api->uStdLib = tch_initStdLib();
 	api->Thread = Thread;
 	api->Mtx = Mtx;
 	api->Sem = Sem;
@@ -86,23 +58,29 @@ void tch_kernelInit(void* arg){
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
 	api->Mem = Mem;
+	api->pTask = tch_initpTask(api);
 //	api->Async = Async;
 
 
-	// create system task thread
-	sysTaskQue = MailQ->create(sizeof(tch_sysTask), TCH_SYSTASK_QSIZE);
 
-	tch_threadCfg sThcfg;
-	sThcfg._t_name = "Sys";
-	sThcfg._t_routine = sysTaskHandler;
-	sThcfg._t_stack = sysThreadStk;
-	sThcfg.t_proior = KThread;
-	sThcfg.t_stackSize = TCH_STHREAD_STK_SIZE;
-	sysThreadId = Thread->create(&sThcfg,sysTaskQue);
+	/**
+	 *  dynamic binding of dependecy
+	 */
+	Sys_StaticInstance.tch_api.Device = tch_kernel_initHAL();
+	if(!Sys_StaticInstance.tch_api.Device)
+		tch_kernel_errorHandler(FALSE,osErrorValue);
+
+
+	if(!tch_kernel_initPort()){
+		tch_kernel_errorHandler(FALSE,osErrorOS);
+	}
+
+	tch_port_kernel_lock();
+	// create system task thread
 
 
 	tch_port_enableISR();                   // interrupt enable
-	tch_schedInit(&tch_sys_instance);
+	tch_schedInit(&Sys_StaticInstance);
 	return;
 }
 
@@ -198,43 +176,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	}
 }
-
-
-
-static DECLARE_THREADROUTINE(sysTaskHandler){
-
-	tch_mailqId taskq = (tch_mailqId) env->Thread->getArg();
-	osEvent evt;
-	env->uStdLib->string->memset(&evt,0,sizeof(osEvent));
-	tch_sysTask* tsk = NULL;
-
-	while(TRUE){
-		evt = env->MailQ->get(taskq,osWaitForever);
-		if(evt.value.p){
-			if(evt.status == osEventMail){
-				tsk = evt.value.p;
-				tsk->tsk_result = tsk->tsk_fn(tsk->tsk_id,tsk->tsk_arg);
-				if(tsk->tsk_result != osOK){
-					// print error msg
-				}
-				env->MailQ->free(evt.value.p);
-			}
-		}
-	}
-
-	/*
-	while(TRUE){
-		while(!tch_listIsEmpty(&sysTaskQue)){    //  thread perform task until task queue is empty
-			struct tch_sys_task_t* task = (struct tch_sys_task_t*) tch_listDequeue(&sysTaskQue);
-			task->tsk_result = task->tsk_fn(task->tsk_id,task->tsk_arg);
-		}
-		if(tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&sysThreadPort,osWaitForever) != osOK)   // if there's no more task, thread will suspended
-			return osErrorOS;
-	}
-	*/
-	return osOK;
-}
-
 
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status){

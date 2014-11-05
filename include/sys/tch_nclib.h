@@ -75,9 +75,11 @@ typedef struct _tch_stdio_ix_t {
 	void (*setbuf)(FILE* fp, char* buf);
 	int (*setvbuf)(FILE* fp, char* buf,int mode,size_t size);
 	int (*fiscanf)(FILE* fd,const char* format,...);
-	int (*siscanf)(const char* str, const char* format,...);
+//	int (*siscanf)(const char* str, const char* format,...);
 	int (*fiprintf)(FILE* fd,const char* format,...);
-	int (*siprintf)(char* str,const char* format,...);
+//	int (*siprintf)(char* str,const char* format,...);
+	int (*iprintf)(const char* format,...);
+	int (*iscanf)(const char* format,...);
 #endif
 #ifdef POSIX_LIBSET
 	int (*fileno)(FILE* fp);
@@ -139,8 +141,8 @@ typedef struct _tch_stdio_ix_t {
 	int (*putchar)(int ch);
 	int (*puts)(const char* s);
 	char* (*gets)(char* buf);
-	int (*iprintf)(const char* format,...);
-	int (*iscanf)(const char* format,...);
+	int (*siscanf)(const char* str, const char* format,...);
+	int (*siprintf)(char* str,const char* format,...);
 }tch_stdio_ix;
 
 typedef struct _tch_string_ix_t {
@@ -302,7 +304,7 @@ typedef struct _tch_ustdl_ix_t {
 }tch_ulib_ix;
 
 extern const tch_ustdlib_ix* uStdLib;
-extern tch_ustdlib_ix* tch_initCrt(void* arg);
+extern tch_ustdlib_ix* tch_initStdLib(void;
 
 #if defined(__cplusplus)
 }

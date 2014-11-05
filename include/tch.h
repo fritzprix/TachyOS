@@ -84,6 +84,7 @@ typedef struct _tch_runtime_t {
 	const tch_mem_ix* Mem;
 	const tch_async_ix* Async;
 	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
+	const tch_ptask_ix* pTask;
 } tch;
 
 
