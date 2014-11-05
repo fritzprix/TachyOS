@@ -49,9 +49,9 @@ const tch_hal* tch_kernel_initHAL(){
 	return &tch_hal_instance;
 }
 
-__attribute__((weak)) void __tch_printError(tchStatus err){}                 // unimplemented weak function stubs
-__attribute__((weak)) void __tch_stdout(const void* bf,uint32_t size){}
-__attribute__((weak)) void __tch_stdin(void* bf,uint32_t size){}
+__attribute__((weak)) void __tch_stderr(const void* bf,size_t size){}                 // unimplemented weak function stubs
+__attribute__((weak)) void __tch_stdout(const void* bf,size_t size){}
+__attribute__((weak)) void __tch_stdin(void* bf,size_t size){}
 
 
 

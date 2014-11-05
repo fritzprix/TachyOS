@@ -127,8 +127,6 @@ static tchStatus tch_uartPutc(tch_UartHandle* handle,uint8_t c);
 static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
 static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
-static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr);
-static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout);
 
 static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
@@ -577,13 +575,6 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	return osOK;
 }
 
-static tchStatus tch_uartWriteCstr(tch_UartHandle* handle,const char* cstr){
-
-}
-
-static tchStatus tch_uartReadCstr(tch_UartHandle* handle,char* cstr,uint32_t timeout){
-
-}
 
 static inline void tch_uartValidate(tch_UartHandlePrototype* _handle){
 	_handle->status = (((uint32_t) _handle) & 0xFFFF) ^ TCH_UART_CLASS_KEY;
