@@ -32,8 +32,6 @@
 #define tch_kAssert(b,error)  if(!b){__tch_printError(error);Thread->terminate(tch_currentThread,error);}
 
 
-#define TCH_SYSTASK_QSIZE                     (10)
-
 
 /*!
  * \brief
@@ -43,6 +41,7 @@ extern void tch_kernelSysTick(void);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
+extern tchStatus tch_kernel_initCrt0(tch* env);
 
 
 extern int Sys_Stack_Top asm("sys_stack_top");

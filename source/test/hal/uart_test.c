@@ -42,17 +42,17 @@ tchStatus uart_performTest(tch* env){
 	int size = env->uStdLib->string->strlen(myname);
 
 	while(mcnt--){
-		serial = env->Device->usart->open(env,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openMsg,env->uStdLib->string->strlen(openMsg));
 		env->Thread->sleep(0);
 		serial->write(serial,myname,size);
 		env->Thread->sleep(0);
-		env->Device->usart->close(serial);
+		env->Device->usart->freeUart(serial);
 	}
 
 	if(env->Thread->join(printer,osWaitForever) != osOK)
 		return osErrorOS;
-	env->Device->usart->close(serial);
+	env->Device->usart->freeUart(serial);
 	return osOK;
 }
 
@@ -70,12 +70,12 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 	ucfg.UartCh = 2;
 	tch_UartHandle* serial = NULL;
 	while(pcnt--){
-		serial = env->Device->usart->open(env,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openedMsg,env->uStdLib->string->strlen(openedMsg));
 		env->Thread->sleep(0);
 		serial->write(serial,myname,size);
 		env->Thread->sleep(0);
-		env->Device->usart->close(serial);
+		env->Device->usart->freeUart(serial);
 	}
 	return osOK;
 }

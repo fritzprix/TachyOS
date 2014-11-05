@@ -27,6 +27,22 @@ extern int errno;
 char* __env[1] = {0};
 char** environ = __env;
 
+tch_UartHandle* stdio_port;
+
+tchStatus tch_kernel_initCrt0(tch* env){
+	// initialize standard i/o stream device
+	tch_UartCfg ucfg;
+	ucfg.Buadrate = 115200;
+	ucfg.FlowCtrl = FALSE;
+	ucfg.Parity = env->Device->usart->Parity.Parity_Non;
+	ucfg.StopBit = env->Device->usart->StopBit.StopBit1B;
+	ucfg.UartCh = 2;
+	stdio_port = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
+
+	return osOK;
+
+}
+
 
 
 char* _sbrk_r(struct _reent* reent,size_t incr){
@@ -40,10 +56,11 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
 	switch(fd){
 	case STDIN_FILENO:
-		return cnt;
+		return -1;
 	case STDERR_FILENO:
 		return cnt;
 	case STDOUT_FILENO:
+		stdio_port->write(stdio_port,buf,cnt);
 		return cnt;
 	}
 	return cnt;

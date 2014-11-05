@@ -25,7 +25,7 @@
 #include "tch_nclib.h"
 #include "tch_port.h"
 #include "tch_async.h"
-
+#include "tch_ptask.h"
 
 
 
@@ -58,7 +58,7 @@ void tch_kernelInit(void* arg){
 	api->MailQ = MailQ;
 	api->MsgQ = MsgQ;
 	api->Mem = Mem;
-	api->pTask = tch_initpTask(api);
+//	api->pTask = tch_initpTask(api);
 //	api->Async = Async;
 
 
@@ -77,6 +77,7 @@ void tch_kernelInit(void* arg){
 
 	tch_port_kernel_lock();
 	// create system task thread
+
 
 
 	tch_port_enableISR();                   // interrupt enable

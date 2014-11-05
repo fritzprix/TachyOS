@@ -51,8 +51,6 @@ const tch_stdio_ix STDIO_StaticObj =  {
 	     //                                       siscanf,
 	                                            fiprintf,
 	     //                                       siprintf,
-	             	                            iprintf,
-	             	                            iscanf,
 #endif
 #ifdef POSIX_LIBSET
 	                                            fileno,
@@ -116,7 +114,9 @@ const tch_stdio_ix STDIO_StaticObj =  {
 	                           //                 iprintf,
 	                           //                 iscanf
 	                                            siscanf,
-	                                            siprintf
+	                                            siprintf,
+	             	                            iprintf,
+	             	                            iscanf
 };
 
 const tch_stdlib_ix STDLIB_StaticObj = {

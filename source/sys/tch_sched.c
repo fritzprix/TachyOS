@@ -18,7 +18,7 @@
 #include "tch_sched.h"
 #include "tch_halcfg.h"
 #include "tch_async.h"
-
+#include "tch_ptask.h"
 
 /* =================  private internal function declaration   ========================== */
 
@@ -99,6 +99,8 @@ void tch_schedInit(void* arg){
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
 	IdleThread_id = Thread->create(&thcfg,_sys);
+
+	_sys->tch_api.pTask = tch_initpTask(_sys);
 
 
 	tch_currentThread = IdleThread_id;

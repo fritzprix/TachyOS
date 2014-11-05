@@ -61,12 +61,6 @@ int main(tch* api) {
 //	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
 
-	tch_UartCfg ucfg;
-	ucfg.Buadrate = 115200;
-	ucfg.FlowCtrl = FALSE;
-	ucfg.Parity = api->Device->usart->Parity.Parity_Non;
-	ucfg.StopBit = api->Device->usart->StopBit.StopBit1B;
-	ucfg.UartCh = 2;
 
 	api->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = api->Device->gpio->Mode.Out;
@@ -92,10 +86,8 @@ int main(tch* api) {
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bClear);
+		api->uStdLib->stdio->iprintf("This is My Age : %d\n\r",35);
 		timer->wait(timer,150);
-		serial = api->Device->usart->open(api,&ucfg,osWaitForever,ActOnSleep);
-		serial->write(serial,msg,size);
-		api->Device->usart->close(serial);
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,200);

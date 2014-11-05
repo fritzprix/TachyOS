@@ -63,8 +63,8 @@ typedef struct tch_lld_usart {
 	const struct _tch_lld_uart_stopbit_t StopBit;
 	const struct _tch_lld_uart_parity_t Parity;
 	const uint8_t PortCount;
-	tch_UartHandle* (*open)(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-	BOOL (*close)(tch_UartHandle* handle);
+	tch_UartHandle* (*allocUart)(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	BOOL (*freeUart)(tch_UartHandle* handle);
 }tch_lld_usart;
 
 extern const tch_lld_usart* tch_usart_instance;

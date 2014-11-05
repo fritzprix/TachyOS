@@ -65,6 +65,7 @@ typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
 typedef struct _tch_bar_ix_t tch_bar_ix;
+typedef struct _tch_ptask_ix_t tch_ptask_ix;
 
 typedef struct tch_hal_t tch_hal;
 
@@ -98,12 +99,12 @@ typedef struct _tch_runtime_t {
 #include "sys/tch_vtimer.h"
 #include "sys/tch_condv.h"
 #include "sys/tch_mpool.h"
-//#include "sys/tch_ipc.h"
 #include "sys/tch_msgq.h"
 #include "sys/tch_mailq.h"
 #include "sys/tch_mem.h"
 #include "sys/tch_async.h"
 #include "sys/tch_nclib.h"
+//#include "sys/tch_ptask.h"
 #include "hal/tch_hal.h"
 
 
