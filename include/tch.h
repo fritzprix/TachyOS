@@ -107,7 +107,7 @@ typedef struct _tch_runtime_t {
 //#include "sys/tch_ptask.h"
 #include "hal/tch_hal.h"
 
-
+extern DECLARE_THREADROUTINE(main);
 
 
 /***

@@ -32,7 +32,7 @@
  *    - typically called from kernel initialize routine
  *    - initialize thread queue
  */
-extern void tch_schedInit(void* arg);
+extern void tch_schedInit(void* _systhread);
 
 /**
  *   Return true if new thread has higher priority than current one

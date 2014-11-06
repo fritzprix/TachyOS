@@ -28,6 +28,17 @@ typedef enum tch_thread_state_t {
 } tch_thread_state;
 
 
+typedef struct tch_sys_task_t tch_sysTask;
+typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
+
+struct tch_sys_task_t {
+	tch_sysTaskFn          fn;
+	tch_thread_prior       prior;
+	void*                  arg;
+	uint8_t                status;
+	int                    id;
+}__attribute__((packed));
+
 typedef struct tch_signal_t {
 	int32_t                 match_target;
 	int32_t                 signal;
@@ -61,18 +72,9 @@ typedef struct tch_thread_queue{
 } tch_thread_queue;
 
 
-typedef struct tch_sys_task_t {
-	tch_lnode_t        tsk_nd;    // list node for waiting system task queue
-	int                tsk_id;    //
-	void*              tsk_arg;
-	tchStatus          tsk_result;
-	tch_thread_prior   tsk_prior;
-	tchStatus (*tsk_fn)(int id,void* arg);
-}tch_sysTask;
-
-
 typedef struct tch_sys_instance_t{
 	tch                     tch_api;
+	tch_threadId            taskThread;
 } tch_sys_instance;
 
 

@@ -31,8 +31,14 @@
 
 
 
-static tch_sys_instance Sys_StaticInstance;
-const tch_sys_instance* Sys = (const tch_sys_instance*)&Sys_StaticInstance;
+
+static DECLARE_THREADSTACK(systhreadStk,1 << 11);
+static DECLARE_THREADROUTINE(systhreadRoutine);
+static DECLARE_THREADROUTINE(idle);
+
+static tch RuntimeInterface;
+const tch* tch_rti = &RuntimeInterface;
+tch_mailqId sysTaskQ;
 
 /***
  *  Initialize Kernel including...
@@ -43,31 +49,30 @@ const tch_sys_instance* Sys = (const tch_sys_instance*)&Sys_StaticInstance;
  */
 void tch_kernelInit(void* arg){
 
+	tch_threadId sysThread = NULL;
 
 	/*Bind API Object*/
-	tch* api = (tch*) &Sys_StaticInstance;
 
-	api->uStdLib = tch_initStdLib();
-	api->Thread = Thread;
-	api->Mtx = Mtx;
-	api->Sem = Sem;
-	api->Condv = Condv;
-	api->Barrier = Barrier;
-	api->Sig = Sig;
-	api->Mempool = Mempool;
-	api->MailQ = MailQ;
-	api->MsgQ = MsgQ;
-	api->Mem = Mem;
-//	api->pTask = tch_initpTask(api);
-//	api->Async = Async;
+	RuntimeInterface.uStdLib = tch_initStdLib();
+
+	RuntimeInterface.Thread = Thread;
+	RuntimeInterface.Mtx = Mtx;
+	RuntimeInterface.Sem = Sem;
+	RuntimeInterface.Condv = Condv;
+	RuntimeInterface.Barrier = Barrier;
+	RuntimeInterface.Sig = Sig;
+	RuntimeInterface.Mempool = Mempool;
+	RuntimeInterface.MailQ = MailQ;
+	RuntimeInterface.MsgQ = MsgQ;
+	RuntimeInterface.Mem = Mem;
 
 
 
 	/**
 	 *  dynamic binding of dependecy
 	 */
-	Sys_StaticInstance.tch_api.Device = tch_kernel_initHAL();
-	if(!Sys_StaticInstance.tch_api.Device)
+	RuntimeInterface.Device = tch_kernel_initHAL();
+	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,osErrorValue);
 
 
@@ -78,10 +83,16 @@ void tch_kernelInit(void* arg){
 	tch_port_kernel_lock();
 	// create system task thread
 
-
+	tch_threadCfg thcfg;
+	thcfg._t_name = "sysloop";
+	thcfg._t_routine = systhreadRoutine;
+	thcfg._t_stack = systhreadStk;
+	thcfg.t_proior = KThread;
+	thcfg.t_stackSize = 1 << 11;
+	sysThread = Thread->create(&thcfg,tch_rti);
 
 	tch_port_enableISR();                   // interrupt enable
-	tch_schedInit(&Sys_StaticInstance);
+	tch_schedInit(sysThread);
 	return;
 }
 
@@ -187,6 +198,74 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 	while(1){
 		asm volatile("NOP");
 	}
+}
+
+static DECLARE_THREADROUTINE(systhreadRoutine){
+	// perform runtime initialization
+	tch_threadId mainThread = NULL;
+	tch_threadId idleThread = NULL;
+
+	osEvent evt;
+	tch_sysTask* task = NULL;
+
+
+
+	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
+		tch_kernel_errorHandler(TRUE,osErrorOS);
+	// initialize sys thread mail box for task queueing
+	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
+	if(!sysTaskQ)
+		tch_kernel_errorHandler(TRUE,osErrorOS);
+
+	tch_threadCfg thcfg;
+	thcfg._t_routine = (tch_thread_routine) main;
+	thcfg._t_stack = &Main_Stack_Limit;
+	thcfg.t_stackSize = (uint32_t) &Main_Stack_Top - (uint32_t) &Main_Stack_Limit;
+	thcfg.t_proior = Normal;
+	thcfg._t_name = "main";
+	mainThread = Thread->create(&thcfg,&RuntimeInterface);
+
+	thcfg._t_routine = (tch_thread_routine) idle;
+	thcfg._t_stack = &Idle_Stack_Limit;
+	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
+	thcfg.t_proior = Idle;
+	thcfg._t_name = "idle";
+	idleThread = Thread->create(&thcfg,&RuntimeInterface);
+
+	if((!mainThread) || (!idleThread))
+		tch_kernel_errorHandler(TRUE,osErrorOS);
+
+	Thread->start(idleThread);
+	Thread->start(mainThread);
+
+	uStdLib->string->memset(&evt,0,sizeof(osEvent));
+
+
+	// loop for handling system tasks (from ISR / from any user thread)
+	while(TRUE){
+		evt = MailQ->get(sysTaskQ,osWaitForever);
+		if(evt.status == osEventMail){
+			task = (tch_sysTask*) evt.value.p;
+			task->fn(task->id,&RuntimeInterface,task->arg);
+			MailQ->free(sysTaskQ,evt.value.p);
+		}
+	}
+	return osOK;    // unreachable point
+
+}
+
+
+static DECLARE_THREADROUTINE(idle){
+//	tch_sys_instance* _sys = (tch_sys_instance*) arg;
+//	_sys->tch_api.Thread->start(MainThread_id);
+	while(TRUE){
+		__DMB();
+		__ISB();
+		__WFI();
+		__DMB();
+		__ISB();
+	}
+	return 0;
 }
 
 

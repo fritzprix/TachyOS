@@ -28,6 +28,9 @@
 #include "tch_mem.h"
 #include "tch_list.h"
 
+#define TCH_SYS_TASKQ_SZ                     (16)
+
+
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
 #define tch_kAssert(b,error)  if(!b){__tch_printError(error);Thread->terminate(tch_currentThread,error);}
 
@@ -76,7 +79,8 @@ extern const tch_hal* Hal;
 
 
 extern tch_thread_header* tch_currentThread;
-extern const tch_sys_instance* Sys;
+extern const tch* tch_rti;
+extern tch_mailqId sysTaskQ;
 
 
 

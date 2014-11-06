@@ -18,8 +18,8 @@ KERNEL_SRCS=\
 	    tch_msgq.c\
 	    tch_mailq.c\
 	    tch_btree.c\
-	    tch_ptask.c
-##	    tch_async.c\
+##      tch_ptask.c\
+        tch_async.c\
 	    tch_ltree.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp

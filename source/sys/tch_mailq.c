@@ -125,7 +125,7 @@ static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* resul
 	void* chunk = NULL;
 	chunk = tch_mailq_alloc(qid,millisec,result);
 	if(chunk){
-		Sys->tch_api.uStdLib->string->memset(chunk,0,((tch_mailq_cb*)qid)->bsz);
+		uStdLib->string->memset(chunk,0,((tch_mailq_cb*)qid)->bsz);
 	}
 	return chunk;
 }

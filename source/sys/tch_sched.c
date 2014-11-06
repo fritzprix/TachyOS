@@ -30,17 +30,6 @@
 
 
 /***
- *  main thread routine
- */
-extern int main(void* arg);
-
-/***
- *  idle thread routine
- */
-static int idle(void* arg);
-
-
-/***
  *  Scheduling policy Implementation
  */
 static LIST_CMP_FN(tch_schedReadyQRule);
@@ -52,16 +41,9 @@ static LIST_CMP_FN(tch_schedWqRule);
  */
 static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((always_inline));
 
-static tch_threadId MainThread_id;
-static tch_threadId IdleThread_id;
-
-
-
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
 
-
-static tch_sys_instance*   _sys;
 static uint64_t tch_systimeTick;
 tch_thread_header* tch_currentThread;
 
@@ -70,8 +52,7 @@ tch_thread_header* tch_currentThread;
 
 
 
-void tch_schedInit(void* arg){
-	_sys = (tch_sys_instance*) arg;
+void tch_schedInit(void* _systhread){
 
 	/**
 	 *  Initialize ready & pend queue
@@ -85,27 +66,10 @@ void tch_schedInit(void* arg){
 	tch_systimeTick = 0;                        ///< main system timer tick
 	tch_port_enableSysTick();                    ///< enable system timer tick
 
-	tch_threadCfg thcfg;
-	thcfg._t_routine = (tch_thread_routine) main;
-	thcfg._t_stack = &Main_Stack_Limit;
-	thcfg.t_stackSize = (uint32_t) &Main_Stack_Top - (uint32_t) &Main_Stack_Limit;
-	thcfg.t_proior = Normal;
-	thcfg._t_name = "main";
-	MainThread_id = Thread->create(&thcfg,_sys);
+	//_sys->tch_api.pTask = tch_initpTask(_sys);
 
-	thcfg._t_routine = (tch_thread_routine) idle;
-	thcfg._t_stack = &Idle_Stack_Limit;
-	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
-	thcfg.t_proior = Idle;
-	thcfg._t_name = "idle";
-	IdleThread_id = Thread->create(&thcfg,_sys);
-
-	_sys->tch_api.pTask = tch_initpTask(_sys);
-
-
-	tch_currentThread = IdleThread_id;
-	tch_schedInitKernelThread(IdleThread_id);
-
+	tch_currentThread = _systhread;
+	tch_schedInitKernelThread(tch_currentThread);
 
 	while(TRUE){     // Unreachable Code. Ensure to protect from executing when undetected schedulr failure happens
 		__WFI();
@@ -312,9 +276,9 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 		_force_fctx += 0.1f;
 #endif
 
-		thr_p->t_state = RUNNING;
-		int result = thr_p->t_fn(thr_p->t_arg);
-		tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
+	thr_p->t_state = RUNNING;
+	int result = thr_p->t_fn(thr_p->t_arg);
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 
 static LIST_CMP_FN(tch_schedReadyQRule){
@@ -329,21 +293,3 @@ static LIST_CMP_FN(tch_schedWqRule){
 	return TRUE;
 }
 
-
-int idle(void* arg){
-	/**
-	 * idle init
-	 * - idle indicator init
-	 */
-
-	tch_sys_instance* _sys = (tch_sys_instance*) arg;
-	_sys->tch_api.Thread->start(MainThread_id);
-	while(TRUE){
-		__DMB();
-		__ISB();
-		__WFI();
-		__DMB();
-		__ISB();
-	}
-	return 0;
-}

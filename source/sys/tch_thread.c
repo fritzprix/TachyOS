@@ -110,7 +110,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,thread,err);
+		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,err);
 	}
 }
 
@@ -170,7 +170,7 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 	_force_fctx += 0.1f;
 #endif
 	thr_p->t_state = RUNNING;
-	int result = (int) thr_p->t_fn(Sys);
+	int result = (int) thr_p->t_fn(tch_rti);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 
