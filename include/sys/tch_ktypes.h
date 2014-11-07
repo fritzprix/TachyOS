@@ -5,18 +5,22 @@
  *      Author: innocentevil
  */
 
+
+
 #ifndef TCH_KTYPES_H_
 #define TCH_KTYPES_H_
 
 #include "tch.h"
+#include "tch_event.h"
+
 
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-
-
+typedef struct tch_kobj_t tch_kObject;
+typedef struct tch_event_ix_t tch_event_ix;
 
 typedef enum tch_thread_state_t {
 	PENDED = 1,                              // state in which thread is created but not started yet (waiting in ready queue)
@@ -31,6 +35,7 @@ typedef enum tch_thread_state_t {
 typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 
+
 struct tch_sys_task_t {
 	tch_sysTaskFn          fn;
 	tch_thread_prior       prior;
@@ -44,8 +49,6 @@ typedef struct tch_signal_t {
 	int32_t                 signal;
 	tch_lnode_t             sig_wq;
 }tch_signal;
-
-
 
 typedef struct tch_thread_header {
 	tch_lnode_t                 t_schedNode;   ///<extends genericlist node class
@@ -67,15 +70,10 @@ typedef struct tch_thread_header {
 	uint32_t                    t_chks;
 } tch_thread_header   __attribute__((aligned(8)));
 
+
 typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
-
-
-typedef struct tch_sys_instance_t{
-	tch                     tch_api;
-	tch_threadId            taskThread;
-} tch_sys_instance;
 
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)

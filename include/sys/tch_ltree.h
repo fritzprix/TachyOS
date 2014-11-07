@@ -16,7 +16,7 @@ extern "C"{
 #endif
 
 
-
+#define INIT_LTREE                 {INIT_BTREE((0xFFFFFF >> 1)),INIT_LIST}
 #define tch_ltreeIsEmpty(ltree)    (((tch_ltree_node*)ltree)->ln.next == NULL)
 typedef struct tch_ltree_node_t {
 	tch_btree_node trn;

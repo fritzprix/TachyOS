@@ -12,6 +12,7 @@
 extern "C"{
 #endif
 
+#define INIT_BTREE(key)                      {NULL,NULL,key}
 
 typedef struct _tch_btree_node_t tch_btree_node;
 

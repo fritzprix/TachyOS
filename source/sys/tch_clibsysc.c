@@ -47,9 +47,9 @@ tchStatus tch_kernel_initCrt0(tch* env){
 
 char* _sbrk_r(struct _reent* reent,size_t incr){
 	if(tch_port_isISR()){
-		return tch_port_enterSvFromIsr(SV_UNIX_SBRK,reent,incr);
+		return (char*)tch_port_enterSvFromIsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
 	}else{
-		return tch_port_enterSvFromUsr(SV_UNIX_SBRK,reent,incr);
+		return (char*)tch_port_enterSvFromUsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
 	}
 }
 
@@ -58,6 +58,7 @@ long _write_r(void* reent,int fd,const void* buf,size_t cnt){
 	case STDIN_FILENO:
 		return -1;
 	case STDERR_FILENO:
+		stdio_port->write(stdio_port,buf,cnt);
 		return cnt;
 	case STDOUT_FILENO:
 		stdio_port->write(stdio_port,buf,cnt);

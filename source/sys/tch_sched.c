@@ -18,7 +18,6 @@
 #include "tch_sched.h"
 #include "tch_halcfg.h"
 #include "tch_async.h"
-#include "tch_ptask.h"
 
 /* =================  private internal function declaration   ========================== */
 

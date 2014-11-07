@@ -35,7 +35,6 @@
 #define tch_kAssert(b,error)  if(!b){__tch_printError(error);Thread->terminate(tch_currentThread,error);}
 
 
-
 /*!
  * \brief
  */
@@ -48,6 +47,8 @@ extern tchStatus tch_kernel_initCrt0(tch* env);
 
 
 extern int Sys_Stack_Top asm("sys_stack_top");
+extern int Sys_Stack_Limit asm("sys_stack_limit");
+
 extern int Heap_Base asm("heap_base");
 extern int Heap_Limit asm("heap_limit");
 
@@ -75,7 +76,11 @@ extern const tch_msgq_ix* MsgQ;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* Mem;
+extern const tch_event_ix* Event;
+
+
 extern const tch_hal* Hal;
+
 
 
 extern tch_thread_header* tch_currentThread;

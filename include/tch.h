@@ -65,7 +65,6 @@ typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
 typedef struct _tch_bar_ix_t tch_bar_ix;
-typedef struct _tch_ptask_ix_t tch_ptask_ix;
 
 typedef struct tch_hal_t tch_hal;
 
@@ -85,7 +84,6 @@ typedef struct _tch_runtime_t {
 	const tch_mem_ix* Mem;
 	const tch_async_ix* Async;
 	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
-	const tch_ptask_ix* pTask;
 } tch;
 
 
@@ -104,7 +102,6 @@ typedef struct _tch_runtime_t {
 #include "sys/tch_mem.h"
 #include "sys/tch_async.h"
 #include "sys/tch_nclib.h"
-//#include "sys/tch_ptask.h"
 #include "hal/tch_hal.h"
 
 extern DECLARE_THREADROUTINE(main);

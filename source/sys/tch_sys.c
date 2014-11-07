@@ -25,7 +25,6 @@
 #include "tch_nclib.h"
 #include "tch_port.h"
 #include "tch_async.h"
-#include "tch_ptask.h"
 
 
 
@@ -35,6 +34,7 @@
 static DECLARE_THREADSTACK(systhreadStk,1 << 11);
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
+
 
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
@@ -89,7 +89,7 @@ void tch_kernelInit(void* arg){
 	thcfg._t_stack = systhreadStk;
 	thcfg.t_proior = KThread;
 	thcfg.t_stackSize = 1 << 11;
-	sysThread = Thread->create(&thcfg,tch_rti);
+	sysThread = Thread->create(&thcfg,(void*)tch_rti);
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(sysThread);
@@ -168,18 +168,20 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy((tch_mailqId) arg1,0));
 		break;
+		/*
 	case SV_ASYNC_WAIT:
 		cth = tch_currentThread;
-//		tch_kernelSetResult(cth,tch_async_kwait(arg1,arg2,&sysTaskQue));
+		tch_kernelSetResult(cth,tch_async_kwait(arg1,arg2,&sysTaskQue));
 		break;
 	case SV_ASYNC_NOTIFY:
 		cth = tch_currentThread;
-//		tch_kernelSetResult(cth,tch_async_knotify(arg1,arg2));
+		tch_kernelSetResult(cth,tch_async_knotify(arg1,arg2));
 		break;
 	case SV_ASYNC_DESTROY:
 		cth = tch_currentThread;
-//		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
-		break;
+		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
+		break;*/
+
 	case SV_UNIX_SBRK:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,(tchStatus)tch_sbrk_k((void*)arg1,arg2));
@@ -212,6 +214,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
 		tch_kernel_errorHandler(TRUE,osErrorOS);
+
 	// initialize sys thread mail box for task queueing
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
@@ -256,8 +259,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 static DECLARE_THREADROUTINE(idle){
-//	tch_sys_instance* _sys = (tch_sys_instance*) arg;
-//	_sys->tch_api.Thread->start(MainThread_id);
 	while(TRUE){
 		__DMB();
 		__ISB();
