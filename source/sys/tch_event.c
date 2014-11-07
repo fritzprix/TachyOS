@@ -41,8 +41,9 @@ static tchStatus tch_eventListen(const tch* env,int id, tch_eventCallback cb,uin
 	evNode->cb_task.status = osOK;
 	evNode->cb_task.arg = NULL;
 
-
+	// critical section
 	tch_ltreeInit(&evNode->tn,id);
+
 }
 
 static tchStatus tch_eventNotify(const tch* env,int id, void* ev_arg){
