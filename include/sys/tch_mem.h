@@ -28,9 +28,11 @@ extern "C"{
  */
 struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
-	int (*free)(void*);
+	void (*free)(void*);
 };
 
+tch_mem_ix* tch_createUsrMem(void* mem,size_t sz);
+void* tch_destroyUsrMem(tch_mem_ix* mem);
 
 #if defined(__cplusplus)
 }
