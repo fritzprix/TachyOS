@@ -100,7 +100,6 @@ typedef struct _tch_runtime_t {
 #include "sys/tch_msgq.h"
 #include "sys/tch_mailq.h"
 #include "sys/tch_mem.h"
-#include "sys/tch_async.h"
 #include "sys/tch_nclib.h"
 #include "hal/tch_hal.h"
 

@@ -33,7 +33,7 @@ extern "C"{
  */
 typedef void* tch_threadId;
 typedef struct _tch_thread_cfg_t tch_threadCfg;
-typedef int (*tch_thread_routine)(tch* env);
+typedef int (*tch_thread_routine)(const tch* env);
 
 
 
@@ -50,7 +50,7 @@ typedef enum {
 
 
 struct _tch_thread_cfg_t {
-	uint32_t             t_stackSize;
+	uint16_t             t_stackSize;
 	tch_thread_routine  _t_routine;
 	tch_thread_prior     t_proior;
 	const void*         _t_stack;

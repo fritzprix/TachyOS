@@ -24,7 +24,6 @@
 #include "tch_halcfg.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
-#include "tch_async.h"
 
 
 
@@ -168,28 +167,26 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy((tch_mailqId) arg1,0));
 		break;
-		/*
-	case SV_ASYNC_WAIT:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_async_kwait(arg1,arg2,&sysTaskQue));
-		break;
-	case SV_ASYNC_NOTIFY:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_async_knotify(arg1,arg2));
-		break;
-	case SV_ASYNC_DESTROY:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_async_kdestroy(arg1));
-		break;*/
-
 	case SV_UNIX_SBRK:
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,(tchStatus)tch_sbrk_k((void*)arg1,arg2));
-		if(cth->t_kRet == (uint32_t)NULL)
-			tch_schedTerminate(cth,osErrorNoMemory);
 		break;
 	}
 }
+
+tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
+	tchStatus result = osOK;
+	tch_sysTask* task = tch_rti->MailQ->alloc(sysTaskQ,osWaitForever,&result);
+	task->arg = arg;
+	task->fn = fn;
+	task->id = id;
+	task->prior = tch_currentThread->t_prior;
+	task->status = osOK;
+	if(result == osOK)
+		tch_rti->MailQ->put(sysTaskQ,task);
+	return result;
+}
+
 
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status){
@@ -242,6 +239,12 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	Thread->start(mainThread);
 
 	uStdLib->string->memset(&evt,0,sizeof(osEvent));
+	char buf[100];
+
+	int siz = uStdLib->stdio->siprintf(buf,"User Heap %d\n\r",&Heap_Base);
+	//uStdLib->stdio->iprintf("User Heap Top:  %x\n\r",&Heap_Limit);
+	//uStdLib->stdio->iprintf("User Heap Bottom : %x\n\r",&Heap_Base);
+
 
 
 	// loop for handling system tasks (from ISR / from any user thread)
@@ -259,12 +262,16 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 static DECLARE_THREADROUTINE(idle){
+
+
 	while(TRUE){
+		// some function entering sleep mode
 		__DMB();
 		__ISB();
 		__WFI();
 		__DMB();
 		__ISB();
+		// some function waking up from sleep mode
 	}
 	return 0;
 }

@@ -17,7 +17,6 @@
 #include "tch_list.h"
 #include "tch_sched.h"
 #include "tch_halcfg.h"
-#include "tch_async.h"
 
 /* =================  private internal function declaration   ========================== */
 
@@ -39,6 +38,8 @@ static LIST_CMP_FN(tch_schedWqRule);
  *  Invoked when new thread start
  */
 static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((always_inline));
+static DECLARE_THREADROUTINE(tch_cleanupThread);
+
 
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
@@ -267,6 +268,7 @@ void tch_schedTerminate(tch_threadId thread,int result){
 }
 
 
+
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_port_setThreadSP((uint32_t)thr_p->t_ctx);
@@ -279,6 +281,7 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	int result = thr_p->t_fn(thr_p->t_arg);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
+
 
 static LIST_CMP_FN(tch_schedReadyQRule){
 	return getThreadHeader(prior)->t_prior > getThreadHeader(post)->t_prior;

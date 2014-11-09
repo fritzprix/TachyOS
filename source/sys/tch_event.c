@@ -11,41 +11,46 @@
 #include "tch_ltree.h"
 
 
-
-struct tch_event_prototype_t {
-	tch_event_ix            ev_pix;
-	tch_ltree_node          ev_tree;
-};
-
 typedef struct tch_event_node_t {
 	tch_ltree_node          tn;
-	tch_sysTask             cb_task;
+	const tch*              env;
+	int                     id;
+	tch_eventCallback       cb;
+	void*                   en_arg;
+	const char*             en_name;
 }tch_eventNode;
 
 
-static tchStatus tch_eventListen(const tch* env,int id, tch_eventCallback cb,uint32_t timeout);
-static tchStatus tch_eventNotify(const tch* env,int id, void* ev_arg);
 
-__attribute__((section(".data")))static struct tch_event_prototype_t Event_StaticInstance = {
-		{tch_eventListen,tch_eventNotify},
-		INIT_LTREE
+static tch_eventNode tch_eventCreate(const tch* env,const char* name);
+static tchStatus tch_eventListen(tch_eventNode evnode,int id, tch_eventCallback cb,uint32_t timeout);
+static tchStatus tch_eventNotify(tch_eventNode evnode,int id, void* ev_arg);
+static tchStatus tch_eventDestroy(tch_eventNode evnode);
+
+__attribute__((section(".data")))static tch_event_ix Event_StaticInstance = {
+		tch_eventCreate,
+		tch_eventListen,
+		tch_eventNotify,
+		tch_eventDestroy
 };
 
 const tch_event_ix* Event = (const tch_event_ix*) &Event_StaticInstance;
 
-static tchStatus tch_eventListen(const tch* env,int id, tch_eventCallback cb,uint32_t timeout){
-	tch_eventNode* evNode = (tch_eventNode*) env->Mem->alloc(sizeof(tch_eventNode));
-	evNode->cb_task.id = id;
-	evNode->cb_task.fn = cb;
-	evNode->cb_task.prior = tch_currentThread->t_prior;
-	evNode->cb_task.status = osOK;
-	evNode->cb_task.arg = NULL;
 
-	// critical section
-	tch_ltreeInit(&evNode->tn,id);
+
+
+static tch_eventNode tch_eventCreate(const tch* env,const char* name){
 
 }
 
-static tchStatus tch_eventNotify(const tch* env,int id, void* ev_arg){
+static tchStatus tch_eventListen(tch_eventNode evnode,int id, tch_eventCallback cb,uint32_t timeout){
+
+}
+
+static tchStatus tch_eventNotify(tch_eventNode evnode,int id, void* ev_arg){
+
+}
+
+static tchStatus tch_eventDestroy(tch_eventNode evnode){
 
 }

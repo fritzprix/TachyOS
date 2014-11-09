@@ -29,7 +29,7 @@ tchStatus mtx_performTest(tch* api){
 	uint32_t* ch1Stack = api->Mem->alloc(512 * sizeof(uint8_t));
 	uint32_t* ch2Stack = api->Mem->alloc(512 * sizeof(uint8_t));
 
-	tch_thread_ix* Thread = api->Thread;
+	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg thCfg;
 	thCfg._t_name = "child1_mtx";
 	thCfg._t_routine = child1Routine;
@@ -64,7 +64,7 @@ tchStatus mtx_performTest(tch* api){
 
 static void race(tch* api){
 	uint32_t idx = 0;
-	tch_mtx_ix* Mtx = api->Mtx;
+	const tch_mtx_ix* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){
 		if(Mtx->lock(mmtx,osWaitForever) == osOK){
 			api->Thread->sleep(0);

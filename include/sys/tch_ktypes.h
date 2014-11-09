@@ -11,7 +11,6 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
-#include "tch_event.h"
 
 
 
@@ -55,6 +54,7 @@ typedef struct tch_thread_header {
 	tch_lnode_t                 t_waitNode;
 	tch_lnode_t                 t_joinQ;      ///<thread queue to wait for this thread's termination
 	tch_lnode_t*                t_waitQ;      ///<reference to wait queue in which this thread is waiting
+	tch_lnode_t*                t_allocList;  ///<allocated object list
 	tch_thread_routine          t_fn;         ///<thread function pointer
 	const char*                 t_name;       ///<thread name /* currently not implemented */
 	void*                       t_arg;        ///<thread arg field

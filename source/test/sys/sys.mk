@@ -1,5 +1,4 @@
-SYS_TEST_SRC = async_test.c\
-               mailq_test.c\
+SYS_TEST_SRC = mailq_test.c\
                mpool_test.c\
                msgq_test.c\
                mtx_test.c\

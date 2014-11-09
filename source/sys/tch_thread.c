@@ -61,6 +61,8 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 
 const tch_thread_ix* Thread = &tch_threadix;
 
+
+
 tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 
@@ -80,6 +82,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_ctx = tch_port_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
 
 	thread_p->t_to = 0;
+	thread_p->t_state = PENDED;
 	thread_p->t_lckCnt = 0;
 	thread_p->t_schedNode.next = thread_p->t_schedNode.prev = NULL;
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
@@ -170,8 +173,7 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 	_force_fctx += 0.1f;
 #endif
 	thr_p->t_state = RUNNING;
-	int result = (int) thr_p->t_fn(tch_rti);
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,(int) thr_p->t_fn(tch_rti));
 }
 
 

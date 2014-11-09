@@ -15,12 +15,15 @@
 extern "C" {
 #endif
 
+typedef void* tch_eventNode;
+typedef void (*tch_eventCallback)(int id,tch_eventNode* node,void* arg);
 
-typedef void (*tch_eventCallback)(int id,tch* env,void* arg);
 
 struct tch_event_ix_t {
-	tchStatus (*listen)(const tch* env,int id, tch_eventCallback cb,uint32_t timeout);
-	tchStatus (*notify)(const tch* env,int id, void* ev_arg);
+	tch_eventNode (*create)(const tch* env,const char* name);
+	tchStatus (*listen)(tch_eventNode evnode,int id, tch_eventCallback cb,uint32_t timeout);
+	tchStatus (*notify)(tch_eventNode evnode,int id, void* ev_arg);
+	tchStatus (*destroy)(tch_eventNode evnode);
 };
 
 

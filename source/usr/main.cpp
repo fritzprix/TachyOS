@@ -86,7 +86,8 @@ int main(tch* api) {
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bClear);
-		api->uStdLib->stdio->iprintf("This is My Age : %d\n\r",35);
+//		api->uStdLib->stdio->iprintf("This is My Age : %d\n\r",35);
+	//	api->uStdLib->stdio->perror("Error : ");
 		timer->wait(timer,150);
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);

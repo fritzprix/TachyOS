@@ -30,7 +30,6 @@ extern "C" {
 #include "mpool_test.h"
 #include "msgq_test.h"
 #include "mailq_test.h"
-#include "async_test.h"
 
 #include "gpio_test.h"
 #include "uart_test.h"

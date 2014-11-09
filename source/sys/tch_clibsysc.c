@@ -27,7 +27,12 @@ extern int errno;
 char* __env[1] = {0};
 char** environ = __env;
 
+
+
+
+
 tch_UartHandle* stdio_port;
+
 
 tchStatus tch_kernel_initCrt0(tch* env){
 	// initialize standard i/o stream device
@@ -46,20 +51,24 @@ tchStatus tch_kernel_initCrt0(tch* env){
 
 
 char* _sbrk_r(struct _reent* reent,size_t incr){
+	char* _p = NULL;
 	if(tch_port_isISR()){
 		return (char*)tch_port_enterSvFromIsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
 	}else{
-		return (char*)tch_port_enterSvFromUsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
+		_p = (char*)tch_port_enterSvFromUsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
+		if(!_p){
+			errno = ENOMEM;
+			perror("Error @ sbrk : ");
+			exit(osErrorNoMemory);
+		}
+		return _p;
 	}
 }
 
 long _write_r(void* reent,int fd,const void* buf,size_t cnt){
 	switch(fd){
 	case STDIN_FILENO:
-		return -1;
 	case STDERR_FILENO:
-		stdio_port->write(stdio_port,buf,cnt);
-		return cnt;
 	case STDOUT_FILENO:
 		stdio_port->write(stdio_port,buf,cnt);
 		return cnt;
@@ -110,7 +119,7 @@ int _isatty_r(int file){
 }
 
 void exit(int code){
-	while(1);
+	Thread->terminate(tch_currentThread,code);
 }
 
 void abort(void){
