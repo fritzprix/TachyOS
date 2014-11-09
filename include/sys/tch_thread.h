@@ -24,7 +24,7 @@ extern "C"{
 
 
 
-#define DECLARE_THREADROUTINE(fn)                    int fn(tch* env)
+#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
 #define DECLARE_THREADSTACK(name,sizeinbyte)         uint64_t name[(sizeinbyte) >> 3]
 
 

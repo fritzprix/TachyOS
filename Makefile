@@ -21,6 +21,8 @@ LIB_DIR=
 CFLAG+=\
        -D$(HW_PLF)\
        -D__NEWLIB__\
+       -D_REENT_SMALL\
+       -D__DYNAMIC_REENT__\
        -mcpu=$(CPU)\
        -m$(INSTR)
 

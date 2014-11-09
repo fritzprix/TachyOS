@@ -81,6 +81,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	                                                                             */
 	thread_p->t_ctx = tch_port_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
 
+	_REENT_INIT_PTR(&thread_p->t_reent);
 	thread_p->t_to = 0;
 	thread_p->t_state = PENDED;
 	thread_p->t_lckCnt = 0;

@@ -19,7 +19,7 @@
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
-int main(tch* api) {
+int main(const tch* api) {
 
 
 

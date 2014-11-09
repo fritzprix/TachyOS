@@ -105,6 +105,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
+		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
 		tch_port_kernel_unlock();
 		break;
@@ -239,11 +240,10 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	Thread->start(mainThread);
 
 	uStdLib->string->memset(&evt,0,sizeof(osEvent));
-	char buf[100];
 
-	int siz = uStdLib->stdio->siprintf(buf,"User Heap %d\n\r",&Heap_Base);
-	//uStdLib->stdio->iprintf("User Heap Top:  %x\n\r",&Heap_Limit);
-	//uStdLib->stdio->iprintf("User Heap Bottom : %x\n\r",&Heap_Base);
+	uStdLib->stdio->iprintf("User Heap Top:  %x\n\r",&Heap_Limit);
+	uStdLib->stdio->iprintf("User Heap Bottom : %x\n\r",&Heap_Base);
+	uStdLib->stdio->iprintf("Thread Header Size : %d\n\r",sizeof(tch_thread_header));
 
 
 

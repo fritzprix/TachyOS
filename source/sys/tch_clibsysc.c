@@ -12,6 +12,9 @@
  *
  */
 
+
+
+
 #include "tch_kernel.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,9 +22,12 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/times.h>
+#include <sys/reent.h>
+#include <reent.h>
 #include <errno.h>
 
 #undef errno
+#undef __getreent
 extern int errno;
 
 char* __env[1] = {0};
@@ -43,14 +49,13 @@ tchStatus tch_kernel_initCrt0(tch* env){
 	ucfg.StopBit = env->Device->usart->StopBit.StopBit1B;
 	ucfg.UartCh = 2;
 	stdio_port = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
-
 	return osOK;
 
 }
 
 
 
-char* _sbrk_r(struct _reent* reent,size_t incr){
+void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	char* _p = NULL;
 	if(tch_port_isISR()){
 		return (char*)tch_port_enterSvFromIsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
@@ -65,7 +70,7 @@ char* _sbrk_r(struct _reent* reent,size_t incr){
 	}
 }
 
-long _write_r(void* reent,int fd,const void* buf,size_t cnt){
+_ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	switch(fd){
 	case STDIN_FILENO:
 	case STDERR_FILENO:
@@ -73,61 +78,61 @@ long _write_r(void* reent,int fd,const void* buf,size_t cnt){
 		stdio_port->write(stdio_port,buf,cnt);
 		return cnt;
 	}
-	return cnt;
-}
-
-int _close_r(void *reent, int fd){
 	return -1;
 }
 
-off_t _lseek_r(void *reent,int fd, off_t pos, int whence){
+int _close_r(struct _reent* reent, int fd){
+	return -1;
+}
+
+off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 	return 0;
 }
 
-long _read_r(void *reent,int fd, void *buf, size_t cnt){
+_ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	return cnt;
 }
 
-int _fork_r(void *reent){
+int _fork_r(struct _reent* reent){
 	return 0;
 }
 
-int _wait_r(void *reent, int *status){
+int _wait_r(struct _reent* reent, int *status){
 	return 0;
 }
 
-int _stat_r(void *reent,const char *file, void* pstat){
+int _stat_r(struct _reent* reent,const char* file, struct stat* pstat){
 	return 0;
 }
 
-int _fstat_r(void *reent,int fd, void* pstat){
+int _fstat_r(struct _reent* reent,int fd, struct stat* pstat){
 	*((uint32_t*)reent) = EINVAL;
 	return 0;
 }
 
-int _link_r(void *reent,const char *old, const char *new){
+int _link_r(struct _reent* reent,const char *old, const char *new){
 	errno = EMLINK;
 	return -1;
 }
 
-int _unlink_r(void *reent, const char *file){
+int _unlink_r(struct _reent* reent, const char *file){
 	return -1;
 }
 
-int _isatty_r(int file){
+int _isatty_r(struct _reent* reent, int fd){
 	return 1;
 }
 
 void exit(int code){
 	Thread->terminate(tch_currentThread,code);
+	while(TRUE);
 }
 
 void abort(void){
 	while(1);
 }
 
-
-int _open_r(void *reent,const char *file, int flags, int mode){
+int _open_r(struct _reent* reent,const char *file, int flags, int mode){
 	return -1;
 }
 
@@ -143,3 +148,4 @@ time_t _times(void* _reent){
 int _gettimeofday(void* _reent){
 	return -1;
 }
+

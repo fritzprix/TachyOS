@@ -68,6 +68,7 @@ typedef struct tch_thread_header {
 	tch_signal                  t_sig;
 	tchStatus                   t_kRet;
 	uint32_t                    t_chks;
+	struct _reent               t_reent;
 } tch_thread_header   __attribute__((aligned(8)));
 
 
