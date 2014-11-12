@@ -8,7 +8,6 @@
 #ifndef TCH_LIST_H_
 #define TCH_LIST_H_
 
-#include "tch_TypeDef.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -22,10 +21,10 @@ extern "C" {
 
 typedef struct _tch_lnode_t tch_lnode_t;
 
-typedef struct _tch_lnode_t {
+ struct _tch_lnode_t {
 	tch_lnode_t* prev;
 	tch_lnode_t* next;
-}tch_lnode_t;
+};
 
 
 

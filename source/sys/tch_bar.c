@@ -88,7 +88,7 @@ static tchStatus tch_bar_destroy(tch_barId barId){
 		return osErrorISR;
 	else
 		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osErrorResource);
-	Mem->free(bar);
+	free(bar);
 	return osOK;
 }
 

@@ -55,6 +55,8 @@ void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
 		return;
 	if(lentry->next)
 		((tch_lnode_t*)lentry->next)->prev = item;
+	else
+		lentry->prev = item;
 	item->prev = lentry;
 	lentry->next = item;
 }
