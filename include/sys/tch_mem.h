@@ -22,6 +22,9 @@
 extern "C"{
 #endif
 
+typedef void* tch_memHandle;
+
+
 
 /**
  * @brief This is public API for Dynamic Memory Allocation
@@ -31,8 +34,8 @@ struct _tch_mem_ix_t {
 	void (*free)(void*);
 };
 
-tch_mem_ix* tch_createUsrMem(void* mem,size_t sz);
-void* tch_destroyUsrMem(tch_mem_ix* mem);
+tchStatus tch_createUsrMem(void* mem,size_t sz);
+tchStatus tch_destroyUsrMem(void);
 
 #if defined(__cplusplus)
 }

@@ -59,6 +59,20 @@ void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
 	lentry->next = item;
 }
 
+void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(lentry->prev){
+		lentry->prev->next = item;
+		item->prev = lentry->prev;
+	}else{
+		lentry->next = item;
+		item->prev = lentry;
+		item->next = NULL;
+	}
+	lentry->prev = item;
+}
+
+
+
 void tch_listPush(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(!lentry)
 		return;

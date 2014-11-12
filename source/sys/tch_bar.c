@@ -45,7 +45,7 @@ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
 static tch_barId tch_bar_create(){
-	tch_bar_cb* bar = Mem->alloc(sizeof(tch_bar_cb));
+	tch_bar_cb* bar = malloc(sizeof(tch_bar_cb));
 	if(!bar)
 		return NULL;
 	uStdLib->string->memset(bar,0,sizeof(tch_bar_cb));
