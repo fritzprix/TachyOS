@@ -35,13 +35,13 @@ __attribute__((section(".data")))static tch_mem_ix MEM_StaticInstance = {
 };
 
 const tch_mem_ix* Mem = &MEM_StaticInstance;
-__attribute__((section(".data")))static char* heap_end = NULL;
+//__attribute__((section(".data")))static char* heap_end = NULL;
 
 
 
 
 
-
+/*
 void* tch_sbrk_k(struct _reent* reent,size_t incr){
 	if(heap_end == NULL)
 		heap_end = (char*)&Heap_Base;
@@ -53,9 +53,9 @@ void* tch_sbrk_k(struct _reent* reent,size_t incr){
 	heap_end += incr;
 	return prev_heap_end;
 }
+*/
 
-
-tchStatus tch_createUsrMem(void* mem,size_t sz){
+tch_memHandle tch_createUsrMem(void* mem,size_t sz){
 	/*
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mem++;
 
@@ -91,8 +91,7 @@ tchStatus tch_createUsrMem(void* mem,size_t sz){
 	tch_listPutFirst((tch_lnode_t*) m_entry,(tch_mem_hdr*) m_head);
 	tch_listPutLast((tch_lnode_t*) m_entry,(tch_mem_hdr*) m_tail);
 
-	tch_currentThread->t_mem = m_entry;
-	return osOK;
+	return m_entry;
 
 }
 

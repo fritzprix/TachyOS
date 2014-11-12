@@ -34,7 +34,7 @@ struct _tch_mem_ix_t {
 	void (*free)(void*);
 };
 
-tchStatus tch_createUsrMem(void* mem,size_t sz);
+tch_memHandle tch_createUsrMem(void* mem,size_t sz);
 tchStatus tch_destroyUsrMem(void);
 
 #if defined(__cplusplus)

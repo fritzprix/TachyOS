@@ -107,9 +107,6 @@ typedef struct tch_thread_queue{
 #define SV_ASYNC_NOTIFY                  ((uint32_t) 0x37)               ///< Supervisor call id to notify completion of async kernel task
 #define SV_ASYNC_DESTROY                 ((uint32_t) 0x38)               ///< Supervisor call id to destroy async
 
-#define SV_UNIX_SBRK                     ((uint32_t) 0x3A)               ///< Supervisor call id for unix system call : sbrk
-
-
 
 #ifdef __cplusplus
 }

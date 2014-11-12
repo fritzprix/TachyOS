@@ -33,7 +33,7 @@ extern int errno;
 char* __env[1] = {0};
 char** environ = __env;
 
-
+__attribute__((section(".data")))static char* heap_end = NULL;
 
 
 
@@ -56,18 +56,15 @@ tchStatus tch_kernel_initCrt0(tch* env){
 
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
-	char* _p = NULL;
-	if(tch_port_isISR()){
-		return (char*)tch_port_enterSvFromIsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
-	}else{
-		_p = (char*)tch_port_enterSvFromUsr(SV_UNIX_SBRK,(uint32_t) reent,incr);
-		if(!_p){
-			errno = ENOMEM;
-			perror("Error @ sbrk : ");
-			exit(osErrorNoMemory);
-		}
-		return _p;
+	if(heap_end == NULL)
+		heap_end = (char*)&Heap_Base;
+	char *prev_heap_end;
+	prev_heap_end = heap_end;
+	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
+		return NULL;
 	}
+	heap_end += incr;
+	return prev_heap_end;
 }
 
 _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){

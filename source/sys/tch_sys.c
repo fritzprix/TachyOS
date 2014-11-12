@@ -168,10 +168,6 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy((tch_mailqId) arg1,0));
 		break;
-	case SV_UNIX_SBRK:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,(tchStatus)tch_sbrk_k((void*)arg1,arg2));
-		break;
 	}
 }
 

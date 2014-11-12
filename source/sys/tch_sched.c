@@ -38,7 +38,6 @@ static LIST_CMP_FN(tch_schedWqRule);
  *  Invoked when new thread start
  */
 static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((always_inline));
-static DECLARE_THREADROUTINE(tch_cleanupThread);
 
 
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state

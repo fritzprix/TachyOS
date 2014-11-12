@@ -14,6 +14,7 @@
 
 #include "tch_kernel.h"
 #include "tch_sched.h"
+#include "tch_mem.h"
 
 
 
@@ -92,6 +93,10 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	tch_listInit(&thread_p->t_sig.sig_wq);
 	tch_listInit(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
+
+	uint8_t* heap = malloc(1 << 12);
+	thread_p->t_mem = tch_createUsrMem(heap,1 << 12);
+
 
 	return (tch_threadId) thread_p;
 
