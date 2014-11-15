@@ -24,8 +24,7 @@
 #include "tch_halcfg.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
-
-
+#include "tch_syscfg.h"
 
 
 
@@ -38,6 +37,9 @@ static DECLARE_THREADROUTINE(idle);
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
 tch_mailqId sysTaskQ;
+tch_memHandle sharedMem;
+
+
 
 /***
  *  Initialize Kernel including...
@@ -63,8 +65,10 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mempool = Mempool;
 	RuntimeInterface.MailQ = MailQ;
 	RuntimeInterface.MsgQ = MsgQ;
-	RuntimeInterface.Mem = Mem;
+	RuntimeInterface.Mem = uMem;
 
+	uint8_t* shMem = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
+	sharedMem = tch_memCreate(shMem,TCH_CFG_SHARED_MEM_SIZE);
 
 
 	/**
@@ -88,6 +92,7 @@ void tch_kernelInit(void* arg){
 	thcfg._t_stack = systhreadStk;
 	thcfg.t_proior = KThread;
 	thcfg.t_stackSize = 1 << 11;
+	tch_currentThread = ROOT_THREAD;
 	sysThread = Thread->create(&thcfg,(void*)tch_rti);
 
 	tch_port_enableISR();                   // interrupt enable
@@ -137,7 +142,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		cth->t_sig.match_target = arg1;                         ///< update thread signal pattern
+		cth->t_sig.sig_comb = arg1;                         ///< update thread signal pattern
 		tch_schedSuspend((tch_thread_queue*)&cth->t_sig.sig_wq,arg2);///< suspend to signal wq
 		break;
 	case SV_SIG_MATCH:
@@ -214,6 +219,9 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	if(!sysTaskQ)
 		tch_kernel_errorHandler(TRUE,osErrorOS);
 
+	tch_threadId th = tch_currentThread;
+	tch_currentThread = ROOT_THREAD;      // create thread as root
+
 	tch_threadCfg thcfg;
 	thcfg._t_routine = (tch_thread_routine) main;
 	thcfg._t_stack = &Main_Stack_Limit;
@@ -228,6 +236,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
 	idleThread = Thread->create(&thcfg,&RuntimeInterface);
+
+	tch_currentThread = th;
 
 	if((!mainThread) || (!idleThread))
 		tch_kernel_errorHandler(TRUE,osErrorOS);

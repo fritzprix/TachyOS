@@ -45,7 +45,7 @@ int32_t tch_signal_set(tch_threadId thread,int32_t signals){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	int32_t sig = th_p->t_sig.signal;
 	th_p->t_sig.signal |= signals;
-	if((th_p->t_sig.match_target == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
+	if((th_p->t_sig.sig_comb == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
 		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t) thread,0);
 		else
@@ -63,7 +63,7 @@ int32_t tch_signal_clear(tch_threadId thread,int32_t signals){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	int32_t sig = th_p->t_sig.signal;
 	th_p->t_sig.signal &= ~signals;
-	if((th_p->t_sig.match_target == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
+	if((th_p->t_sig.sig_comb == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
 		if(tch_port_isISR())
 			tch_port_enterSvFromIsr(SV_SIG_MATCH,(uint32_t)thread,0);
 		else
@@ -81,7 +81,7 @@ tchStatus tch_signal_wait(int32_t signals,uint32_t millisec){
 	if(tch_port_isISR()){
 		return osErrorISR;
 	}
-	if((th_p->t_sig.match_target = signals) == th_p->t_sig.signal){
+	if((th_p->t_sig.sig_comb = signals) == th_p->t_sig.signal){
 		return osOK;
 	}else{
 		return tch_port_enterSvFromUsr(SV_SIG_WAIT,signals,millisec);

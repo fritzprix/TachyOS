@@ -15,10 +15,14 @@
 #include "tch_kernel.h"
 #include "tch_sched.h"
 #include "tch_mem.h"
-
+#include "tch_syscfg.h"
 
 
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
+
+
+const uint32_t THREAD_ROOT_BIT  =  ((uint32_t) 1 << 0); // if set thread is root thread of process, otherwise child thread of any root
+
 
 
 /**
@@ -45,6 +49,8 @@ static BOOL tch_threadIsValid(tch_threadId id);
 
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
+static void __tch_thread_atexit(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
+
 
 __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadCreate,
@@ -65,7 +71,21 @@ const tch_thread_ix* Thread = &tch_threadix;
 
 
 tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
-	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
+	uint8_t* th_mem = NULL;
+	uint16_t allocsz = 0;
+	uint8_t* sptop = NULL;
+	if(cfg->t_stackSize < TCH_CFG_THREAD_STACK_MIN_SIZE)
+		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
+
+	if(tch_currentThread == ROOT_THREAD){
+		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE;
+	}else{
+		allocsz = cfg->t_stackSize;
+	}
+	th_mem = malloc(allocsz);
+	sptop = th_mem + allocsz;
+
+//	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
 
 	/**
 	 * thread initialize from configuration type
@@ -89,13 +109,18 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_schedNode.next = thread_p->t_schedNode.prev = NULL;
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
 	thread_p->t_waitQ = NULL;
-	thread_p->t_sig.match_target = thread_p->t_sig.signal = 0;
+	thread_p->t_sig.sig_comb = thread_p->t_sig.signal = 0;
 	tch_listInit(&thread_p->t_sig.sig_wq);
 	tch_listInit(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
 
-	uint8_t* heap = malloc(1 << 12);
-	thread_p->t_mem = tch_createUsrMem(heap,1 << 12);
+
+	if(tch_currentThread != ROOT_THREAD)
+		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
+	else{
+		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
+		thread_p->t_flag |= THREAD_ROOT_BIT;                // mark as root thread
+	}
 
 
 	return (tch_threadId) thread_p;
@@ -181,5 +206,4 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 	thr_p->t_state = RUNNING;
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,(int) thr_p->t_fn(tch_rti));
 }
-
 

@@ -44,7 +44,7 @@ struct tch_sys_task_t {
 }__attribute__((packed));
 
 typedef struct tch_signal_t {
-	int32_t                 match_target;
+	int32_t                 sig_comb;
 	int32_t                 signal;
 	tch_lnode_t             sig_wq;
 }tch_signal;
@@ -54,22 +54,22 @@ typedef struct tch_thread_header {
 	tch_lnode_t                 t_waitNode;
 	tch_lnode_t                 t_joinQ;      ///<thread queue to wait for this thread's termination
 	tch_lnode_t*                t_waitQ;      ///<reference to wait queue in which this thread is waiting
-	tch_lnode_t*                t_allocList;  ///<allocated object list
 	tch_thread_routine          t_fn;         ///<thread function pointer
-	const char*                 t_name;       ///<thread name /* currently not implemented */
+	const char*                 t_name;       ///<thread name
 	void*                       t_arg;        ///<thread arg field
-	uint32_t                    t_lckCnt;
-	uint32_t                    t_tslot;
-	tch_thread_state            t_state;
-	uint32_t                    t_prior;
-	uint32_t                    t_svd_prior;
-	uint64_t                    t_to;
-	void*                       t_ctx;
-	tch_signal                  t_sig;
-	tchStatus                   t_kRet;
-	tch_memHandle               t_mem;
-	uint32_t                    t_chks;
-	struct _reent               t_reent;
+	uint32_t                    t_lckCnt;     /// lock count to know whether  restore original priority
+	uint32_t                    t_tslot;      /// time slot for round robin scheduling (currently not used)
+	tch_thread_state            t_state;      /// thread state
+	uint32_t                    t_flag;
+	uint32_t                    t_prior;      /// current priority
+	uint32_t                    t_svd_prior;  /// saved priority for priority escalation (which prvent prioirty inversion from happening)
+	uint64_t                    t_to;         /// timeout value for pending operation
+	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
+	tch_signal                  t_sig;        /// signal handle
+	tchStatus                   t_kRet;       /// kernel return value
+	tch_memHandle               t_mem;        /// heap handle
+	uint32_t                    t_chks;       /// checksum for integrity check
+	struct _reent               t_reent;      /// reentrant struct used by c standard library
 } tch_thread_header   __attribute__((aligned(8)));
 
 
@@ -107,6 +107,8 @@ typedef struct tch_thread_queue{
 #define SV_ASYNC_NOTIFY                  ((uint32_t) 0x37)               ///< Supervisor call id to notify completion of async kernel task
 #define SV_ASYNC_DESTROY                 ((uint32_t) 0x38)               ///< Supervisor call id to destroy async
 
+
+#define ROOT_THREAD                      ((tch_threadId) 1)
 
 #ifdef __cplusplus
 }

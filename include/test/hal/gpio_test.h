@@ -12,7 +12,7 @@
 extern "C"{
 #endif
 
-extern tchStatus gpio_performTest(tch* api);
+extern tchStatus gpio_performTest(const tch* api);
 
 
 

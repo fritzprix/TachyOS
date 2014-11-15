@@ -52,7 +52,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen){
-	tch_mailq_cb* mailqcb = (tch_mailq_cb*) Mem->alloc(sizeof(tch_mailq_cb));
+	tch_mailq_cb* mailqcb = (tch_mailq_cb*) shMem->alloc(sizeof(tch_mailq_cb));
 	uStdLib->string->memset(mailqcb,0,sizeof(tch_mailq_cb));
 	mailqcb->blen = qlen;
 	mailqcb->bsz = sz;
@@ -65,8 +65,8 @@ static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen){
 	tch_listInit(&mailqcb->wq);
 
 	if(!(mailqcb->bpool && mailqcb->msgq)){
-		Mem->free(mailqcb->bpool);
-		Mem->free(mailqcb->msgq);
+		shMem->free(mailqcb->bpool);
+		shMem->free(mailqcb->msgq);
 		return NULL;
 	}
 
@@ -201,7 +201,7 @@ static tchStatus tch_mailq_destroy(tch_mailqId qid){
 	if((result = tch_port_enterSvFromUsr(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
 		return result;
 	MsgQ->destroy(mailqcb->msgq);
-	Mem->free(qid);
+	shMem->free(qid);
 	return osOK;
 }
 

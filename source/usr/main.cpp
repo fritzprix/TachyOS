@@ -47,7 +47,7 @@ int main(const tch* api) {
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
-//	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
+	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 
 //	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);

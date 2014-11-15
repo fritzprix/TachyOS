@@ -51,10 +51,12 @@ typedef enum {
 
 struct _tch_thread_cfg_t {
 	uint16_t             t_stackSize;
+	uint16_t             t_heapSize;
 	tch_thread_routine  _t_routine;
 	tch_thread_prior     t_proior;
 	const void*         _t_stack;
 	const char*         _t_name;
+	const void*         _t_heap;
 };
 
 /**

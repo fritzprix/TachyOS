@@ -52,7 +52,7 @@ const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 static tch_msgqId tch_msgq_create(size_t len){
 	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) Mem->alloc(sz);
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) shMem->alloc(sz);
 	uStdLib->string->memset(msgqCb,0,sz);
 
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
@@ -211,10 +211,10 @@ static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 		tch_schedResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,osErrorResource,FALSE);
 		tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,osErrorResource,TRUE);
 		msgqCb->updated = 0;
-		Mem->free(msgqCb);
+		shMem->free(msgqCb);
 	}else{
 		tch_port_enterSvFromUsr(SV_MSGQ_DESTROY,(uword_t)mqId,0);
-		Mem->free(msgqCb);
+		shMem->free(msgqCb);
 	}
 	return osOK;
 }

@@ -57,7 +57,7 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
 tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
-	tch_mpool_cb* mpcb = (tch_mpool_cb*) Mem->alloc(sizeof(tch_mpool_cb) + sz * plen);
+	tch_mpool_cb* mpcb = (tch_mpool_cb*) shMem->alloc(sizeof(tch_mpool_cb) + sz * plen);
 	uStdLib->string->memset(mpcb,0,sizeof(tch_mpool_cb) + sz * plen);
 	mpcb->bpool = (tch_mpool_cb*) mpcb + 1;
 	mpcb->bcount = plen;
@@ -124,7 +124,7 @@ static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
 	}
 	tch_mpoolInvalidate(mpool);
 	tch_mpool_cb* mcb = (tch_mpool_cb*) mpool;
-	Mem->free(mcb);
+	shMem->free(mcb);
 	return osOK;
 }
 

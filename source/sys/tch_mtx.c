@@ -67,7 +67,7 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 
 tch_mtxId tch_mtx_create(){
-	tch_mtx* mcb = (tch_mtx*) Mem->alloc(sizeof(tch_mtx));
+	tch_mtx* mcb = (tch_mtx*) shMem->alloc(sizeof(tch_mtx));
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtx));
 	mcb->key = 0;
 	tch_listInit((tch_lnode_t*)&mcb->que);
@@ -152,7 +152,7 @@ tchStatus tch_mtx_destroy(tch_mtxId id){
 	mcb->own = NULL;
 	Thread->setPriority(Thread->self(),mcb->svdPrior);
 	mcb->svdPrior = Idle;
-	Mem->free(mcb);
+	shMem->free(mcb);
 	return result;
 }
 

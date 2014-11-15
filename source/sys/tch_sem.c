@@ -44,7 +44,7 @@ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
 
 
 static tch_semId tch_semaphore_create(uint32_t count){
-	tch_semaphore_cb* sem = (tch_semaphore_cb*) Mem->alloc(sizeof(tch_semaphore_cb));
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) shMem->alloc(sizeof(tch_semaphore_cb));
 	if(!sem)
 		return NULL;
 	sem->count = count;

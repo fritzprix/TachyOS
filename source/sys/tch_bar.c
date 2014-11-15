@@ -45,7 +45,7 @@ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
 static tch_barId tch_bar_create(){
-	tch_bar_cb* bar = Mem->alloc(sizeof(tch_bar_cb));
+	tch_bar_cb* bar = shMem->alloc(sizeof(tch_bar_cb));
 	if(!bar)
 		return NULL;
 	uStdLib->string->memset(bar,0,sizeof(tch_bar_cb));
@@ -88,7 +88,7 @@ static tchStatus tch_bar_destroy(tch_barId barId){
 		return osErrorISR;
 	else
 		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osErrorResource);
-	Mem->free(bar);
+	shMem->free(bar);
 	return osOK;
 }
 

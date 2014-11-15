@@ -54,7 +54,7 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 
 static tch_condvId tch_condv_create(){
-	tch_condv* condv = (tch_condv*)Mem->alloc(sizeof(tch_condv));
+	tch_condv* condv = (tch_condv*)shMem->alloc(sizeof(tch_condv));
 	uStdLib->string->memset(condv,0,sizeof(tch_condv));
 	tch_listInit((tch_lnode_t*)&condv->wq);
 	condv->wakeMtx = NULL;
@@ -162,7 +162,7 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 		tch_condvInvalidate(condv);
 		result = tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,osErrorResource);
 		Mtx->unlock(condv->wakeMtx);
-		Mem->free(condv);
+		shMem->free(condv);
 		return result;
 	}
 }

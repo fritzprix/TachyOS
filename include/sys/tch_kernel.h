@@ -77,7 +77,9 @@ extern const tch_bar_ix* Barrier;
 extern const tch_msgq_ix* MsgQ;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
-extern const tch_mem_ix* Mem;
+extern const tch_mem_ix* uMem;
+extern const tch_mem_ix* kMem;
+extern const tch_mem_ix* shMem;
 
 
 extern const tch_hal* Hal;
@@ -87,6 +89,7 @@ extern const tch_hal* Hal;
 extern tch_thread_header* tch_currentThread;
 extern const tch* tch_rti;
 extern tch_mailqId sysTaskQ;
+extern tch_memHandle sharedMem;
 
 
 
