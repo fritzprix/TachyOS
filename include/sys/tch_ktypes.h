@@ -91,6 +91,7 @@ typedef struct tch_thread_queue{
 #define SV_THREAD_SUSPEND                ((uint32_t) 0x24)
 #define SV_THREAD_RESUME                 ((uint32_t) 0x25)
 #define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
+#define SV_THREAD_DESTROY                ((uint32_t) 0x27)
 
 #define SV_MSGQ_PUT                      ((uint32_t) 0x2D)               ///< Supervisor call id to put msg to msgq
 #define SV_MSGQ_GET                      ((uint32_t) 0x2E)               ///< Supervisor call id to get msg from msgq

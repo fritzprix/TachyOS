@@ -140,6 +140,10 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		tch_schedTerminate((tch_threadId) cth,arg2);
 		break;
+	case SV_THREAD_DESTROY:
+		cth = (tch_thread_header*) arg1;
+		tch_schedDestroy((tch_threadId) cth,arg2);
+		break;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
 		cth->t_sig.sig_comb = arg1;                         ///< update thread signal pattern

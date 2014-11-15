@@ -47,7 +47,7 @@ int main(const tch* api) {
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
-	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
+//	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
 
 //	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
@@ -80,7 +80,7 @@ int main(const tch* api) {
 	const char* msg = "T";
 	int size = api->uStdLib->string->strlen(msg);
 	char cb[20];
-	while(1){
+	while(0){
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bSet);

@@ -48,8 +48,7 @@ static void* tch_threadGetArg();
 static BOOL tch_threadIsValid(tch_threadId id);
 
 
-static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
-static void __tch_thread_atexit(tch_thread_header* thr_p,tchStatus status)__attribute__((naked));
+static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status);
 
 
 __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
@@ -204,6 +203,30 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 	_force_fctx += 0.1f;
 #endif
 	thr_p->t_state = RUNNING;
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,(int) thr_p->t_fn(tch_rti));
+	tchStatus res = thr_p->t_fn(tch_rti);
+	asm volatile(
+			"ldr r0,=%0\n"
+			"ldr r1,[%1]\n"
+			"ldr r2,[%2]\n"
+			"svc #0" : : "i"(SV_THREAD_DESTROY),"r"(&thr_p),"r"(&res) :);
+//	tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
+}
+
+
+void tch_kernel_atexit(tch_threadId thread,int status){
+	tchStatus res = res;
+	tch_threadId th_p = thread;
+	// destroy & release used system resources
+	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
+		tch_memDestroy(getThreadHeader(thread)->t_mem);
+		kMem->free(getThreadHeader(thread)->t_mem);
+	}
+
+	asm volatile(
+			"ldr r0,=%0\n"
+			"ldr r1,[%1]\n"
+			"ldr r2,[%2]\n"
+			"svc #0" : : "i"(SV_THREAD_TERMINATE),"r"(&th_p),"r"(&res) :);
+//	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,res);
 }
 

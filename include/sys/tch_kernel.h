@@ -45,6 +45,7 @@ extern tchStatus tch_kernel_initCrt0(tch* env);
 extern void* tch_kmalloc(size_t sz);
 extern void tch_kfree(void*);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
+extern void tch_kernel_atexit(tch_threadId thread,int res);
 
 
 

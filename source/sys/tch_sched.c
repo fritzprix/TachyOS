@@ -267,6 +267,15 @@ void tch_schedTerminate(tch_threadId thread,int result){
 }
 
 
+void tch_schedDestroy(tch_threadId thread,int res){
+	/// manipulated exc stack to return atexit
+	tch_exc_stack* rt_stk = __get_PSP();
+	rt_stk->Return = tch_kernel_atexit;
+	rt_stk->R0 = thread;
+	rt_stk->R1 = res;
+	return;
+}
+
 
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
