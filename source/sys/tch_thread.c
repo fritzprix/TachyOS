@@ -204,12 +204,7 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 #endif
 	thr_p->t_state = RUNNING;
 	tchStatus res = thr_p->t_fn(tch_rti);
-	asm volatile(
-			"ldr r0,=%0\n"
-			"ldr r1,[%1]\n"
-			"ldr r2,[%2]\n"
-			"svc #0" : : "i"(SV_THREAD_DESTROY),"r"(&thr_p),"r"(&res) :);
-//	tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
+	tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
 }
 
 
@@ -221,12 +216,6 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 		tch_memDestroy(getThreadHeader(thread)->t_mem);
 		kMem->free(getThreadHeader(thread)->t_mem);
 	}
-
-	asm volatile(
-			"ldr r0,=%0\n"
-			"ldr r1,[%1]\n"
-			"ldr r2,[%2]\n"
-			"svc #0" : : "i"(SV_THREAD_TERMINATE),"r"(&th_p),"r"(&res) :);
-//	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,res);
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,res);
 }
 

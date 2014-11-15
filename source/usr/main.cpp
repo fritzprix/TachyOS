@@ -40,7 +40,6 @@ int main(const tch* api) {
 
 	tch_assert(api,TRUE,osErrorISR);
 
-//	tchStatus (*registerIoEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* cfg,uint32_t* pmsk,uint32_t timeout);
 
 	uint32_t pmsk = 1 << 10;
 	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
@@ -75,11 +74,6 @@ int main(const tch* api) {
 
 	tch_gptimerHandle* timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
 
-
-	tch_UartHandle* serial = NULL;
-	const char* msg = "T";
-	int size = api->uStdLib->string->strlen(msg);
-	char cb[20];
 	while(0){
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,150);
