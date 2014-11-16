@@ -37,13 +37,10 @@ tchStatus timer_performTest(tch* env){
 	tch_threadId waiterThread1;
 	tch_threadId waiterThread2;
 
-	uint8_t* waiterThread1Stk = (uint8_t*) env->Mem->alloc(1 << 9);
-	uint8_t* waiterThread2Stk = (uint8_t*) env->Mem->alloc(1 << 9);
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "Waiter1";
 	thcfg._t_routine = waiter1Run;
-	thcfg._t_stack = waiterThread1Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
@@ -53,7 +50,6 @@ tchStatus timer_performTest(tch* env){
 
 	thcfg._t_name = "Waiter2";
 	thcfg._t_routine = waiter2Run;
-	thcfg._t_stack = waiterThread2Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
@@ -92,7 +88,6 @@ tchStatus timer_performTest(tch* env){
 	pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
 	thcfg._t_name = "PulseDrv1";
 	thcfg._t_routine = pulsDrv1Run;
-	thcfg._t_stack = waiterThread1Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
@@ -102,7 +97,6 @@ tchStatus timer_performTest(tch* env){
 
 	thcfg._t_name = "pulseDrv2";
 	thcfg._t_routine = pulsDrv2Run;
-	thcfg._t_stack = waiterThread2Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 	waiterThread2 = env->Thread->create(&thcfg,pwmDrv);
@@ -141,7 +135,6 @@ tchStatus timer_performTest(tch* env){
 
 	thcfg._t_name = "Pgen";
 	thcfg._t_routine = pulseGenRun;
-	thcfg._t_stack = waiterThread1Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
@@ -149,7 +142,6 @@ tchStatus timer_performTest(tch* env){
 
 	thcfg._t_name = "Pcon1";
 	thcfg._t_routine = pulseCon1Run;
-	thcfg._t_stack = waiterThread2Stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 9;
 
@@ -159,7 +151,6 @@ tchStatus timer_performTest(tch* env){
 
 	thcfg._t_name = "Pcon2";
 	thcfg._t_routine = pulseCon2Run;
-	thcfg._t_stack = pconStk;
 	thcfg.t_stackSize = 1 << 9;
 	thcfg.t_proior = Normal;
 
@@ -173,8 +164,6 @@ tchStatus timer_performTest(tch* env){
 	env->Thread->join(pcon1Thread,osWaitForever);
 	env->Thread->join(pcon2Thread,osWaitForever);
 
-	env->Mem->free(waiterThread1Stk);
-	env->Mem->free(waiterThread2Stk);
 	env->Mem->free(pconStk);
 
 	capt->close(capt);

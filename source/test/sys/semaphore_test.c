@@ -30,27 +30,21 @@ tchStatus semaphore_performTest(tch* api){
 
 	shVar = 0;
 	spin = TRUE;
-	uint32_t* th1Stk = api->Mem->alloc(512);
-	uint32_t* th2Stk = api->Mem->alloc(512);
-	uint32_t* th3Stk = api->Mem->alloc(512);
 
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "child1";
 	thcfg._t_routine = child1Routine;
-	thcfg._t_stack = th1Stk;
 	thcfg.t_stackSize = 512;
 	thcfg.t_proior = Normal;
 	ch1Id = api->Thread->create(&thcfg,api);
 
 	thcfg._t_name = "child2";
 	thcfg._t_routine = child2Routine;
-	thcfg._t_stack = th2Stk;
 	ch2Id = api->Thread->create(&thcfg,api);
 
 	thcfg._t_name = "child3";
 	thcfg._t_routine = child3Routine;
-	thcfg._t_stack = th3Stk;
 	ch3Id = api->Thread->create(&thcfg,api);
 
 	ts = api->Sem->create(1);
@@ -64,11 +58,6 @@ tchStatus semaphore_performTest(tch* api){
 		return osErrorOS;
 	if(api->Thread->join(ch1Id,osWaitForever) != osOK)
 		return osErrorOS;
-
-	api->Mem->free(th1Stk);
-	api->Mem->free(th2Stk);
-	api->Mem->free(th3Stk);
-
 
 	return osOK;
 }

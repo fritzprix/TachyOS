@@ -25,10 +25,6 @@ static DECLARE_THREADROUTINE(child1Routine);
 static DECLARE_THREADROUTINE(child2Routine);
 static DECLARE_THREADROUTINE(child3Routine);
 
-static void* child1Stk;
-static void* child2Stk;
-static void* child3Stk;
-
 static tch_threadId child1Id;
 static tch_threadId child2Id;
 static tch_threadId child3Id;
@@ -39,15 +35,10 @@ static tch_barId bid;
 tchStatus barrier_performTest(tch* api){
 	mainId = api->Thread->self();
 
-	// prepare thread stack from heap
-	child1Stk = api->Mem->alloc(512);
-	child2Stk = api->Mem->alloc(512);
-	child3Stk = api->Mem->alloc(512);
 
 	tch_threadCfg tcfg;
 	tcfg._t_name = "child1";
 	tcfg._t_routine = child1Routine;
-	tcfg._t_stack = child1Stk;
 	tcfg.t_proior = Normal;
 	tcfg.t_stackSize = 512;
 
@@ -55,7 +46,6 @@ tchStatus barrier_performTest(tch* api){
 
 	tcfg._t_name = "child2";
 	tcfg._t_routine = child2Routine;
-	tcfg._t_stack = child2Stk;
 	tcfg.t_proior = Normal;
 	tcfg.t_stackSize = 512;
 	child2Id = api->Thread->create(&tcfg,api);
@@ -63,7 +53,6 @@ tchStatus barrier_performTest(tch* api){
 
 	tcfg._t_name = "child3";
 	tcfg._t_routine = child3Routine;
-	tcfg._t_stack = child3Stk;
 	tcfg.t_proior = Normal;
 	tcfg.t_stackSize = 512;
 	child3Id = api->Thread->create(&tcfg,api);
@@ -90,9 +79,6 @@ tchStatus barrier_performTest(tch* api){
 	if(api->Thread->join(child3Id,osWaitForever) != osOK)
 		return osErrorOS;
 
-	api->Mem->free(child1Stk);
-	api->Mem->free(child2Stk);
-	api->Mem->free(child3Stk);
 
 
 	return osOK;

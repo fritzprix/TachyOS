@@ -57,39 +57,30 @@ tchStatus monitor_performTest(tch* api){
 	uint8_t* prod1stk = NULL;
 	uint8_t* prod2stk = NULL;
 
-	cons1stk = api->Mem->alloc(512);
-	cons2stk = api->Mem->alloc(512);
-
-	prod1stk = api->Mem->alloc(512);
-	prod2stk = api->Mem->alloc(512);
 
 	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,osErrorOS);
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "consumer1";
 	thcfg._t_routine = consumerRoutine;
-	thcfg._t_stack = cons1stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 512;
 
 	consumer1Thread = api->Thread->create(&thcfg,api);
 
 	thcfg._t_name = "consumer2";
-	thcfg._t_stack = cons2stk;
 	consumer2Thread = api->Thread->create(&thcfg,api);
 
 
 
 	thcfg._t_name = "producer1";
 	thcfg._t_routine = producerRoutine;
-	thcfg._t_stack = prod1stk;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 512;
 
 	producer1Thread = api->Thread->create(&thcfg,api);
 
 	thcfg._t_name = "producer2";
-	thcfg._t_stack = prod2stk;
 	producer2Thread = api->Thread->create(&thcfg,api);
 
 
@@ -117,11 +108,6 @@ tchStatus monitor_performTest(tch* api){
 		return osErrorOS;
 	if(api->Thread->join(consumer2Thread,osWaitForever) != osOK)
 		return osErrorOS;
-
-	api->Mem->free(cons1stk);
-	api->Mem->free(cons2stk);
-	api->Mem->free(prod1stk);
-	api->Mem->free(prod2stk);
 
 
 	api->Condv->destroy(condP);

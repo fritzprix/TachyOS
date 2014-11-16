@@ -42,8 +42,6 @@ tchStatus msgq_performTest(tch* api){
 	miscnt = 0;
 	usrcnt = 0;
 
-	uint8_t* sender_stk = (uint8_t*) api->Mem->alloc(1 << 9);
-	uint8_t* receiver_stk = (uint8_t*) api->Mem->alloc(1 << 9);
 
 	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
@@ -74,14 +72,12 @@ tchStatus msgq_performTest(tch* api){
 	tch_threadCfg tcfg;
 	tcfg._t_name = "sender";
 	tcfg._t_routine = sender;
-	tcfg._t_stack = sender_stk;
 	tcfg.t_proior = Normal;
 	tcfg.t_stackSize = 1 << 9;
 	sender_id = Thread->create(&tcfg,api);
 
 	tcfg._t_name = "receiver";
 	tcfg._t_routine = receiver;
-	tcfg._t_stack = receiver_stk;
 	receiver_id = Thread->create(&tcfg,api);
 
 	Thread->start(receiver_id);
@@ -92,8 +88,6 @@ tchStatus msgq_performTest(tch* api){
 	tch_assert(api,Thread->join(sender_id,osWaitForever) == osOK,osErrorOS);
 	api->Barrier->destroy(mBar);
 
-	api->Mem->free(sender_stk);
-	api->Mem->free(receiver_stk);
 
 	in->unregisterIoEvent(in,1 << 0);
 

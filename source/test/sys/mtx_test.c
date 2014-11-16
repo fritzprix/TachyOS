@@ -26,21 +26,17 @@ static tch_mtxId mmtx;
 tchStatus mtx_performTest(tch* api){
 
 
-	uint32_t* ch1Stack = api->Mem->alloc(512 * sizeof(uint8_t));
-	uint32_t* ch2Stack = api->Mem->alloc(512 * sizeof(uint8_t));
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg thCfg;
 	thCfg._t_name = "child1_mtx";
 	thCfg._t_routine = child1Routine;
-	thCfg._t_stack = ch1Stack;
 	thCfg.t_proior = Normal;
 	thCfg.t_stackSize = 512;
 	child1 = Thread->create(&thCfg,api);
 
 	thCfg._t_name = "child2_mtx";
 	thCfg._t_routine = child2Routine;
-	thCfg._t_stack = ch2Stack;
 	thCfg.t_stackSize = 512;
 	thCfg.t_proior = Normal;
 	child2 = Thread->create(&thCfg,api);
@@ -55,8 +51,6 @@ tchStatus mtx_performTest(tch* api){
 
 	tchStatus result = api->Thread->join(child1,osWaitForever);
 
-	api->Mem->free(ch1Stack);
-	api->Mem->free(ch2Stack);
 	return result;
 
 }

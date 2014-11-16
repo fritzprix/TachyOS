@@ -69,7 +69,7 @@ typedef struct tch_thread_header {
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memHandle               t_mem;        /// heap handle
 	uint32_t*                   t_chks;       /// checksum for integrity check
-	struct _reent*              t_reent;      /// reentrant struct used by c standard library
+	struct _reent               t_reent;      /// reentrant struct used by c standard library
 } tch_thread_header   __attribute__((aligned(8)));
 
 

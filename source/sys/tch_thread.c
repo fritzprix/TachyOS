@@ -78,10 +78,10 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
 	if(tch_currentThread == ROOT_THREAD){
-		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(struct _reent);
+		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(tch_thread_header)/* + sizeof(struct _reent)*/;
 		th_mem = kMem->alloc(allocsz);
 	}else{
-		allocsz = cfg->t_stackSize;
+		allocsz = cfg->t_stackSize + sizeof(tch_thread_header);
 		th_mem = uMem->alloc(allocsz);
 	}
 	sptop = th_mem + allocsz;
@@ -117,14 +117,15 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_flag = 0;
 
 
+	_REENT_INIT_PTR(&thread_p->t_reent);
 	if(tch_currentThread != ROOT_THREAD){
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-		thread_p->t_reent = tch_currentThread->t_reent;
+//		thread_p->t_reent = tch_currentThread->t_reent;
 	}
 	else{
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
-		thread_p->t_reent = (struct _reent*)(th_mem + TCH_CFG_PROC_HEAP_SIZE);
-		_REENT_INIT_PTR(thread_p->t_reent);
+//		thread_p->t_reent = (struct _reent*)(th_mem + TCH_CFG_PROC_HEAP_SIZE);
+//		_REENT_INIT_PTR(thread_p->t_reent);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                // mark as root thread
 	}
 
@@ -218,9 +219,9 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 void tch_kernel_atexit(tch_threadId thread,int status){
 	// destroy & release used system resources
 	tch_mem_ix* mem = NULL;
+	uStdLib->stdio->iprintf("\rThread (%s) Exit with (%d)\n",getThreadHeader(thread)->t_name,status);
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
 		tch_memDestroy(getThreadHeader(thread)->t_mem);
-		kMem->free(getThreadHeader(thread)->t_mem);
 		mem = (tch_mem_ix*)kMem;
 	}else{
 		mem = (tch_mem_ix*)uMem;

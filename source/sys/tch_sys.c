@@ -29,7 +29,6 @@
 
 
 
-static DECLARE_THREADSTACK(systhreadStk,1 << 11);
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
 
@@ -89,7 +88,6 @@ void tch_kernelInit(void* arg){
 	tch_threadCfg thcfg;
 	thcfg._t_name = "sysloop";
 	thcfg._t_routine = systhreadRoutine;
-	thcfg._t_stack = systhreadStk;
 	thcfg.t_proior = KThread;
 	thcfg.t_stackSize = 1 << 11;
 	tch_currentThread = ROOT_THREAD;
@@ -110,7 +108,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
-		_impure_ptr = tch_currentThread->t_reent;
+	//	_impure_ptr = tch_currentThread->t_reent;
+		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
 		tch_port_kernel_unlock();
 		break;
@@ -228,20 +227,18 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	tch_threadCfg thcfg;
 	thcfg._t_routine = (tch_thread_routine) main;
-	thcfg._t_stack = &Main_Stack_Limit;
 	thcfg.t_stackSize = (uint32_t) &Main_Stack_Top - (uint32_t) &Main_Stack_Limit;
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
 	mainThread = Thread->create(&thcfg,&RuntimeInterface);
+	tch_currentThread = th;
 
 	thcfg._t_routine = (tch_thread_routine) idle;
-	thcfg._t_stack = &Idle_Stack_Limit;
 	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
 	idleThread = Thread->create(&thcfg,&RuntimeInterface);
 
-	tch_currentThread = th;
 
 	if((!mainThread) || (!idleThread))
 		tch_kernel_errorHandler(TRUE,osErrorOS);
@@ -251,9 +248,9 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	uStdLib->string->memset(&evt,0,sizeof(osEvent));
 
-	uStdLib->stdio->iprintf("User Heap Top:  %x\n\r",&Heap_Limit);
-	uStdLib->stdio->iprintf("User Heap Bottom : %x\n\r",&Heap_Base);
-	uStdLib->stdio->iprintf("Thread Header Size : %d\n\r",sizeof(tch_thread_header));
+	uStdLib->stdio->iprintf("\rUser Heap Top:  %x\n",&Heap_Limit);
+	uStdLib->stdio->iprintf("\rUser Heap Bottom : %x\n",&Heap_Base);
+	uStdLib->stdio->iprintf("\rThread Header Size : %d\n",sizeof(tch_thread_header));
 
 
 

@@ -25,11 +25,9 @@ tchStatus uart_performTest(tch* env){
 	tch_UartHandle* serial = NULL;
 
 
-	uint8_t* printerThreadStk = (uint8_t*)env->Mem->alloc(1 << 10);
 	tch_threadCfg thcfg;
 	thcfg._t_name = "Printer";
 	thcfg._t_routine = printerThreadRoutine;
-	thcfg._t_stack = printerThreadStk;
 	thcfg.t_stackSize = (1 << 10);
 	thcfg.t_proior = Normal;
 

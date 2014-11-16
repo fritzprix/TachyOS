@@ -15,11 +15,11 @@
 #endif
 
 #ifndef TCH_CFG_THREAD_STACK_MIN_SIZE
-#define TCH_CFG_THREAD_STACK_MIN_SIZE     ((uint16_t) 0x200)
+#define TCH_CFG_THREAD_STACK_MIN_SIZE     ((uint16_t) 0x400)
 #endif
 
 #ifndef TCH_CFG_PROC_HEAP_SIZE
-#define TCH_CFG_PROC_HEAP_SIZE            ((uint16_t) 0x1000)
+#define TCH_CFG_PROC_HEAP_SIZE            ((uint16_t) 0x1800)
 #endif
 
 #endif /* TCH_SYSCFG_H_ */

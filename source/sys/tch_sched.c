@@ -270,9 +270,12 @@ void tch_schedTerminate(tch_threadId thread,int result){
 void tch_schedDestroy(tch_threadId thread,int res){
 	/// manipulated exc stack to return atexit
 	tch_exc_stack* rt_stk = __get_PSP();
+	rt_stk--;
 	rt_stk->Return = tch_kernel_atexit;
 	rt_stk->R0 = thread;
 	rt_stk->R1 = res;
+	rt_stk->xPSR = (uint32_t) (1 << 24);
+	__set_PSP(rt_stk);
 	return;
 }
 
