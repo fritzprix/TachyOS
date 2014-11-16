@@ -110,7 +110,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
-		_impure_ptr = &tch_currentThread->t_reent;
+		_impure_ptr = tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
 		tch_port_kernel_unlock();
 		break;

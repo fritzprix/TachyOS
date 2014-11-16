@@ -16,6 +16,7 @@
 #include "tch_sched.h"
 #include "tch_mem.h"
 #include "tch_syscfg.h"
+#include <sys/reent.h>
 
 
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
@@ -77,11 +78,12 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
 	if(tch_currentThread == ROOT_THREAD){
-		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE;
+		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(struct _reent);
+		th_mem = kMem->alloc(allocsz);
 	}else{
 		allocsz = cfg->t_stackSize;
+		th_mem = uMem->alloc(allocsz);
 	}
-	th_mem = malloc(allocsz);
 	sptop = th_mem + allocsz;
 
 //	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
@@ -101,7 +103,6 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	                                                                             */
 	thread_p->t_ctx = tch_port_makeInitialContext(thread_p,__tch_thread_entry);                // manipulate initial context of thread
 
-	_REENT_INIT_PTR(&thread_p->t_reent);
 	thread_p->t_to = 0;
 	thread_p->t_state = PENDED;
 	thread_p->t_lckCnt = 0;
@@ -111,13 +112,19 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_sig.sig_comb = thread_p->t_sig.signal = 0;
 	tch_listInit(&thread_p->t_sig.sig_wq);
 	tch_listInit(&thread_p->t_joinQ);
-	thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
+	thread_p->t_chks = (uint32_t*)th_mem;
+	*thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
+	thread_p->t_flag = 0;
 
 
-	if(tch_currentThread != ROOT_THREAD)
+	if(tch_currentThread != ROOT_THREAD){
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
+		thread_p->t_reent = tch_currentThread->t_reent;
+	}
 	else{
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
+		thread_p->t_reent = (struct _reent*)(th_mem + TCH_CFG_PROC_HEAP_SIZE);
+		_REENT_INIT_PTR(thread_p->t_reent);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                // mark as root thread
 	}
 
@@ -192,7 +199,7 @@ static BOOL tch_threadIsValid(tch_threadId id){
 		th_p = tch_currentThread;
 	else
 		th_p = (tch_thread_header*) id;
-	return th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
+	return *th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
 }
 
 
@@ -209,13 +216,17 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 
 
 void tch_kernel_atexit(tch_threadId thread,int status){
-	tchStatus res = res;
-	tch_threadId th_p = thread;
 	// destroy & release used system resources
+	tch_mem_ix* mem = NULL;
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
 		tch_memDestroy(getThreadHeader(thread)->t_mem);
 		kMem->free(getThreadHeader(thread)->t_mem);
+		mem = (tch_mem_ix*)kMem;
+	}else{
+		mem = (tch_mem_ix*)uMem;
 	}
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,res);
+	mem->free(getThreadHeader(thread)->t_chks);
+
+	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,status);
 }
 

@@ -57,10 +57,11 @@ tchStatus gpio_performTest(const tch* api){
 	api->Thread->start(evconsThread);
 
 
+	tchStatus result = osOK;
 
-	if(api->Thread->join(evgenThread,osWaitForever) != osOK)
+	if((result = api->Thread->join(evgenThread,osWaitForever)) != osOK)
 		return osErrorOS;
-	if(api->Thread->join(evconsThread,osWaitForever) != osOK)
+	if((result = api->Thread->join(evconsThread,osWaitForever)) != osOK)
 		return osErrorOS;
 
 //	api->Mem->free(evgen_stk);
