@@ -19,8 +19,9 @@
 #define TCH_BARRIER_CLASS_KEY        ((uhword_t) 0x2D03)
 
 typedef struct tch_bar_def_t{
+	tch_uobj                 __obj;
 	uint32_t                 state;
-	tch_lnode_t             wq;
+	tch_lnode_t              wq;
 } tch_bar_cb;
 
 static tch_barId tch_bar_create();
@@ -51,7 +52,8 @@ static tch_barId tch_bar_create(){
 	uStdLib->string->memset(bar,0,sizeof(tch_bar_cb));
 	tch_barValidate(bar);
 	tch_listInit(&bar->wq);
-	return ((tch_barId)bar);
+	bar->__obj.destructor = tch_bar_destroy;
+	return (tch_barId) bar;
 }
 
 static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){

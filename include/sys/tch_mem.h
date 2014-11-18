@@ -30,7 +30,7 @@ typedef void* tch_memHandle;
  * @brief This is public API for Dynamic Memory Allocation
  */
 struct _tch_mem_ix_t {
-	void* (*alloc)(uint32_t size);
+	void* (*alloc)(size_t size);
 	void (*free)(void*);
 };
 

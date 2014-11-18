@@ -72,8 +72,8 @@ const tch_thread_ix* Thread = &tch_threadix;
 
 tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t* th_mem = NULL;
-	uint16_t allocsz = 0;
 	uint8_t* sptop = NULL;
+	uint16_t allocsz = 0;
 	if(cfg->t_stackSize < TCH_CFG_THREAD_STACK_MIN_SIZE)
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
@@ -84,10 +84,8 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		allocsz = cfg->t_stackSize + sizeof(tch_thread_header);
 		th_mem = uMem->alloc(allocsz);
 	}
+
 	sptop = th_mem + allocsz;
-
-//	uint8_t* sptop = (uint8_t*)cfg->_t_stack + cfg->t_stackSize;             /// peek stack top pointer
-
 	/**
 	 * thread initialize from configuration type
 	 */
@@ -96,6 +94,9 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_fn = cfg->_t_routine;
 	thread_p->t_name = cfg->_t_name;
 	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
+	tch_listInit(&thread_p->t_ualc);
+	tch_listInit(&thread_p->t_shalc);
+	thread_p->t_root = tch_currentThread == ROOT_THREAD? NULL : tch_currentThread;
 	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
@@ -120,12 +121,9 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	_REENT_INIT_PTR(&thread_p->t_reent);
 	if(tch_currentThread != ROOT_THREAD){
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-//		thread_p->t_reent = tch_currentThread->t_reent;
 	}
 	else{
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
-//		thread_p->t_reent = (struct _reent*)(th_mem + TCH_CFG_PROC_HEAP_SIZE);
-//		_REENT_INIT_PTR(thread_p->t_reent);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                // mark as root thread
 	}
 

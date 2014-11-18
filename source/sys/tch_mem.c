@@ -61,21 +61,41 @@ const tch_mem_ix* shMem = &shMem_StaticInstance;
  * \breif : usr space heap allocator function
  */
 static void* tch_usrAlloc(uint32_t size){
-	return tch_memAlloc(tch_currentThread->t_mem,size);
+	if(tch_port_isISR())
+		return NULL;
+	tch_mem_hdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
+	hdr--;
+	tch_listPutLast(&tch_currentThread->t_ualc,hdr);
+	return ++hdr;
 }
 
 /*!
  * \breif : usr space heap free fucntion
  */
 static void tch_usrFree(void* chnk){
+	if(tch_port_isISR())
+		return;
+	tch_mem_hdr* hdr = chnk;
+	hdr--;
+	tch_listRemove(&tch_currentThread->t_ualc,hdr);
 	tch_memFree(tch_currentThread->t_mem,chnk);
 }
 
 static void* tch_sharedAlloc(uint32_t sz){
-	return tch_memAlloc(sharedMem,sz);
+	if(tch_port_isISR())
+		return NULL;
+	tch_mem_hdr* hdr = tch_memAlloc(sharedMem,sz);
+	hdr--;
+	tch_listPutLast(&tch_currentThread->t_shalc,hdr);
+	return ++hdr;
 }
 
 static void tch_sharedFree(void* chnk){
+	if(tch_port_isISR())
+		return;
+	tch_mem_hdr* hdr = chnk;
+	hdr--;
+	tch_listRemove(&tch_currentThread->t_shalc,hdr);
 	tch_memFree(sharedMem,chnk);
 }
 

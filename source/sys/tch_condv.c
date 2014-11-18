@@ -22,6 +22,7 @@
 
 
 typedef struct _tch_condv_cb {
+	tch_uobj          __obj;
 	uint32_t          state;
 	tch_mtxId         wakeMtx;
 	tch_thread_queue  wq;
@@ -59,6 +60,7 @@ static tch_condvId tch_condv_create(){
 	tch_listInit((tch_lnode_t*)&condv->wq);
 	condv->wakeMtx = NULL;
 	tch_condvValidate(condv);
+	condv->__obj.destructor = tch_condv_destroy;
 	return condv;
 }
 

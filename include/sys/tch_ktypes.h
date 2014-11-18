@@ -33,6 +33,10 @@ typedef enum tch_thread_state_t {
 
 typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
+typedef struct tch_thread_header_t tch_thread_header;
+typedef struct tch_uobj_t tch_uobj;
+
+
 
 
 struct tch_sys_task_t {
@@ -49,7 +53,11 @@ typedef struct tch_signal_t {
 	tch_lnode_t             sig_wq;
 }tch_signal;
 
-typedef struct tch_thread_header {
+struct tch_uobj_t {
+	tchStatus (*destructor)(tch_uobj* obj);
+};
+
+struct tch_thread_header_t {
 	tch_lnode_t                 t_schedNode;   ///<extends genericlist node class
 	tch_lnode_t                 t_waitNode;
 	tch_lnode_t                 t_joinQ;      ///<thread queue to wait for this thread's termination
@@ -68,9 +76,12 @@ typedef struct tch_thread_header {
 	tch_signal                  t_sig;        /// signal handle
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memHandle               t_mem;        /// heap handle
-	uint32_t*                   t_chks;       /// checksum for integrity check
+	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
+	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
+	tch_thread_header*          t_root;       /// parent thread (root thread)
 	struct _reent               t_reent;      /// reentrant struct used by c standard library
-} tch_thread_header   __attribute__((aligned(8)));
+	uint32_t*                   t_chks;       /// checksum for integrity check
+} __attribute__((aligned(8)));
 
 
 typedef struct tch_thread_queue{
