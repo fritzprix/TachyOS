@@ -35,7 +35,7 @@ typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_header_t tch_thread_header;
 typedef struct tch_uobj_t tch_uobj;
-
+typedef tchStatus (*tch_uobjDestr)(tch_uobj* obj);
 
 
 
@@ -70,7 +70,6 @@ struct tch_thread_header_t {
 	tch_thread_state            t_state;      /// thread state
 	uint32_t                    t_flag;
 	uint32_t                    t_prior;      /// current priority
-	uint32_t                    t_svd_prior;  /// saved priority for priority escalation (which prvent prioirty inversion from happening)
 	uint64_t                    t_to;         /// timeout value for pending operation
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
 	tch_signal                  t_sig;        /// signal handle

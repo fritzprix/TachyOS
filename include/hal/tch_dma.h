@@ -80,7 +80,7 @@ typedef void* tch_DmaHandle;
  *  \brief dma event listener type
  *   DMA event Listener type. fist arg is \ref dma_handle
  */
-typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle* ins,uint16_t evType);
+typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle ins,uint16_t evType);
 
 /*!
  * \brief DMA Configuration type
@@ -228,9 +228,9 @@ typedef struct tch_lld_dma {
 	 * \return dma handle which allows access dma H/W
 	 */
 	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-	tch_DmaHandle* (*allocDma)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-	BOOL (*beginXfer)(tch_DmaHandle* self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
-	tchStatus (*freeDma)(tch_DmaHandle* handle);
+	tch_DmaHandle (*allocDma)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	BOOL (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
+	tchStatus (*freeDma)(tch_DmaHandle handle);
 
 }tch_lld_dma;
 

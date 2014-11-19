@@ -147,7 +147,7 @@ static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg);
 static uint16_t tch_gpio_getPortCount();
 static uint16_t tch_gpio_getPincount(const gpIo_x port);
 static uint32_t tch_gpio_getPinAvailable(const gpIo_x port);
-static void tch_gpio_freeIo(tch_GpioHandle* self);
+static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self);
 
 
 /**********************************************************************************************/
@@ -196,6 +196,7 @@ static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
 __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 
 		{
+
 				INIT_GPIOPORT_TYPE,
 				INIT_GPIOMODE_TYPE,
 				INIT_GPIOOTYPE_TYPE,
@@ -208,8 +209,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 				tch_gpio_initEvCfg,
 				tch_gpio_getPortCount,
 				tch_gpio_getPincount,
-				tch_gpio_getPinAvailable,
-				tch_gpio_freeIo
+				tch_gpio_getPinAvailable
 		},
 		NULL,
 		NULL,
@@ -220,17 +220,12 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticManager;
 
 
-static int gtest1,gtest2,gtest3,gtest4;
 
 static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	if(!gpio->_clkenr){                     /// given GPIO port is not supported in this H/W
 		return NULL;
 	}
-
-
-	gtest1 = gtest2 = gtest3 = gtest4 = 0;
-
 
 	if(!GPIO_StaticManager.mtxId)
 		GPIO_StaticManager.mtxId = Mtx->create();
@@ -242,7 +237,6 @@ static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint32_
 		if(api->Condv->wait(GPIO_StaticManager.condvId,GPIO_StaticManager.mtxId,timeout) != osOK)
 			return NULL;
 	}
-
 	gpio->io_ocpstate |= pmsk;     // mark pin as occupied
 	api->Mtx->unlock(GPIO_StaticManager.mtxId);
 
@@ -297,38 +291,36 @@ static uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
 	return GPIO_HWs[port].io_ocpstate;
 }
 
-static void tch_gpio_freeIo(tch_GpioHandle* self){
+static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	tch_gpio_handle_prototype* _handle = NULL;
+	tchStatus result = 0;
 	if(!self)
-		return;
+		return osErrorParameter;
 	_handle = (tch_gpio_handle_prototype*) self;
 	if(!tch_gpioIsValid(_handle))
-		return;
+		return osErrorResource;
 	const tch* env = _handle->env;
 	if(env->Mtx->lock(_handle->mtxId,osWaitForever) != osOK)
-		return;
-	gtest1++;
+		return osErrorTimeoutResource;
 	tch_gpioInvalidate(_handle);
 	env->Mtx->destroy(_handle->mtxId);
 
-	gtest2++;
-	if(env->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever) != osOK)
-		return;
+	if((result = env->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever)) != osOK)
+		return result;
 	tch_gpio_descriptor* gpio = &GPIO_HWs[_handle->idx];
 	tch_GpioCfg initCfg;
 	tch_gpio_initCfg(&initCfg);
 	tch_gpio_handle_configure(self,&initCfg,_handle->pMsk);
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
-	gtest3++;
 
 
 	gpio->io_ocpstate &= ~_handle->pMsk;
 	env->Condv->wakeAll(GPIO_StaticManager.condvId);
-	gtest4++;
 	tch_gpioInvalidate(_handle);
 	env->Mem->free(_handle);
 	env->Mtx->unlock(GPIO_StaticManager.mtxId);
+	return osOK;
 }
 
 
@@ -539,6 +531,7 @@ static BOOL tch_gpio_handle_listen(tch_GpioHandle* self,uint8_t pin,uint32_t tim
 
 
 static void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
+	handle->_pix.close = tch_gpio_handle_freeIo;
 	handle->_pix.in = tch_gpio_handle_in;
 	handle->_pix.out = tch_gpio_handle_out;
 	handle->_pix.listen = tch_gpio_handle_listen;

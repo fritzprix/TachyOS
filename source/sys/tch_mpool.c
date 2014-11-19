@@ -28,10 +28,10 @@
 */
 
 typedef struct tch_mpool_cb_t {
+	tch_uobj             __obj;
 	uint32_t             bstate;
 	void*                bend;
 	void*                bfree;
-	uint32_t             bcount;
 	uint32_t             balign;
 	void*                bpool;
 }tch_mpool_cb;
@@ -60,8 +60,8 @@ tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
 	tch_mpool_cb* mpcb = (tch_mpool_cb*) shMem->alloc(sizeof(tch_mpool_cb) + sz * plen);
 	uStdLib->string->memset(mpcb,0,sizeof(tch_mpool_cb) + sz * plen);
 	mpcb->bpool = (tch_mpool_cb*) mpcb + 1;
-	mpcb->bcount = plen;
 	mpcb->balign = sz;
+	mpcb->__obj.destructor = (tch_uobjDestr) tch_mpool_destroy;
 	memset(mpcb->bpool,0,sz * plen);
 	void* next = NULL;
 	uint8_t* blk = (uint8_t*) mpcb->bpool;

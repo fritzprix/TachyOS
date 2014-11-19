@@ -91,8 +91,8 @@ tchStatus msgq_performTest(tch* api){
 
 	in->unregisterIoEvent(in,1 << 0);
 
-	api->Device->gpio->freeIo(out);
-	api->Device->gpio->freeIo(in);
+	out->close(out);
+	in->close(in);
 
 	return osOK;
 

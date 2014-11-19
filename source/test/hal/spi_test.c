@@ -25,7 +25,7 @@ tchStatus spi_performTest(tch* env){
 
 	do{
 		spihandle = env->Device->spi->allocSpi(env,env->Device->spi->spi.spi0,&spiCfg,osWaitForever,ActOnSleep);
-		env->Device->spi->freeSpi(spihandle);
+		spihandle->close(spihandle);
 	}while(leakTestcnt--);
 
 

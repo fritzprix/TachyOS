@@ -14,19 +14,16 @@
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
 
 typedef struct _tch_mailq_cb {
+	tch_uobj      __obj;
 	uint32_t      bstate;         // state
-	size_t        bsz;
-	size_t        blen;
-	size_t        updated;
-	size_t        pidx;
-	size_t        gidx;
+	uint32_t      bsz;
 	tch_mpoolId   bpool;
-	tch_msgqId msgq;
+	tch_msgqId    msgq;
 	tch_lnode_t   wq;
 }tch_mailq_cb;
 
 
-static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen);
+static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen);
 static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static tchStatus tch_mailq_put(tch_mailqId qid,void* mail);
@@ -51,15 +48,11 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
-static tch_mailqId tch_mailq_create(size_t sz,uint32_t qlen){
+static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) shMem->alloc(sizeof(tch_mailq_cb));
 	uStdLib->string->memset(mailqcb,0,sizeof(tch_mailq_cb));
-	mailqcb->blen = qlen;
 	mailqcb->bsz = sz;
-	mailqcb->pidx = 0;
-	mailqcb->gidx = 0;
-	mailqcb->updated = 0;
-
+	mailqcb->__obj.destructor = (tch_uobjDestr) tch_mailq_destroy;
 	mailqcb->bpool = Mempool->create(sz,qlen);
 	mailqcb->msgq = MsgQ->create(qlen);
 	tch_listInit(&mailqcb->wq);

@@ -60,7 +60,7 @@ static tch_condvId tch_condv_create(){
 	tch_listInit((tch_lnode_t*)&condv->wq);
 	condv->wakeMtx = NULL;
 	tch_condvValidate(condv);
-	condv->__obj.destructor = tch_condv_destroy;
+	condv->__obj.destructor = (tch_uobjDestr) tch_condv_destroy;
 	return condv;
 }
 

@@ -76,7 +76,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 	out->out(out,outp,bSet);
 	env->Thread->sleep(50);
 	out->out(out,outp,bClear);
-	env->Device->gpio->freeIo(out);
+	out->close(out);
 	return osOK;
 }
 
@@ -88,6 +88,6 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	if(in->listen(in,2,osWaitForever))
 		return osErrorOS;
 	in->unregisterIoEvent(in,inp);
-	env->Device->gpio->freeIo(in);
+	in->close(in);
 	return osOK;
 }

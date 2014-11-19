@@ -221,17 +221,17 @@ typedef struct tch_dma_handle_prototype_t{
 	tch_condvId                 condv;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
-	tch_msgqId               dma_mq;
+	tch_msgqId                  dma_mq;
 }tch_dma_handle_prototype;
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg);
 static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-static tch_DmaHandle* tch_dma_openStream(tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
+static tch_DmaHandle tch_dma_openStream(tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
 
-static tchStatus tch_dma_close(tch_DmaHandle* self);
-static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch);
+static tchStatus tch_dma_close(tch_DmaHandle self);
+static tch_DmaHandle tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch);
 static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor* dma_desc);
 
 
@@ -293,7 +293,7 @@ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size
 
 
 
-static tch_DmaHandle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
+static tch_DmaHandle tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	if(dma == DMA_NOT_USED)
 		return NULL;
 
@@ -341,7 +341,7 @@ static tch_DmaHandle* tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint
 }
 
 
-static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
+static tch_DmaHandle tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	tch_dma_handle_prototype* dma_handle = (tch_dma_handle_prototype*) api->Mem->alloc(sizeof(tch_dma_handle_prototype));
 	dma_handle->api = api;
 	dma_handle->ch = ch;
@@ -352,12 +352,12 @@ static tch_DmaHandle* tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	dma_handle->dma_mq = api->MsgQ->create(1);
 	dma_handle->listener = NULL;
 
-	return (tch_DmaHandle*)dma_handle;
+	return (tch_DmaHandle)dma_handle;
 }
 
 
 
-static BOOL tch_dma_beginXfer(tch_DmaHandle* self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
+static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
 	if(!tch_dmaIsValid((tch_dma_handle_prototype*)self))
 		return FALSE;
 	uint8_t err_cnt = 0;
@@ -423,7 +423,7 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 
 }
 
-static tchStatus tch_dma_close(tch_DmaHandle* self){
+static tchStatus tch_dma_close(tch_DmaHandle self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus result = osOK;
 	if(!tch_dmaIsValid(ins))
@@ -486,7 +486,7 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 		return FALSE;                     // return
 	}
 	if(handle->listener){
-		if(!handle->listener((tch_DmaHandle*)handle,isr))
+		if(!handle->listener((tch_DmaHandle)handle,isr))
 			return FALSE;
 	}
 	tch* api = handle->api;

@@ -12,14 +12,15 @@
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
 
 typedef struct _tch_msgq_cb {
-	uint32_t state;
+	tch_uobj      __obj;
+	uint32_t      state;
 	void*         bp;
-	size_t        sz;
+	uint32_t      sz;
 	uint32_t      pidx;
 	uint32_t      gidx;
 	tch_lnode_t   cwq;
 	tch_lnode_t   pwq;
-	size_t        updated;
+	uint32_t      updated;
 }tch_msgq_cb;
 
 
@@ -28,7 +29,7 @@ tchStatus tch_msgq_kput(tch_msgqId,tch_msgq_karg* arg);
 tchStatus tch_msgq_kget(tch_msgqId,tch_msgq_karg* arg);
 tchStatus tch_msgq_kdestroy(tch_msgqId);
 
-static tch_msgqId tch_msgq_create(size_t len);
+static tch_msgqId tch_msgq_create(uint32_t len);
 static tchStatus tch_msgq_put(tch_msgqId,uint32_t msg,uint32_t millisec);
 static osEvent tch_msgq_get(tch_msgqId,uint32_t millisec);
 static tchStatus tch_msgq_destroy(tch_msgqId);
@@ -50,12 +51,13 @@ __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 
-static tch_msgqId tch_msgq_create(size_t len){
+static tch_msgqId tch_msgq_create(uint32_t len){
 	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) shMem->alloc(sz);
 	uStdLib->string->memset(msgqCb,0,sz);
 
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
+	msgqCb->__obj.destructor = tch_msgq_destroy;
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;

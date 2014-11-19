@@ -119,7 +119,8 @@ typedef struct tch_gpio_cfg_t {
 }tch_GpioCfg;
 
 
-typedef struct tch_gpio_handle {
+struct tch_gpio_handle {
+	tchStatus (*close)(tch_GpioHandle* IoHandle);
 	/*! \brief write gpio port's output value
 	 *  \param[in] self handle object
 	 *  \param[in] pmsk bit flags value to be written into gpio(s)
@@ -163,7 +164,7 @@ typedef struct tch_gpio_handle {
 	 */
 	BOOL (*listen)(tch_GpioHandle* self,uint8_t pin,uint32_t timeout);
 
-}tch_GpioHandle;
+};
 
 
 typedef struct tch_lld_gpio {
@@ -180,7 +181,6 @@ typedef struct tch_lld_gpio {
 	uint16_t (*getPortCount)();
 	uint16_t (*getPincount)(const gpIo_x port);
 	uint32_t (*getPinAvailable)(const gpIo_x port);
-	void (*freeIo)(tch_GpioHandle* IoHandle);
 }tch_lld_gpio;
 
 extern const tch_lld_gpio* tch_gpio_instance;

@@ -96,11 +96,11 @@ typedef struct tch_lld_usart_handle_prototype_t {
 	tch_UartHandle                    pix;
 	uint8_t                           idx;
 	union {
-		tch_DmaHandle* txDma;
+		tch_DmaHandle txDma;
 		tch_msgqId txQ;
 	}txCh;
 	union {
-		tch_DmaHandle* rxDma;
+		tch_DmaHandle rxDma;
 		tch_msgqId rxQ;
 	} rxCh;
 	tch_GpioHandle*                   ioHandle;
@@ -375,7 +375,7 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 		env->Device->dma->freeDma(ins->rxCh.rxDma);
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
-	env->Device->gpio->freeIo(ins->ioHandle);
+	ins->ioHandle->close(ins->ioHandle);
 	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != osOK){
 		return FALSE;
 	}

@@ -93,7 +93,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_arg = arg;
 	thread_p->t_fn = cfg->_t_routine;
 	thread_p->t_name = cfg->_t_name;
-	thread_p->t_prior = thread_p->t_svd_prior = cfg->t_proior;
+	thread_p->t_prior = cfg->t_proior;
 	tch_listInit(&thread_p->t_ualc);
 	tch_listInit(&thread_p->t_shalc);
 	thread_p->t_root = tch_currentThread == ROOT_THREAD? NULL : tch_currentThread;

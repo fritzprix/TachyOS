@@ -834,7 +834,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	env->Mtx->destroy(ins->mtx);
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
 	env->Barrier->destroy(ins->uev_bar);
-	env->Device->gpio->freeIo(ins->iohandle);    // free io resource
+	ins->iohandle->close(ins->iohandle);          // free io resource
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
@@ -927,7 +927,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	env->MsgQ->destroy(ins->msgqs[0]);
 	env->MsgQ->destroy(ins->msgqs[1]);
 	env->Mem->free(ins->msgqs);
-	env->Device->gpio->freeIo(ins->iohandle);
+	ins->iohandle->close(ins->iohandle);
 
 	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != osOK)
 		return result;

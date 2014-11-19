@@ -43,20 +43,20 @@ struct _tch_timer_str_t {
 };
 
 struct _tch_gptimer_handle_t {
-	BOOL (*wait)(tch_gptimerHandle* self,uint32_t usec);
 	tchStatus (*close)(tch_gptimerHandle* self);
+	BOOL (*wait)(tch_gptimerHandle* self,uint32_t usec);
 };
 
 struct _tch_pwm_handle_t {
+	tchStatus (*close)(tch_pwmHandle* self);
 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
 	BOOL (*setDuty)(tch_pwmHandle* self,uint32_t ch,float duty);
 	float (*getDuty)(tch_pwmHandle* self,uint32_t ch);
-	tchStatus (*close)(tch_pwmHandle* self);
 };
 
 struct _tch_tcapt_handle_t {
-	tchStatus (*read)(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
 	tchStatus (*close)(tch_tcaptHandle* self);
+	tchStatus (*read)(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
 };
 
 struct _tch_timer_utime_t{

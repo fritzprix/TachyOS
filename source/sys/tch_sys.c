@@ -301,4 +301,6 @@ void tch_kernel_faulthandle(int fault){
 	}
 }
 
+tchStatus tch_noop_destr(tch_uobj* obj){return osOK;}
+
 

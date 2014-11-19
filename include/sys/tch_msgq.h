@@ -28,7 +28,7 @@ struct _tch_msgque_ix_t {
 	 *  @return queue ID
 	 *
 	 */
-	tch_msgqId (*create)(size_t len);
+	tch_msgqId (*create)(uint32_t len);
 
 	/**
 	 * put message in the message queue (for producer side)

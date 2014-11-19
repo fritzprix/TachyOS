@@ -18,11 +18,17 @@
 
 
 typedef struct tch_mem_chunk_hdr_t tch_mem_hdr;
+typedef struct tch_uobj_prototype tch_uobjProto;
 
 struct tch_mem_chunk_hdr_t {
 	tch_lnode_t           allocLn;
 	uint32_t              usz;
 }__attribute__((aligned(8)));
+
+struct tch_uobj_prototype {
+	tch_mem_hdr         hdr;
+	tch_uobj            __obj;
+};
 
 static void* tch_memAlloc(tch_memHandle mh,uint32_t size);
 static void tch_memFree(tch_memHandle mh,void* p);
@@ -65,7 +71,7 @@ static void* tch_usrAlloc(uint32_t size){
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
 	hdr--;
-	tch_listPutLast(&tch_currentThread->t_ualc,hdr);
+	tch_listPutLast(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
 	return ++hdr;
 }
 
@@ -77,7 +83,7 @@ static void tch_usrFree(void* chnk){
 		return;
 	tch_mem_hdr* hdr = chnk;
 	hdr--;
-	tch_listRemove(&tch_currentThread->t_ualc,hdr);
+	tch_listRemove(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
 	tch_memFree(tch_currentThread->t_mem,chnk);
 }
 
@@ -86,7 +92,7 @@ static void* tch_sharedAlloc(uint32_t sz){
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(sharedMem,sz);
 	hdr--;
-	tch_listPutLast(&tch_currentThread->t_shalc,hdr);
+	tch_listPutLast(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	return ++hdr;
 }
 
@@ -95,7 +101,7 @@ static void tch_sharedFree(void* chnk){
 		return;
 	tch_mem_hdr* hdr = chnk;
 	hdr--;
-	tch_listRemove(&tch_currentThread->t_shalc,hdr);
+	tch_listRemove(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	tch_memFree(sharedMem,chnk);
 }
 
@@ -130,20 +136,20 @@ static void* tch_memAlloc(tch_memHandle mh,uint32_t size){
 	while(cnode->next){
 		cnode = cnode->next;
 		if(((tch_mem_hdr*) cnode)->usz > rsz){
-			nchnk = (uint32_t) cnode + rsz;
+			nchnk = (tch_mem_hdr*)((uint32_t) cnode + rsz);
 			tch_listInit((tch_lnode_t*) nchnk);
 			((tch_lnode_t*)nchnk)->next = cnode->next;
 			((tch_lnode_t*)nchnk)->prev = cnode->prev;
 			if(cnode->next)
-				cnode->next->prev = nchnk;
+				cnode->next->prev = (tch_lnode_t*)nchnk;
 			if(cnode->prev)
-				cnode->prev->next = nchnk;
+				cnode->prev->next = (tch_lnode_t*)nchnk;
 			nchnk->usz = ((tch_mem_hdr*) cnode)->usz - rsz;
 			((tch_mem_hdr*) cnode)->usz = size;
-			nchnk = cnode;
+			nchnk = (tch_mem_hdr*) cnode;
 			return nchnk + 1;
 		}else if(((tch_mem_hdr*) cnode)->usz == size){
-			nchnk = cnode;
+			nchnk = (tch_mem_hdr*) cnode;
 			if(cnode->next)
 				cnode->next->prev = cnode->prev;
 			if(cnode->prev)
@@ -174,9 +180,9 @@ static void tch_memFree(tch_memHandle mh,void* p){
 			((tch_lnode_t*) nchnk)->next = cnode->next;
 			((tch_lnode_t*) nchnk)->prev = cnode;
 			if(cnode->next)
-				cnode->next->prev = nchnk;
-			cnode->next = nchnk;
-			cnode = nchnk;
+				cnode->next->prev = (tch_lnode_t*) nchnk;
+			cnode->next = (tch_lnode_t*) nchnk;
+			cnode = (tch_lnode_t*) nchnk;
 			if(nchnk->usz == ((uint32_t) cnode->next - (uint32_t)cnode) - sizeof(tch_mem_hdr)){
 				nchnk->usz += ((tch_mem_hdr*) cnode->next)->usz + sizeof(tch_mem_hdr);
 				cnode->next = cnode->next->next;
@@ -186,9 +192,9 @@ static void tch_memFree(tch_memHandle mh,void* p){
 			return;
 		}else{
 			((tch_lnode_t*)nchnk)->next = ((tch_lnode_t*)m_entry)->next;
-			((tch_lnode_t*)nchnk)->prev = m_entry;
-			((tch_lnode_t*)m_entry)->next = nchnk;
-			cnode = nchnk;
+			((tch_lnode_t*)nchnk)->prev = (tch_lnode_t*)m_entry;
+			((tch_lnode_t*)m_entry)->next = (tch_lnode_t*)nchnk;
+			cnode = (tch_lnode_t*)nchnk;
 			if(nchnk->usz == ((uint32_t)cnode->next - (uint32_t)cnode - sizeof(tch_mem_hdr))){
 				nchnk->usz += ((tch_mem_hdr*) cnode->next)->usz + sizeof(tch_mem_hdr);
 				cnode->next = cnode->next->next;

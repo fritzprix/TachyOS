@@ -25,10 +25,10 @@
 #include "tch_kernel.h"
 
 typedef struct tch_mtx_cb {
+	tch_uobj            __obj;
 	uint32_t            state;
-	uint32_t            key;
 	tch_thread_queue    que;
-	void*               own;
+	tch_threadId        own;
 	tch_thread_prior    svdPrior;
 }tch_mtx;
 
@@ -69,9 +69,9 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 tch_mtxId tch_mtx_create(){
 	tch_mtx* mcb = (tch_mtx*) shMem->alloc(sizeof(tch_mtx));
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtx));
-	mcb->key = 0;
 	tch_listInit((tch_lnode_t*)&mcb->que);
 	mcb->own = NULL;
+	mcb->__obj.destructor = (tch_uobjDestr) tch_mtx_destroy;
 	mcb->state = 0;
 	tch_mtxValidate(mcb);
 	return  mcb;
@@ -92,13 +92,13 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 	tch_mtx* mcb = (tch_mtx*) id;
 	if(!tch_mtxIsValid(mcb))
 		return osErrorResource;              // validity check of mutex control block
-	int tid = (int)Thread->self();           // get current thread id
-	if((int)mcb->key == tid)
+	tch_threadId tid = Thread->self();           // get current thread id
+	if(mcb->own == tid)
 		return osOK;                         // if this mutex is locked by current thread, return 'ok'
-	while(tch_port_exclusiveCompareUpdate((int*)&mcb->key,0,tid)){
+	while(tch_port_exclusiveCompareUpdate((uaddr_t)&mcb->own,0,(uword_t) tid)){
 		tch_thread_prior prior = Thread->getPriorty((tch_threadId)tid);                         // mutex is already locked
-		if(Thread->getPriorty((tch_threadId)mcb->key) < prior)
-			Thread->setPriority((tch_threadId)mcb->key,prior);
+		if(Thread->getPriorty((tch_threadId)mcb->own) < prior)
+			Thread->setPriority((tch_threadId)mcb->own,prior);
 		result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&mcb->que,timeout);
 		if(!tch_mtxIsValid(mcb))
 			return osErrorResource;
@@ -124,14 +124,13 @@ tchStatus tch_mtx_unlock(tch_mtxId id){
 		return osErrorISR;
 	}
 	tch_threadId tid = Thread->self();
-	if(mcb->key != ((uint32_t)tid))
+	if(mcb->own != tid)
 		return osErrorResource;
 	if(!tch_mtxIsValid(mcb))
 		return osErrorResource;
 	Thread->setPriority(mcb->own,mcb->svdPrior);
 	mcb->svdPrior = Idle;
 	mcb->own = NULL;
-	mcb->key = 0;
 	if(!tch_listIsEmpty(&mcb->que))
 		tch_port_enterSvFromUsr(SV_THREAD_RESUME,(uint32_t)&mcb->que,osOK);
 	return osOK;
@@ -148,7 +147,6 @@ tchStatus tch_mtx_destroy(tch_mtxId id){
 		return osErrorTimeoutResource;
 	tch_mtxInvalidate(mcb);
 	result = tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&mcb->que,osErrorResource);
-	mcb->key = 0;
 	mcb->own = NULL;
 	Thread->setPriority(Thread->self(),mcb->svdPrior);
 	mcb->svdPrior = Idle;

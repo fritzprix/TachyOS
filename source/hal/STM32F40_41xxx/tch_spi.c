@@ -120,12 +120,12 @@ struct _tch_spi_handle_prototype {
 	spi_t                     spi;
 	const tch*                env;
 	union {
-		tch_DmaHandle*        dma;
-		tch_msgqId         mq;
+		tch_DmaHandle        dma;
+		tch_msgqId           mq;
 	}txCh;
 	union {
-		tch_DmaHandle*        dma;
-		tch_msgqId         mq;
+		tch_DmaHandle        dma;
+		tch_msgqId           mq;
 	}rxCh;
 	uint32_t                  status;
 	tch_GpioHandle*           iohandle;
@@ -144,8 +144,7 @@ __attribute__((section(".data"))) static tch_lld_spi_prototype SPI_StaticInstanc
 			INIT_SPI_OPMODE,
 			INIT_SPI_BUADRATE,
 			tch_spiInitCfg,
-			tch_spiOpen,
-			tch_spiClose
+			tch_spiOpen
 		},
 		NULL,
 		NULL
@@ -266,7 +265,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 		env->Condv->wakeAll(SPI_StaticInstance.condv);
 		env->Mtx->unlock(SPI_StaticInstance.mtx);
 		if(hnd->iohandle)
-			env->Device->gpio->freeIo(hnd->iohandle);
+			hnd->iohandle->close(hnd->iohandle);
 		if(hnd->rxCh.dma){
 			if(rxDma)
 				env->Device->dma->freeDma(hnd->rxCh.dma);
@@ -289,6 +288,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 	hnd->mtx = env->Mtx->create();
 	hnd->pix.read = tch_spiRead;
 	hnd->pix.write = tch_spiWrite;
+	hnd->pix.close = tch_spiClose;
 	if(rxDma && txDma)
 		hnd->pix.transceive = tch_spiTransceiveDma;
 	else
@@ -486,7 +486,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	env->MsgQ->destroy(ins->rxCh.mq);
 	env->MsgQ->destroy(ins->txCh.mq);
 
-	env->Device->gpio->freeIo(ins->iohandle);
+	ins->iohandle->close(ins->iohandle);
 
 	env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
 

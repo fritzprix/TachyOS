@@ -52,7 +52,7 @@ static tch_barId tch_bar_create(){
 	uStdLib->string->memset(bar,0,sizeof(tch_bar_cb));
 	tch_barValidate(bar);
 	tch_listInit(&bar->wq);
-	bar->__obj.destructor = tch_bar_destroy;
+	bar->__obj.destructor = (tch_uobjDestr) tch_bar_destroy;
 	return (tch_barId) bar;
 }
 
