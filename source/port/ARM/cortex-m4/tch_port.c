@@ -195,6 +195,7 @@ int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
  */
 void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;                // offset exc_stack size (size depends on floating point option)
+	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;

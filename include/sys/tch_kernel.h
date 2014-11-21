@@ -30,8 +30,8 @@
 
 #define TCH_SYS_TASKQ_SZ                     (16)
 
-
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
+
 
 /*!
  * \brief

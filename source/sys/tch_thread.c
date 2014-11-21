@@ -218,6 +218,19 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 	// destroy & release used system resources
 	tch_mem_ix* mem = NULL;
 	uStdLib->stdio->iprintf("\rThread (%s) Exit with (%d)\n",getThreadHeader(thread)->t_name,status);
+	tch_lnode_t* ualc = &getThreadHeader(thread)->t_ualc;
+	tch_lnode_t* salc = &getThreadHeader(thread)->t_shalc;
+	tch_uobjProto* uobj = NULL;
+	while(!tch_listIsEmpty(ualc)){
+		uobj = tch_listDequeue(ualc);
+		if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+			uStdLib->stdio->iprintf("\rUnused user resource released\n");
+	}
+	while(!tch_listIsEmpty(salc)){
+		uobj = tch_listDequeue(salc);
+		if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+			uStdLib->stdio->iprintf("\rUnused shared resources released\n");
+	}
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
 		tch_memDestroy(getThreadHeader(thread)->t_mem);
 		mem = (tch_mem_ix*)kMem;

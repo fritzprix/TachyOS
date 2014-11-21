@@ -17,22 +17,8 @@
 #include <stdlib.h>
 
 
-typedef struct tch_mem_chunk_hdr_t tch_mem_hdr;
-typedef struct tch_uobj_prototype tch_uobjProto;
-
-struct tch_mem_chunk_hdr_t {
-	tch_lnode_t           allocLn;
-	uint32_t              usz;
-}__attribute__((aligned(8)));
-
-struct tch_uobj_prototype {
-	tch_mem_hdr         hdr;
-	tch_uobj            __obj;
-};
-
 static void* tch_memAlloc(tch_memHandle mh,uint32_t size);
 static void tch_memFree(tch_memHandle mh,void* p);
-
 
 
 static void* tch_usrAlloc(uint32_t size);
