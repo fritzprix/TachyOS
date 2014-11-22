@@ -57,6 +57,17 @@ uint32_t tch_kHeapAvail(void){
 	return ((uint32_t) &Heap_Limit) - (uint32_t) heap_end;
 }
 
+tchStatus tch_kHeapFreeAll(tch_threadId thread){
+	tch_thread_header* th_hdr = (tch_thread_header*) thread;
+	if(!Thread->isRoot())
+		return osErrorParameter;
+	uMem->freeAll(thread);
+	shMem->freeAll(thread);
+	free(th_hdr->t_chks);
+	return osOK;
+}
+
+
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	if(heap_end == NULL)

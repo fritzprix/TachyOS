@@ -25,28 +25,33 @@ static uint32_t tch_memAvail(tch_memHandle mh);
 static void* tch_usrAlloc(uint32_t size);
 static void tch_usrFree(void* chnk);
 static uint32_t tch_usrAvail(void);
+static tchStatus tch_usrFreeAll(tch_threadId thread);
 
 static void* tch_sharedAlloc(uint32_t size);
 static void tch_sharedFree(void* chnk);
 static uint32_t tch_sharedAvail(void);
+static tchStatus tch_sharedFreeAll(tch_threadId thread);
 
 
 __attribute__((section(".data")))static tch_mem_ix uMEM_StaticInstance = {
 		tch_usrAlloc,
 		tch_usrFree,
-		tch_usrAvail
+		tch_usrAvail,
+		tch_usrFreeAll
 };
 
 __attribute__((section(".data")))static tch_mem_ix kMem_StaticInstance = {
 		malloc,
 		free,
-		tch_kHeapAvail
+		tch_kHeapAvail,
+		tch_kHeapFreeAll,
 };
 
 __attribute__((section(".data"))) static tch_mem_ix shMem_StaticInstance = {
 		tch_sharedAlloc,
 		tch_sharedFree,
-		tch_sharedAvail
+		tch_sharedAvail,
+		tch_sharedFreeAll
 };
 
 const tch_mem_ix* uMem = &uMEM_StaticInstance;      // dynamic memory block which can be used by user process (threads) and accessible only by owner process and its child thread
@@ -83,6 +88,10 @@ static uint32_t tch_usrAvail(void){
 	return tch_memAvail(tch_currentThread->t_mem);
 }
 
+static tchStatus tch_usrFreeAll(tch_threadId thread){
+	tch_thread_header* th_hdr = (tch_thread_header*) thread;
+	return tch_memFreeAll(th_hdr->t_mem,&th_hdr->t_ualc);
+}
 
 
 static void* tch_sharedAlloc(uint32_t sz){
@@ -109,6 +118,11 @@ static uint32_t tch_sharedAvail(void){
 	return tch_memAvail(sharedMem);
 }
 
+static tchStatus tch_sharedFreeAll(tch_threadId thread){
+	tch_thread_header* th_hdr = (tch_thread_header*) thread;
+	return tch_memFreeAll(sharedMem,&th_hdr->t_shalc);
+}
+
 
 tch_memHandle tch_memCreate(void* mem,uint32_t sz){
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mem;
@@ -129,7 +143,15 @@ tch_memHandle tch_memCreate(void* mem,uint32_t sz){
 
 }
 
-tchStatus tch_memDestroy(tch_memHandle mh){
+tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list){
+	tch_uobjProto* uobj = NULL;
+	while(!tch_listIsEmpty(alloc_list)){
+		uobj = tch_listDequeue(alloc_list);
+		if(uobj && uobj->__obj.destructor){
+			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+				uStdLib->stdio->iprintf("\r leaked resources closed\n");
+		}
+	}
 	return osOK;
 }
 

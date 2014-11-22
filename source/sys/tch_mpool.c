@@ -21,11 +21,6 @@
 
 #define TCH_MPOOL_CLASS_KEY             ((uint16_t) 0x2D05)
 
-/*
-#define tch_mpoolValidate(mpcb)         ((tch_mpool_cb*) mpcb)->bstate = ((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY
-#define tch_mpoolInvalidate(mpcb)       ((tch_mpool_cb*) mpcb)->bstate &= ~(0xFFFF)
-#define tch_mpoolIsValid(mpcb)          (((tch_mpool_cb*) mpcb)->bstate & 0xFFFF) == (((uint32_t) mpcb & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY)
-*/
 
 typedef struct tch_mpool_cb_t {
 	tch_uobj             __obj;

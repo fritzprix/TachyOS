@@ -33,10 +33,11 @@ struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
 	uint32_t (*avail)(void);
+	tchStatus (*freeAll)(tch_threadId thread);
 };
 
 tch_memHandle tch_memCreate(void* mem,uint32_t sz);
-tchStatus tch_memDestroy(tch_memHandle);
+tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list);
 
 #if defined(__cplusplus)
 }

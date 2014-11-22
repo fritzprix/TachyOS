@@ -43,6 +43,7 @@ extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
 extern tchStatus tch_kernel_initCrt0(tch* env);
 extern uint32_t tch_kHeapAvail(void);
+extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern void tch_kernel_atexit(tch_threadId thread,int res);
 extern tchStatus tch_noop_destr(tch_uobj* obj);

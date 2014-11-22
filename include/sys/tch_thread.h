@@ -77,6 +77,7 @@ struct _tch_thread_ix_t {
 	tch_thread_prior (*getPriorty)(tch_threadId tid);
 	void* (*getArg)();
 	BOOL (*isValid)(tch_threadId tid);
+	BOOL (*isRoot)();
 };
 
 #if defined(__cplusplus)

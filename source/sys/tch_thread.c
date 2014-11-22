@@ -47,6 +47,7 @@ static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
 static BOOL tch_threadIsValid(tch_threadId id);
+static BOOL tch_threadIsRoot();
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status);
 
@@ -61,7 +62,8 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadSetPriority,
 		tch_threadGetPriorty,
 		tch_threadGetArg,
-		tch_threadIsValid
+		tch_threadIsValid,
+		tch_threadIsRoot
 };
 
 
@@ -201,6 +203,10 @@ static BOOL tch_threadIsValid(tch_threadId id){
 	return *th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
 }
 
+static BOOL tch_threadIsRoot(){
+	return tch_currentThread->t_state & THREAD_ROOT_BIT;
+}
+
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 
@@ -218,25 +224,9 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 	// destroy & release used system resources
 	tch_mem_ix* mem = NULL;
 	uStdLib->stdio->iprintf("\rThread (%s) Exit with (%d)\n",getThreadHeader(thread)->t_name,status);
-	tch_lnode_t* ualc = &getThreadHeader(thread)->t_ualc;
-	tch_lnode_t* salc = &getThreadHeader(thread)->t_shalc;
-	tch_uobjProto* uobj = NULL;
-	while(!tch_listIsEmpty(ualc)){
-		uobj = tch_listDequeue(ualc);
-		if(uobj->__obj.destructor){
-			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
-				uStdLib->stdio->iprintf("\rUnused user resource released\n");
-		}
-	}
-	while(!tch_listIsEmpty(salc)){
-		uobj = tch_listDequeue(salc);
-		if(uobj->__obj.destructor){
-			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
-				uStdLib->stdio->iprintf("\rUnused shared resources released\n");
-		}
-	}
+	uMem->freeAll(thread);
+	shMem->freeAll(thread);
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
-		tch_memDestroy(getThreadHeader(thread)->t_mem);
 		mem = (tch_mem_ix*)kMem;
 	}else{
 		mem = (tch_mem_ix*)uMem;

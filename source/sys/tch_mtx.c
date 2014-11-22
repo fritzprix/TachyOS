@@ -151,7 +151,7 @@ tchStatus tch_mtx_destroy(tch_mtxId id){
 	Thread->setPriority(Thread->self(),mcb->svdPrior);
 	mcb->svdPrior = Idle;
 	shMem->free(mcb);
-	return result;
+	return osOK;
 }
 
 
