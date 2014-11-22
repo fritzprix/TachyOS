@@ -19,35 +19,39 @@
 
 static void* tch_memAlloc(tch_memHandle mh,uint32_t size);
 static void tch_memFree(tch_memHandle mh,void* p);
+static uint32_t tch_memAvail(tch_memHandle mh);
 
 
 static void* tch_usrAlloc(uint32_t size);
 static void tch_usrFree(void* chnk);
+static uint32_t tch_usrAvail(void);
+
 static void* tch_sharedAlloc(uint32_t size);
 static void tch_sharedFree(void* chnk);
+static uint32_t tch_sharedAvail(void);
 
 
 __attribute__((section(".data")))static tch_mem_ix uMEM_StaticInstance = {
 		tch_usrAlloc,
-		tch_usrFree
+		tch_usrFree,
+		tch_usrAvail
 };
 
 __attribute__((section(".data")))static tch_mem_ix kMem_StaticInstance = {
 		malloc,
-		free
+		free,
+		tch_kHeapAvail
 };
 
 __attribute__((section(".data"))) static tch_mem_ix shMem_StaticInstance = {
 		tch_sharedAlloc,
-		tch_sharedFree
+		tch_sharedFree,
+		tch_sharedAvail
 };
 
-const tch_mem_ix* uMem = &uMEM_StaticInstance;
-const tch_mem_ix* kMem = &kMem_StaticInstance;
-const tch_mem_ix* shMem = &shMem_StaticInstance;
-//__attribute__((section(".data")))static char* heap_end = NULL;
-
-
+const tch_mem_ix* uMem = &uMEM_StaticInstance;      // dynamic memory block which can be used by user process (threads) and accessible only by owner process and its child thread
+const tch_mem_ix* kMem = &kMem_StaticInstance;      // dynamic memory block which is soley used by kernel function and system library (will be protected from user thread)
+const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block which can be shared by multiple threads (for IPC ..)
 
 /*!
  * \breif : usr space heap allocator function
@@ -56,6 +60,8 @@ static void* tch_usrAlloc(uint32_t size){
 	if(tch_port_isISR())
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
+	if(!hdr)
+		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	hdr--;
 	tch_listPutLast(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
 	return ++hdr;
@@ -73,10 +79,18 @@ static void tch_usrFree(void* chnk){
 	tch_memFree(tch_currentThread->t_mem,chnk);
 }
 
+static uint32_t tch_usrAvail(void){
+	return tch_memAvail(tch_currentThread->t_mem);
+}
+
+
+
 static void* tch_sharedAlloc(uint32_t sz){
 	if(tch_port_isISR())
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(sharedMem,sz);
+	if(!hdr)
+		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	hdr--;
 	tch_listPutLast(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	return ++hdr;
@@ -91,13 +105,18 @@ static void tch_sharedFree(void* chnk){
 	tch_memFree(sharedMem,chnk);
 }
 
+static uint32_t tch_sharedAvail(void){
+	return tch_memAvail(sharedMem);
+}
+
+
 tch_memHandle tch_memCreate(void* mem,uint32_t sz){
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mem;
 	tch_mem_hdr* m_head = (tch_mem_hdr*)((((uint32_t)((tch_mem_hdr*) m_entry + 1)) + 7) & ~7);
 	tch_mem_hdr* m_tail = (tch_mem_hdr*) (((uint32_t) mem + sz) & ~7);
 	m_tail--;
-	m_entry->usz = m_tail->usz = 0;
-	m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_mem_hdr);
+	m_tail->usz = 0;
+	m_entry->usz = m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_mem_hdr);
 	tch_listInit(&m_entry->allocLn);
 
 	tch_listInit((tch_lnode_t*)m_head);
@@ -133,6 +152,7 @@ static void* tch_memAlloc(tch_memHandle mh,uint32_t size){
 			nchnk->usz = ((tch_mem_hdr*) cnode)->usz - rsz;
 			((tch_mem_hdr*) cnode)->usz = size;
 			nchnk = (tch_mem_hdr*) cnode;
+			m_entry->usz -= rsz;
 			return nchnk + 1;
 		}else if(((tch_mem_hdr*) cnode)->usz == size){
 			nchnk = (tch_mem_hdr*) cnode;
@@ -140,6 +160,7 @@ static void* tch_memAlloc(tch_memHandle mh,uint32_t size){
 				cnode->next->prev = cnode->prev;
 			if(cnode->prev)
 				cnode->prev->next = cnode->next;
+			m_entry->usz -= size + sizeof(tch_mem_hdr);
 			return nchnk + 1;
 		}
 	}
@@ -155,7 +176,7 @@ static void tch_memFree(tch_memHandle mh,void* p){
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
 	nchnk--;
 	int gap = 0;
-
+	m_entry->usz += nchnk->usz + sizeof(tch_mem_hdr);
 	while(cnode->next){
 		cnode = cnode->next;
 		if((uint32_t) cnode < (uint32_t) nchnk){
@@ -191,3 +212,9 @@ static void tch_memFree(tch_memHandle mh,void* p){
 		}
 	}
 }
+
+static uint32_t tch_memAvail(tch_memHandle mh){
+	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
+	return m_entry->usz;
+}
+

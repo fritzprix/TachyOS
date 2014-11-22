@@ -153,7 +153,7 @@ int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res
 	if(tch_listIsEmpty(wq)){
 		return FALSE;
 	}
-	if(!tch_listRemove(wq,&nth->t_waitNode)){    // try remove given thread from wait Q
+	if(!tch_listRemove((tch_lnode_t*) wq,&nth->t_waitNode)){    // try remove given thread from wait Q
 		return FALSE;                                  // if thread is not in the wait Q return
 	}
 	nth->t_waitQ = NULL;
@@ -163,7 +163,7 @@ int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res
 	if(tch_schedIsPreemptable(nth) && preemt){
 		nth->t_state = RUNNING;
 		tch_schedReady(tch_currentThread);                       // put current thread in ready queue for preemption
-		getListNode(nth)->prev = tch_currentThread;              // set current thread as previous node of new thread
+		getListNode(nth)->prev = getListNode(tch_currentThread); // set current thread as previous node of new thread
 		tch_currentThread = nth;                                 // set new thread as current thread
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);    // go to switch context
 		return TRUE;
@@ -193,7 +193,7 @@ BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 	if(tpreempt && preemt){
 		tpreempt->t_state = RUNNING;
 		tch_schedReady(tch_currentThread);
-		getListNode(tpreempt)->prev = tch_currentThread;
+		getListNode(tpreempt)->prev = getListNode(tch_currentThread);
 		tch_currentThread = tpreempt;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
 	}
@@ -232,7 +232,7 @@ void tch_kernelSysTick(void){
 	if((!tch_listIsEmpty(&tch_readyQue)) && tch_schedIsPreemptable(tch_readyQue.thque.next)){
 		nth = (tch_thread_header*)tch_listDequeue((tch_lnode_t*)&tch_readyQue);
 		tch_listEnqueuePriority((tch_lnode_t*) &tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQRule);
-		getListNode(nth)->prev = tch_currentThread;
+		getListNode(nth)->prev = getListNode(tch_currentThread);
 		tch_currentThread = nth;
 		getThreadHeader(getListNode(nth)->prev)->t_state = SLEEP;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
@@ -255,7 +255,7 @@ BOOL tch_schedIsPreemptable(tch_threadId nth){
 void tch_schedTerminate(tch_threadId thread,int result){
 	tch_threadId jth = 0;
 	tch_thread_header* cth_p = getThreadHeader(thread);
-	cth_p->t_state = TERMINATED;                          ///< change state of thread to terminated
+	cth_p->t_state = TERMINATED;                                                      ///< change state of thread to terminated
 	while(!tch_listIsEmpty(&cth_p->t_joinQ)){
 		jth = (tch_threadId)((tch_lnode_t*) tch_listDequeue(&cth_p->t_joinQ) - 1);    ///< dequeue thread(s) waiting for termination of this thread
 		getThreadHeader(jth)->t_waitQ = NULL;
@@ -269,13 +269,17 @@ void tch_schedTerminate(tch_threadId thread,int result){
 
 void tch_schedDestroy(tch_threadId thread,int res){
 	/// manipulated exc stack to return atexit
-	tch_exc_stack* rt_stk = __get_PSP();
-	rt_stk--;
-	rt_stk->Return = tch_kernel_atexit;
-	rt_stk->R0 = thread;
-	rt_stk->R1 = res;
-	rt_stk->xPSR = (uint32_t) (1 << 24);
-	__set_PSP(rt_stk);
+	if(thread == tch_currentThread){
+		getThreadHeader(thread)->t_state = DESTROYED;      // mark as destroyed and manipulate exception stack to route thread to destroy routine (clean-up stage)
+		tch_exc_stack* rt_stk = (tch_exc_stack*)__get_PSP();
+		rt_stk--;
+		rt_stk->Return = (uint32_t)tch_kernel_atexit;
+		rt_stk->R0 = (uint32_t)thread;
+		rt_stk->R1 = res;
+		rt_stk->xPSR = (uint32_t) (1 << 24);
+		__set_PSP((uint32_t)rt_stk);
+	}else
+		getThreadHeader(thread)->t_state = DESTROYED;      // just mark as destroyed
 	return;
 }
 

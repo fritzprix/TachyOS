@@ -69,7 +69,7 @@ endif
 ifeq ($(OPT_FLAG),)
 	OPT_FLAG=-O0 -g3
 ifeq ($(PUBLISH_TYPE),Release)
-	OPT_FLAG=-O1 -g3
+	OPT_FLAG=-O2 -g0
 endif
 endif
 
@@ -91,13 +91,10 @@ ifeq ($(CFLAG),)
 endif
 
 ifeq ($(CPFLAG),)
-	CPFLAG = -g\
-	         -gdwarf-2 \
-	         -c\
+	CPFLAG = -c\
 	         -mlong-calls\
 	         -ffunction-sections\
 	         -ffreestanding\
-	         -O\
 	         -fno-rtti\
 	         -fno-exceptions\
 	         -Wall\

@@ -22,12 +22,13 @@ typedef struct tch_kobj_t tch_kObject;
 typedef struct tch_event_ix_t tch_event_ix;
 
 typedef enum tch_thread_state_t {
-	PENDED = 1,                              // state in which thread is created but not started yet (waiting in ready queue)
-	RUNNING = 2,                             // state in which thread occupies cpu
-	READY = 3,
-	WAIT = 4,                                // state in which thread wait for event (wake)
-	SLEEP = 5,                               // state in which thread is yield cpu for given amount of time
-	TERMINATED = -1                          // state in which thread has finished its task
+	PENDED =  ((int8_t) 1),                              // state in which thread is created but not started yet (waiting in ready queue)
+	RUNNING = ((int8_t) 2),                             // state in which thread occupies cpu
+	READY =   ((int8_t) 3),
+	WAIT =    ((int8_t) 4),                                // state in which thread wait for event (wake)
+	SLEEP =   ((int8_t) 5),                               // state in which thread is yield cpu for given amount of time
+	DESTROYED =  ((int8_t) 6),                           // state in which thread is about to be destroyed (sheduler detected this and route thread to destroy routine)
+	TERMINATED = ((int8_t) -1)                         // state in which thread has finished its task
 } tch_thread_state;
 
 
@@ -70,26 +71,27 @@ typedef struct tch_signal_t {
 
 
 struct tch_thread_header_t {
-	tch_lnode_t                 t_schedNode;   ///<extends genericlist node class
-	tch_lnode_t                 t_waitNode;
+	tch_lnode_t                 t_schedNode;   ///<thread queue node to be scheduled
+	tch_lnode_t                 t_waitNode;    ///<thread queue node to be blocked
 	tch_lnode_t                 t_joinQ;      ///<thread queue to wait for this thread's termination
+	tch_lnode_t                 t_childNode;   ///<thread queue node to iterate child thread
 	tch_lnode_t*                t_waitQ;      ///<reference to wait queue in which this thread is waiting
 	tch_thread_routine          t_fn;         ///<thread function pointer
 	const char*                 t_name;       ///<thread name
 	void*                       t_arg;        ///<thread arg field
-	uint32_t                    t_lckCnt;     /// lock count to know whether  restore original priority
 	uint32_t                    t_tslot;      /// time slot for round robin scheduling (currently not used)
 	tch_thread_state            t_state;      /// thread state
-	uint32_t                    t_flag;
-	uint32_t                    t_prior;      /// current priority
+	uint8_t                     t_flag;       /// flag for dealing with attributes of thread
+	uint8_t                     t_lckCnt;     /// lock count to know whether  restore original priority
+	uint8_t                     t_prior;      /// priority
 	uint64_t                    t_to;         /// timeout value for pending operation
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
-	tch_signal                  t_sig;        /// signal handle
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memHandle               t_mem;        /// heap handle
+	tch_signal*                 t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
-	tch_thread_header*          t_root;       /// parent thread (root thread)
+	tch_thread_header*          t_root;       /// ptr to parent thread
 	struct _reent               t_reent;      /// reentrant struct used by c standard library
 	uint32_t*                   t_chks;       /// checksum for integrity check
 } __attribute__((aligned(8)));

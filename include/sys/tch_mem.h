@@ -32,6 +32,7 @@ typedef void* tch_memHandle;
 struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
+	uint32_t (*avail)(void);
 };
 
 tch_memHandle tch_memCreate(void* mem,uint32_t sz);

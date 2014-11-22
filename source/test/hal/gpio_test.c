@@ -59,7 +59,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 	out->out(out,outp,bSet);
 	env->Thread->sleep(50);
 	out->out(out,outp,bClear);
-//	out->close(out);
+	out->close(out);
 	return osOK;
 }
 
@@ -87,6 +87,6 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	if(in->listen(in,2,osWaitForever))
 		return osErrorOS;
 	in->unregisterIoEvent(in,inp);
-//	in->close(in);
+	in->close(in);
 	return osOK;
 }

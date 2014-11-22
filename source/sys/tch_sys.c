@@ -108,9 +108,10 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
-	//	_impure_ptr = tch_currentThread->t_reent;
 		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
+		if(tch_currentThread->t_state == DESTROYED)
+			tch_schedDestroy(tch_currentThread,tch_currentThread->t_kRet);
 		tch_port_kernel_unlock();
 		break;
 	case SV_THREAD_START:              // start thread first time
@@ -145,12 +146,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		cth->t_sig.sig_comb = arg1;                         ///< update thread signal pattern
-		tch_schedSuspend((tch_thread_queue*)&cth->t_sig.sig_wq,arg2);///< suspend to signal wq
+		cth->t_sig->sig_comb = arg1;                         ///< update thread signal pattern
+		tch_schedSuspend((tch_thread_queue*)&cth->t_sig->sig_wq,arg2);///< suspend to signal wq
 		break;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
-		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
+		tch_schedResumeM((tch_thread_queue*)&cth->t_sig->sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
 		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;

@@ -46,7 +46,9 @@ int main(const tch* api) {
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
+	api->uStdLib->stdio->iprintf("\rHeap Available Sizes : %d bytes\n",api->Mem->avail());
 	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
+	api->uStdLib->stdio->iprintf("\rHeap Available Sizes : %d bytes\n",api->Mem->avail());
 
 //	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 //	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
@@ -80,7 +82,7 @@ int main(const tch* api) {
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bClear);
-		api->uStdLib->stdio->iprintf("\rMain Loop\n");
+		api->uStdLib->stdio->iprintf("\rHeap Available Sizes : %d bytes\n",api->Mem->avail());
 		timer->wait(timer,150);
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);

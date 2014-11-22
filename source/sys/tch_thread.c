@@ -22,8 +22,8 @@
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
 
 
-const uint32_t THREAD_ROOT_BIT  =  ((uint32_t) 1 << 0); // if set thread is root thread of process, otherwise child thread of any root
 
+const uint32_t THREAD_ROOT_BIT  =  ((uint32_t) 1 << 0); // if set thread is root thread of process, otherwise child thread of any root
 
 
 /**
@@ -47,7 +47,6 @@ static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
 static BOOL tch_threadIsValid(tch_threadId id);
-
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status);
 
@@ -96,7 +95,6 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_prior = cfg->t_proior;
 	tch_listInit(&thread_p->t_ualc);
 	tch_listInit(&thread_p->t_shalc);
-	thread_p->t_root = tch_currentThread == ROOT_THREAD? NULL : tch_currentThread;
 	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
@@ -110,8 +108,6 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_schedNode.next = thread_p->t_schedNode.prev = NULL;
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
 	thread_p->t_waitQ = NULL;
-	thread_p->t_sig.sig_comb = thread_p->t_sig.signal = 0;
-	tch_listInit(&thread_p->t_sig.sig_wq);
 	tch_listInit(&thread_p->t_joinQ);
 	thread_p->t_chks = (uint32_t*)th_mem;
 	*thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
@@ -119,14 +115,18 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 
 	_REENT_INIT_PTR(&thread_p->t_reent);
-	if(tch_currentThread != ROOT_THREAD){
+	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
+		thread_p->t_root = tch_currentThread;
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-	}
-	else{
+		thread_p->t_sig = tch_currentThread->t_sig;         // share parent signal node
+	}else{                                                  // if new thread is root thread
+		thread_p->t_root = NULL;
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
-		thread_p->t_flag |= THREAD_ROOT_BIT;                // mark as root thread
+		thread_p->t_sig = (tch_signal*) kMem->alloc(sizeof(tch_signal));
+		tch_listInit(&thread_p->t_sig->sig_wq);
+		thread_p->t_sig->signal = thread_p->t_sig->sig_comb = 0;
+		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
 	}
-
 
 	return (tch_threadId) thread_p;
 
@@ -149,7 +149,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,err);
+		return tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thread,err);
 	}
 }
 
@@ -223,13 +223,17 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 	tch_uobjProto* uobj = NULL;
 	while(!tch_listIsEmpty(ualc)){
 		uobj = tch_listDequeue(ualc);
-		if(uobj->__obj.destructor(&uobj->__obj) == osOK)
-			uStdLib->stdio->iprintf("\rUnused user resource released\n");
+		if(uobj->__obj.destructor){
+			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+				uStdLib->stdio->iprintf("\rUnused user resource released\n");
+		}
 	}
 	while(!tch_listIsEmpty(salc)){
 		uobj = tch_listDequeue(salc);
-		if(uobj->__obj.destructor(&uobj->__obj) == osOK)
-			uStdLib->stdio->iprintf("\rUnused shared resources released\n");
+		if(uobj->__obj.destructor){
+			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+				uStdLib->stdio->iprintf("\rUnused shared resources released\n");
+		}
 	}
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
 		tch_memDestroy(getThreadHeader(thread)->t_mem);
@@ -238,7 +242,6 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 		mem = (tch_mem_ix*)uMem;
 	}
 	mem->free(getThreadHeader(thread)->t_chks);
-
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,status);
 }
 

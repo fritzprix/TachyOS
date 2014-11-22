@@ -53,6 +53,9 @@ tchStatus tch_kernel_initCrt0(tch* env){
 
 }
 
+uint32_t tch_kHeapAvail(void){
+	return ((uint32_t) &Heap_Limit) - (uint32_t) heap_end;
+}
 
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
@@ -61,6 +64,9 @@ void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
 	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
+		if(!tch_port_isISR()){
+			Thread->terminate(tch_currentThread,osErrorNoMemory);
+		}
 		return NULL;
 	}
 	heap_end += incr;
