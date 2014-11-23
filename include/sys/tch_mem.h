@@ -34,6 +34,8 @@ struct _tch_mem_ix_t {
 	void (*free)(void*);
 	uint32_t (*avail)(void);
 	tchStatus (*freeAll)(tch_threadId thread);
+	void (*printFreeList)(void);
+	void (*printAllocList)(void);
 };
 
 tch_memHandle tch_memCreate(void* mem,uint32_t sz);

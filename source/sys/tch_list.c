@@ -153,7 +153,7 @@ int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item)){
-	printf("\n----------List Print---------------\n");
+	printf("\r\n----------List Print---------------\n");
 	tch_lnode_t* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
