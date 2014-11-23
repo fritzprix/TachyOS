@@ -150,7 +150,7 @@
 
 
 #ifndef MFEATURE_GPIO
-#define MFEATURE_GPIO               (6)                     ///  define number of gpio port your platform
+#define MFEATURE_GPIO               (6)          ///  define number of gpio port your platform
 #endif
 
 #ifndef MFEATURE_PINCOUNT_pPORT                            ///   define number of pin count per each gpio port
@@ -173,6 +173,13 @@
 #define MFEATURE_TIMER              (10)
 #endif
 
+#ifndef MFEATURE_SPI
+#define MFEATURE_SPI                (3)
+#endif
+
+#ifndef MFEATURE_IIC
+#define MFEATURE_IIC                (3)
+#endif
 
 typedef struct _tch_uart_bs_t {
 	dma_t          txdma;
@@ -196,6 +203,29 @@ typedef struct _tch_timer_bs_t {
 	uint8_t        ch4p;
 	uint8_t        afv;
 }tch_timer_bs;
+
+typedef struct _tch_spi_bs_t {
+	dma_t          txdma;
+	dma_t          rxdma;
+	uint8_t        txch;
+	uint8_t        rxch;
+	gpIo_x         port;
+	uint8_t        mosi;
+	uint8_t        miso;
+	uint8_t        sck;
+	uint8_t        afv;
+}tch_spi_bs;
+
+typedef struct _tch_iic_bs_t {
+	dma_t         txdma;
+	dma_t         rxdma;
+	uint8_t       txch;
+	uint8_t       rxch;
+	gpIo_x        port;
+	uint8_t       scl;
+	uint8_t       sda;
+	uint8_t       afv;
+}tch_iic_bs;
 
 
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
@@ -225,6 +255,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 		},
 		{
 				DMA_Str4,
+			//	DMA_NOT_USED,
 				DMA_NOT_USED,
 				DMA_Ch7,
 				DMA_Ch4,
@@ -338,6 +369,95 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				-1,
 				-1,
 				9
+		}
+};
+
+/**
+ * 	spi_t          spi;
+	dma_t          txdma;
+	dma_t          rxdma;
+	gpIo_x         port;
+	uint8_t        mosi;
+	uint8_t        miso;
+	uint8_t        sck;
+ */
+
+__attribute__((section(".data"))) static tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
+		{
+				DMA_Str13,    //dma2_stream5
+				DMA_Str10,    //dma2_stream2
+				3,            //dma channel 3
+				3,            //dma channel 3
+				0,            // port A (0)
+				7,            // pin  7
+				6,            // pin  6
+				5,            // pin  5
+				5             // af5
+		},
+		{
+				DMA_Str4,     //dma1_stream4
+				DMA_Str3,     //dma1_stream3
+				0,
+				0,
+				1,            // port B (1)
+				15,           // pin  15
+				14,           // pin  14
+				13,           // pin  13
+				5             // af5
+		},
+		{
+				DMA_Str7,     //dma1_stream7
+				DMA_Str2,     //dma1_stream2
+				0,
+				0,
+				2,            // port C (2)
+				12,           // pin  12
+				11,           // pin  11
+				10,           // pin  10
+				6
+		}
+};
+/**
+ * 	dma_t         txdma;
+	dma_t         rxdma;
+	uint8_t       txch;
+	uint8_t       rxch;
+	gpIo_x        port;
+	uint8_t       scl;
+	uint8_t       sda;
+	uint8_t       afv;
+ */
+
+__attribute__((section(".data"))) static tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = {
+		{      // IIC 1
+				DMA_Str6,    // dma1_stream 6
+				DMA_Str5,    // dma1_stream 5
+				1,           // dma channel 1
+				1,           // dma channel 1
+				1,           // port B(1)
+				6,           // pin 6
+				7,           // pin 7
+				4            // afv
+		},
+		{
+				DMA_Str2,   // dma1_stream 2
+				DMA_Str7,   // dma1_stream 7
+				7,          // dma channel 7
+				7,          // dma channel 7
+				5,          // port B(1)
+				0,          // pin 10
+				1,          // pin 11
+				4           // afv
+		},
+		{
+				DMA_Str2,   // dma1 stream 2
+				DMA_Str4,   // dma1 stream 4
+				3,          // dma channel 3
+				3,          // dma channel 3
+				7,          // port H(7)
+				7,          // pin 7
+				8,          // pin 8
+				4           // afv
 		}
 };
 

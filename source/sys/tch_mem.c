@@ -17,17 +17,33 @@
 #include <stdlib.h>
 
 
-static void* tch_memAlloc(tch_memHandle mh,uint32_t size);
+typedef struct tch_mem_chunk_hdr_t tch_mem_hdr;
+typedef struct tch_uobj_prototype tch_uobjProto;
+
+struct tch_mem_chunk_hdr_t {
+	tch_lnode_t           allocLn;
+	uint32_t              usz;
+}__attribute__((aligned(8)));
+
+struct tch_uobj_prototype {
+	tch_mem_hdr         hdr;
+	tch_uobj            __obj;
+};
+
+static void* tch_memAlloc(tch_memHandle mh,size_t size);
 static void tch_memFree(tch_memHandle mh,void* p);
+static tch_mem_hdr* tch_memMerge(tch_mem_hdr* cur,tch_mem_hdr* next);
 static uint32_t tch_memAvail(tch_memHandle mh);
+static tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list);
 
 
-static void* tch_usrAlloc(uint32_t size);
+
+static void* tch_usrAlloc(size_t size);
 static void tch_usrFree(void* chnk);
 static uint32_t tch_usrAvail(void);
 static tchStatus tch_usrFreeAll(tch_threadId thread);
 
-static void* tch_sharedAlloc(uint32_t size);
+static void* tch_sharedAlloc(size_t size);
 static void tch_sharedFree(void* chnk);
 static uint32_t tch_sharedAvail(void);
 static tchStatus tch_sharedFreeAll(tch_threadId thread);
@@ -61,7 +77,7 @@ const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block whic
 /*!
  * \breif : usr space heap allocator function
  */
-static void* tch_usrAlloc(uint32_t size){
+static void* tch_usrAlloc(size_t size){
 	if(tch_port_isISR())
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
@@ -94,7 +110,7 @@ static tchStatus tch_usrFreeAll(tch_threadId thread){
 }
 
 
-static void* tch_sharedAlloc(uint32_t sz){
+static void* tch_sharedAlloc(size_t sz){
 	if(tch_port_isISR())
 		return NULL;
 	tch_mem_hdr* hdr = tch_memAlloc(sharedMem,sz);
@@ -143,7 +159,7 @@ tch_memHandle tch_memCreate(void* mem,uint32_t sz){
 
 }
 
-tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list){
+static tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list){
 	tch_uobjProto* uobj = NULL;
 	while(!tch_listIsEmpty(alloc_list)){
 		uobj = tch_listDequeue(alloc_list);
@@ -155,7 +171,7 @@ tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list){
 	return osOK;
 }
 
-static void* tch_memAlloc(tch_memHandle mh,uint32_t size){
+static void* tch_memAlloc(tch_memHandle mh,size_t size){
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
 	tch_mem_hdr* nchnk = NULL;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
@@ -189,10 +205,7 @@ static void* tch_memAlloc(tch_memHandle mh,uint32_t size){
 	return NULL;
 }
 
-
 static void tch_memFree(tch_memHandle mh,void* p){
-
-
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
 	tch_mem_hdr* nchnk = p;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
@@ -233,7 +246,9 @@ static void tch_memFree(tch_memHandle mh,void* p){
 			return;
 		}
 	}
+	m_entry->usz -= nchnk->usz + sizeof(tch_mem_hdr);
 }
+
 
 static uint32_t tch_memAvail(tch_memHandle mh){
 	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;

@@ -169,6 +169,7 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
 	tch_spi_handle_prototype* hnd = NULL;
 	SPI_TypeDef* spiHw = NULL;
+	tch_GpioCfg iocfg;
 	tch_DmaCfg dmaCfg;
 	BOOL rxDma = FALSE;
 	BOOL txDma = FALSE;
@@ -186,42 +187,18 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 			return NULL;
 	}
 
-	spiDesc->_handle = ((void*) 1);            // occupy spi h/w
+	spiDesc->_handle = hnd = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
 	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != osOK){
 		return NULL;
 	}
 
-
-	hnd  = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
 	env->uStdLib->string->memset(hnd,0,sizeof(tch_spi_handle_prototype));
 
-	if(!hnd){
-		env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
-		spiDesc->_handle = NULL;
-		env->Condv->wakeAll(SPI_StaticInstance.condv);
-		env->Mtx->unlock(SPI_StaticInstance.mtx);
-		return NULL;
-	}
-
-	spiDesc->_handle = hnd;
-
-	tch_GpioCfg iocfg;
 	iocfg.Af = spibs->afv;
 	iocfg.Speed = env->Device->gpio->Speed.High;
 	iocfg.Mode = env->Device->gpio->Mode.Func;
 
 	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout,popt);
-	if(!hnd->iohandle){
-		env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
-		spiDesc->_handle = NULL;
-		env->Condv->wakeAll(SPI_StaticInstance.condv);
-		env->Mtx->unlock(SPI_StaticInstance.mtx);
-		env->Mem->free(hnd);
-		return NULL;
-	}
-
-
-
 
 	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED)){
 		dmaCfg.BufferType = env->Device->dma->BufferType.Normal;

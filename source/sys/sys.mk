@@ -8,7 +8,6 @@ KERNEL_SRCS=\
 	    tch_sys.c\
 	    tch_sem.c\
 	    tch_thread.c\
-	    tch_vtimer.c\
 	    tch_list.c\
 	    tch_mem.c\
 	    tch_clibsysc.c\
@@ -19,7 +18,8 @@ KERNEL_SRCS=\
 	    tch_mailq.c\
 	    tch_btree.c\
 	    tch_ltree.c\
-##	    tch_event.c
+#	    tch_event.c\
+	    tch_vtimer.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 

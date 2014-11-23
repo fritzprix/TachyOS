@@ -50,9 +50,9 @@ void* tch_listDequeue(tch_lnode_t* lentry){
 }
 
 void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
-	item->next = lentry->next;
 	if(!lentry)
-		return;
+			return;
+	item->next = lentry->next;
 	if(lentry->next)
 		((tch_lnode_t*)lentry->next)->prev = item;
 	else
@@ -61,10 +61,15 @@ void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
 	lentry->next = item;
 }
 
+
+// has some bug
 void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(!lentry || !item)
+		return;
 	if(lentry->prev){
 		lentry->prev->next = item;
 		item->prev = lentry->prev;
+		item->next = NULL;
 	}else{
 		lentry->next = item;
 		item->prev = lentry;
@@ -119,6 +124,7 @@ int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	}
 	if(lentry->next){
 		lentry->next = NULL;
+		lentry->prev = NULL;
 		return (1 > 0);
 	}
 

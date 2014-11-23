@@ -37,7 +37,6 @@ struct _tch_mem_ix_t {
 };
 
 tch_memHandle tch_memCreate(void* mem,uint32_t sz);
-tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list);
 
 #if defined(__cplusplus)
 }

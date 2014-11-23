@@ -175,26 +175,26 @@ tch_GpioHandle* iohandle;
 ///////            Timer Manager Function               ///////
 static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
+	tch_gptimer_handle_proto* ins = NULL;
 	if(!TIMER_StaticInstance.condv)
 		TIMER_StaticInstance.condv = env->Condv->create();
 	if(!TIMER_StaticInstance.mtx)
 		TIMER_StaticInstance.mtx = env->Mtx->create();
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
-	tch_gptimer_handle_proto* ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
-	env->uStdLib->string->memset(ins,0,sizeof(tch_gptimer_handle_proto));
 	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != osOK){
-		env->Mem->free(ins);
 		return NULL;
 	}
 	while(timDesc->_handle){
 		if(env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout) != osOK){
-			env->Mem->free(ins);
 			return NULL;
 		}
 	}
-	timDesc->_handle = ins; /// mark as occupied
+	timDesc->_handle = ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+
+
+	env->uStdLib->string->memset(ins,0,sizeof(tch_gptimer_handle_proto));
 
 	/* bind instance method and internal member var  */
 	ins->_pix.close = tch_gptimer_close;
@@ -314,9 +314,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	if(!TIMER_StaticInstance.mtx)
 		TIMER_StaticInstance.mtx = env->Mtx->create();
 
-	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) env->Mem->alloc(sizeof(tch_pwm_handle_proto));
-	if(!ins)
-		return NULL;
+	tch_pwm_handle_proto* ins = NULL;
 	tch_GpioCfg iocfg;
 	env->Device->gpio->initCfg(&iocfg);
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
@@ -341,11 +339,6 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	iocfg.Mode = env->Device->gpio->Mode.Func;
 	ins->iohandle = env->Device->gpio->allocIo(env,timBcfg->port,pmsk,&iocfg,timeout,tdef->pwrOpt);
 
-	if(!ins->iohandle){
-		env->Mem->free(ins);
-		return NULL;
-	}
-
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != osOK){
 		env->Mem->free(ins);
@@ -357,7 +350,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 			return NULL;
 		}
 	}
-	timDesc->_handle = ins;
+	timDesc->_handle = ins = (tch_pwm_handle_proto*) env->Mem->alloc(sizeof(tch_pwm_handle_proto));
+	env->Mtx->unlock(TIMER_StaticInstance.mtx);
 
 	ins->_pix.getDuty = tch_pwm_getDuty;
 	ins->_pix.setDuty = tch_pwm_setDuty;

@@ -67,16 +67,17 @@ int main(const tch* api) {
 	iocfg.Mode = api->Device->gpio->Mode.Out;
 	iocfg.Otype = api->Device->gpio->Otype.PushPull;
 	iocfg.Speed = api->Device->gpio->Speed.VeryHigh;
-	tch_gpio_handle* out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
-	out->out(out,1 << 3,bSet);
+	tch_gpio_handle* out = NULL;
 
 	tch_gptimerDef gptdef;
 	gptdef.UnitTime = api->Device->timer->UnitTime.uSec;
 	gptdef.pwrOpt = ActOnSleep;
 
-	tch_gptimerHandle* timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
+	tch_gptimerHandle* timer = NULL;
 
 	while(1){
+		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
+		out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,150);
 		out->out(out,1 << 14,bSet);
@@ -87,6 +88,9 @@ int main(const tch* api) {
 		api->Thread->sleep(1);
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,200);
+		timer->close(timer);
+		out->close(out);
+		api->uStdLib->stdio->iprintf("\rHeap Available Sizes : %d bytes\n",api->Mem->avail());
 	}
 	return osOK;
 }

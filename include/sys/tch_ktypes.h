@@ -37,22 +37,14 @@ typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_header_t tch_thread_header;
 typedef struct tch_uobj_t tch_uobj;
 typedef tchStatus (*tch_uobjDestr)(tch_uobj* obj);
-typedef struct tch_mem_chunk_hdr_t tch_mem_hdr;
-typedef struct tch_uobj_prototype tch_uobjProto;
+
 
 
 struct tch_uobj_t {
 	tchStatus (*destructor)(tch_uobj* obj);
 };
-struct tch_mem_chunk_hdr_t {
-	tch_lnode_t           allocLn;
-	uint32_t              usz;
-}__attribute__((aligned(8)));
 
-struct tch_uobj_prototype {
-	tch_mem_hdr         hdr;
-	tch_uobj            __obj;
-};
+
 
 struct tch_sys_task_t {
 	tch_sysTaskFn          fn;

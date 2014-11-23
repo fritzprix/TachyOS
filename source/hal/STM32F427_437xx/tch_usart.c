@@ -156,6 +156,11 @@ __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInsta
 const tch_lld_usart* tch_usart_instance = (const tch_lld_usart*) &UART_StaticInstance;
 
 static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+	tch_UartHandlePrototype* uins = NULL;
+	tch_GpioCfg iocfg;
+	uint32_t io_msk = 0;
+	uint32_t umskb = 1 << cfg->UartCh;
+
 	if(cfg->UartCh >= MFEATURE_UART)    // if requested channel is larger than uart channel count
 		return NULL;                    // return null
 	if(!UART_StaticInstance.mtx)
@@ -164,7 +169,6 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		UART_StaticInstance.condv = env->Condv->create();
 	if(env->Device->interrupt->isISR())
 		return NULL;
-	uint32_t umskb = 1 << cfg->UartCh;
 
 
 	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != osOK)
@@ -173,45 +177,35 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		if(env->Condv->wait(UART_StaticInstance.condv,UART_StaticInstance.mtx,timeout) != osOK)
 			return NULL;
 	}
-	UART_StaticInstance.occp_state |= umskb;
-	env->Mtx->unlock(UART_StaticInstance.mtx);
+	UART_StaticInstance.occp_state |= umskb;   // mark as occupied
+	env->Mtx->unlock(UART_StaticInstance.mtx); // exit critical section
 	tch_uart_descriptor* uDesc = &UART_HWs[cfg->UartCh];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
 	tch_uart_bs* ubs = &UART_BD_CFGs[cfg->UartCh];
-	tch_GpioCfg iocfg;
 
-	env->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = env->Device->gpio->Mode.Func;
-	iocfg.Af = ubs->afv;
-
-	uint32_t io_msk = (1 << ubs->rxp) | (1 << ubs->txp);
-	if(cfg->FlowCtrl && (ubs->rtsp != -1) && (ubs->ctsp != -1)){
-		io_msk |= (1 << ubs->rtsp) | (1 << ubs->ctsp);
-	}
-
-	tch_GpioHandle* iohandle = env->Device->gpio->allocIo(env,ubs->port,io_msk,&iocfg,timeout,popt); // try get io handle
-	if(!iohandle){   // if requested io has been occupied, then clear uart occupation mark and return null
-		if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != osOK)
-			return NULL;
-		UART_StaticInstance.occp_state &= ~umskb;
-		env->Condv->wakeAll(UART_StaticInstance.condv);
-		env->Mtx->unlock(UART_StaticInstance.mtx);
-		return NULL;
-	}
+                   // configure io port required by uart
 
 
-	tch_UartHandlePrototype* uins = env->Mem->alloc(sizeof(tch_UartHandlePrototype));   // if successfully get io handle, create uart handle instance
-	env->uStdLib->string->memset(uins,0,sizeof(tch_UartHandlePrototype));
+	uDesc->_handle = uins = env->Mem->alloc(sizeof(tch_UartHandlePrototype));   // if successfully get io handle, create uart handle instance
+	env->uStdLib->string->memset(uins,0,sizeof(tch_UartHandlePrototype));       // clear instance data structure
 
 	uins->rxMtx = env->Mtx->create();
 	uins->rxCondv = env->Condv->create();
 	uins->txMtx = env->Mtx->create();
 	uins->txCondv = env->Condv->create();
-
-	uDesc->_handle = uins;
 	uins->idx = cfg->UartCh;
-	uins->ioHandle = iohandle;
 	uins->env = env;
+
+	env->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Af = ubs->afv;
+
+	io_msk = (1 << ubs->rxp) | (1 << ubs->txp);
+	if(cfg->FlowCtrl && (ubs->rtsp != -1) && (ubs->ctsp != -1)){
+		io_msk |= (1 << ubs->rtsp) | (1 << ubs->ctsp);
+	}
+
+	uins->ioHandle = env->Device->gpio->allocIo(env,ubs->port,io_msk,&iocfg,timeout,popt); // try get io handle
 
 	/*  Uart Baudrate Configuration  */
 	uint8_t psc = 2;
