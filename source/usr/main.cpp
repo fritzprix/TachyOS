@@ -54,17 +54,17 @@ int main(const tch* api) {
 	api->Mem->printAllocList();
 	api->Mem->printFreeList();
 
-//	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
-//	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
+	//	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
 
 
 	api->Device->gpio->initCfg(&iocfg);
@@ -102,4 +102,3 @@ int main(const tch* api) {
 	}
 	return osOK;
 }
-

@@ -16,16 +16,17 @@
 #include "tch.h"
 #include <stdlib.h>
 
-
 typedef struct tch_mem_entry_t tch_memEntry;
-typedef struct tch_mem_chunk_hdr_t tch_memHdr;
 typedef struct tch_uobj_prototype tch_uobjProto;
-
+typedef struct tch_mem_chunk_hdr_t tch_memHdr;
 
 struct tch_mem_chunk_hdr_t {
 	tch_lnode_t           allocLn;
 	uint32_t              usz;
 }__attribute__((aligned(8)));
+
+
+
 
 struct tch_mem_entry_t {
 	tch_memHdr            hdr;
@@ -36,7 +37,6 @@ struct tch_uobj_prototype {
 	tch_memHdr         hdr;
 	tch_uobj            __obj;
 };
-
 
 static tch_memEntry* tch_memCreate(void* mem,uint32_t sz);
 static void* tch_memAlloc(tch_memHandle mh,size_t size);
@@ -53,7 +53,6 @@ static uint32_t tch_usrAvail(void);
 static tchStatus tch_usrFreeAll(tch_threadId thread);
 static void tch_usrPrintFreeList(void);
 static void tch_usrPrintAllocList(void);
-
 
 static void* tch_sharedAlloc(size_t size);
 static void tch_sharedFree(void* chnk);
@@ -97,11 +96,16 @@ const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block whic
 
 tch_memHandle tch_usrMemCreate(void* mem,uint32_t sz){
 	tch_memEntry* m_entry = tch_memCreate(mem,sz);
-	m_entry->mtx = Mtx->create();
-	return (tch_memHandle) m_entry;
+//	m_entry->mtx = Mtx->create();
+	return (tch_memHandle)m_entry;
 }
 
-
+tch_memHandle tch_sharedMemCreate(void* mem,uint32_t sz){
+	tch_memEntry* _entry = tch_memCreate(mem,sz);
+	sharedMem = (tch_memHandle)_entry;
+	_entry->mtx = Mtx->create();
+	return (tch_memHandle) _entry;
+}
 
 /*!
  * \breif : usr space heap allocator function
@@ -146,31 +150,43 @@ static void tch_usrPrintAllocList(void){
 	tch_listPrint(&tch_currentThread->t_ualc,tch_memPrint);
 }
 
-tch_memHandle tch_sharedMemCreate(void* mem,uint32_t sz){
-	tch_memEntry* m_entry = tch_memCreate(mem,sz);
-	m_entry->mtx = Mtx->create();
-	return (tch_memHandle) m_entry;
-}
-
 
 void* tch_sharedAlloc(size_t sz){
+	tch_memEntry* _entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return NULL;
+	if(_entry->mtx){
+		if(Mtx->lock(_entry->mtx,osWaitForever) != osOK)
+			return NULL;
+	}
+
 	tch_memHdr* hdr = tch_memAlloc(sharedMem,sz);
-	if(!hdr)
+
+	if(!hdr){
+		if(_entry->mtx){
+			Mtx->unlock(_entry->mtx);
+		}
 		Thread->terminate(tch_currentThread,osErrorNoMemory);
+	}
 	hdr--;
 	tch_listPutLast(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
+	if(_entry->mtx){
+		Mtx->unlock(_entry->mtx);
+	}
 	return ++hdr;
 }
 
 void tch_sharedFree(void* chnk){
+	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return;
 	tch_memHdr* hdr = chnk;
 	hdr--;
+	if(Mtx->lock(m_entry->mtx,osWaitForever) != osOK)
+		return;
 	tch_listRemove(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	tch_memFree(sharedMem,chnk);
+	Mtx->unlock(m_entry->mtx);
 }
 
 static uint32_t tch_sharedAvail(void){
@@ -198,7 +214,6 @@ static tch_memEntry* tch_memCreate(void* mem,uint32_t sz){
 	m_tail--;
 	m_tail->usz = 0;
 	m_entry->hdr.usz = m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_memHdr);
-	m_entry->mtx = NULL;
 	tch_listInit(&m_entry->hdr.allocLn);
 
 	tch_listInit((tch_lnode_t*)m_head);
@@ -230,9 +245,6 @@ static void tch_memPrint(void* m){
 
 static void* tch_memAlloc(tch_memHandle mh,size_t size){
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
-	if(m_entry->mtx)
-		if(Mtx->lock(m_entry->mtx,osWaitForever) != osOK)
-			return NULL;
 	tch_memHdr* nchnk = NULL;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
 	int rsz = size + sizeof(tch_memHdr);
@@ -251,7 +263,6 @@ static void* tch_memAlloc(tch_memHandle mh,size_t size){
 			((tch_memHdr*) cnode)->usz = size;
 			nchnk = (tch_memHdr*) cnode;
 			m_entry->hdr.usz -= rsz;
-			Mtx->unlock(m_entry->mtx);
 			return nchnk + 1;
 		}else if(((tch_memHdr*) cnode)->usz == size){
 			nchnk = (tch_memHdr*) cnode;
@@ -260,11 +271,9 @@ static void* tch_memAlloc(tch_memHandle mh,size_t size){
 			if(cnode->prev)
 				cnode->prev->next = cnode->next;
 			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
-			Mtx->unlock(m_entry->mtx);
 			return nchnk + 1;
 		}
 	}
-	Mtx->unlock(m_entry->mtx);
 	return NULL;
 }
 
@@ -282,9 +291,6 @@ static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
 
 static void tch_memFree(tch_memHandle mh,void* p){
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
-	if(m_entry->mtx)
-		if(Mtx->lock(m_entry->mtx,osWaitForever) != osOK)
-			return;
 	tch_memHdr* nchnk = p;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
 	nchnk--;
@@ -292,7 +298,6 @@ static void tch_memFree(tch_memHandle mh,void* p){
 	while(cnode->next){
 		cnode = cnode->next;
 		if(cnode == (tch_lnode_t*)nchnk){  // if same node is encountered, return immediately
-			Mtx->unlock(m_entry->mtx);
 			return;
 		}
 		if(((uint32_t) cnode < (uint32_t) nchnk) && ((uint32_t) nchnk < (uint32_t)cnode->next)){
@@ -305,11 +310,9 @@ static void tch_memFree(tch_memHandle mh,void* p){
 			do{
 				cnode = ((tch_lnode_t*)nchnk)->next;
 				if(!cnode){
-					Mtx->unlock(m_entry->mtx);
 					return;
 				}
 			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode_t*)nchnk)->next) != (tch_memHdr*)cnode);
-			Mtx->unlock(m_entry->mtx);
 			return;
 		}else if(cnode > (tch_lnode_t*) nchnk){
 			((tch_lnode_t*)nchnk)->next = ((tch_lnode_t*)m_entry)->next;
@@ -317,21 +320,17 @@ static void tch_memFree(tch_memHandle mh,void* p){
 			((tch_lnode_t*)m_entry)->next = (tch_lnode_t*)nchnk;
 
 			if(!((tch_lnode_t*) nchnk)->next){
-				Mtx->unlock(m_entry->mtx);
 				return;
 			}
 			do{
 				cnode = ((tch_lnode_t*)nchnk)->next;
 				if(!cnode){
-					Mtx->unlock(m_entry->mtx);
 					return;
 				}
 			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode_t*)nchnk)->next) != (tch_memHdr*)cnode);
-			Mtx->unlock(m_entry->mtx);
 			return;
 		}
 	}
-	Mtx->unlock(m_entry->mtx);
 	m_entry->hdr.usz -= nchnk->usz + sizeof(tch_memHdr);
 }
 
@@ -340,4 +339,3 @@ static uint32_t tch_memAvail(tch_memHandle mh){
 	tch_memHdr* m_entry = (tch_memHdr*) mh;
 	return m_entry->usz;
 }
-

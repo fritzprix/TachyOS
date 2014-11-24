@@ -38,9 +38,6 @@ struct _tch_mem_ix_t {
 	void (*printAllocList)(void);
 };
 
-
-
-
 #if defined(__cplusplus)
 }
 #endif

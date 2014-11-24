@@ -66,8 +66,8 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
 
-	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
-	sharedMem = tch_sharedMemCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
+	uint8_t* shMem = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
+	sharedMem = tch_sharedMemCreate(shMem,TCH_CFG_SHARED_MEM_SIZE);
 
 
 	/**
