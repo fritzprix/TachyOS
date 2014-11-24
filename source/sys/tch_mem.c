@@ -17,26 +17,34 @@
 #include <stdlib.h>
 
 
-typedef struct tch_mem_chunk_hdr_t tch_mem_hdr;
+typedef struct tch_mem_entry_t tch_memEntry;
+typedef struct tch_mem_chunk_hdr_t tch_memHdr;
 typedef struct tch_uobj_prototype tch_uobjProto;
+
 
 struct tch_mem_chunk_hdr_t {
 	tch_lnode_t           allocLn;
 	uint32_t              usz;
 }__attribute__((aligned(8)));
 
+struct tch_mem_entry_t {
+	tch_memHdr            hdr;
+	tch_mtxId             mtx;
+};
+
 struct tch_uobj_prototype {
-	tch_mem_hdr         hdr;
+	tch_memHdr         hdr;
 	tch_uobj            __obj;
 };
 
+
+static tch_memEntry* tch_memCreate(void* mem,uint32_t sz);
 static void* tch_memAlloc(tch_memHandle mh,size_t size);
-static tch_mem_hdr* tch_memMerge(tch_mem_hdr* cur,tch_mem_hdr* next);
+static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next);
 static void tch_memFree(tch_memHandle mh,void* p);
 static uint32_t tch_memAvail(tch_memHandle mh);
 static tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list);
 static void tch_memPrint(void*);
-
 
 
 static void* tch_usrAlloc(size_t size);
@@ -46,12 +54,13 @@ static tchStatus tch_usrFreeAll(tch_threadId thread);
 static void tch_usrPrintFreeList(void);
 static void tch_usrPrintAllocList(void);
 
+
 static void* tch_sharedAlloc(size_t size);
 static void tch_sharedFree(void* chnk);
 static uint32_t tch_sharedAvail(void);
 static tchStatus tch_sharedFreeAll(tch_threadId thread);
-static void tch_sharedFreeList(void);
-static void tch_sharedAllocList(void);
+static void tch_sharedPrintFreeList(void);
+static void tch_sharedPrintAllocList(void);
 
 
 __attribute__((section(".data")))static tch_mem_ix uMEM_StaticInstance = {
@@ -77,13 +86,22 @@ __attribute__((section(".data"))) static tch_mem_ix shMem_StaticInstance = {
 		tch_sharedFree,
 		tch_sharedAvail,
 		tch_sharedFreeAll,
-		tch_sharedFreeList,
-		tch_sharedAllocList
+		tch_sharedPrintFreeList,
+		tch_sharedPrintAllocList
 };
 
 const tch_mem_ix* uMem = &uMEM_StaticInstance;      // dynamic memory block which can be used by user process (threads) and accessible only by owner process and its child thread
 const tch_mem_ix* kMem = &kMem_StaticInstance;      // dynamic memory block which is soley used by kernel function and system library (will be protected from user thread)
 const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block which can be shared by multiple threads (for IPC ..)
+
+
+tch_memHandle tch_usrMemCreate(void* mem,uint32_t sz){
+	tch_memEntry* m_entry = tch_memCreate(mem,sz);
+	m_entry->mtx = Mtx->create();
+	return (tch_memHandle) m_entry;
+}
+
+
 
 /*!
  * \breif : usr space heap allocator function
@@ -91,7 +109,7 @@ const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block whic
 static void* tch_usrAlloc(size_t size){
 	if(tch_port_isISR())
 		return NULL;
-	tch_mem_hdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
+	tch_memHdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
 	if(!hdr)
 		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	hdr--;
@@ -105,7 +123,7 @@ static void* tch_usrAlloc(size_t size){
 static void tch_usrFree(void* chnk){
 	if(tch_port_isISR())
 		return;
-	tch_mem_hdr* hdr = chnk;
+	tch_memHdr* hdr = chnk;
 	hdr--;
 	tch_listRemove(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
 	tch_memFree(tch_currentThread->t_mem,chnk);
@@ -128,10 +146,17 @@ static void tch_usrPrintAllocList(void){
 	tch_listPrint(&tch_currentThread->t_ualc,tch_memPrint);
 }
 
-static void* tch_sharedAlloc(size_t sz){
+tch_memHandle tch_sharedMemCreate(void* mem,uint32_t sz){
+	tch_memEntry* m_entry = tch_memCreate(mem,sz);
+	m_entry->mtx = Mtx->create();
+	return (tch_memHandle) m_entry;
+}
+
+
+void* tch_sharedAlloc(size_t sz){
 	if(tch_port_isISR())
 		return NULL;
-	tch_mem_hdr* hdr = tch_memAlloc(sharedMem,sz);
+	tch_memHdr* hdr = tch_memAlloc(sharedMem,sz);
 	if(!hdr)
 		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	hdr--;
@@ -139,10 +164,10 @@ static void* tch_sharedAlloc(size_t sz){
 	return ++hdr;
 }
 
-static void tch_sharedFree(void* chnk){
+void tch_sharedFree(void* chnk){
 	if(tch_port_isISR())
 		return;
-	tch_mem_hdr* hdr = chnk;
+	tch_memHdr* hdr = chnk;
 	hdr--;
 	tch_listRemove(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	tch_memFree(sharedMem,chnk);
@@ -157,23 +182,24 @@ static tchStatus tch_sharedFreeAll(tch_threadId thread){
 	return tch_memFreeAll(sharedMem,&th_hdr->t_shalc);
 }
 
-static void tch_sharedFreeList(void){
+static void tch_sharedPrintFreeList(void){
 	tch_listPrint(sharedMem,tch_memPrint);
 }
 
-static void tch_sharedAllocList(void){
+static void tch_sharedPrintAllocList(void){
 	tch_listPrint(&tch_currentThread->t_shalc,tch_memPrint);
 }
 
 
-tch_memHandle tch_memCreate(void* mem,uint32_t sz){
-	tch_mem_hdr* m_entry = (tch_mem_hdr*) mem;
-	tch_mem_hdr* m_head = (tch_mem_hdr*)((((uint32_t)((tch_mem_hdr*) m_entry + 1)) + 7) & ~7);
-	tch_mem_hdr* m_tail = (tch_mem_hdr*) (((uint32_t) mem + sz) & ~7);
+static tch_memEntry* tch_memCreate(void* mem,uint32_t sz){
+	tch_memEntry* m_entry = (tch_memEntry*) mem;
+	tch_memHdr* m_head = (tch_memHdr*)((((uint32_t)((tch_memEntry*) m_entry + 1)) + 7) & ~7);
+	tch_memHdr* m_tail = (tch_memHdr*) (((uint32_t) mem + sz) & ~7);
 	m_tail--;
 	m_tail->usz = 0;
-	m_entry->usz = m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_mem_hdr);
-	tch_listInit(&m_entry->allocLn);
+	m_entry->hdr.usz = m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_memHdr);
+	m_entry->mtx = NULL;
+	tch_listInit(&m_entry->hdr.allocLn);
 
 	tch_listInit((tch_lnode_t*)m_head);
 	tch_listInit((tch_lnode_t*)m_tail);
@@ -198,19 +224,22 @@ static tchStatus tch_memFreeAll(tch_memHandle mh,tch_lnode_t* alloc_list){
 }
 
 static void tch_memPrint(void* m){
-	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %d\n",((tch_mem_hdr*)m)->usz,m);
+	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %d\n",((tch_memHdr*)m)->usz,m);
 }
 
 
 static void* tch_memAlloc(tch_memHandle mh,size_t size){
-	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
-	tch_mem_hdr* nchnk = NULL;
+	tch_memEntry* m_entry = (tch_memEntry*) mh;
+	if(m_entry->mtx)
+		if(Mtx->lock(m_entry->mtx,osWaitForever) != osOK)
+			return NULL;
+	tch_memHdr* nchnk = NULL;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
-	int rsz = size + sizeof(tch_mem_hdr);
+	int rsz = size + sizeof(tch_memHdr);
 	while(cnode->next){
 		cnode = cnode->next;
-		if(((tch_mem_hdr*) cnode)->usz > rsz){
-			nchnk = (tch_mem_hdr*)((uint32_t) cnode + rsz);
+		if(((tch_memHdr*) cnode)->usz > rsz){
+			nchnk = (tch_memHdr*)((uint32_t) cnode + rsz);
 			tch_listInit((tch_lnode_t*) nchnk);
 			((tch_lnode_t*)nchnk)->next = cnode->next;
 			((tch_lnode_t*)nchnk)->prev = cnode->prev;
@@ -218,46 +247,54 @@ static void* tch_memAlloc(tch_memHandle mh,size_t size){
 				cnode->next->prev = (tch_lnode_t*)nchnk;
 			if(cnode->prev)
 				cnode->prev->next = (tch_lnode_t*)nchnk;
-			nchnk->usz = ((tch_mem_hdr*) cnode)->usz - rsz;
-			((tch_mem_hdr*) cnode)->usz = size;
-			nchnk = (tch_mem_hdr*) cnode;
-			m_entry->usz -= rsz;
+			nchnk->usz = ((tch_memHdr*) cnode)->usz - rsz;
+			((tch_memHdr*) cnode)->usz = size;
+			nchnk = (tch_memHdr*) cnode;
+			m_entry->hdr.usz -= rsz;
+			Mtx->unlock(m_entry->mtx);
 			return nchnk + 1;
-		}else if(((tch_mem_hdr*) cnode)->usz == size){
-			nchnk = (tch_mem_hdr*) cnode;
+		}else if(((tch_memHdr*) cnode)->usz == size){
+			nchnk = (tch_memHdr*) cnode;
 			if(cnode->next)
 				cnode->next->prev = cnode->prev;
 			if(cnode->prev)
 				cnode->prev->next = cnode->next;
-			m_entry->usz -= size + sizeof(tch_mem_hdr);
+			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
+			Mtx->unlock(m_entry->mtx);
 			return nchnk + 1;
 		}
 	}
+	Mtx->unlock(m_entry->mtx);
 	return NULL;
 }
 
-static tch_mem_hdr* tch_memMerge(tch_mem_hdr* cur,tch_mem_hdr* next){
-	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_mem_hdr))){
-		cur->usz += next->usz + sizeof(tch_mem_hdr);
+static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
+	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_memHdr))){
+		cur->usz += next->usz + sizeof(tch_memHdr);
 		((tch_lnode_t*) cur)->next = ((tch_lnode_t*) next)->next;
 		if(((tch_lnode_t*) cur)->next)
 			((tch_lnode_t*) cur)->next->prev = (tch_lnode_t*)cur;
-		return (tch_mem_hdr*)((tch_lnode_t*) cur)->next;
+		return (tch_memHdr*)((tch_lnode_t*) cur)->next;
 	}
 	return next;
 }
 
 
 static void tch_memFree(tch_memHandle mh,void* p){
-	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
-	tch_mem_hdr* nchnk = p;
+	tch_memEntry* m_entry = (tch_memEntry*) mh;
+	if(m_entry->mtx)
+		if(Mtx->lock(m_entry->mtx,osWaitForever) != osOK)
+			return;
+	tch_memHdr* nchnk = p;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
 	nchnk--;
-	m_entry->usz += nchnk->usz + sizeof(tch_mem_hdr);
+	m_entry->hdr.usz += nchnk->usz + sizeof(tch_memHdr);
 	while(cnode->next){
 		cnode = cnode->next;
-		if(cnode == (tch_lnode_t*)nchnk)  // if same node is encountered, return immediately
+		if(cnode == (tch_lnode_t*)nchnk){  // if same node is encountered, return immediately
+			Mtx->unlock(m_entry->mtx);
 			return;
+		}
 		if(((uint32_t) cnode < (uint32_t) nchnk) && ((uint32_t) nchnk < (uint32_t)cnode->next)){
 			((tch_lnode_t*) nchnk)->next = cnode->next;
 			((tch_lnode_t*) nchnk)->prev = cnode;
@@ -267,31 +304,40 @@ static void tch_memFree(tch_memHandle mh,void* p){
 
 			do{
 				cnode = ((tch_lnode_t*)nchnk)->next;
-				if(!cnode)
+				if(!cnode){
+					Mtx->unlock(m_entry->mtx);
 					return;
-			}while(tch_memMerge(nchnk,(tch_mem_hdr*)((tch_lnode_t*)nchnk)->next) != (tch_mem_hdr*)cnode);
+				}
+			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode_t*)nchnk)->next) != (tch_memHdr*)cnode);
+			Mtx->unlock(m_entry->mtx);
 			return;
 		}else if(cnode > (tch_lnode_t*) nchnk){
 			((tch_lnode_t*)nchnk)->next = ((tch_lnode_t*)m_entry)->next;
 			((tch_lnode_t*)nchnk)->prev = (tch_lnode_t*)m_entry;
 			((tch_lnode_t*)m_entry)->next = (tch_lnode_t*)nchnk;
 
-			if(!((tch_lnode_t*) nchnk)->next)
+			if(!((tch_lnode_t*) nchnk)->next){
+				Mtx->unlock(m_entry->mtx);
 				return;
+			}
 			do{
 				cnode = ((tch_lnode_t*)nchnk)->next;
-				if(!cnode)
+				if(!cnode){
+					Mtx->unlock(m_entry->mtx);
 					return;
-			}while(tch_memMerge(nchnk,(tch_mem_hdr*)((tch_lnode_t*)nchnk)->next) != (tch_mem_hdr*)cnode);
+				}
+			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode_t*)nchnk)->next) != (tch_memHdr*)cnode);
+			Mtx->unlock(m_entry->mtx);
 			return;
 		}
 	}
-	m_entry->usz -= nchnk->usz + sizeof(tch_mem_hdr);
+	Mtx->unlock(m_entry->mtx);
+	m_entry->hdr.usz -= nchnk->usz + sizeof(tch_memHdr);
 }
 
 
 static uint32_t tch_memAvail(tch_memHandle mh){
-	tch_mem_hdr* m_entry = (tch_mem_hdr*) mh;
+	tch_memHdr* m_entry = (tch_memHdr*) mh;
 	return m_entry->usz;
 }
 

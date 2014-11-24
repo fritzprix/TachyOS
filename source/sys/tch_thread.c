@@ -123,7 +123,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		thread_p->t_sig = tch_currentThread->t_sig;         // share parent signal node
 	}else{                                                  // if new thread is root thread
 		thread_p->t_root = NULL;
-		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
+		thread_p->t_mem = tch_usrMemCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
 		thread_p->t_sig = (tch_signal*) kMem->alloc(sizeof(tch_signal));
 		tch_listInit(&thread_p->t_sig->sig_wq);
 		thread_p->t_sig->signal = thread_p->t_sig->sig_comb = 0;

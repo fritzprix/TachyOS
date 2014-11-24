@@ -47,7 +47,8 @@ extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern void tch_kernel_atexit(tch_threadId thread,int res);
 extern tchStatus tch_noop_destr(tch_uobj* obj);
-
+extern tch_memHandle tch_sharedMemCreate(void* mem,uint32_t sz);
+extern tch_memHandle tch_usrMemCreate(void* mem,uint32_t sz);
 
 
 extern int Sys_Stack_Top asm("sys_stack_top");
