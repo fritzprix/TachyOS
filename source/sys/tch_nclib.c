@@ -5,6 +5,7 @@
  *      Author: manics99
  */
 
+#include "tch_kernel.h"
 #include "tch_nclib.h"
 #include <stdlib.h>
 #include <stdio.h>

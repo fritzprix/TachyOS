@@ -25,15 +25,6 @@ extern "C"{
 /***
  *  semaphore  types
  */
-typedef void* tch_semId;
-
-struct _tch_semaph_ix_t {
-	tch_semId (*create)(uint32_t count);
-	tchStatus (*lock)(tch_semId sid,uint32_t timeout);
-	tchStatus (*unlock)(tch_semId sid);
-	tchStatus (*destroy)(tch_semId sid);
-};
-
 
 #if defined(__cplusplus)
 }

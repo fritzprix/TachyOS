@@ -11,6 +11,7 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
+#include "tch_list.h"
 
 
 
@@ -79,8 +80,8 @@ struct tch_thread_header_t {
 	uint64_t                    t_to;         /// timeout value for pending operation
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
 	tchStatus                   t_kRet;       /// kernel return value
-	tch_memHandle               t_mem;        /// heap handle
-	tch_signal*                 t_sig;        /// signal handle
+	tch_memId               t_mem;        /// heap handle
+	tch_signal                  t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
 	tch_thread_header*          t_root;       /// ptr to parent thread
@@ -92,6 +93,7 @@ struct tch_thread_header_t {
 typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
+
 
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)

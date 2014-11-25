@@ -23,30 +23,15 @@
 extern "C"{
 #endif
 
-/*! \brief condition variable identifier
- */
-typedef void* tch_condvId;
 
-/*!
- * \brief posix-like condition variable API struct
- */
-struct _tch_condvar_ix_t {
+typedef struct _tch_condv_cb_t {
+	tch_uobj          __obj;
+	uint32_t          state;
+	tch_mtxId         wakeMtx;
+	tch_thread_queue  wq;
+}tch_condvCb;
 
-	/*! \brief create posix-like condition variable
-	 *  \return initiated \ref tch_condvId
-	 */
-	tch_condvId (*create)();
-	/*! \brief wait on condition variable with unlocking mutex
-	 *  \param[in] condv
-	 *  \param[in] lock
-	 *  \param[in] timeout
-	 */
-	tchStatus (*wait)(tch_condvId condv,tch_mtxId lock,uint32_t timeout);
-	tchStatus (*wake)(tch_condvId condv);
-	tchStatus (*wakeAll)(tch_condvId condv);
-	tchStatus (*destroy)(tch_condvId condv);
-};
-
+extern void tch_condvInit(tch_condvCb* condv);
 
 
 #if defined(__cplusplus)

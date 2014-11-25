@@ -14,14 +14,14 @@
 extern "C" {
 #endif
 
-typedef void* tch_barId;
+typedef struct tch_bar_cb_t{
+	tch_uobj                 __obj;
+	uint32_t                 state;
+	tch_lnode_t              wq;
+} tch_barCb;
 
-struct _tch_bar_ix_t {
-	tch_barId (*create)();
-	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
-	tchStatus (*signal)(tch_barId bar,tchStatus result);
-	tchStatus (*destroy)(tch_barId bar);
-};
+
+extern void tch_initBar(tch_barCb* bar);
 
 #if defined(__cplusplus)
 }

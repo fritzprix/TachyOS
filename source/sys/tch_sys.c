@@ -36,7 +36,7 @@ static DECLARE_THREADROUTINE(idle);
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
 tch_mailqId sysTaskQ;
-tch_memHandle sharedMem;
+tch_memId sharedMem;
 
 
 
@@ -66,8 +66,8 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
 
-	uint8_t* shMem = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
-	sharedMem = tch_sharedMemCreate(shMem,TCH_CFG_SHARED_MEM_SIZE);
+	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
+	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
 
 
 	/**
@@ -146,12 +146,12 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	case SV_SIG_WAIT:
 		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		cth->t_sig->sig_comb = arg1;                         ///< update thread signal pattern
-		tch_schedSuspend((tch_thread_queue*)&cth->t_sig->sig_wq,arg2);///< suspend to signal wq
+		cth->t_sig.sig_comb = arg1;                         ///< update thread signal pattern
+		tch_schedSuspend((tch_thread_queue*)&cth->t_sig.sig_wq,arg2);///< suspend to signal wq
 		break;
 	case SV_SIG_MATCH:
 		cth = (tch_thread_header*) arg1;
-		tch_schedResumeM((tch_thread_queue*)&cth->t_sig->sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
+		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
 		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;
@@ -302,6 +302,5 @@ void tch_kernel_faulthandle(int fault){
 	}
 }
 
-tchStatus tch_noop_destr(tch_uobj* obj){return osOK;}
 
 

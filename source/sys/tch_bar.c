@@ -14,15 +14,11 @@
 #include "tch.h"
 #include "tch_kernel.h"
 #include "tch_bar.h"
+#include "tch_mem.h"
 
 
 #define TCH_BARRIER_CLASS_KEY        ((uhword_t) 0x2D03)
 
-typedef struct tch_bar_def_t{
-	tch_uobj                 __obj;
-	uint32_t                 state;
-	tch_lnode_t              wq;
-} tch_bar_cb;
 
 static tch_barId tch_bar_create();
 static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout);
@@ -45,11 +41,19 @@ __attribute__((section(".data"))) static tch_bar_ix Barrier_StaticInstance = {
 const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
+void tch_initBar(tch_barCb* bar){
+	uStdLib->string->memset(bar,0,sizeof(tch_barCb));
+	tch_barValidate(bar);
+	tch_listInit(&bar->wq);
+	bar->__obj.destructor = (tch_uobjDestr) tch_noop_destr;
+}
+
+
 static tch_barId tch_bar_create(){
-	tch_bar_cb* bar = shMem->alloc(sizeof(tch_bar_cb));
+	tch_barCb* bar = shMem->alloc(sizeof(tch_barCb));
 	if(!bar)
 		return NULL;
-	uStdLib->string->memset(bar,0,sizeof(tch_bar_cb));
+	uStdLib->string->memset(bar,0,sizeof(tch_barCb));
 	tch_barValidate(bar);
 	tch_listInit(&bar->wq);
 	bar->__obj.destructor = (tch_uobjDestr) tch_bar_destroy;
@@ -63,11 +67,11 @@ static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){
 		return osErrorResource;
 	if(tch_port_isISR())
 		return osErrorISR;
-	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&((tch_bar_cb*)bar)->wq,timeout);
+	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&((tch_barCb*)bar)->wq,timeout);
 }
 
 static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
-	tch_bar_cb* bar = (tch_bar_cb*) barId;
+	tch_barCb* bar = (tch_barCb*) barId;
 	if(!bar)
 		return osErrorParameter;
 	if(!tch_barIsValid(bar))
@@ -82,7 +86,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 }
 
 static tchStatus tch_bar_destroy(tch_barId barId){
-	tch_bar_cb* bar = (tch_bar_cb*) barId;
+	tch_barCb* bar = (tch_barCb*) barId;
 	if((!bar) || (!tch_barIsValid(bar)))
 		return osErrorParameter;
 	tch_barInvalidate(bar);
@@ -100,13 +104,13 @@ static tchStatus tch_bar_destroy(tch_barId barId){
 
 
 static void tch_barValidate(tch_barId bar){
-	((tch_bar_cb*) bar)->state |= (((uint32_t) bar & 0xFFFF) ^ TCH_BARRIER_CLASS_KEY);
+	((tch_barCb*) bar)->state |= (((uint32_t) bar & 0xFFFF) ^ TCH_BARRIER_CLASS_KEY);
 }
 
 static void tch_barInvalidate(tch_barId bar){
-	((tch_bar_cb*) bar)->state &= ~(0xFFFF);
+	((tch_barCb*) bar)->state &= ~(0xFFFF);
 }
 
 static BOOL tch_barIsValid(tch_barId bar){
-	return (((tch_bar_cb*) bar)->state & 0xFFFF) == (((uint32_t) bar & 0xFFFF) ^ TCH_BARRIER_CLASS_KEY);
+	return (((tch_barCb*) bar)->state & 0xFFFF) == (((uint32_t) bar & 0xFFFF) ^ TCH_BARRIER_CLASS_KEY);
 }

@@ -13,6 +13,7 @@
 
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
 
+
 typedef struct _tch_mailq_cb {
 	tch_uobj      __obj;
 	uint32_t      bstate;         // state
@@ -21,7 +22,6 @@ typedef struct _tch_mailq_cb {
 	tch_msgqId    msgq;
 	tch_lnode_t   wq;
 }tch_mailq_cb;
-
 
 static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen);
 static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);

@@ -24,61 +24,21 @@ extern "C"{
 
 
 
-#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
 
 /**
  *  Thread relevant type definition
  */
-typedef void* tch_threadId;
-typedef struct _tch_thread_cfg_t tch_threadCfg;
-typedef int (*tch_thread_routine)(const tch* env);
 
 
 
-typedef enum {
-	KThread = 8,
-	Unpreemtible = 6,
-	Realtime = 5,
-	High = 4,
-	Normal = 3,
-	Low = 2,
-	Idle = 1
-} tch_thread_prior;
 
-
-
-struct _tch_thread_cfg_t {
-	uint16_t             t_stackSize;
-	uint16_t             t_heapSize;
-	tch_thread_routine  _t_routine;
-	tch_thread_prior     t_proior;
-	const char*         _t_name;
-};
 
 /**
  * Thread Interface
  */
 
 
-struct _tch_thread_ix_t {
-	/**
-	 *  Create Thread Object
-	 */
-	tch_threadId (*create)(tch_threadCfg* cfg,void* arg);
-	/**
-	 *  Start New Thread
-	 */
-	tchStatus (*start)(tch_threadId thread);
-	tchStatus (*terminate)(tch_threadId thread,tchStatus err);
-	tch_threadId (*self)();
-	tchStatus (*sleep)(uint32_t millisec);
-	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
-	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
-	tch_thread_prior (*getPriorty)(tch_threadId tid);
-	void* (*getArg)();
-	BOOL (*isValid)(tch_threadId tid);
-	BOOL (*isRoot)();
-};
+
 
 #if defined(__cplusplus)
 }

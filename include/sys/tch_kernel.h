@@ -25,8 +25,7 @@
 #include "tch_port.h"
 #include "tch_sched.h"
 #include "tch_hal.h"
-#include "tch_mem.h"
-#include "tch_list.h"
+
 
 #define TCH_SYS_TASKQ_SZ                     (16)
 
@@ -46,9 +45,7 @@ extern uint32_t tch_kHeapAvail(void);
 extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern void tch_kernel_atexit(tch_threadId thread,int res);
-extern tchStatus tch_noop_destr(tch_uobj* obj);
-extern tch_memHandle tch_usrMemCreate(void* mem,uint32_t sz);
-extern tch_memHandle tch_sharedMemCreate(void* mem,uint32_t sz);
+
 
 
 
@@ -84,8 +81,7 @@ extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* uMem;
 extern const tch_mem_ix* kMem;
 extern const tch_mem_ix* shMem;
-
-
+extern const tch_ustdlib_ix* uStdLib;
 extern const tch_hal* Hal;
 
 
@@ -93,7 +89,7 @@ extern const tch_hal* Hal;
 extern tch_thread_header* tch_currentThread;
 extern const tch* tch_rti;
 extern tch_mailqId sysTaskQ;
-extern tch_memHandle sharedMem;
+extern tch_memId sharedMem;
 
 
 

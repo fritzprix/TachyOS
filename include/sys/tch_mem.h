@@ -22,21 +22,12 @@
 extern "C"{
 #endif
 
-typedef void* tch_memHandle;
-
-
+extern tch_memId tch_memCreate(void* mem,uint32_t sz);
+extern tchStatus tch_noop_destr(tch_uobj* obj);
 
 /**
  * @brief This is public API for Dynamic Memory Allocation
  */
-struct _tch_mem_ix_t {
-	void* (*alloc)(size_t size);
-	void (*free)(void*);
-	uint32_t (*avail)(void);
-	tchStatus (*freeAll)(tch_threadId thread);
-	void (*printFreeList)(void);
-	void (*printAllocList)(void);
-};
 
 #if defined(__cplusplus)
 }

@@ -15,9 +15,6 @@
 #ifndef TCH_MTX_H_
 #define TCH_MTX_H_
 
-#include "tch_list.h"
-#include "tch_thread.h"
-#include "tch_TypeDef.h"
 
 
 #if defined(__cplusplus)
@@ -25,19 +22,20 @@ extern "C" {
 #endif
 
 
+typedef struct _tch_mtx_cb_t  {
+	tch_uobj            __obj;
+	uint32_t            state;
+	tch_thread_queue    que;
+	tch_threadId        own;
+	tch_thread_prior    svdPrior;
+}tch_mtxCb;
+
 
 /***
  *  mutex  types
  */
-typedef void* tch_mtxId;
 
-
-struct _tch_mutex_ix_t {
-	tch_mtxId (*create)();
-	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
-	tchStatus (*unlock)(tch_mtxId mtx);
-	tchStatus (*destroy)(tch_mtxId mtx);
-};
+extern void tch_mtxInit(tch_mtxCb* mtx);
 
 #if defined(__cplusplus)
 }

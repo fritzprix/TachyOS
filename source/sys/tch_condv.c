@@ -8,6 +8,7 @@
 #include "tch.h"
 #include "tch_kernel.h"
 #include "tch_condv.h"
+#include "tch_mem.h"
 
 
 #define CONDV_VALID        ((uint8_t) 1)
@@ -15,18 +16,12 @@
 
 #define TCH_CONDV_CLASS_KEY           ((uint16_t) 0x2D01)
 
-#define tch_condvSetWait(condv)       ((tch_condv*) condv)->state |= CONDV_WAIT
-#define tch_condvClrWait(condv)       ((tch_condv*) condv)->state &= ~CONDV_WAIT
-#define tch_condvIsWait(condv)        ((tch_condv*) condv)->state & CONDV_WAIT
+#define tch_condvSetWait(condv)       ((tch_condvCb*) condv)->state |= CONDV_WAIT
+#define tch_condvClrWait(condv)       ((tch_condvCb*) condv)->state &= ~CONDV_WAIT
+#define tch_condvIsWait(condv)        ((tch_condvCb*) condv)->state & CONDV_WAIT
 
 
 
-typedef struct _tch_condv_cb {
-	tch_uobj          __obj;
-	uint32_t          state;
-	tch_mtxId         wakeMtx;
-	tch_thread_queue  wq;
-}tch_condv;
 
 static inline void tch_condvValidate(tch_condvId condv);
 static inline void tch_condvInvalidate(tch_condvId condv);
@@ -54,9 +49,18 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 
 
+void tch_condvInit(tch_condvCb* condv){
+	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
+	tch_listInit((tch_lnode_t*)&condv->wq);
+	condv->wakeMtx = NULL;
+	tch_condvValidate(condv);
+	condv->__obj.destructor = (tch_uobjDestr) tch_noop_destr;
+}
+
+
 static tch_condvId tch_condv_create(){
-	tch_condv* condv = (tch_condv*)shMem->alloc(sizeof(tch_condv));
-	uStdLib->string->memset(condv,0,sizeof(tch_condv));
+	tch_condvCb* condv = (tch_condvCb*)shMem->alloc(sizeof(tch_condvCb));
+	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
 	tch_listInit((tch_lnode_t*)&condv->wq);
 	condv->wakeMtx = NULL;
 	tch_condvValidate(condv);
@@ -69,7 +73,7 @@ static tch_condvId tch_condv_create(){
  *
  */
 static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
-	tch_condv* condv = (tch_condv*) id;
+	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!tch_condvIsValid(condv))
 		return osErrorResource;
 	condv->wakeMtx = lock;
@@ -105,7 +109,7 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
  * \brief posix condition variable signal
  */
 static tchStatus tch_condv_wake(tch_condvId id){
-	tch_condv* condv = (tch_condv*) id;
+	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!tch_condvIsValid(condv))
 		return osErrorResource;
 	if(tch_port_isISR()){                  // if isr mode, no locked mtx is supplied
@@ -129,7 +133,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 }
 
 static tchStatus tch_condv_wakeAll(tch_condvId id){
-	tch_condv* condv = (tch_condv*) id;
+	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!tch_condvIsValid(condv))
 		return osErrorResource;
 	if(tch_port_isISR()){
@@ -153,7 +157,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 }
 
 static tchStatus tch_condv_destroy(tch_condvId id){
-	tch_condv* condv = (tch_condv*) id;
+	tch_condvCb* condv = (tch_condvCb*) id;
 	tchStatus result = osOK;
 	if(!tch_condvIsValid(condv))
 		return osErrorResource;
@@ -170,13 +174,13 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 }
 
 static inline void tch_condvValidate(tch_condvId condId){
-	((tch_condv*) condId)->state |= (((((uint32_t) condId) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY) << 2);
+	((tch_condvCb*) condId)->state |= (((((uint32_t) condId) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY) << 2);
 }
 
 static inline void tch_condvInvalidate(tch_condvId condId){
-	((tch_condv*) condId)->state &= ~(0xFFFF << 2);
+	((tch_condvCb*) condId)->state &= ~(0xFFFF << 2);
 }
 
 static inline BOOL tch_condvIsValid(tch_condvId condv){
-	return ((((tch_condv*) condv)->state  >> 2) & 0xFFFF) ==  ((((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY);
+	return ((((tch_condvCb*) condv)->state  >> 2) & 0xFFFF) ==  ((((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY);
 }

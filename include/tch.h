@@ -47,59 +47,193 @@ extern "C" {
 /// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
+#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
 
+
+typedef struct _tch_runtime_t tch;
 
 /*!
  *  tachyos kernel interface
  */
-typedef struct _tch_thread_ix_t tch_thread_ix;
-typedef struct _tch_condvar_ix_t tch_condv_ix;
-typedef struct _tch_mutex_ix_t tch_mtx_ix;
-typedef struct _tch_semaph_ix_t tch_semaph_ix;
-typedef struct _tch_signal_ix_t tch_signal_ix;
-typedef struct _tch_timer_ix_t tch_timer_ix;
-typedef struct _tch_msgque_ix_t tch_msgq_ix;
-typedef struct _tch_mailbox_ix_t tch_mailq_ix;
-typedef struct _tch_mpool_ix_t tch_mpool_ix;
-typedef struct _tch_mem_ix_t tch_mem_ix;
-typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
-typedef struct _tch_async_ix_t tch_async_ix;
-typedef struct _tch_bar_ix_t tch_bar_ix;
-
-typedef struct tch_hal_t tch_hal;
 
 
-typedef struct _tch_runtime_t {
-	const tch_thread_ix* Thread;
-	const tch_signal_ix* Sig;
-	const tch_timer_ix* Timer;
-	const tch_condv_ix* Condv;
-	const tch_mtx_ix* Mtx;
-	const tch_semaph_ix* Sem;
-	const tch_bar_ix* Barrier;
-	const tch_msgq_ix* MsgQ;
-	const tch_mailq_ix* MailQ;
-	const tch_mpool_ix* Mempool;                ///< Operating System
-	const tch_hal* Device;                      ///< Entry of Device Driver Handles
-	const tch_mem_ix* Mem;
-	const tch_async_ix* Async;
-	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
-} tch;
+typedef void* tch_threadId;
+typedef void* tch_mtxId;
+typedef void* tch_semId;
+typedef void* tch_barId;
+typedef void* tch_timerId;
+/*! \brief condition variable identifier
+ */
+typedef void* tch_condvId;
+typedef void* tch_mpoolId;
+typedef void* tch_msgqId;
+typedef void* tch_mailqId;
+typedef void* tch_memId;
 
 
 
+struct _tch_thread_ix_t {
+	/**
+	 *  Create Thread Object
+	 */
+	tch_threadId (*create)(tch_threadCfg* cfg,void* arg);
+	/**
+	 *  Start New Thread
+	 */
+	tchStatus (*start)(tch_threadId thread);
+	tchStatus (*terminate)(tch_threadId thread,tchStatus err);
+	tch_threadId (*self)();
+	tchStatus (*sleep)(uint32_t millisec);
+	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
+	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
+	tch_thread_prior (*getPriorty)(tch_threadId tid);
+	void* (*getArg)();
+	BOOL (*isValid)(tch_threadId tid);
+	BOOL (*isRoot)();
+};
 
-#include "sys/tch_mtx.h"
-#include "sys/tch_sem.h"
-#include "sys/tch_bar.h"
-#include "sys/tch_thread.h"
-#include "sys/tch_sig.h"
-#include "sys/tch_vtimer.h"
-#include "sys/tch_condv.h"
-#include "sys/tch_mpool.h"
-#include "sys/tch_msgq.h"
-#include "sys/tch_mailq.h"
-#include "sys/tch_mem.h"
+struct _tch_mutex_ix_t {
+	tch_mtxId (*create)();
+	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
+	tchStatus (*unlock)(tch_mtxId mtx);
+	tchStatus (*destroy)(tch_mtxId mtx);
+};
+
+
+struct _tch_semaph_ix_t {
+	tch_semId (*create)(uint32_t count);
+	tchStatus (*lock)(tch_semId sid,uint32_t timeout);
+	tchStatus (*unlock)(tch_semId sid);
+	tchStatus (*destroy)(tch_semId sid);
+};
+
+struct _tch_bar_ix_t {
+	tch_barId (*create)();
+	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
+	tchStatus (*signal)(tch_barId bar,tchStatus result);
+	tchStatus (*destroy)(tch_barId bar);
+};
+
+struct _tch_signal_ix_t {
+	int32_t (*set)(tch_threadId thread,int32_t signals);
+	int32_t (*clear)(tch_threadId thread,int32_t signals);
+	tchStatus (*wait)(int32_t signals,uint32_t millisec);
+};
+
+
+struct _tch_timer_ix_t {
+	tch_timerId (*create)(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
+	tchStatus (*start)(tch_timerId timer,uint32_t millisec);
+	tchStatus (*stop)(tch_timerId timer);
+	tchStatus (*destroy)(tch_timerId timer);
+};
+
+
+
+
+/*!
+ * \brief posix-like condition variable API struct
+ */
+struct _tch_condvar_ix_t {
+
+	/*! \brief create posix-like condition variable
+	 *  \return initiated \ref tch_condvId
+	 */
+	tch_condvId (*create)();
+	/*! \brief wait on condition variable with unlocking mutex
+	 *  \param[in] condv
+	 *  \param[in] lock
+	 *  \param[in] timeout
+	 */
+	tchStatus (*wait)(tch_condvId condv,tch_mtxId lock,uint32_t timeout);
+	tchStatus (*wake)(tch_condvId condv);
+	tchStatus (*wakeAll)(tch_condvId condv);
+	tchStatus (*destroy)(tch_condvId condv);
+};
+
+
+
+struct _tch_mpool_ix_t {
+	tch_mpoolId (*create)(size_t sz,uint32_t plen);
+	void* (*alloc)(tch_mpoolId mpool);
+	void* (*calloc)(tch_mpoolId mpool);
+	tchStatus (*free)(tch_mpoolId mpool,void* block);
+	tchStatus (*destroy)(tch_mpoolId mpool);
+};
+
+
+/**
+ *    CMSIS RTOS Compatible message queue
+ */
+
+struct _tch_msgque_ix_t {
+	/**
+	 *  Create and initiate Message Queue instance
+	 *  ##Note : In CMSIS, this function actually has one more arguement, which is thread. however it is pointless
+	 *           because there isn't any operation which is dedicated to a given single thread
+	 *
+	 *  @arg1 message queue definition
+	 *  @return queue ID
+	 *
+	 */
+	tch_msgqId (*create)(uint32_t len);
+
+	/**
+	 * put message in the message queue (for producer side)
+	 * ##Note : In ISR Mode, timeout is forced to 0 and execution is not blocked.
+	 *
+	 *  @arg1 message queue id
+	 *  @arg2 msg to send
+	 *  @arg3 timeout in millisecond
+	 *  @return osOK  : the message is put into the queue.
+	 *          osErrorResource  : no memory in the queue was available.
+	 *          osErrorTimeoutResource  : no memory in the queue was available during the given time limit.
+	 *          osErrorParameter  : a parameter is invalid or outside of a permitted
+	 */
+	tchStatus (*put)(tch_msgqId,uint32_t msg,uint32_t millisec);
+
+	/**
+	 * Get a Message or Wait for a Message from a Queue
+	 * ##Note : In ISR Mode, timeout is forced to 0 and execution is not blocked.
+	 *
+	 *   @arg1 message queue id
+	 *   @arg2 timeout in millisecond
+	 *   @return osOK: no message is available in the queue and no timeout was specified.
+	 *           osEventTimeout: no message has arrived during the given timeout period.
+	 *           osEventMessage: message received, value.p contains the pointer to message.
+	 *           osErrorParameter: a parameter is invalid or outside of a permitted range.
+	 */
+	osEvent (*get)(tch_msgqId,uint32_t millisec);
+
+	/*!
+	 * \brief destroy msg queue
+	 */
+	tchStatus (*destroy)(tch_msgqId);
+};
+
+
+struct _tch_mailbox_ix_t {
+	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
+	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	tchStatus (*put)(tch_mailqId qid,void* mail);
+	osEvent (*get)(tch_mailqId qid,uint32_t millisec);
+	tchStatus (*free)(tch_mailqId qid,void* mail);
+	tchStatus (*destroy)(tch_mailqId qid);
+};
+
+struct _tch_mem_ix_t {
+	void* (*alloc)(size_t size);
+	void (*free)(void*);
+	uint32_t (*avail)(void);
+	tchStatus (*freeAll)(tch_threadId thread);
+	void (*printFreeList)(void);
+	void (*printAllocList)(void);
+};
+
+
+
+
 #include "sys/tch_nclib.h"
 #include "hal/tch_hal.h"
 

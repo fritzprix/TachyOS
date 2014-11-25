@@ -21,14 +21,14 @@ void* operator new(size_t size) throw() {
 #ifdef __USE_MALLOC
 	return malloc(size);
 #else
-	return Mem->alloc(size);
+	return uMem->alloc(size);
 #endif
 }
 void operator delete(void* p){
 #ifdef __USE_MALLOC
 	free(p);
 #else
-	Mem->free(p);
+	uMem->free(p);
 #endif
 }
 

@@ -303,7 +303,7 @@ typedef struct _tch_ustdl_ix_t {
 	const tch_time_ix* time;
 }tch_ulib_ix;
 
-extern const tch_ustdlib_ix* uStdLib;
+
 extern tch_ustdlib_ix* tch_initStdLib(void);
 
 #if defined(__cplusplus)

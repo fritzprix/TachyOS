@@ -18,10 +18,10 @@
 
 
 
-static tch_timer_id tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
-static tchStatus tch_timer_start(tch_timer_id timer,uint32_t millisec);
-static tchStatus tch_timer_stop(tch_timer_id timer);
-static tchStatus tch_timer_delete(tch_timer_id timer);
+static tch_timerId tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
+static tchStatus tch_timer_start(tch_timerId timer,uint32_t millisec);
+static tchStatus tch_timer_stop(tch_timerId timer);
+static tchStatus tch_timer_delete(tch_timerId timer);
 
 
 
@@ -37,18 +37,18 @@ const tch_timer_ix* Timer = (const tch_timer_ix*)&TIMER_StaticInstance;
 
 
 
-tch_timer_id tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg){
+tch_timerId tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg){
 
 }
 
-tchStatus tch_timer_start(tch_timer_id timer,uint32_t millisec){
+tchStatus tch_timer_start(tch_timerId timer,uint32_t millisec){
 
 }
 
-tchStatus tch_timer_stop(tch_timer_id timer){
+tchStatus tch_timer_stop(tch_timerId timer){
 
 }
 
-tchStatus tch_timer_delete(tch_timer_id timer){
+tchStatus tch_timer_delete(tch_timerId timer){
 
 }

@@ -15,6 +15,40 @@
 extern "C"{
 #endif
 
+
+typedef struct _tch_thread_ix_t tch_thread_ix;
+typedef struct _tch_condvar_ix_t tch_condv_ix;
+typedef struct _tch_mutex_ix_t tch_mtx_ix;
+typedef struct _tch_semaph_ix_t tch_semaph_ix;
+typedef struct _tch_signal_ix_t tch_signal_ix;
+typedef struct _tch_timer_ix_t tch_timer_ix;
+typedef struct _tch_msgque_ix_t tch_msgq_ix;
+typedef struct _tch_mailbox_ix_t tch_mailq_ix;
+typedef struct _tch_mpool_ix_t tch_mpool_ix;
+typedef struct _tch_mem_ix_t tch_mem_ix;
+typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
+typedef struct _tch_async_ix_t tch_async_ix;
+typedef struct _tch_bar_ix_t tch_bar_ix;
+typedef struct tch_hal_t tch_hal;
+
+
+typedef struct _tch_runtime_t {
+	const tch_thread_ix* Thread;
+	const tch_signal_ix* Sig;
+	const tch_timer_ix* Timer;
+	const tch_condv_ix* Condv;
+	const tch_mtx_ix* Mtx;
+	const tch_semaph_ix* Sem;
+	const tch_bar_ix* Barrier;
+	const tch_msgq_ix* MsgQ;
+	const tch_mailq_ix* MailQ;
+	const tch_mpool_ix* Mempool;                ///< Operating System
+	const tch_hal* Device;                      ///< Entry of Device Driver Handles
+	const tch_mem_ix* Mem;
+	const tch_async_ix* Async;
+	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
+}tch;
+
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
 typedef enum  {
@@ -47,13 +81,65 @@ typedef struct  {
 } osEvent;
 
 
-
 /***
  *  General Types
  */
 typedef enum {	TRUE = ((uint8_t)(1 > 0)),FALSE = ((uint8_t)!TRUE)  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_PwrOpt;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
+
+
+
+/**
+ * type definition for thread api
+ */
+typedef enum {
+	KThread = 8,
+	Unpreemtible = 6,
+	Realtime = 5,
+	High = 4,
+	Normal = 3,
+	Low = 2,
+	Idle = 1
+} tch_thread_prior;
+
+typedef int (*tch_thread_routine)(const tch* env);
+typedef struct _tch_thread_cfg_t {
+	uint16_t             t_stackSize;
+	uint16_t             t_heapSize;
+	tch_thread_routine  _t_routine;
+	tch_thread_prior     t_proior;
+	const char*         _t_name;
+}tch_threadCfg;
+
+
+
+/**
+ * type definition for mpool
+ */
+typedef struct _tch_mpoolDef_t{
+	uint32_t count;
+	uint32_t align;
+	void*    pool;
+} tch_mpoolDef_t;
+
+
+
+/**
+ * type definition for system timer
+ */
+
+typedef void* (*tch_timer_callback)(void* arg);
+typedef enum {
+	Once,Periodic
+}tch_timer_type;
+
+typedef struct _tch_timer_def_t {
+	tch_timer_callback     fn;
+}tch_timer_def;
+
+
+
 
 #if defined(__cplusplus)
 }

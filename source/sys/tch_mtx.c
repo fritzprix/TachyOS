@@ -23,15 +23,9 @@
  */
 
 #include "tch_kernel.h"
+#include "tch_mtx.h"
+#include "tch_mem.h"
 
-typedef struct tch_mtx_cb tch_mtx;
-struct tch_mtx_cb {
-	tch_uobj            __obj;
-	uint32_t            state;
-	tch_thread_queue    que;
-	tch_threadId        own;
-	tch_thread_prior    svdPrior;
-};
 static tch_mtxId tch_mtx_create();
 static tchStatus tch_mtx_lock(tch_mtxId mtx,uint32_t timeout);
 static tchStatus tch_mtx_unlock(tch_mtxId mtx);
@@ -64,9 +58,18 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 
 
+void tch_mtxInit(tch_mtxCb* mcb){
+	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
+	tch_listInit((tch_lnode_t*)&mcb->que);
+	mcb->own = NULL;
+	mcb->__obj.destructor = (tch_uobjDestr) tch_noop_destr;
+	mcb->state = 0;
+	tch_mtxValidate(mcb);
+}
+
 tch_mtxId tch_mtx_create(){
-	tch_mtx* mcb = (tch_mtx*) shMem->alloc(sizeof(tch_mtx));
-	uStdLib->string->memset(mcb,0,sizeof(tch_mtx));
+	tch_mtxCb* mcb = (tch_mtxCb*) shMem->alloc(sizeof(tch_mtxCb));
+	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
 	tch_listInit((tch_lnode_t*)&mcb->que);
 	mcb->own = NULL;
 	mcb->__obj.destructor = (tch_uobjDestr) tch_mtx_destroy;
@@ -87,7 +90,7 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}
-	tch_mtx* mcb = (tch_mtx*) id;
+	tch_mtxCb* mcb = (tch_mtxCb*) id;
 	if(!tch_mtxIsValid(mcb))
 		return osErrorResource;              // validity check of mutex control block
 	tch_threadId tid = Thread->self();           // get current thread id
@@ -117,7 +120,7 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 
 
 tchStatus tch_mtx_unlock(tch_mtxId id){
-	tch_mtx* mcb = (tch_mtx*) id;
+	tch_mtxCb* mcb = (tch_mtxCb*) id;
 	if(tch_port_isISR()){
 		return osErrorISR;
 	}
@@ -135,7 +138,7 @@ tchStatus tch_mtx_unlock(tch_mtxId id){
 }
 
 tchStatus tch_mtx_destroy(tch_mtxId id){
-	tch_mtx* mcb = (tch_mtx*)id;
+	tch_mtxCb* mcb = (tch_mtxCb*)id;
 	tchStatus result = osOK;
 	if(tch_port_isISR())
 		return osErrorISR;
@@ -154,15 +157,15 @@ tchStatus tch_mtx_destroy(tch_mtxId id){
 
 
 static inline void tch_mtxValidate(tch_mtxId mtx){
-	tch_mtx* mcb = (tch_mtx*) mtx;
+	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
 	mcb->state = (TCH_MTX_CLASS_KEY ^ ((uint32_t)mtx & 0xFFFF)) << 2;
 }
 
 
 static inline void tch_mtxInvalidate(tch_mtxId mtx){
-	((tch_mtx*) mtx)->state &= ~(0xFFFF << 2);
+	((tch_mtxCb*) mtx)->state &= ~(0xFFFF << 2);
 }
 static inline BOOL tch_mtxIsValid(tch_mtxId mtx){
-	return (((((tch_mtx*) mtx)->state >> 2) & 0xFFFF) ^ TCH_MTX_CLASS_KEY) == ((uint32_t)mtx & 0xFFFF);
+	return (((((tch_mtxCb*) mtx)->state >> 2) & 0xFFFF) ^ TCH_MTX_CLASS_KEY) == ((uint32_t)mtx & 0xFFFF);
 }
 
