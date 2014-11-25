@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+extern void tch_signalInit(tch_signal* sig);
+
 
 #if defined(__cplusplus)
 }

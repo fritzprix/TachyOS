@@ -14,41 +14,50 @@
 
 
 #include "tch_kernel.h"
+#include "tch_time.h"
 
 
 
+static uint64_t tch_systime_setCurrentTimeMills(uint64_t time);
+static uint64_t tch_systime_getCurrentTimeMills();
+static uint64_t tch_systime_currentThreadTimeMills();
+static uint64_t tch_systime_elapsedRealtime();
+static uint64_t tch_systime_uptimeMills();
 
-static tch_timerId tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
-static tchStatus tch_timer_start(tch_timerId timer,uint32_t millisec);
-static tchStatus tch_timer_stop(tch_timerId timer);
-static tchStatus tch_timer_delete(tch_timerId timer);
 
-
-
-__attribute__((section(".data"))) static tch_timer_ix TIMER_StaticInstance = {
-		tch_timer_create,
-		tch_timer_start,
-		tch_timer_stop,
-		tch_timer_delete
+__attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
+		tch_systime_setCurrentTimeMills,
+		tch_systime_getCurrentTimeMills,
+		tch_systime_currentThreadTimeMills,
+		tch_systime_elapsedRealtime,
+		tch_systime_uptimeMills
 };
 
-const tch_timer_ix* Timer = (const tch_timer_ix*)&TIMER_StaticInstance;
+const tch_systime_ix* Timer = (const tch_systime_ix*)&TIMER_StaticInstance;
 
 
-
-
-tch_timerId tch_timer_create(const tch_timer_def* timer_def,tch_timer_type type,void* arg){
+tch_systime_ix* tch_systimeInit(uint64_t timeInMills){
 
 }
 
-tchStatus tch_timer_start(tch_timerId timer,uint32_t millisec){
+
+
+static uint64_t tch_systime_setCurrentTimeMills(uint64_t time){
 
 }
 
-tchStatus tch_timer_stop(tch_timerId timer){
+static uint64_t tch_systime_getCurrentTimeMills(){
 
 }
 
-tchStatus tch_timer_delete(tch_timerId timer){
+static uint64_t tch_systime_currentThreadTimeMills(){
+
+}
+
+static uint64_t tch_systime_elapsedRealtime(){
+
+}
+
+static uint64_t tch_systime_uptimeMills(){
 
 }

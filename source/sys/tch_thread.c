@@ -68,6 +68,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 
 
 const tch_thread_ix* Thread = &tch_threadix;
+tch_thread_queue tch_procList;
 
 
 
@@ -111,6 +112,8 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
+	tch_listInit(&thread_p->t_childNode);
+	tch_signalInit(&thread_p->t_sig);
 	thread_p->t_chks = (uint32_t*)th_mem;
 	*thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
 	thread_p->t_flag = 0;
@@ -120,12 +123,12 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
 		thread_p->t_root = tch_currentThread;
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
+		tch_listPutLast(&tch_currentThread->t_childNode,&thread_p->t_childNode);
 	}else{                                                  // if new thread is root thread
 		thread_p->t_root = NULL;
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
-		tch_listInit(&thread_p->t_sig.sig_wq);
-		thread_p->t_sig.signal = thread_p->t_sig.sig_comb = 0;
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
+		tch_listPutLast(&tch_procList,&thread_p->t_childNode);
 	}
 
 	return (tch_threadId) thread_p;
@@ -225,8 +228,10 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 	uMem->freeAll(thread);
 	shMem->freeAll(thread);
 	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
+		tch_listRemove(&getThreadHeader(getThreadHeader(thread)->t_root)->t_childNode,&getThreadHeader(thread)->t_childNode);
 		mem = (tch_mem_ix*)kMem;
 	}else{
+		tch_listRemove((tch_lnode_t*)&tch_procList,&getThreadHeader(thread)->t_childNode);
 		mem = (tch_mem_ix*)uMem;
 	}
 	mem->free(getThreadHeader(thread)->t_chks);

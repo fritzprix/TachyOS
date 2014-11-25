@@ -34,6 +34,12 @@ const tch_signal_ix* Sig = &Signal_StaticInstance;
 
 
 
+void tch_signalInit(tch_signal* sig){
+	sig->sig_comb = sig->signal = 0;
+	tch_listInit(&sig->sig_wq);
+}
+
+
 
 
 int32_t tch_signal_set(tch_threadId thread,int32_t signals){

@@ -18,8 +18,8 @@ KERNEL_SRCS=\
 	    tch_mailq.c\
 	    tch_btree.c\
 	    tch_ltree.c\
+	    tch_time.c
 #	    tch_event.c\
-	    tch_vtimer.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 

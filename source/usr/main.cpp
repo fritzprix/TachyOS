@@ -78,27 +78,31 @@ int main(const tch* api) {
 	gptdef.pwrOpt = ActOnSleep;
 
 	tch_gptimerHandle* timer = NULL;
+	uint32_t loopcnt = 0;
 
 	while(1){
 		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
 		out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
 		out->out(out,1 << 14,bClear);
-		timer->wait(timer,150);
+		timer->wait(timer,15);
 		out->out(out,1 << 14,bSet);
-		timer->wait(timer,150);
+		timer->wait(timer,15);
 		out->out(out,1 << 14,bClear);
-		api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
-		api->Mem->printAllocList();
-		api->Mem->printFreeList();
-		timer->wait(timer,150);
-		api->Thread->sleep(1);
+		if((loopcnt++ % 100000) == 0){
+			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
+			api->Mem->printAllocList();
+			api->Mem->printFreeList();
+		}
+		timer->wait(timer,15);
 		out->out(out,1 << 14,bSet);
-		timer->wait(timer,200);
+		timer->wait(timer,20);
 		timer->close(timer);
 		out->close(out);
-		api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
-		api->Mem->printAllocList();
-		api->Mem->printFreeList();
+		if((loopcnt % 100000) == 50000){
+			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
+			api->Mem->printAllocList();
+			api->Mem->printFreeList();
+		}
 	}
 	return osOK;
 }

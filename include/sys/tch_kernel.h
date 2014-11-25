@@ -70,7 +70,7 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
  */
 extern const tch_thread_ix* Thread;
 extern const tch_signal_ix* Sig;
-extern const tch_timer_ix* Timer;
+extern const tch_systime_ix* Timer;
 extern const tch_condv_ix* Condv;
 extern const tch_mtx_ix* Mtx;
 extern const tch_semaph_ix* Sem;
@@ -87,6 +87,7 @@ extern const tch_hal* Hal;
 
 
 extern tch_thread_header* tch_currentThread;
+extern tch_thread_queue tch_procList;
 extern const tch* tch_rti;
 extern tch_mailqId sysTaskQ;
 extern tch_memId sharedMem;

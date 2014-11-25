@@ -21,7 +21,7 @@ typedef struct _tch_condvar_ix_t tch_condv_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
 typedef struct _tch_semaph_ix_t tch_semaph_ix;
 typedef struct _tch_signal_ix_t tch_signal_ix;
-typedef struct _tch_timer_ix_t tch_timer_ix;
+typedef struct _tch_systime_ix_t tch_systime_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mailq_ix;
 typedef struct _tch_mpool_ix_t tch_mpool_ix;
@@ -35,7 +35,7 @@ typedef struct tch_hal_t tch_hal;
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
 	const tch_signal_ix* Sig;
-	const tch_timer_ix* Timer;
+	const tch_systime_ix* Timer;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
 	const tch_semaph_ix* Sem;

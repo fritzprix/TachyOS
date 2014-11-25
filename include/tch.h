@@ -121,11 +121,12 @@ struct _tch_signal_ix_t {
 };
 
 
-struct _tch_timer_ix_t {
-	tch_timerId (*create)(const tch_timer_def* timer_def,tch_timer_type type,void* arg);
-	tchStatus (*start)(tch_timerId timer,uint32_t millisec);
-	tchStatus (*stop)(tch_timerId timer);
-	tchStatus (*destroy)(tch_timerId timer);
+struct _tch_systime_ix_t {
+	uint64_t (*setCurrentTimeMills)(uint64_t time);
+	uint64_t (*getCurrentTimeMills)();
+	uint64_t (*currentThreadTimeMills)();
+	uint64_t (*elapsedRealtime)();
+	uint64_t (*uptimeMills)();
 };
 
 

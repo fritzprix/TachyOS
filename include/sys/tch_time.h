@@ -12,8 +12,8 @@
  *      Author: innocentevil
  */
 
-#ifndef TCH_VTIMER_H_
-#define TCH_VTIMER_H_
+#ifndef TCH_TIME_H_
+#define TCH_TIME_H_
 
 #include "tch_TypeDef.h"
 
@@ -21,11 +21,7 @@
 extern "C"{
 #endif
 
-/***
- *  timer types
- */
-
-
+extern tch_systime_ix* tch_systimeInit(uint64_t timeInMills);
 
 #if defined(__cplusplus)
 }
