@@ -83,11 +83,11 @@ void tch_schedStartThread(tch_threadId nth){
 	tch_thread_header* thr_p = nth;
 	if(tch_schedIsPreemptable(nth)){
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQRule);			///< put current thread in ready queue
-		getListNode(nth)->prev = tch_currentThread; 	                                                            ///< set new thread as current thread
+		getListNode(nth)->prev = (tch_lnode_t*) tch_currentThread; 	                                                            ///< set new thread as current thread
 		tch_currentThread = nth;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
 		getThreadHeader(getListNode(tch_currentThread)->prev)->t_state = READY;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,getListNode(nth)->prev,osOK);
+		tch_port_jmpToKernelModeThread((uaddr_t) tch_port_switchContext,(uword_t)nth,(uword_t) getListNode(nth)->prev,osOK);
 	}else{
 		getThreadHeader(nth)->t_state = READY;
 		tch_kernelSetResult(tch_currentThread,osOK);
@@ -116,7 +116,7 @@ void tch_schedSleep(uint32_t timeout,tch_thread_state nextState){
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,osErrorOS);
 	tch_kernelSetResult(tch_currentThread,osEventTimeout);
-	getListNode(nth)->prev = tch_currentThread;
+	getListNode(nth)->prev = (tch_lnode_t*) tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = nextState;
 	tch_currentThread = nth;
@@ -135,7 +135,7 @@ void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	nth = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,osErrorOS);
-	getListNode(nth)->prev = tch_currentThread;
+	getListNode(nth)->prev = (tch_lnode_t*) tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
 	getThreadHeader(tch_currentThread)->t_waitQ = (tch_lnode_t*) wq;
@@ -218,6 +218,7 @@ tchStatus tch_schedCancelTimeout(tch_threadId thread){
 void tch_kernelSysTick(void){
 	tch_systimeTick++;
 	tch_thread_header* nth = NULL;
+	tch_currentThread->t_tslot++;
 	while((!tch_listIsEmpty(&tch_pendQue)) && (getThreadHeader(tch_pendQue.thque.next)->t_to <= tch_systimeTick)){                      ///< Check timeout value
 		nth = (tch_thread_header*) tch_listDequeue((tch_lnode_t*)&tch_pendQue);
 		nth->t_state = READY;
@@ -249,7 +250,7 @@ tch_threadId tch_schedGetRunningThread(){
 BOOL tch_schedIsPreemptable(tch_threadId nth){
 	if(!nth)
 		return FALSE;
-	return tch_schedReadyQRule(nth,tch_currentThread);
+	return tch_schedReadyQRule(nth,tch_currentThread) || tch_currentThread->t_tslot > 10;
 }
 
 void tch_schedTerminate(tch_threadId thread,int result){

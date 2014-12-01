@@ -7,7 +7,6 @@
 
 
 #include "tch_kernel.h"
-#include "tch_sys.h"
 #include "tch_ktypes.h"
 #include "tch_mailq.h"
 

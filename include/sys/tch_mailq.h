@@ -13,7 +13,14 @@
 extern "C" {
 #endif
 
+typedef struct _tch_mailq_karg{
+	uint32_t timeout;
+	void*    chunk;
+}tch_mailq_karg;
 
+extern tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg);
+extern tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg);
+extern tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg);
 
 
 

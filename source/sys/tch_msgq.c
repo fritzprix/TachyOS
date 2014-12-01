@@ -6,7 +6,6 @@
  */
 
 #include "tch_kernel.h"
-#include "tch_sys.h"
 #include "tch_msgq.h"
 
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)

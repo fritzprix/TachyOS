@@ -19,7 +19,8 @@
 
 
 #include "tch_kernel.h"
-#include "tch_sys.h"
+#include "tch_mailq.h"
+#include "tch_msgq.h"
 #include "tch_mem.h"
 #include "tch_halcfg.h"
 #include "tch_nclib.h"
@@ -66,7 +67,7 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
 
-	tch_listInit(&tch_procList);
+	tch_listInit((tch_lnode_t*) &tch_procList);
 
 	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
 	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
@@ -85,13 +86,12 @@ void tch_kernelInit(void* arg){
 	}
 
 	tch_port_kernel_lock();
-	// create system task thread
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "sysloop";
 	thcfg._t_routine = systhreadRoutine;
 	thcfg.t_proior = KThread;
-	thcfg.t_stackSize = 1 << 11;
+	thcfg.t_stackSize = 1 << 10;
 	tch_currentThread = ROOT_THREAD;
 	sysThread = Thread->create(&thcfg,(void*)tch_rti);
 
@@ -110,6 +110,7 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
+		tch_currentThread->t_tslot = 0;
 		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
 		if(tch_currentThread->t_state == DESTROYED)

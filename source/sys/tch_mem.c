@@ -11,7 +11,6 @@
  *      Author: innocentevil
  */
 #include "tch_kernel.h"
-#include "tch_sys.h"
 #include "tch_mtx.h"
 #include <stdlib.h>
 

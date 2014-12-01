@@ -121,11 +121,12 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 	_REENT_INIT_PTR(&thread_p->t_reent);
 	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
-		thread_p->t_root = tch_currentThread;
+		thread_p->t_refNode.root = tch_currentThread;
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-		tch_listPutLast(&tch_currentThread->t_childNode,&thread_p->t_childNode);
+		tch_listPutLast(tch_currentThread->t_refNode.childs,&thread_p->t_childNode);
 	}else{                                                  // if new thread is root thread
-		thread_p->t_root = NULL;
+		thread_p->t_refNode.childs = kMem->alloc(sizeof(tch_lnode_t));
+		tch_listInit(thread_p->t_refNode.childs);
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
 		tch_listPutLast(&tch_procList,&thread_p->t_childNode);
@@ -224,14 +225,24 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 void tch_kernel_atexit(tch_threadId thread,int status){
 	// destroy & release used system resources
 	tch_mem_ix* mem = NULL;
+	tch_thread_header* th_p = getThreadHeader(thread);
+	tch_thread_header* ch_p = NULL;
 	uStdLib->stdio->iprintf("\rThread (%s) Exit with (%d)\n",getThreadHeader(thread)->t_name,status);
 	uMem->freeAll(thread);
 	shMem->freeAll(thread);
-	if(getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT){
-		tch_listRemove(&getThreadHeader(getThreadHeader(thread)->t_root)->t_childNode,&getThreadHeader(thread)->t_childNode);
+	if(th_p->t_flag & THREAD_ROOT_BIT){
+		while(!tch_listIsEmpty(th_p->t_refNode.childs)){
+			ch_p = (tch_thread_header*)tch_listDequeue(th_p->t_refNode.childs);
+			if(ch_p){
+				Thread->terminate(ch_p,status);   // terminate child
+				Thread->join(ch_p,osWaitForever);        // wait child termination
+				uStdLib->stdio->iprintf("\rThread (%s) Terminated ",ch_p->t_name);
+			}
+		}
+		tch_listRemove((tch_lnode_t*)&tch_procList,&th_p->t_childNode);
 		mem = (tch_mem_ix*)kMem;
 	}else{
-		tch_listRemove((tch_lnode_t*)&tch_procList,&getThreadHeader(thread)->t_childNode);
+		tch_listRemove((tch_lnode_t*)getThreadHeader(th_p->t_refNode.root)->t_refNode.childs,&th_p->t_childNode);
 		mem = (tch_mem_ix*)uMem;
 	}
 	mem->free(getThreadHeader(thread)->t_chks);

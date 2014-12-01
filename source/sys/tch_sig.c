@@ -13,6 +13,7 @@
  */
 
 #include "tch_kernel.h"
+#include <signal.h>
 
 
 

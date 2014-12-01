@@ -114,8 +114,8 @@ void tch_port_disableISR(void){
 
 
 
-void tch_port_switchContext(uaddr_t nth,uaddr_t cth){
-	//isr_svc_cnt--;
+void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
+	((tch_thread_header*)nth)->t_kRet = kret;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
@@ -133,10 +133,31 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth){
 }
 
 
+void tch_port_buildTemporalContext(void* cth,void (*fn)(int),int arg1){
+	asm volatile(
+#ifdef MFEATURE_HFLOAT
+			"vpush {s16-s31}\n"
+#endif
+			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
+			"str sp,[%0]\n"                      ///< store
+			: : "r"(&((tch_thread_header*) cth)->t_ctx):);
+	fn(arg1);
+	asm volatile(
+			"ldr sp,[%0]\n"
+			"pop {r4-r11,lr}\n"
+#ifdef MFEATURE_HFLOAT
+			"vpop {s16-s31}\n"
+#endif
+			"ldr r0,=%1\n"
+			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
+}
+
+
+
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t ret_val){
+void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	//if(isr_svc_cnt)
 //		tch_kernel_errorHandler(FALSE,osErrorISR);
 	//isr_svc_cnt++;
@@ -149,7 +170,8 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	memset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
-	tch_kernelSetResult(arg1,ret_val);
+	org_sp->R2 = arg3;
+//	tch_kernelSetResult(arg1,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack

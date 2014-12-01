@@ -19,8 +19,9 @@
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
-int main(const tch* api) {
+static DECLARE_THREADROUTINE(childRoutine);
 
+int main(const tch* api) {
 
 
 	tch_GpioCfg iocfg;
@@ -79,6 +80,15 @@ int main(const tch* api) {
 
 	tch_gptimerHandle* timer = NULL;
 	uint32_t loopcnt = 0;
+/*
+	tch_threadCfg thcfg;
+	thcfg._t_name = "Child";
+	thcfg._t_routine = childRoutine;
+	thcfg.t_proior = Normal;
+	thcfg.t_stackSize = 1 << 9;
+	tch_threadId nchild = api->Thread->create(&thcfg,NULL);
+	api->Thread->start(nchild);
+*/
 
 	while(1){
 		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
@@ -88,7 +98,7 @@ int main(const tch* api) {
 		out->out(out,1 << 14,bSet);
 		timer->wait(timer,15);
 		out->out(out,1 << 14,bClear);
-		if((loopcnt++ % 100000) == 0){
+		if((loopcnt++ % 10000) == 0){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
@@ -98,11 +108,22 @@ int main(const tch* api) {
 		timer->wait(timer,20);
 		timer->close(timer);
 		out->close(out);
-		if((loopcnt % 100000) == 50000){
+		if((loopcnt % 10000) == 5000){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
+		//	return osOK;
 		}
 	}
 	return osOK;
 }
+
+static DECLARE_THREADROUTINE(childRoutine){
+	env->uStdLib->stdio->iprintf("\rChild Initiated \n");
+	while(1){
+		env->uStdLib->stdio->iprintf("\rChild Loop\n");
+		env->Thread->sleep(100);
+	}
+	return osOK;
+}
+

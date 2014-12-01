@@ -62,6 +62,11 @@ typedef struct tch_signal_t {
 }tch_signal;
 
 
+typedef struct tch_thread_queue{
+	tch_lnode_t             thque;
+} tch_thread_queue;
+
+
 
 struct tch_thread_header_t {
 	tch_lnode_t                 t_schedNode;   ///<thread queue node to be scheduled
@@ -84,15 +89,13 @@ struct tch_thread_header_t {
 	tch_signal                  t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
-	tch_thread_header*          t_root;       /// ptr to parent thread
+	union {
+		tch_thread_header* root;
+		tch_lnode_t*       childs;
+	} t_refNode;
 	struct _reent               t_reent;      /// reentrant struct used by c standard library
 	uint32_t*                   t_chks;       /// checksum for integrity check
 } __attribute__((aligned(8)));
-
-
-typedef struct tch_thread_queue{
-	tch_lnode_t             thque;
-} tch_thread_queue;
 
 
 
