@@ -80,15 +80,13 @@ int main(const tch* api) {
 
 	tch_gptimerHandle* timer = NULL;
 	uint32_t loopcnt = 0;
-/*
 	tch_threadCfg thcfg;
 	thcfg._t_name = "Child";
 	thcfg._t_routine = childRoutine;
 	thcfg.t_proior = Normal;
-	thcfg.t_stackSize = 1 << 9;
+	thcfg.t_stackSize = 1 << 10;
 	tch_threadId nchild = api->Thread->create(&thcfg,NULL);
 	api->Thread->start(nchild);
-*/
 
 	while(1){
 		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
@@ -112,7 +110,6 @@ int main(const tch* api) {
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
-		//	return osOK;
 		}
 	}
 	return osOK;

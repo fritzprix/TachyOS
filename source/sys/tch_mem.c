@@ -97,11 +97,18 @@ const tch_mem_ix* shMem = &shMem_StaticInstance;    // dynamic memory block whic
 static void* tch_usrAlloc(size_t size){
 	if(tch_port_isISR())
 		return NULL;
+	tch_memEntry* m_entry = tch_currentThread->t_mem;
+	if(!m_entry)
+		return NULL;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return NULL;
 	tch_memHdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
 	if(!hdr)
 		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	hdr--;
-	tch_listPutLast(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
+	tch_listPutFirst(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
+	if(Mtx->unlock(&m_entry->mtx) != osOK)
+		return NULL;
 	return ++hdr;
 }
 
@@ -109,12 +116,19 @@ static void* tch_usrAlloc(size_t size){
  * \breif : usr space heap free fucntion
  */
 static void tch_usrFree(void* chnk){
+	tch_memHdr* hdr = NULL;
+	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(tch_port_isISR())
 		return;
-	tch_memHdr* hdr = chnk;
+	if(!m_entry)
+		return;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return;
+	hdr = chnk;
 	hdr--;
 	tch_listRemove(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
 	tch_memFree(tch_currentThread->t_mem,chnk);
+	Mtx->unlock(&m_entry->mtx);
 }
 
 static uint32_t tch_usrAvail(void){
@@ -127,11 +141,23 @@ static tchStatus tch_usrFreeAll(tch_threadId thread){
 }
 
 static void tch_usrPrintFreeList(void){
+	tch_memEntry* m_entry = tch_currentThread->t_mem;
+	if(!m_entry)
+		return;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return;
 	tch_listPrint(tch_currentThread->t_mem,tch_memPrint);
+	Mtx->unlock(&m_entry->mtx);
 }
 
 static void tch_usrPrintAllocList(void){
+	tch_memEntry* m_entry = tch_currentThread->t_mem;
+	if(!m_entry)
+		return;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return;
 	tch_listPrint(&tch_currentThread->t_ualc,tch_memPrint);
+	Mtx->unlock(&m_entry->mtx);
 }
 
 
@@ -149,7 +175,7 @@ void* tch_sharedAlloc(size_t sz){
 		Thread->terminate(tch_currentThread,osErrorNoMemory);
 	}
 	hdr--;
-	tch_listPutLast(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
+	tch_listPutFirst(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	Mtx->unlock(&_entry->mtx);
 	return ++hdr;
 }
@@ -177,11 +203,24 @@ static tchStatus tch_sharedFreeAll(tch_threadId thread){
 }
 
 static void tch_sharedPrintFreeList(void){
+	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
+	if(tch_port_isISR())
+		return;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return;
 	tch_listPrint(sharedMem,tch_memPrint);
+	Mtx->unlock(&m_entry->mtx);
+
 }
 
 static void tch_sharedPrintAllocList(void){
+	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
+	if(tch_port_isISR())
+		return;
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+		return;
 	tch_listPrint(&tch_currentThread->t_shalc,tch_memPrint);
+	Mtx->unlock(&m_entry->mtx);
 }
 
 
@@ -297,9 +336,10 @@ static void tch_memFree(tch_memId mh,void* p){
 			((tch_lnode_t*)nchnk)->next = ((tch_lnode_t*)m_entry)->next;
 			((tch_lnode_t*)nchnk)->prev = (tch_lnode_t*)m_entry;
 			((tch_lnode_t*)m_entry)->next = (tch_lnode_t*)nchnk;
-
 			if(!((tch_lnode_t*) nchnk)->next){
 				return;
+			}else{
+				((tch_lnode_t*) nchnk)->next->prev = (tch_lnode_t*) nchnk;
 			}
 			do{
 				cnode = ((tch_lnode_t*)nchnk)->next;

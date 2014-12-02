@@ -108,6 +108,32 @@ void* tch_listPop(tch_lnode_t* lentry){
 	return last;
 }
 
+
+int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
+	if(tch_listIsEmpty(lentry))
+		return (1 < 0);
+	if(!item)
+		return (1 < 0);
+	tch_lnode_t* cnode = lentry;
+	while(cnode->next != NULL){
+		cnode = cnode->next;
+		if(cnode == item){
+			if(cnode->next)
+				cnode->next->prev = cnode->prev;
+			if(cnode->prev)
+				cnode->prev->next = cnode->next;
+			return (1 > 0);
+		}
+	}
+	if(lentry->next){
+		lentry->next = NULL;
+		lentry->prev = NULL;
+		return (1 > 0);
+	}
+	return (1 < 0);
+}
+
+/*
 int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(tch_listIsEmpty(lentry))
 		return (1 < 0);
@@ -130,7 +156,7 @@ int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 
 	return (1 < 0);
 }
-
+*/
 int tch_listSize(tch_lnode_t* lentry){
 	int cnt = 0;
 	tch_lnode_t* cnode = lentry;
