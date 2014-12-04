@@ -66,7 +66,6 @@ tchStatus barrier_performTest(tch* api){
 	api->Thread->start(child3Id);
 
 
-	api->Sig->wait(1,osWaitForever);
 	api->Thread->sleep(10);
 	api->Barrier->signal(bid,osOK);
 	if(api->Barrier->wait(bid,osWaitForever) != osErrorResource)
@@ -102,7 +101,6 @@ static DECLARE_THREADROUTINE(child2Routine){
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
-	env->Sig->set(mainId,1);
 	if(env->Barrier->wait(bid,osWaitForever) != osOK)
 		return osErrorOS;
 	env->Thread->sleep(20);

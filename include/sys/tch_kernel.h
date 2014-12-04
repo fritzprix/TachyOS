@@ -44,7 +44,7 @@ extern tchStatus tch_kernel_initCrt0(tch* env);
 extern uint32_t tch_kHeapAvail(void);
 extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
-extern void tch_kernel_atexit(tch_threadId thread,int res);
+extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((naked));
 
 
 
@@ -69,7 +69,6 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
  * - are bound statically in compile time
  */
 extern const tch_thread_ix* Thread;
-extern const tch_signal_ix* Sig;
 extern const tch_systime_ix* Timer;
 extern const tch_condv_ix* Condv;
 extern const tch_mtx_ix* Mtx;
@@ -82,6 +81,7 @@ extern const tch_mem_ix* uMem;
 extern const tch_mem_ix* kMem;
 extern const tch_mem_ix* shMem;
 extern const tch_ustdlib_ix* uStdLib;
+extern const tch_usignal_ix* uSig;
 extern const tch_hal* Hal;
 
 

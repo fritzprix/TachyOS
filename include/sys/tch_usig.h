@@ -8,14 +8,22 @@
 #ifndef TCH_USIG_H_
 #define TCH_USIG_H_
 
-#include <signal.h>
+#include "tch_kernel.h"
+
 #if defined(__cplusplus)
 extern "C"{
 #endif
 
-typedef void (*sighandler)(int sig);
+typedef struct tch_usig_arg_t {
+	int      signum;
+	void*    sigarg;
+}tch_uSiganlArg;
 
+extern void tch_usigInit(tch_usigHandle* sig);
 
+extern tch_sigFuncPtr tch_uSignalSetK(int sig,tch_sigFuncPtr fn);
+extern int tch_uSignalRaiseK(tch_threadId thread,tch_uSiganlArg* sarg);
+extern void tch_uSignalJmpToHanlder(tch_threadId thread);
 
 
 #if defined(__cplusplus)

@@ -110,6 +110,7 @@ int main(const tch* api) {
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
+			api->uSig->raise(api->Thread->self(),SIGKILL,osOK);    // kill main
 		}
 	}
 	return osOK;
@@ -117,8 +118,9 @@ int main(const tch* api) {
 
 static DECLARE_THREADROUTINE(childRoutine){
 	env->uStdLib->stdio->iprintf("\rChild Initiated \n");
-	while(1){
-		env->uStdLib->stdio->iprintf("\rChild Loop\n");
+	uint8_t cnt = 100;
+	while(cnt--){
+		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt);
 		env->Thread->sleep(100);
 	}
 	return osOK;

@@ -274,7 +274,7 @@ void tch_schedDestroy(tch_threadId thread,int res){
 		getThreadHeader(thread)->t_state = DESTROYED;      // mark as destroyed and manipulate exception stack to route thread to destroy routine (clean-up stage)
 		tch_exc_stack* rt_stk = (tch_exc_stack*)__get_PSP();
 		rt_stk--;
-		rt_stk->Return = (uint32_t)tch_kernel_atexit;
+		rt_stk->Return = (uint32_t)__tch_kernel_atexit;
 		rt_stk->R0 = (uint32_t)thread;
 		rt_stk->R1 = res;
 		rt_stk->xPSR = (uint32_t) (1 << 24);

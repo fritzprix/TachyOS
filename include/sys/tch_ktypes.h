@@ -55,16 +55,22 @@ struct tch_sys_task_t {
 	int                    id;
 }__attribute__((packed));
 
-typedef struct tch_signal_t {
-	int32_t                 sig_comb;
-	int32_t                 signal;
-	tch_lnode_t             sig_wq;
-}tch_signal;
 
 
 typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
+
+typedef struct tch_usig_handle_t tch_usigHandle;
+
+
+struct tch_usig_handle_t {
+	int              sig;
+	void*            sig_arg;
+	tch_sigFuncPtr   sigHdrTable[4];
+};
+
+
 
 
 
@@ -86,13 +92,13 @@ struct tch_thread_header_t {
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memId                   t_mem;        /// heap handle
-	tch_signal                  t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
 	union {
 		tch_thread_header* root;
 		tch_lnode_t*       childs;
 	} t_refNode;
+	tch_usigHandle              t_usig;
 	struct _reent               t_reent;      /// reentrant struct used by c standard library
 	uint32_t*                   t_chks;       /// checksum for integrity check
 } __attribute__((aligned(8)));
@@ -101,8 +107,8 @@ struct tch_thread_header_t {
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
-#define SV_SIG_MATCH                     ((uint32_t) 0x14)
-#define SV_SIG_WAIT                      ((uint32_t) 0x15)
+#define SV_SIG_SET                       ((uint32_t) 0x16)
+#define SV_SIG_RAISE                     ((uint32_t) 0x17)
 
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread

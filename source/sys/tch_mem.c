@@ -39,7 +39,7 @@ static void* tch_memAlloc(tch_memId mh,size_t size);
 static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next);
 static void tch_memFree(tch_memId mh,void* p);
 static uint32_t tch_memAvail(tch_memId mh);
-static tchStatus tch_memFreeAll(tch_memId mh,tch_lnode_t* alloc_list);
+static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list);
 static void tch_memPrint(void*);
 
 
@@ -137,7 +137,7 @@ static uint32_t tch_usrAvail(void){
 
 static tchStatus tch_usrFreeAll(tch_threadId thread){
 	tch_thread_header* th_hdr = (tch_thread_header*) thread;
-	return tch_memFreeAll(th_hdr->t_mem,&th_hdr->t_ualc);
+	return tch_memForceRelease(th_hdr->t_mem,&th_hdr->t_ualc);
 }
 
 static void tch_usrPrintFreeList(void){
@@ -199,7 +199,7 @@ static uint32_t tch_sharedAvail(void){
 
 static tchStatus tch_sharedFreeAll(tch_threadId thread){
 	tch_thread_header* th_hdr = (tch_thread_header*) thread;
-	return tch_memFreeAll(sharedMem,&th_hdr->t_shalc);
+	return tch_memForceRelease(sharedMem,&th_hdr->t_shalc);
 }
 
 static void tch_sharedPrintFreeList(void){
@@ -244,7 +244,7 @@ tch_memId tch_memCreate(void* mem,uint32_t sz){
 
 }
 
-static tchStatus tch_memFreeAll(tch_memId mh,tch_lnode_t* alloc_list){
+static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
 	tch_uobjProto* uobj = NULL;
 	while(!tch_listIsEmpty(alloc_list)){
 		uobj = tch_listDequeue(alloc_list);

@@ -26,6 +26,8 @@
 #include "tch_nclib.h"
 #include "tch_port.h"
 #include "tch_syscfg.h"
+#include "tch_usig.h"
+#include "tch_thread.h"
 
 
 
@@ -61,11 +63,11 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Sem = Sem;
 	RuntimeInterface.Condv = Condv;
 	RuntimeInterface.Barrier = Barrier;
-	RuntimeInterface.Sig = Sig;
 	RuntimeInterface.Mempool = Mempool;
 	RuntimeInterface.MailQ = MailQ;
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
+	RuntimeInterface.uSig = uSig;
 
 	tch_listInit((tch_lnode_t*) &tch_procList);
 
@@ -113,9 +115,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_currentThread->t_tslot = 0;
 		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
-		if(tch_currentThread->t_state == DESTROYED)
-			tch_schedDestroy(tch_currentThread,tch_currentThread->t_kRet);
 		tch_port_kernel_unlock();
+		tch_uSignalJmpToHanlder(tch_currentThread);
 		break;
 	case SV_THREAD_START:              // start thread first time
 		tch_schedStartThread((tch_threadId) arg1);
@@ -147,14 +148,13 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		tch_schedDestroy((tch_threadId) cth,arg2);
 		break;
-	case SV_SIG_WAIT:
-		cth = (tch_thread_header*) tch_schedGetRunningThread();
-		cth->t_sig.sig_comb = arg1;                         ///< update thread signal pattern
-		tch_schedSuspend((tch_thread_queue*)&cth->t_sig.sig_wq,arg2);///< suspend to signal wq
+	case SV_SIG_SET:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,(tchStatus)tch_uSignalSetK((int)arg1,(tch_sigFuncPtr) arg2));
 		break;
-	case SV_SIG_MATCH:
-		cth = (tch_thread_header*) arg1;
-		tch_schedResumeM((tch_thread_queue*)&cth->t_sig.sig_wq,SCHED_THREAD_ALL,osOK,TRUE);
+	case SV_SIG_RAISE:
+		cth = tch_currentThread;
+		tch_kernelSetResult(cth,(tchStatus)tch_uSignalRaiseK((tch_threadId)arg1,(tch_uSiganlArg*) arg2));
 		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;

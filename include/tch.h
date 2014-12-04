@@ -114,12 +114,6 @@ struct _tch_bar_ix_t {
 	tchStatus (*destroy)(tch_barId bar);
 };
 
-struct _tch_signal_ix_t {
-	int32_t (*set)(tch_threadId thread,int32_t signals);
-	int32_t (*clear)(tch_threadId thread,int32_t signals);
-	tchStatus (*wait)(int32_t signals,uint32_t millisec);
-};
-
 
 struct _tch_systime_ix_t {
 	uint64_t (*setCurrentTimeMills)(uint64_t time);
@@ -227,12 +221,15 @@ struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
 	uint32_t (*avail)(void);
-	tchStatus (*freeAll)(tch_threadId thread);
+	tchStatus (*forceRelease)(tch_threadId thread);
 	void (*printFreeList)(void);
 	void (*printAllocList)(void);
 };
 
-
+struct _tch_usig_ix_t {
+	tch_sigFuncPtr (*set)(int sig,tch_sigFuncPtr fn);
+	int (*raise)(tch_threadId thread,int sig,uint32_t sig_arg);
+};
 
 
 #include "sys/tch_nclib.h"

@@ -20,7 +20,6 @@ typedef struct _tch_thread_ix_t tch_thread_ix;
 typedef struct _tch_condvar_ix_t tch_condv_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
 typedef struct _tch_semaph_ix_t tch_semaph_ix;
-typedef struct _tch_signal_ix_t tch_signal_ix;
 typedef struct _tch_systime_ix_t tch_systime_ix;
 typedef struct _tch_msgque_ix_t tch_msgq_ix;
 typedef struct _tch_mailbox_ix_t tch_mailq_ix;
@@ -29,12 +28,13 @@ typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
 typedef struct _tch_bar_ix_t tch_bar_ix;
+typedef struct _tch_usig_ix_t tch_usignal_ix;
 typedef struct tch_hal_t tch_hal;
 
 
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
-	const tch_signal_ix* Sig;
+	const tch_usignal_ix* uSig;
 	const tch_systime_ix* Timer;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
@@ -68,6 +68,18 @@ typedef enum  {
   osErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
   os_status_reserved      =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
+
+
+typedef void (*tch_sigFuncPtr)(int,uint32_t);
+
+#define SIG_DFL ((tch_sigFuncPtr) 0)	/* Default action */
+#define SIG_IGN ((tch_sigFuncPtr) 1)	/* Ignore action */
+#define SIG_ERR ((tch_sigFuncPtr)-1)	/* Error return */
+
+#define SIGKILL ((int)  0)
+#define SIGINT  ((int)  1)
+#define SIGSEGV ((int)  2)
+#define SIGUSR  ((int)  3)
 
 
 typedef struct  {

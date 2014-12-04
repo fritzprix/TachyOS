@@ -61,8 +61,8 @@ tchStatus tch_kHeapFreeAll(tch_threadId thread){
 	tch_thread_header* th_hdr = (tch_thread_header*) thread;
 	if(!Thread->isRoot())
 		return osErrorParameter;
-	uMem->freeAll(thread);
-	shMem->freeAll(thread);
+	uMem->forceRelease(thread);
+	shMem->forceRelease(thread);
 	free(th_hdr->t_chks);
 	return osOK;
 }

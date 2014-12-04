@@ -13,17 +13,16 @@
  */
 
 #include "tch_kernel.h"
-#include "tch_sched.h"
+#include "tch_thread.h"
 #include "tch_mem.h"
 #include "tch_syscfg.h"
+#include "tch_usig.h"
 #include <sys/reent.h>
 
 
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
 
 
-
-const uint32_t THREAD_ROOT_BIT  =  ((uint32_t) 1 << 0); // if set thread is root thread of process, otherwise child thread of any root
 
 
 /**
@@ -49,7 +48,7 @@ static void* tch_threadGetArg();
 static BOOL tch_threadIsValid(tch_threadId id);
 static BOOL tch_threadIsRoot();
 
-static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status);
+static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status) __attribute__((naked));
 
 
 __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
@@ -98,6 +97,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_prior = cfg->t_proior;
 	tch_listInit(&thread_p->t_ualc);
 	tch_listInit(&thread_p->t_shalc);
+	tch_usigInit(&thread_p->t_usig);
 	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
@@ -113,9 +113,8 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
 	tch_listInit(&thread_p->t_childNode);
-	tch_signalInit(&thread_p->t_sig);
-	thread_p->t_chks = (uint32_t*)th_mem;
-	*thread_p->t_chks = (uint32_t)thread_p->t_arg + (uint32_t)thread_p->t_fn;
+	thread_p->t_chks = (uint32_t*)th_mem;                                                    // keep allocated mem pointer to release it when this thread is destroyed
+	*thread_p->t_chks = (uint32_t) tch_noop_destr;                                           // thread has no-op destructor
 	thread_p->t_flag = 0;
 
 
@@ -123,13 +122,13 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
 		thread_p->t_refNode.root = tch_currentThread;
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-		tch_listPutLast(tch_currentThread->t_refNode.childs,&thread_p->t_childNode);
+		tch_listPutFirst(tch_currentThread->t_refNode.childs,&thread_p->t_childNode);
 	}else{                                                  // if new thread is root thread
 		thread_p->t_refNode.childs = kMem->alloc(sizeof(tch_lnode_t));
 		tch_listInit(thread_p->t_refNode.childs);
 		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
-		tch_listPutLast(&tch_procList,&thread_p->t_childNode);
+		tch_listPutFirst((tch_lnode_t*)&tch_procList,(tch_lnode_t*)&thread_p->t_childNode);
 	}
 
 	return (tch_threadId) thread_p;
@@ -210,7 +209,7 @@ static BOOL tch_threadIsRoot(){
 }
 
 
-static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
+__attribute__((naked))static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 
 #ifdef MFEATURE_HFLOAT
 	float _force_fctx = 0.1f;
@@ -222,14 +221,14 @@ static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status){
 }
 
 
-void tch_kernel_atexit(tch_threadId thread,int status){
+__attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 	// destroy & release used system resources
 	tch_mem_ix* mem = NULL;
 	tch_thread_header* th_p = getThreadHeader(thread);
 	tch_thread_header* ch_p = NULL;
 	uStdLib->stdio->iprintf("\rThread (%s) Exit with (%d)\n",getThreadHeader(thread)->t_name,status);
-	uMem->freeAll(thread);
-	shMem->freeAll(thread);
+	uMem->forceRelease(thread);
+	shMem->forceRelease(thread);
 	if(th_p->t_flag & THREAD_ROOT_BIT){
 		while(!tch_listIsEmpty(th_p->t_refNode.childs)){
 			ch_p = (tch_thread_header*)((uint32_t) tch_listDequeue(th_p->t_refNode.childs) - 3 * sizeof(tch_lnode_t));
@@ -246,6 +245,7 @@ void tch_kernel_atexit(tch_threadId thread,int status){
 	}else{
 		tch_listRemove((tch_lnode_t*)getThreadHeader(th_p->t_refNode.root)->t_refNode.childs,&th_p->t_childNode);
 		mem = (tch_mem_ix*)uMem;
+		tch_currentThread = tch_currentThread->t_refNode.root;
 	}
 	mem->free(getThreadHeader(thread)->t_chks);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,status);
