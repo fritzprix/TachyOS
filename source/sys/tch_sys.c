@@ -115,8 +115,8 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_currentThread->t_tslot = 0;
 		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
-		tch_port_kernel_unlock();
 		tch_uSignalJmpToHanlder(tch_currentThread);
+		tch_port_kernel_unlock();
 		break;
 	case SV_THREAD_START:              // start thread first time
 		tch_schedStartThread((tch_threadId) arg1);

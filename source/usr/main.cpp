@@ -20,6 +20,7 @@ tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
 static DECLARE_THREADROUTINE(childRoutine);
+static DECLARE_SIGHALDER(main_sighandler);
 
 int main(const tch* api) {
 
@@ -85,8 +86,9 @@ int main(const tch* api) {
 	thcfg._t_routine = childRoutine;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 1 << 10;
-	tch_threadId nchild = api->Thread->create(&thcfg,NULL);
+	tch_threadId nchild = api->Thread->create(&thcfg,api->Thread->self());
 	api->Thread->start(nchild);
+	api->uSig->set(SIGINT,main_sighandler);
 
 	while(1){
 		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
@@ -110,19 +112,29 @@ int main(const tch* api) {
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
-			api->uSig->raise(api->Thread->self(),SIGKILL,osOK);    // kill main
 		}
 	}
 	return osOK;
 }
 
 static DECLARE_THREADROUTINE(childRoutine){
+	tch_threadId parent = env->Thread->getArg();
 	env->uStdLib->stdio->iprintf("\rChild Initiated \n");
-	uint8_t cnt = 100;
-	while(cnt--){
+
+	uint32_t cnt = 0;
+	while(1){
 		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt);
-		env->Thread->sleep(100);
+		env->Thread->sleep(10);
+		env->uSig->raise(parent,SIGINT,&cnt);
 	}
 	return osOK;
 }
+
+
+
+static DECLARE_SIGHALDER(main_sighandler){
+	uint32_t* cnt = (uint32_t*) arg;
+	(*cnt)++;
+}
+
 

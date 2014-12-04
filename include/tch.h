@@ -48,6 +48,7 @@ extern "C" {
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
+#define DECLARE_SIGHALDER(fn)                        void fn(int sig,uint32_t arg)
 
 
 typedef struct _tch_runtime_t tch;

@@ -16,7 +16,7 @@ static int tch_uSignalRaise(tch_threadId thread,int sig,uint32_t arg);
 
 static void tch_uSignalKill(int sig,uint32_t arg);
 static void tch_uSignalNoop(int sig,uint32_t arg);
-static void __tch_uSignalHandler(tch_sigFuncPtr fn,int sig,void* arg) __attribute__((naked));
+static void __tch_uSignalHandler(tch_sigFuncPtr fn,int sig,uint32_t arg) __attribute__((naked));
 
 __attribute__((section(".data"))) static tch_usignal_ix uSig_StaticInstance = {
 		tch_uSignalSet,
@@ -120,12 +120,33 @@ static void tch_uSignalNoop(int sig,uint32_t arg){
 }
 
 
-__attribute__((naked)) static void __tch_uSignalHandler(tch_sigFuncPtr fn,int sig,void* arg) {
+__attribute__((naked)) static void __tch_uSignalHandler(tch_sigFuncPtr fn,int sig,uint32_t arg) {
 	tch_port_kernel_unlock();
 	fn(sig,arg);
 	tch_port_kernel_lock();
 	asm volatile(
 			"ldr r0,=%0\n"
 			"svc #0" : : "i"(SV_EXIT_FROM_SV) :);
+	/*
+	asm volatile(
+#ifdef MFEATURE_HFLOAT
+			"vpush {s16-s31}\n"
+#endif
+			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
+			"str sp,[%0]\n"                      ///< store
+			: : "r"(&tch_currentThread->t_ctx):);
+
+	tch_port_kernel_unlock();
+	fn(sig,arg);
+	tch_port_kernel_lock();
+	asm volatile(
+			"ldr sp,[%0]\n"
+			"pop {r4-r11,lr}\n"
+#ifdef MFEATURE_HFLOAT
+			"vpop {s16-s31}\n"
+#endif
+			"ldr r0,=%1\n"
+			"svc #0" : : "r"(&tch_currentThread->t_ctx),"i"(SV_EXIT_FROM_SV):);
+			*/
 }
 
