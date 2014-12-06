@@ -67,7 +67,7 @@ typedef struct tch_usig_handle_t tch_usigHandle;
 struct tch_usig_handle_t {
 	int              sig;
 	void*            sig_arg;
-	tch_sigFuncPtr   sigHdrTable[4];
+	tch_sigFuncPtr   sigHdrTable[3];
 };
 
 

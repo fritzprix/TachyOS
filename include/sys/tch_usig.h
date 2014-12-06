@@ -23,7 +23,7 @@ extern void tch_usigInit(tch_usigHandle* sig);
 
 extern tch_sigFuncPtr tch_uSignalSetK(int sig,tch_sigFuncPtr fn);
 extern int tch_uSignalRaiseK(tch_threadId thread,tch_uSiganlArg* sarg);
-extern void tch_uSignalJmpToHanlder(tch_threadId thread);
+extern BOOL tch_uSignalJmpToHanlder(tch_threadId thread);
 
 
 #if defined(__cplusplus)

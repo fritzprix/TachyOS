@@ -232,13 +232,11 @@ __attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 	if(th_p->t_flag & THREAD_ROOT_BIT){
 		while(!tch_listIsEmpty(th_p->t_refNode.childs)){
 			ch_p = (tch_thread_header*)((uint32_t) tch_listDequeue(th_p->t_refNode.childs) - 3 * sizeof(tch_lnode_t));
-			/*
 			if(ch_p){
-				Thread->terminate(ch_p,status);   // terminate child
+				uSig->raise(ch_p,SIGKILL,status);
 				Thread->join(ch_p,osWaitForever);        // wait child termination
 				uStdLib->stdio->iprintf("\rThread (%s) Terminated ",ch_p->t_name);
 			}
-			*/
 		}
 		tch_listRemove((tch_lnode_t*)&tch_procList,&th_p->t_childNode);
 		mem = (tch_mem_ix*)kMem;

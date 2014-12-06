@@ -78,8 +78,7 @@ typedef void (*tch_sigFuncPtr)(int,uint32_t);
 
 #define SIGKILL ((int)  0)
 #define SIGINT  ((int)  1)
-#define SIGSEGV ((int)  2)
-#define SIGUSR  ((int)  3)
+#define SIGUSR  ((int)  2)
 
 
 typedef struct  {

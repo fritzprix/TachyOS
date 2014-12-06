@@ -20,7 +20,7 @@ tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
 static DECLARE_THREADROUTINE(childRoutine);
-static DECLARE_SIGHALDER(main_sighandler);
+static DECLARE_SIGHANDLER(main_sighandler);
 
 int main(const tch* api) {
 
@@ -48,13 +48,6 @@ int main(const tch* api) {
 	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
-	api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
-	api->Mem->printAllocList();
-	api->Mem->printFreeList();
-	tch_assert(api,gpio_performTest(api) == osOK,osErrorOS);
-	api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
-	api->Mem->printAllocList();
-	api->Mem->printFreeList();
 
 	//	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
 	//	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
@@ -121,20 +114,21 @@ static DECLARE_THREADROUTINE(childRoutine){
 	tch_threadId parent = env->Thread->getArg();
 	env->uStdLib->stdio->iprintf("\rChild Initiated \n");
 
-	uint32_t cnt = 0;
-	while(1){
+	uint32_t cnt = 100;
+	while(cnt){
 		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt);
 		env->Thread->sleep(10);
 		env->uSig->raise(parent,SIGINT,&cnt);
 	}
+	env->uSig->raise(parent,SIGKILL,osOK);
 	return osOK;
 }
 
 
 
-static DECLARE_SIGHALDER(main_sighandler){
+static DECLARE_SIGHANDLER(main_sighandler){
 	uint32_t* cnt = (uint32_t*) arg;
-	(*cnt)++;
+	(*cnt)--;
 }
 
 

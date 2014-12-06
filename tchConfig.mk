@@ -38,15 +38,21 @@ endif
 
 
 
-### Open 407Z ###
+### Open 407Z ###\
+ARCH = ARM\
+CPU = cortex-m4\
+INSTR = thumb\
+FPU = HALFSOFT\
+HW_VENDOR = "ST Micro"\
+HW_PLF = STM32F40_41xxx\
+
+
 ARCH = ARM
-CPU = cortex-m4
+CPU = cortex-m3
 INSTR = thumb
-FPU = HALFSOFT
+FPU = SOFT
 HW_VENDOR = "ST Micro"
-HW_PLF = STM32F40_41xxx
-
-
+HW_PLF = STM32F2XX
 
 
 
