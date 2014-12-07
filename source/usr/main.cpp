@@ -81,7 +81,6 @@ int main(const tch* api) {
 	thcfg.t_stackSize = 1 << 10;
 	tch_threadId nchild = api->Thread->create(&thcfg,api->Thread->self());
 	api->Thread->start(nchild);
-	api->uSig->set(SIGINT,main_sighandler);
 
 	while(1){
 		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
@@ -116,11 +115,10 @@ static DECLARE_THREADROUTINE(childRoutine){
 
 	uint32_t cnt = 100;
 	while(cnt){
-		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt);
+		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt--);
 		env->Thread->sleep(10);
-		env->uSig->raise(parent,SIGINT,&cnt);
 	}
-	env->uSig->raise(parent,SIGKILL,osOK);
+	env->Thread->terminate(parent,osOK);
 	return osOK;
 }
 

@@ -81,7 +81,6 @@ extern const tch_mem_ix* uMem;
 extern const tch_mem_ix* kMem;
 extern const tch_mem_ix* shMem;
 extern const tch_ustdlib_ix* uStdLib;
-extern const tch_usignal_ix* uSig;
 extern const tch_hal* Hal;
 
 

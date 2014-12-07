@@ -78,6 +78,7 @@ extern tchStatus tch_schedCancelTimeout(tch_threadId thread);
 
 extern void tch_schedTerminate(tch_threadId thread, int result);
 extern void tch_schedDestroy(tch_threadId thread,int result);
+extern BOOL tch_schedLivenessChk(tch_threadId thread);
 
 
 /***

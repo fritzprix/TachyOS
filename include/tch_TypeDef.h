@@ -28,13 +28,11 @@ typedef struct _tch_mem_ix_t tch_mem_ix;
 typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
 typedef struct _tch_bar_ix_t tch_bar_ix;
-typedef struct _tch_usig_ix_t tch_usignal_ix;
 typedef struct tch_hal_t tch_hal;
 
 
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
-	const tch_usignal_ix* uSig;
 	const tch_systime_ix* Timer;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;

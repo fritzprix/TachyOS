@@ -227,11 +227,6 @@ struct _tch_mem_ix_t {
 	void (*printAllocList)(void);
 };
 
-struct _tch_usig_ix_t {
-	tch_sigFuncPtr (*set)(int sig,tch_sigFuncPtr fn);
-	int (*raise)(tch_threadId thread,int sig,uint32_t sig_arg);
-};
-
 
 #include "sys/tch_nclib.h"
 #include "hal/tch_hal.h"

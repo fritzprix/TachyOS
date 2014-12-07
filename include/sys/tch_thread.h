@@ -24,7 +24,7 @@ extern "C"{
 
 
 #define THREAD_ROOT_BIT    ((uint8_t) 1 << 0)
-#define THREAD_SIG_BIT     ((uint8_t) 1 << 1)
+#define THREAD_DEATH_BIT     ((uint8_t) 1 << 1)
 
 
 /**

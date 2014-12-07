@@ -61,14 +61,6 @@ typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
 
-typedef struct tch_usig_handle_t tch_usigHandle;
-
-
-struct tch_usig_handle_t {
-	int              sig;
-	void*            sig_arg;
-	tch_sigFuncPtr   sigHdrTable[3];
-};
 
 
 
@@ -98,7 +90,6 @@ struct tch_thread_header_t {
 		tch_thread_header* root;
 		tch_lnode_t*       childs;
 	} t_refNode;
-	tch_usigHandle              t_usig;
 	struct _reent               t_reent;      /// reentrant struct used by c standard library
 	uint32_t*                   t_chks;       /// checksum for integrity check
 } __attribute__((aligned(8)));
@@ -106,9 +97,6 @@ struct tch_thread_header_t {
 
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
-
-#define SV_SIG_SET                       ((uint32_t) 0x16)
-#define SV_SIG_RAISE                     ((uint32_t) 0x17)
 
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread

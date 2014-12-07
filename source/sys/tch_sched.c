@@ -13,10 +13,9 @@
  */
 
 #include "tch_kernel.h"
-#include "tch_port.h"
 #include "tch_list.h"
 #include "tch_sched.h"
-#include "tch_halcfg.h"
+#include "tch_thread.h"
 
 /* =================  private internal function declaration   ========================== */
 
@@ -271,18 +270,22 @@ void tch_schedTerminate(tch_threadId thread,int result){
 void tch_schedDestroy(tch_threadId thread,int res){
 	/// manipulated exc stack to return atexit
 	if(thread == tch_currentThread){
-		getThreadHeader(thread)->t_state = DESTROYED;      // mark as destroyed and manipulate exception stack to route thread to destroy routine (clean-up stage)
-		tch_exc_stack* rt_stk = (tch_exc_stack*)__get_PSP();
-		rt_stk--;
-		rt_stk->Return = (uint32_t)__tch_kernel_atexit;
-		rt_stk->R0 = (uint32_t)thread;
-		rt_stk->R1 = res;
-		rt_stk->xPSR = (uint32_t) (1 << 24);
-		__set_PSP((uint32_t)rt_stk);
-	}else
-		getThreadHeader(thread)->t_state = DESTROYED;      // just mark as destroyed
-	return;
+		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,res,0);
+	}else{
+		getThreadHeader(thread)->t_flag |= THREAD_DEATH_BIT;
+		getThreadHeader(thread)->t_reent._errno = res;
+	}
 }
+
+BOOL tch_schedLivenessChk(tch_threadId thread){
+	if(!(getThreadHeader(thread)->t_flag & THREAD_DEATH_BIT))
+		return TRUE;
+	tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,getThreadHeader(thread)->t_reent._errno,0);
+	getThreadHeader(thread)->t_flag &= ~THREAD_DEATH_BIT;
+
+	return FALSE;
+}
+
 
 
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
@@ -297,6 +300,8 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	int result = thr_p->t_fn(thr_p->t_arg);
 	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
+
+
 
 
 static LIST_CMP_FN(tch_schedReadyQRule){

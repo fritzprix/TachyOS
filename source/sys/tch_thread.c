@@ -16,7 +16,6 @@
 #include "tch_thread.h"
 #include "tch_mem.h"
 #include "tch_syscfg.h"
-#include "tch_usig.h"
 #include <sys/reent.h>
 
 
@@ -97,7 +96,6 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_prior = cfg->t_proior;
 	tch_listInit(&thread_p->t_ualc);
 	tch_listInit(&thread_p->t_shalc);
-	tch_usigInit(&thread_p->t_usig);
 	                                                                             /**
 	                                                                             *  thread context will be saved on 't_ctx'
 	                                                                             *  initial sp is located in 2 context table offset below thread pointer
@@ -233,7 +231,7 @@ __attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 		while(!tch_listIsEmpty(th_p->t_refNode.childs)){
 			ch_p = (tch_thread_header*)((uint32_t) tch_listDequeue(th_p->t_refNode.childs) - 3 * sizeof(tch_lnode_t));
 			if(ch_p){
-				uSig->raise(ch_p,SIGKILL,status);
+				Thread->terminate(ch_p,status);
 				Thread->join(ch_p,osWaitForever);        // wait child termination
 				uStdLib->stdio->iprintf("\rThread (%s) Terminated ",ch_p->t_name);
 			}
