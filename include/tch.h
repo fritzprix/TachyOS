@@ -48,7 +48,6 @@ extern "C" {
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
-#define DECLARE_SIGHANDLER(fn)                        void fn(int sig,uint32_t arg)
 
 
 typedef struct _tch_runtime_t tch;
@@ -227,9 +226,20 @@ struct _tch_mem_ix_t {
 	void (*printAllocList)(void);
 };
 
+struct _tch_event_ix_t {
+	tch_eventTree* (*createEventTree)();
+	tchStatus (*listen)(tch_eventTree* self,tch_eventHandler ev_handler);
+	tchStatus (*waitEvent)(tch_eventTree* self,int ev_id,uint32_t timeout);
+	tchStatus (*raise)(tch_eventTree* self,int ev_id,int ev_msg);
+	tchStatus (*raiseAll)(int ev_id,int ev_msg);
+	void (*destroy)(tch_eventTree* self);
+};
+
+
 
 #include "sys/tch_nclib.h"
 #include "hal/tch_hal.h"
+
 
 extern DECLARE_THREADROUTINE(main);
 

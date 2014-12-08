@@ -29,6 +29,8 @@ typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct _tch_async_ix_t tch_async_ix;
 typedef struct _tch_bar_ix_t tch_bar_ix;
 typedef struct tch_hal_t tch_hal;
+typedef struct _tch_event_ix_t tch_event_ix;
+
 
 
 typedef struct _tch_runtime_t {

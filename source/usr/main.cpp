@@ -20,7 +20,6 @@ tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
 static DECLARE_THREADROUTINE(childRoutine);
-static DECLARE_SIGHANDLER(main_sighandler);
 
 int main(const tch* api) {
 
@@ -115,8 +114,8 @@ static DECLARE_THREADROUTINE(childRoutine){
 
 	uint32_t cnt = 100;
 	while(cnt){
-		env->uStdLib->stdio->iprintf("\rChild Loop %d\n",cnt--);
-		env->Thread->sleep(10);
+		env->uStdLib->stdio->iprintf("\rChild Loop %x\n",cnt++);
+		env->Thread->sleep(100);
 	}
 	env->Thread->terminate(parent,osOK);
 	return osOK;
@@ -124,9 +123,5 @@ static DECLARE_THREADROUTINE(childRoutine){
 
 
 
-static DECLARE_SIGHANDLER(main_sighandler){
-	uint32_t* cnt = (uint32_t*) arg;
-	(*cnt)--;
-}
 
 

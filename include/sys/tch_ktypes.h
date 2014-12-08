@@ -19,8 +19,6 @@
 extern "C" {
 #endif
 
-typedef struct tch_kobj_t tch_kObject;
-typedef struct tch_event_ix_t tch_event_ix;
 
 typedef enum tch_thread_state_t {
 	PENDED =  ((int8_t) 1),                              // state in which thread is created but not started yet (waiting in ready queue)

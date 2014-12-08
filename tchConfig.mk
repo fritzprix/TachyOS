@@ -27,7 +27,7 @@ endif
 
 # Hardware Vendor Option
 ifeq ($(HW_VENDOR),)
-	HW_VENDOR = "ST Micro"
+	HW_VENDOR = ST_Micro
 endif
 
 # IC_FAMILY Option
@@ -51,7 +51,7 @@ ARCH = ARM
 CPU = cortex-m3
 INSTR = thumb
 FPU = SOFT
-HW_VENDOR = "ST Micro"
+HW_VENDOR = ST_Micro
 HW_PLF = STM32F2XX
 
 

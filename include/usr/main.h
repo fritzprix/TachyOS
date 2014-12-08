@@ -20,8 +20,6 @@ extern "C" {
 #endif
 
 #include "tch.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "mtx_test.h"
 #include "semaphore_test.h"

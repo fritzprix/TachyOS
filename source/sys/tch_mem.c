@@ -257,7 +257,7 @@ static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
 }
 
 static void tch_memPrint(void* m){
-	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %d\n",((tch_memHdr*)m)->usz,m);
+	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %x\n",((tch_memHdr*)m)->usz,m);
 }
 
 

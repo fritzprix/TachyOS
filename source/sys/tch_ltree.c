@@ -53,6 +53,8 @@ tch_ltree_node* tch_ltreeRemoveTail(tch_ltree_node** rtp){
 	return tch_btree_delete(rtp,root->trn.key);
 }
 
+
+
 void tch_ltreePrint(tch_ltree_node* root,void (*prt)(void*)){
 	tch_listPrint(&root->ln,prt);
 }
