@@ -48,22 +48,22 @@ tchStatus msgq_performTest(tch* api){
 
 	tch_GpioCfg iocfg;
 	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = api->Device->gpio->Mode.Out;
-	iocfg.Otype = api->Device->gpio->Otype.OpenDrain;
-	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	iocfg.Speed = api->Device->gpio->Speed.Mid;
-	out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,1 << 2,&iocfg,osWaitForever,ActOnSleep);
+	iocfg.Mode = GPIO_Mode_OUT;
+	iocfg.Otype = GPIO_Otype_OD;
+	iocfg.PuPd = GPIO_PuPd_PU;
+	iocfg.Speed = GPIO_OSpeed_50M;
+	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,osWaitForever,ActOnSleep);
 	out->out(out,1 << 2,bSet);
 
-	iocfg.Mode = api->Device->gpio->Mode.In;
-	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	iocfg.Speed = api->Device->gpio->Speed.Mid;
-	in = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_0,1 << 0,&iocfg,osWaitForever,ActOnSleep);
+	iocfg.Mode = GPIO_Mode_IN;
+	iocfg.PuPd = GPIO_PuPd_PU;;
+	iocfg.Speed = GPIO_OSpeed_50M;
+	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,osWaitForever,ActOnSleep);
 
 	tch_GpioEvCfg evcfg;
 	api->Device->gpio->initEvCfg(&evcfg);
-	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
-	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
+	evcfg.EvEdge = GPIO_EvEdge_Fall;
+	evcfg.EvType = GPIO_EvType_Interrupt;
 	evcfg.EvCallback = ioEventListener;
 	uint32_t pmsk = 1 << 0;
 	in->registerIoEvent(in,&evcfg,&pmsk);

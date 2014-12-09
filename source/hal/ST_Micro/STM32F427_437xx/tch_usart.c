@@ -21,37 +21,11 @@
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)
 
-
-
 #define TCH_URX_QSZ                         ((size_t) 10)
 
-#define TCH_UTX_ID                          ((uint32_t) 0x5D)
-
 #define USART_Parity_Pos_CR1                (uint8_t) (9)
-#define USART_Parity_NON                    (uint8_t) (0 << 1 | 0 << 0)
-#define USART_Parity_ODD                    (uint8_t) (1 << 1 | 1 << 0)
-#define USART_Parity_EVEN                   (uint8_t) (1 << 1 | 0 << 0)
 
 #define USART_StopBit_Pos_CR2               (uint8_t) (12)
-#define USART_StopBit_1B                    (uint8_t) (0)
-#define USART_StopBit_0dot5B                (uint8_t) (1)
-#define USART_StopBit_2B                    (uint8_t) (2)
-#define USART_StopBit_1dot5B                (uint8_t) (3)
-
-
-#define INIT_UART_STOPBIT                   {\
-	                                          USART_StopBit_0dot5B,\
-	                                          USART_StopBit_1B,\
-	                                          USART_StopBit_1dot5B,\
-	                                          USART_StopBit_2B\
-}
-
-
-#define INIT_UART_PARITY                   {\
-	                                          USART_Parity_NON,\
-	                                          USART_Parity_ODD,\
-	                                          USART_Parity_EVEN\
-}
 
 
 #define UART_RXBUSY                         ((uint32_t) 0x10000)
@@ -94,7 +68,7 @@ struct tch_lld_usart_arg_t {
 
 typedef struct tch_lld_usart_handle_prototype_t {
 	tch_UartHandle                    pix;
-	uint8_t                           idx;
+	uart_t                           pno;
 	union {
 		tch_DmaHandle txDma;
 		tch_msgqId txQ;
@@ -109,7 +83,7 @@ typedef struct tch_lld_usart_handle_prototype_t {
 	tch_mtxId                         txMtx;
 	tch_condvId                       txCondv;
 	uint32_t                          status;
-	tch*                              env;
+	const tch*                        env;
 }tch_UartHandlePrototype;
 
 typedef struct tch_lld_uart_prototype {
@@ -120,8 +94,8 @@ typedef struct tch_lld_uart_prototype {
 	uint16_t                          lpoccp_state;
 }tch_lld_uart_prototype;
 
-static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-static BOOL tch_uartClose(tch_UartHandle* handle);
+static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+static tchStatus tch_uartClose(tch_UartHandle* handle);
 
 static tchStatus tch_uartPutc(tch_UartHandle* handle,uint8_t c);
 static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
@@ -139,11 +113,8 @@ static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle);
 
 __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInstance = {
 		{
-				INIT_UART_STOPBIT,
-				INIT_UART_PARITY,
 				MFEATURE_UART,
-				tch_uartOpen,
-				tch_uartClose
+				tch_uartOpen
 		},
 		NULL,
 		NULL,
@@ -155,13 +126,13 @@ __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInsta
 
 const tch_lld_usart* tch_usart_instance = (const tch_lld_usart*) &UART_StaticInstance;
 
-static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	tch_UartHandlePrototype* uins = NULL;
 	tch_GpioCfg iocfg;
 	uint32_t io_msk = 0;
-	uint32_t umskb = 1 << cfg->UartCh;
+	uint32_t umskb = 1 << port;
 
-	if(cfg->UartCh >= MFEATURE_UART)    // if requested channel is larger than uart channel count
+	if(port >= MFEATURE_UART)    // if requested channel is larger than uart channel count
 		return NULL;                    // return null
 	if(!UART_StaticInstance.mtx)
 		UART_StaticInstance.mtx = env->Mtx->create();
@@ -179,9 +150,9 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	}
 	UART_StaticInstance.occp_state |= umskb;   // mark as occupied
 	env->Mtx->unlock(UART_StaticInstance.mtx); // exit critical section
-	tch_uart_descriptor* uDesc = &UART_HWs[cfg->UartCh];
+	tch_uart_descriptor* uDesc = &UART_HWs[port];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
-	tch_uart_bs* ubs = &UART_BD_CFGs[cfg->UartCh];
+	tch_uart_bs* ubs = &UART_BD_CFGs[port];
 
                    // configure io port required by uart
 
@@ -193,11 +164,11 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	uins->rxCondv = env->Condv->create();
 	uins->txMtx = env->Mtx->create();
 	uins->txCondv = env->Condv->create();
-	uins->idx = cfg->UartCh;
+	uins->pno = port;
 	uins->env = env;
 
 	env->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.Af = ubs->afv;
 
 	io_msk = (1 << ubs->rxp) | (1 << ubs->txp);
@@ -247,16 +218,16 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 	BOOL txDma = FALSE;
 
 	if(ubs->txdma != DMA_NOT_USED){ // setup tx dma
-		dmaCfg.BufferType = DMA->BufferType.Normal;
+		dmaCfg.BufferType = DMA_BufferMode_Normal;
 		dmaCfg.Ch = ubs->txch;
-		dmaCfg.Dir = DMA->Dir.MemToPeriph;
-		dmaCfg.FlowCtrl = DMA->FlowCtrl.DMA;
-		dmaCfg.Priority = DMA->Priority.Normal;
-		dmaCfg.mAlign = DMA->Align.Byte;
-		dmaCfg.mBurstSize = DMA->BurstSize.Burst1;
+		dmaCfg.Dir = DMA_Dir_MemToPeriph;
+		dmaCfg.FlowCtrl = DMA_FlowControl_DMA;
+		dmaCfg.Priority = DMA_Prior_Mid;
+		dmaCfg.mAlign = DMA_DataAlign_Byte;
+		dmaCfg.mBurstSize = DMA_Burst_Single;
 		dmaCfg.mInc = TRUE;
-		dmaCfg.pAlign = DMA->Align.Byte;
-		dmaCfg.pBurstSize = DMA->BurstSize.Burst1;
+		dmaCfg.pAlign = DMA_DataAlign_Byte;
+		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
 		uins->txCh.txDma = DMA->allocDma(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
@@ -268,16 +239,16 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 
 
 	if(ubs->rxdma != DMA_NOT_USED){ // setup rx dma
-		dmaCfg.BufferType = DMA->BufferType.Normal;
+		dmaCfg.BufferType = DMA_BufferMode_Normal;
 		dmaCfg.Ch = ubs->rxch;
-		dmaCfg.Dir = DMA->Dir.PeriphToMem;
-		dmaCfg.FlowCtrl = DMA->FlowCtrl.DMA;
-		dmaCfg.Priority = DMA->Priority.Normal;
-		dmaCfg.mAlign = DMA->Align.Byte;
-		dmaCfg.mBurstSize = DMA->BurstSize.Burst1;
+		dmaCfg.Dir = DMA_Dir_PeriphToMem;
+		dmaCfg.FlowCtrl = DMA_FlowControl_DMA;
+		dmaCfg.Priority = DMA_Prior_Mid;
+		dmaCfg.mAlign = DMA_DataAlign_Byte;
+		dmaCfg.mBurstSize = DMA_Burst_Single;
 		dmaCfg.mInc = TRUE;
-		dmaCfg.pAlign = DMA->Align.Byte;
-		dmaCfg.pBurstSize = DMA->BurstSize.Burst1;
+		dmaCfg.pAlign = DMA_DataAlign_Byte;
+		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
 		uins->rxCh.rxDma = DMA->allocDma(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
@@ -314,6 +285,8 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 		uhw->CR3 &= ~USART_CR3_DMAR;
 	}
 
+	uins->pix.close = tch_uartClose;
+
 
 	uhw->CR1 |= USART_CR1_UE;
 	uhw->SR = 0;
@@ -329,29 +302,31 @@ static tch_UartHandle* tch_uartOpen(tch* env,tch_UartCfg* cfg,uint32_t timeout,t
 }
 
 
-static BOOL tch_uartClose(tch_UartHandle* handle){
+static tchStatus tch_uartClose(tch_UartHandle* handle){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
-	tch_uart_descriptor* uDesc = &UART_HWs[ins->idx];
+	tch_uart_descriptor* uDesc = &UART_HWs[ins->pno];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
-	tch* env = ins->env;
+	tchStatus res = osOK;
+	const tch* env = ins->env;
 	if(!tch_uartIsValid(ins))
-		return FALSE;
+		return osErrorParameter;
 	if(env->Device->interrupt->isISR())
-		return FALSE;
+		return osErrorParameter;
 
 
 	// block tx / rx operation by setting busy
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
-		return FALSE;
+	if((res = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
+		return res;
 	while(UART_IS_TXBUSY(ins)){
-		env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever);
+		if((res = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != osOK)
+			return res;
 	}
 	UART_SET_TXBUSY(ins);
-
-	if(env->Mtx->lock(ins->rxMtx,osWaitForever) != osOK)
-		return FALSE;
+	if((res = env->Mtx->lock(ins->rxMtx,osWaitForever)) != osOK)
+		return res;
 	while(UART_IS_RXBUSY(ins)){
-		env->Condv->wait(ins->rxCondv,ins->rxMtx,osWaitForever);
+		if((res = env->Condv->wait(ins->rxCondv,ins->rxMtx,osWaitForever)) != osOK)
+			return res;
 	}
 	UART_SET_RXBUSY(ins);
 
@@ -373,15 +348,17 @@ static BOOL tch_uartClose(tch_UartHandle* handle){
 	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != osOK){
 		return FALSE;
 	}
-	UART_StaticInstance.occp_state &= ~(1 << ins->idx); // clear Occupation flag
-	UART_StaticInstance.lpoccp_state &= ~(1 << ins->idx);
+	UART_StaticInstance.occp_state &= ~(1 << ins->pno); // clear Occupation flag
+	UART_StaticInstance.lpoccp_state &= ~(1 << ins->pno);
+
+	*uDesc->_rstr |= uDesc->rstmsk;
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 	env->Device->interrupt->disable(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
 	env->Mem->free(handle);
-	env->Mtx->unlock(UART_StaticInstance.mtx);
-	return TRUE;
+	uDesc->_handle = NULL;
+	return env->Mtx->unlock(UART_StaticInstance.mtx);
 }
 
 
@@ -397,7 +374,7 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 	if(!handle)
 		return osErrorParameter;
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
-	USART_TypeDef* uhw = UART_HWs[ins->idx]._hw;
+	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
 	tch* env = ins->env;
 	osEvent evt;
 	evt.status = osOK;
@@ -444,7 +421,7 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 	if(!handle)
 		return osErrorParameter;
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
-	USART_TypeDef* uhw = UART_HWs[ins->idx]._hw;
+	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
 	tch* env = ins->env;
 	tchStatus result = osOK;
 	*bp = '\0';
@@ -511,7 +488,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	if((result = env->Mtx->unlock(ins->txMtx)) != osOK)
 		return result;
 
-	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->idx]._hw;
+	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
 	tch_lld_dma* dma = (tch_lld_dma*) env->Device->dma;
 	tch_DmaReqDef req;
 	dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
@@ -556,7 +533,7 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	if((result = env->Mtx->unlock(ins->rxMtx)) != osOK)
 		return result;
 
-	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->idx]._hw;
+	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
 	tch_lld_dma* dma = (tch_lld_dma*)env->Device->dma;
 	tch_DmaReqDef req;
 	dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);

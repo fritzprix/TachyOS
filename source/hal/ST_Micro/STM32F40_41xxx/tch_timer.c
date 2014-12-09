@@ -15,27 +15,12 @@
 #include "tch_kernel.h"
 #include "tch_timer.h"
 #include "tch_halInit.h"
+#include "tch_halcfg.h"
 
 
 
 
-#define TIMER_UNITTIME_mSEC      ((uint8_t) 0)
-#define TIMER_UNITTIME_uSEC      ((uint8_t) 1)
-#define TIMER_UNITTIME_nSEC      ((uint8_t) 2)
 
-#define TIMER_POLARITY_POSITIVE  ((uint8_t) 1)
-#define TIMER_POLARITY_NEGATIVE  ((uint8_t) 0xFF)
-
-#define INIT_UNTITIME_STR        {\
-	                              TIMER_UNITTIME_mSEC,\
-	                              TIMER_UNITTIME_uSEC,\
-	                              TIMER_UNITTIME_nSEC\
-}
-
-#define INIT_PALARITY_STR        {\
-	                               TIMER_POLARITY_POSITIVE,\
-	                               TIMER_POLARITY_NEGATIVE\
-}
 /*     class identifier for checking validity of instance    */
 #define TIMER_GP_CLASS_KEY       ((uint16_t) 0x6401)
 #define TIMER_PWM_CLASS_KEY      ((uint16_t) 0x6411)
@@ -155,9 +140,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self);
 
 __attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance = {
 		{
-				{0,1,2,3,4,5,6,7,8,9},
-				INIT_UNTITIME_STR,
-				INIT_PALARITY_STR,
+				MFEATURE_TIMER,
 				tch_timer_allocGptimerUnit,
 				tch_timer_allocPWMUnit,
 				tch_timer_allocCaptureUnit,
@@ -319,7 +302,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	env->Device->gpio->initCfg(&iocfg);
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
 
-	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.Af = timBcfg->afv;
 
 	uint32_t pmsk = 0;
@@ -336,7 +319,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		env->Mem->free(ins);
 		return NULL;
 	}
-	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Mode = GPIO_Mode_AF;
 	ins->iohandle = env->Device->gpio->allocIo(env,timBcfg->port,pmsk,&iocfg,timeout,tdef->pwrOpt);
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
@@ -497,7 +480,7 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 
 	env->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.Af = tbs->afv;
 
 

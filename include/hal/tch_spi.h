@@ -17,47 +17,37 @@
 
 #include "tch.h"
 
+#define tch_spi0             ((spi_t) 0)
+#define tch_spi1             ((spi_t) 1)
+#define tch_spi2             ((spi_t) 2)
+#define tch_spi3             ((spi_t) 3)
+#define tch_spi4             ((spi_t) 4)
+#define tch_spi5             ((spi_t) 5)
+#define tch_spi6             ((spi_t) 6)
+#define tch_spi7             ((spi_t) 7)
+#define tch_spi8             ((spi_t) 8)
+
+#define SPI_FRM_FORMAT_16B           ((uint8_t) 1)
+#define SPI_FRM_FORMAT_8B            ((uint8_t) 0)
+
+#define SPI_FRM_ORI_MSBFIRST         ((uint8_t) 0)
+#define SPI_FRM_ORI_LSBFIRST         ((uint8_t) 1)
+
+#define SPI_OPMODE_MASTER            ((uint8_t) 0)
+#define SPI_OPMODE_SLAVE             ((uint8_t) 1)
+
+#define SPI_CLKMODE_0                ((uint8_t) 0)
+#define SPI_CLKMODE_1                ((uint8_t) 1)
+#define SPI_CLKMODE_2                ((uint8_t) 2)
+#define SPI_CLKMODE_3                ((uint8_t) 3)
+
+#define SPI_BAUDRATE_HIGH            ((uint8_t) 0)
+#define SPI_BAUDRATE_NORMAL          ((uint8_t) 2)
+#define SPI_BAUDRATE_LOW             ((uint8_t) 4)
+
 typedef uint8_t spi_t;
 typedef struct tch_spi_handle_t tch_spiHandle;
-struct _tch_spi_str_t {
-	spi_t spi0;
-	spi_t spi1;
-	spi_t spi2;
-	spi_t spi3;
-	spi_t spi4;
-	spi_t spi5;
-	spi_t spi6;
-	spi_t spi7;
-	spi_t spi8;
-};
 
-struct _tch_spi_frame_format_t {
-	uint8_t Frame16B;
-	uint8_t Frame8B;
-};
-
-struct _tch_spi_frame_orient_t {
-	uint8_t MSBFirst;
-	uint8_t LSBFirst;
-};
-
-struct _tch_spi_opmode_t {
-	uint8_t Master;
-	uint8_t Slave;
-};
-
-struct _tch_spi_clkmode_t {
-	uint8_t Mode0;
-	uint8_t Mode1;
-	uint8_t Mode2;
-	uint8_t Mode3;
-};
-
-struct _tch_spi_baudrate_t {
-	uint8_t High;
-	uint8_t Mid;
-	uint8_t Low;
-};
 
 typedef struct tch_spi_cfg_t {
 	uint8_t ClkMode;
@@ -75,14 +65,9 @@ struct tch_spi_handle_t {
 };
 
 typedef struct tch_lld_spi {
-	struct _tch_spi_str_t spi;
-	struct _tch_spi_clkmode_t ClkMode;
-	struct _tch_spi_frame_format_t FrmFormat;
-	struct _tch_spi_frame_orient_t FrmOrient;
-	struct _tch_spi_opmode_t Role;
-	struct _tch_spi_baudrate_t Baudrate;
+	const uint16_t SPI_COUNT;
 	void (*initCfg)(tch_spiCfg* cfg);
-	tch_spiHandle* (*allocSpi)(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_spi;
 
 extern const  tch_lld_spi* tch_spi_instance;

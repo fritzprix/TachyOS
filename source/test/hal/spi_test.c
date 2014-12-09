@@ -16,21 +16,21 @@ tchStatus spi_performTest(tch* env){
 
 
 
-	spiCfg.Baudrate = env->Device->spi->Baudrate.Low;
-	spiCfg.ClkMode = env->Device->spi->ClkMode.Mode0;
-	spiCfg.FrmFormat = env->Device->spi->FrmFormat.Frame8B;
-	spiCfg.FrmOrient = env->Device->spi->FrmOrient.LSBFirst;
-	spiCfg.Role = env->Device->spi->Role.Master;
+	spiCfg.Baudrate = SPI_BAUDRATE_LOW;
+	spiCfg.ClkMode = SPI_CLKMODE_0;
+	spiCfg.FrmFormat = SPI_FRM_FORMAT_8B;
+	spiCfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
+	spiCfg.Role = SPI_OPMODE_MASTER;
 
 
 	do{
-		spihandle = env->Device->spi->allocSpi(env,env->Device->spi->spi.spi0,&spiCfg,osWaitForever,ActOnSleep);
+		spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,osWaitForever,ActOnSleep);
 		spihandle->close(spihandle);
 	}while(leakTestcnt--);
 
 
 
-	spihandle = env->Device->spi->allocSpi(env,env->Device->spi->spi.spi0,&spiCfg,osWaitForever,ActOnSleep);
+	spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,osWaitForever,ActOnSleep);
 	leakTestcnt = 0;
 
 	const char* str = "Hello World!! This is SPI";

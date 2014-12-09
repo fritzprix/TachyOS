@@ -26,6 +26,7 @@ endif
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/sys
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
+BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
 TEST_SYS_SRC_DIR=$(ROOT_DIR)/source/test/sys
 TEST_HAL_SRC_DIR=$(ROOT_DIR)/source/test/hal
 
@@ -37,6 +38,7 @@ KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
 PORT_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)/$(CPU)
 PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
+BOARD_HDR_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
 TEST_SYS_HDR_DIR=$(ROOT_DIR)/include/test/sys
 TEST_HAL_HDR_DIR=$(ROOT_DIR)/include/test/hal
@@ -59,6 +61,7 @@ ifeq ($(INC),)
 	      -I$(HAL_COMMON_HDR_DIR)\
 	      -I$(KERNEL_HDR_DIR)\
 	      -I$(TCH_API_HDR_DIR)\
+	      -I$(BOARD_HDR_DIR)\
 	      -I$(USR_HDR_DIR)\
 	      -I$(TEST_SYS_HDR_DIR)\
 	      -I$(TEST_HAL_HDR_DIR)

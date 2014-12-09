@@ -62,6 +62,41 @@ extern "C" {
 #define DMA_Ch5                   (uint8_t) 5  ///< DMA Channel #5
 #define DMA_Ch6                   (uint8_t) 6  ///< DMA Channel #6
 #define DMA_Ch7                   (uint8_t) 7  ///< DMA Channel #7
+
+#define DMA_Burst_Single          (uint8_t) 0
+#define DMA_Burst_Inc4            (uint8_t) 1
+#define DMA_Burst_Inc8            (uint8_t) 2
+#define DMA_Burst_Inc16           (uint8_t) 3
+
+#define DMA_Minc_Enable           (uint8_t) 1
+#define DMA_Minc_Disable          (uint8_t) 0
+
+#define DMA_Pinc_Enable           (uint8_t) 1
+#define DMA_Pinc_Disable          (uint8_t) 0
+
+#define DMA_Dir_PeriphToMem       (uint8_t) 0
+#define DMA_Dir_MemToPeriph       (uint8_t) 1
+#define DMA_Dir_MemToMem          (uint8_t) 2
+
+#define DMA_DataAlign_Byte        (uint8_t) 0
+#define DMA_DataAlign_Hword       (uint8_t) 1
+#define DMA_DataAlign_Word        (uint8_t) 2
+
+#define DMA_Prior_Low            (uint8_t) 0
+#define DMA_Prior_Mid            (uint8_t) 1
+#define DMA_Prior_High           (uint8_t) 2
+#define DMA_Prior_VHigh          (uint8_t) 4
+
+#define DMA_FlowControl_DMA      (uint8_t) 0
+#define DMA_FlowControl_Periph   (uint8_t) 1
+
+#define DMA_BufferMode_Normal     (uint8_t) 0
+#define DMA_BufferMode_Dbl        (uint8_t) 1
+#define DMA_BufferMode_Cir        (uint8_t) 2
+
+#define DMA_TargetAddress_Mem0    (uint8_t) 1
+#define DMA_TargetAddress_Periph  (uint8_t) 2
+#define DMA_TargetAddress_Mem1    (uint8_t) 3
 /*!
  *  \brief DMA Type
  *   DMA Stream Type
@@ -86,37 +121,6 @@ typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle ins,uint16_t evType);
  * \brief DMA Configuration type
  */
 typedef struct dma_cfg_t tch_DmaCfg;
-
-struct _tch_dma_str_t {
-	uint8_t      dma0;
-	uint8_t      dma1;
-	uint8_t      dma2;
-	uint8_t      dma3;
-	uint8_t      dma4;
-	uint8_t      dma5;
-	uint8_t      dma6;
-	uint8_t      dma7;
-	uint8_t      dma8;
-	uint8_t      dma9;
-	uint8_t      dma10;
-	uint8_t      dma11;
-	uint8_t      dma12;
-	uint8_t      dma13;
-	uint8_t      dma14;
-	uint8_t      dma15;
-	uint8_t      dma_not_used;
-};
-
-struct _tch_dma_ch_t{
-	uint8_t      ch0;
-	uint8_t      ch1;
-	uint8_t      ch2;
-	uint8_t      ch3;
-	uint8_t      ch4;
-	uint8_t      ch5;
-	uint8_t      ch6;
-	uint8_t      ch7;
-};
 
 
 /*!
@@ -202,21 +206,12 @@ typedef struct _tch_dma_req_t {
  *   DMA HAL Interface which is accessible from \ref tch object
  */
 typedef struct tch_lld_dma {
-	const struct _tch_dma_str_t Stream;
-	const struct _tch_dma_ch_t  Ch;
-	const tch_DmaBufferType     BufferType;                ///< DMA buffer type \note value can be differ from each platform H/W
-	const tch_DmaDir            Dir;                       ///< Direction of DMA Stream \note Value can be differ from each platform H/W
-	const tch_DmaPriority       Priority;                  ///< Priority of DMA Channel \note Value can be differ from each platform H/W
-	const tch_DmaBurstSize      BurstSize;                 ///< Burst Size of DMA Stream \note Value can be differ from each platform H/W
-	const tch_DmaFlowCtrl       FlowCtrl;                  ///< Flow Controller of DMA Operation. can be either DMA or Peripheral \note Value can be differ from each platform H/W
-	const tch_DmaAlign          Align;                     ///< Data Alignment of DMA Source and Target \note Value can be differ from each platform H/W
-	const tch_DmaTargetAddress  targetAddress;
-	const int                   DMA_CNT;
 	/*!
 	 * \brief Initialize DMA Configuration
 	 * \param cfg pointer of \ref tch_dma_cfg
 	 * \see tch_dma_cfg
 	 */
+	uint16_t DMA_COUNT;
 	void (*initCfg)(tch_DmaCfg* cfg);
 
 	/*!
@@ -228,7 +223,7 @@ typedef struct tch_lld_dma {
 	 * \return dma handle which allows access dma H/W
 	 */
 	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-	tch_DmaHandle (*allocDma)(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	tch_DmaHandle (*allocDma)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	BOOL (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_DmaHandle handle);
 

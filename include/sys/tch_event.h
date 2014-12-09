@@ -8,9 +8,6 @@
 #ifndef TCH_EVENT_H_
 #define TCH_EVENT_H_
 
-typedef void* tch_eventTree;
-typedef BOOL (*tch_eventHandler)(int ev_id,int ev_msg);
-
 
 
 

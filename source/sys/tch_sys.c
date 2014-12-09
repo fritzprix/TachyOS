@@ -27,6 +27,7 @@
 #include "tch_port.h"
 #include "tch_syscfg.h"
 #include "tch_thread.h"
+#include "tch_board.h"
 
 
 
@@ -236,6 +237,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	if((!mainThread) || (!idleThread))
 		tch_kernel_errorHandler(TRUE,osErrorOS);
+
+	tch_boardInit(&RuntimeInterface);
 
 	Thread->start(idleThread);
 	Thread->start(mainThread);

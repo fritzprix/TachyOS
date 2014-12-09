@@ -22,20 +22,42 @@ extern "C" {
 #endif
 
 
-#define _GPIO_0              ((gpIo_x) 0)
-#define _GPIO_1              ((gpIo_x) 1)
-#define _GPIO_2              ((gpIo_x) 2)
-#define _GPIO_3              ((gpIo_x) 3)
-#define _GPIO_4              ((gpIo_x) 4)
-#define _GPIO_5              ((gpIo_x) 5)
-#define _GPIO_6              ((gpIo_x) 6)
-#define _GPIO_7              ((gpIo_x) 7)
-#define _GPIO_8              ((gpIo_x) 8)
-#define _GPIO_9              ((gpIo_x) 9)
-#define _GPIO_10             ((gpIo_x) 10)
-#define _GPIO_11             ((gpIo_x) 11)
+#define tch_gpio0              ((gpIo_x) 0)
+#define tch_gpio1              ((gpIo_x) 1)
+#define tch_gpio2              ((gpIo_x) 2)
+#define tch_gpio3              ((gpIo_x) 3)
+#define tch_gpio4              ((gpIo_x) 4)
+#define tch_gpio5              ((gpIo_x) 5)
+#define tch_gpio6              ((gpIo_x) 6)
+#define tch_gpio7              ((gpIo_x) 7)
+#define tch_gpio8              ((gpIo_x) 8)
+#define tch_gpio9              ((gpIo_x) 9)
+#define tch_gpio10             ((gpIo_x) 10)
+#define tch_gpio11             ((gpIo_x) 11)
+
+#define GPIO_Mode_IN                   (uint8_t) (0)
+#define GPIO_Mode_OUT                  (uint8_t) (1)
+#define GPIO_Mode_AF                   (uint8_t) (2)
+#define GPIO_Mode_AN                   (uint8_t) (3)
+
+#define GPIO_Otype_PP                   (uint8_t) (0)
+#define GPIO_Otype_OD                   (uint8_t) (1)
 
 
+#define GPIO_OSpeed_2M                  (uint8_t) (0)
+#define GPIO_OSpeed_25M                 (uint8_t) (1)
+#define GPIO_OSpeed_50M                 (uint8_t) (2)
+#define GPIO_OSpeed_100M                (uint8_t) (3)
+
+#define GPIO_PuPd_Float                 (uint8_t) (0)
+#define GPIO_PuPd_PU                    (uint8_t) (1)
+#define GPIO_PuPd_PD                    (uint8_t) (2)
+
+#define GPIO_EvEdge_Rise               ((uint8_t) 1)
+#define GPIO_EvEdge_Fall               ((uint8_t) 2)
+
+#define GPIO_EvType_Interrupt          ((uint8_t) 1)
+#define GPIO_EvType_Event              ((uint8_t) 2)
 
 
 #define DECLARE_IO_CALLBACK(name) BOOL name(tch_GpioHandle* self,uint8_t pin)
@@ -168,13 +190,7 @@ struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
-	tch_gpioPorts Ports;
-	tch_gpioMode Mode;
-	tch_gpioOtype Otype;
-	tch_gpioSpeed Speed;
-	tch_gpioPuPd PuPd;
-	tch_gpioEvEdge EvEdeg;
-	tch_gpioEvType EvType;
+	const uint16_t IOPORT_COUNT;
 	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	void (*initCfg)(tch_GpioCfg* cfg);
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);

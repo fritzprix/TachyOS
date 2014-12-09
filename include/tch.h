@@ -69,6 +69,8 @@ typedef void* tch_mpoolId;
 typedef void* tch_msgqId;
 typedef void* tch_mailqId;
 typedef void* tch_memId;
+typedef void* tch_eventTree;
+
 
 
 

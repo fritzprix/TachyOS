@@ -31,23 +31,7 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 #define TCH_SPI_MASTER_FLAG          ((uint32_t) 0x10000)
 #define TCH_SPI_BUSY_FLAG            ((uint32_t) 0x20000)
 
-#define SPI_FRM_FORMAT_16B           ((uint8_t) 1)
-#define SPI_FRM_FORMAT_8B            ((uint8_t) 0)
 
-#define SPI_FRM_ORI_MSBFIRST         ((uint8_t) 0)
-#define SPI_FRM_ORI_LSBFIRST         ((uint8_t) 1)
-
-#define SPI_OPMODE_MASTER            ((uint8_t) 0)
-#define SPI_OPMODE_SLAVE             ((uint8_t) 1)
-
-#define SPI_CLKMODE_0                ((uint8_t) 0)
-#define SPI_CLKMODE_1                ((uint8_t) 1)
-#define SPI_CLKMODE_2                ((uint8_t) 2)
-#define SPI_CLKMODE_3                ((uint8_t) 3)
-
-#define SPI_BAUDRATE_HIGH            ((uint8_t) 0)
-#define SPI_BAUDRATE_NORMAL          ((uint8_t) 2)
-#define SPI_BAUDRATE_LOW             ((uint8_t) 4)
 
 
 #define SPI_setBusy(ins)             do{\
@@ -61,41 +45,8 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
 
 
-
-
-
-#define INIT_SPI_STR                 {0,1,2,3,4,5,6,7,8}
-#define INIT_SPI_FRM_FORMAT          {\
-	                                   SPI_FRM_FORMAT_16B,\
-	                                   SPI_FRM_FORMAT_8B\
-}
-
-#define INIT_SPI_FRM_ORIENT          {\
-	                                   SPI_FRM_ORI_MSBFIRST,\
-	                                   SPI_FRM_ORI_LSBFIRST\
-}
-
-#define INIT_SPI_OPMODE              {\
-	                                   SPI_OPMODE_MASTER,\
-	                                   SPI_OPMODE_SLAVE\
-}
-
-#define INIT_SPI_CLKMODE             {\
-	                                   SPI_CLKMODE_0,\
-	                                   SPI_CLKMODE_1,\
-	                                   SPI_CLKMODE_2,\
-	                                   SPI_CLKMODE_3\
-}
-
-#define INIT_SPI_BUADRATE            {\
-                                       SPI_BAUDRATE_HIGH,\
-                                       SPI_BAUDRATE_NORMAL,\
-                                       SPI_BAUDRATE_LOW\
-}
-
-
 static void tch_spiInitCfg(tch_spiCfg* cfg);
-static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 
 static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz);
 static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
@@ -137,14 +88,9 @@ struct _tch_spi_handle_prototype {
  */
 __attribute__((section(".data"))) static tch_lld_spi_prototype SPI_StaticInstance = {
 		{
-			INIT_SPI_STR,
-			INIT_SPI_CLKMODE,
-			INIT_SPI_FRM_FORMAT,
-			INIT_SPI_FRM_ORIENT,
-			INIT_SPI_OPMODE,
-			INIT_SPI_BUADRATE,
-			tch_spiInitCfg,
-			tch_spiOpen
+				MFEATURE_SPI,
+				tch_spiInitCfg,
+				tch_spiOpen
 		},
 		NULL,
 		NULL
@@ -163,7 +109,7 @@ static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->Role = SPI_OPMODE_MASTER;
 }
 
-static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 
 	tch_spi_bs* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
@@ -195,35 +141,35 @@ static tch_spiHandle* tch_spiOpen(tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t ti
 	env->uStdLib->string->memset(hnd,0,sizeof(tch_spi_handle_prototype));
 
 	iocfg.Af = spibs->afv;
-	iocfg.Speed = env->Device->gpio->Speed.High;
-	iocfg.Mode = env->Device->gpio->Mode.Func;
+	iocfg.Speed = GPIO_OSpeed_25M;
+	iocfg.Mode = GPIO_Mode_AF;
 
 	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout,popt);
 
 	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED)){
-		dmaCfg.BufferType = env->Device->dma->BufferType.Normal;
+		dmaCfg.BufferType = DMA_BufferMode_Normal;
 		dmaCfg.Ch = spibs->rxch;
-		dmaCfg.Dir = env->Device->dma->Dir.PeriphToMem;
-		dmaCfg.FlowCtrl = env->Device->dma->FlowCtrl.DMA;
-		dmaCfg.Priority = env->Device->dma->Priority.Normal;
+		dmaCfg.Dir = DMA_Dir_PeriphToMem;
+		dmaCfg.FlowCtrl = DMA_FlowControl_DMA;
+		dmaCfg.Priority = DMA_Prior_Mid;
 		if(cfg->FrmFormat == SPI_FRM_FORMAT_8B){
-			dmaCfg.mAlign = env->Device->dma->Align.Byte;
-			dmaCfg.pAlign = env->Device->dma->Align.Byte;
+			dmaCfg.mAlign = DMA_DataAlign_Byte;
+			dmaCfg.pAlign = DMA_DataAlign_Byte;
 		}
 		else{
-			dmaCfg.mAlign = env->Device->dma->Align.word;
-			dmaCfg.pAlign = env->Device->dma->Align.Byte;
+			dmaCfg.mAlign = DMA_DataAlign_Hword;
+			dmaCfg.pAlign = DMA_DataAlign_Hword;
 		}
-		dmaCfg.mBurstSize = env->Device->dma->BurstSize.Burst1;
+		dmaCfg.mBurstSize = DMA_Burst_Single;
 		dmaCfg.mInc = TRUE;
-		dmaCfg.pBurstSize = env->Device->dma->BurstSize.Burst1;
+		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 		hnd->rxCh.dma = env->Device->dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
 		if(hnd->rxCh.dma)
 			rxDma = TRUE;
 
 		dmaCfg.Ch = spibs->txch;
-		dmaCfg.Dir = env->Device->dma->Dir.MemToPeriph;
+		dmaCfg.Dir = DMA_Dir_MemToPeriph;
 		hnd->txCh.dma = env->Device->dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
 		if(hnd->txCh.dma)
 			txDma = TRUE;
@@ -468,8 +414,6 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
 
 	*spiDesc->_rstr |= spiDesc->rstmsk;
-	*spiDesc->_rstr &= ~spiDesc->rstmsk;
-
 	*spiDesc->_clkenr &= ~spiDesc->clkmsk;
 	*spiDesc->_lpclkenr &= ~spiDesc->lpclkmsk;
 

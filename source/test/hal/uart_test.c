@@ -18,9 +18,8 @@ tchStatus uart_performTest(tch* env){
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
 	ucfg.FlowCtrl = FALSE;
-	ucfg.Parity = env->Device->usart->Parity.Parity_Non;
-	ucfg.StopBit = env->Device->usart->StopBit.StopBit1B;
-	ucfg.UartCh = 2;
+	ucfg.Parity = USART_Parity_NON;
+	ucfg.StopBit = USART_StopBit_1B;
 
 	tch_UartHandle* serial = NULL;
 
@@ -40,17 +39,17 @@ tchStatus uart_performTest(tch* env){
 	int size = env->uStdLib->string->strlen(myname);
 
 	while(mcnt--){
-		serial = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openMsg,env->uStdLib->string->strlen(openMsg));
 		env->Thread->sleep(0);
 		serial->write(serial,myname,size);
 		env->Thread->sleep(0);
-		env->Device->usart->freeUart(serial);
+		serial->close(serial);
 	}
 
 	if(env->Thread->join(printer,osWaitForever) != osOK)
 		return osErrorOS;
-	env->Device->usart->freeUart(serial);
+	serial->close(serial);
 	return osOK;
 }
 
@@ -63,17 +62,16 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
 	ucfg.FlowCtrl = FALSE;
-	ucfg.Parity = env->Device->usart->Parity.Parity_Non;
-	ucfg.StopBit = env->Device->usart->StopBit.StopBit1B;
-	ucfg.UartCh = 2;
+	ucfg.Parity = USART_Parity_NON;
+	ucfg.StopBit = USART_StopBit_1B;
 	tch_UartHandle* serial = NULL;
 	while(pcnt--){
-		serial = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openedMsg,env->uStdLib->string->strlen(openedMsg));
 		env->Thread->sleep(0);
 		serial->write(serial,myname,size);
 		env->Thread->sleep(0);
-		env->Device->usart->freeUart(serial);
+		serial->close(serial);
 	}
 	return osOK;
 }

@@ -234,7 +234,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				9,
 				10,
 				11,
@@ -246,7 +246,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				2,
 				3,
 				0,
@@ -259,7 +259,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch7,
 				DMA_Ch4,
-				_GPIO_1,
+				tch_gpio1,
 				10,
 				11,
 				13,
@@ -271,7 +271,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				0,
 				1,
 				-1,
@@ -291,7 +291,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 
 __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
-				_GPIO_0,
+				tch_gpio0,
 				0,
 				1,
 				2,
@@ -299,7 +299,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				1,
 		},
 		{// TIM3
-				_GPIO_1,
+				tch_gpio1,
 				4,
 				5,
 				0,
@@ -307,7 +307,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				2
 		},
 		{// TIM4
-				_GPIO_1,
+				tch_gpio1,
 				6,
 				7,
 				8,
@@ -315,7 +315,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				2
 		},
 		{// TIM5
-				_GPIO_7,
+				tch_gpio7,
 				10,
 				11,
 				12,
@@ -323,7 +323,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				2
 		},
 		{// TIM9
-				_GPIO_4,
+				tch_gpio4,
 				5,
 				6,
 				-1,
@@ -331,7 +331,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				3
 		},
 		{// TIM10
-				_GPIO_1,
+				tch_gpio1,
 				8,
 				-1,
 				-1,
@@ -339,7 +339,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				3
 		},
 		{// TIM11
-				_GPIO_1,
+				tch_gpio1,
 				9,
 				-1,
 				-1,
@@ -347,7 +347,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				3
 		},
 		{// TIM12
-				_GPIO_1,
+				tch_gpio1,
 				14,
 				15,
 				-1,
@@ -355,7 +355,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				9
 		},
 		{// TIM13
-				_GPIO_5,
+				tch_gpio5,
 				8,
 				-1,
 				-1,
@@ -363,7 +363,7 @@ __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIM
 				9
 		},
 		{// TIM14
-				_GPIO_5,
+				tch_gpio5,
 				9,
 				-1,
 				-1,

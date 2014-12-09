@@ -30,21 +30,21 @@ int main(const tch* api) {
 	api->Device->gpio->initCfg(&iocfg);
 
 
-	iocfg.Mode = api->Device->gpio->Mode.Out;
-	iocfg.Otype = api->Device->gpio->Otype.PushPull;
-	led = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,(1 << 6),&iocfg,osWaitForever,NoActOnSleep);
+	iocfg.Mode = GPIO_Mode_OUT;
+	iocfg.Otype = GPIO_Otype_PP;
+	led = api->Device->gpio->allocIo(api,tch_gpio5,(1 << 6),&iocfg,osWaitForever,NoActOnSleep);
 
 	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = api->Device->gpio->Mode.In;
-	iocfg.PuPd = api->Device->gpio->PuPd.PullUp;
-	btn = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_5,(1 << 10),&iocfg,osWaitForever,NoActOnSleep);
+	iocfg.Mode = GPIO_Mode_IN;
+	iocfg.PuPd = GPIO_PuPd_PU;
+	btn = api->Device->gpio->allocIo(api,tch_gpio5,(1 << 10),&iocfg,osWaitForever,NoActOnSleep);
 
 	tch_assert(api,TRUE,osErrorISR);
 
 
 	uint32_t pmsk = 1 << 10;
-	evcfg.EvEdge = api->Device->gpio->EvEdeg.Fall;
-	evcfg.EvType = api->Device->gpio->EvType.Interrupt;
+	evcfg.EvEdge = GPIO_EvEdge_Fall;
+	evcfg.EvType = GPIO_EvType_Interrupt;
 	btn->registerIoEvent(btn,&evcfg,&pmsk);
 
 
@@ -62,13 +62,13 @@ int main(const tch* api) {
 
 
 	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = api->Device->gpio->Mode.Out;
-	iocfg.Otype = api->Device->gpio->Otype.PushPull;
-	iocfg.Speed = api->Device->gpio->Speed.VeryHigh;
+	iocfg.Mode = GPIO_Mode_OUT;
+	iocfg.Otype = GPIO_Otype_PP;
+	iocfg.Speed = GPIO_OSpeed_100M;
 	tch_gpio_handle* out = NULL;
 
 	tch_gptimerDef gptdef;
-	gptdef.UnitTime = api->Device->timer->UnitTime.uSec;
+	gptdef.UnitTime = TIMER_UNITTIME_uSEC;
 	gptdef.pwrOpt = ActOnSleep;
 
 	tch_gptimerHandle* timer = NULL;
@@ -82,8 +82,8 @@ int main(const tch* api) {
 	api->Thread->start(nchild);
 
 	while(1){
-		timer = api->Device->timer->openGpTimer(api,api->Device->timer->timer.timer0,&gptdef,osWaitForever);
-		out = api->Device->gpio->allocIo(api,api->Device->gpio->Ports.gpio_2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
+		timer = api->Device->timer->openGpTimer(api,tch_TIMER0,&gptdef,osWaitForever);
+		out = api->Device->gpio->allocIo(api,tch_gpio2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
 		out->out(out,1 << 14,bClear);
 		timer->wait(timer,15);
 		out->out(out,1 << 14,bSet);

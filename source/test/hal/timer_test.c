@@ -29,10 +29,10 @@ tchStatus timer_performTest(tch* env){
 
 	// ************* Start of test for Basic Timer Function ********************** //
 	tch_gptimerDef gptDef;
-	gptDef.UnitTime = env->Device->timer->UnitTime.mSec;
+	gptDef.UnitTime = TIMER_UNITTIME_mSEC;
 	gptDef.pwrOpt = ActOnSleep;
 
-	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,env->Device->timer->timer.timer0,&gptDef,osWaitForever);
+	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,tch_TIMER0,&gptDef,osWaitForever);
 
 	tch_threadId waiterThread1;
 	tch_threadId waiterThread2;
@@ -75,17 +75,17 @@ tchStatus timer_performTest(tch* env){
 
 	tch_pwmDef pwmDef;
 	pwmDef.PeriodInUnitTime = 1000;
-	pwmDef.UnitTime = env->Device->timer->UnitTime.uSec;
+	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
 	int cnt = 100000;
 	tch_pwmHandle* pwmDrv = NULL;
 	while(cnt--){
-		pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
+		pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,osWaitForever);
 		if(pwmDrv)
 			pwmDrv->close(pwmDrv);
 	}
 
-	pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer0,&pwmDef,osWaitForever);
+	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,osWaitForever);
 	thcfg._t_name = "PulseDrv1";
 	thcfg._t_routine = pulsDrv1Run;
 	thcfg.t_proior = Normal;
@@ -116,20 +116,20 @@ tchStatus timer_performTest(tch* env){
 	// ************* End of test for PWM Out Function ********************** //
 
 	pwmDef.PeriodInUnitTime = 1000;
-	pwmDef.UnitTime = env->Device->timer->UnitTime.uSec;
+	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
 
-	pwmDrv = env->Device->timer->openPWM(env,env->Device->timer->timer.timer2,&pwmDef,osWaitForever);
+	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,osWaitForever);
 	if(!pwmDrv)
 		return osErrorOS;
 
 	tch_tcaptDef captDef;
-	captDef.Polarity = env->Device->timer->Polarity.negative;
-	captDef.UnitTime = env->Device->timer->UnitTime.uSec;
+	captDef.Polarity = TIMER_POLARITY_NEGATIVE;
+	captDef.UnitTime = TIMER_UNITTIME_uSEC;
 	captDef.periodInUnitTime = 1000;
 	captDef.pwrOpt = ActOnSleep;
 
-	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,env->Device->timer->timer.timer0,&captDef,osWaitForever);
+	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,tch_TIMER0,&captDef,osWaitForever);
 	if(!capt)
 		return osErrorOS;
 

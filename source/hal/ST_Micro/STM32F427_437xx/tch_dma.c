@@ -28,61 +28,35 @@
 
 #define DMA_MBurst_Pos            (uint8_t) 23
 #define DMA_PBurst_Pos            (uint8_t) 21
-#define DMA_Burst_Single          (uint8_t) 0
-#define DMA_Burst_Inc4            (uint8_t) 1
-#define DMA_Burst_Inc8            (uint8_t) 2
-#define DMA_Burst_Inc16           (uint8_t) 3
+
 #define DMA_Burst_Msk             (DMA_Burst_Single |\
 		                           DMA_Burst_Inc4|\
 		                           DMA_Burst_Inc8|\
 		                           DMA_Burst_Inc16)
 
 #define DMA_Minc_Pos              (uint8_t) 10
-#define DMA_Minc_Enable           (uint8_t) 1
-#define DMA_Minc_Disable          (uint8_t) 0
-
 #define DMA_Pinc_Pos              (uint8_t) 9
-#define DMA_Pinc_Enable           (uint8_t) 1
-#define DMA_Pinc_Disable          (uint8_t) 0
+
 
 
 #define DMA_Dir_Pos               (uint8_t) 6
-#define DMA_Dir_PeriphToMem       (uint8_t) 0
-#define DMA_Dir_MemToPeriph       (uint8_t) 1
-#define DMA_Dir_MemToMem          (uint8_t) 2
+
 #define DMA_Dir_Msk               (DMA_Dir_PeriphToMem |\
 		                           DMA_Dir_MemToPeriph |\
 		                           DMA_Dir_MemToMem)
 
 #define DMA_MDataAlign_Pos        (uint8_t) 13
 #define DMA_PDataAlign_Pos        (uint8_t) 11
-#define DMA_DataAlign_Byte        (uint8_t) 0
-#define DMA_DataAlign_Hword       (uint8_t) 1
-#define DMA_DataAlign_Word        (uint8_t) 2
+
 #define DMA_DataAlign_Msk         (DMA_DataAlign_Byte  |\
 		                           DMA_DataAlign_Hword |\
 		                           DMA_DataAlign_Word)
 
 #define DMA_Prior_Pos            (uint8_t) 16
-#define DMA_Prior_Low            (uint8_t) 0
-#define DMA_Prior_Mid            (uint8_t) 1
-#define DMA_Prior_High           (uint8_t) 2
-#define DMA_Prior_VHigh          (uint8_t) 4
-
 
 #define DMA_FlowControl_Pos      (uint8_t) 5
-#define DMA_FlowControl_DMA      (uint8_t) 0
-#define DMA_FlowControl_Periph   (uint8_t) 1
 
 
-
-#define DMA_BufferMode_Normal     (uint8_t) 0
-#define DMA_BufferMode_Dbl        (uint8_t) 1
-#define DMA_BufferMode_Cir        (uint8_t) 2
-
-#define DMA_TargetAddress_Mem0    (uint8_t) 1
-#define DMA_TargetAddress_Periph  (uint8_t) 2
-#define DMA_TargetAddress_Mem1    (uint8_t) 3
 
 
 #define DMA_FLAG_EvPos                         (uint8_t)  3
@@ -99,82 +73,6 @@
 
 #define DMA_FLAG_BUSY                          ((uint16_t) (1 << 10))
 
-#define INIT_DMA_STR_TYPE                      {\
-	                                            DMA_Str0,\
-	                                            DMA_Str1,\
-	                                            DMA_Str2,\
-	                                            DMA_Str3,\
-	                                            DMA_Str4,\
-	                                            DMA_Str5,\
-	                                            DMA_Str6,\
-	                                            DMA_Str7,\
-	                                            DMA_Str8,\
-	                                            DMA_Str9,\
-	                                            DMA_Str10,\
-	                                            DMA_Str11,\
-	                                            DMA_Str12,\
-	                                            DMA_Str13,\
-	                                            DMA_Str14,\
-	                                            DMA_Str15,\
-	                                            DMA_NOT_USED\
-                                               }
-
-#define INIT_DMA_CH_TYPE                       {\
-	                                             DMA_Ch0,\
-	                                             DMA_Ch1,\
-	                                             DMA_Ch2,\
-	                                             DMA_Ch3,\
-	                                             DMA_Ch4,\
-	                                             DMA_Ch5,\
-	                                             DMA_Ch6,\
-	                                             DMA_Ch7\
-                                                }
-
-#define INIT_DMA_BUFFER_TYPE                   {\
-                                                 DMA_BufferMode_Normal,\
-                                                 DMA_BufferMode_Dbl,\
-                                                 DMA_BufferMode_Cir\
-                                               }
-
-#define INIT_DMA_DIR_TYPE                      {\
-	                                             DMA_Dir_PeriphToMem,\
-	                                             DMA_Dir_MemToMem,\
-	                                             DMA_Dir_MemToPeriph\
-                                               }
-
-#define INIT_DMA_PRIORITY_TYPE                 {\
-	                                             DMA_Prior_VHigh,\
-	                                             DMA_Prior_High,\
-	                                             DMA_Prior_Mid,\
-	                                             DMA_Prior_Low\
-                                                }
-
-#define INIT_DMA_BURSTSIZE_TYPE                 {\
-	                                              DMA_Burst_Single,\
-	                                              0,\
-	                                              DMA_Burst_Inc4,\
-	                                              DMA_Burst_Inc8,\
-	                                              DMA_Burst_Inc16\
-                                                }
-
-
-#define INIT_DMA_FLOWCTRL_TYPE                  {\
-	                                              DMA_FlowControl_Periph,\
-	                                              DMA_FlowControl_DMA\
-                                                }
-
-#define INIT_DMA_ALIGN_TYPE                     {\
-	                                              DMA_DataAlign_Byte,\
-	                                              DMA_DataAlign_Hword,\
-	                                              DMA_DataAlign_Word\
-                                                }
-
-#define INIT_DMA_TARGET_ADDRESS                 {\
-	                                              DMA_TargetAddress_Mem0,\
-	                                              DMA_TargetAddress_Mem1,\
-	                                              DMA_TargetAddress_Periph,\
-	                                              0\
-                                                }
 
 
 
@@ -227,7 +125,7 @@ typedef struct tch_dma_handle_prototype_t{
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg);
 static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-static tch_DmaHandle tch_dma_openStream(tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+static tch_DmaHandle tch_dma_openStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
 
 static tchStatus tch_dma_close(tch_DmaHandle self);
@@ -244,15 +142,6 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 
 __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		{
-				INIT_DMA_STR_TYPE,
-				INIT_DMA_CH_TYPE,
-				INIT_DMA_BUFFER_TYPE,
-				INIT_DMA_DIR_TYPE,
-				INIT_DMA_PRIORITY_TYPE,
-				INIT_DMA_BURSTSIZE_TYPE,
-				INIT_DMA_FLOWCTRL_TYPE,
-				INIT_DMA_ALIGN_TYPE,
-				INIT_DMA_TARGET_ADDRESS,
 				16,
 				tch_dma_initCfg,
 				tch_dma_initReq,
@@ -270,17 +159,17 @@ const tch_lld_dma* tch_dma_instance = (tch_lld_dma*)&DMA_StaticInstance;
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg){
-	cfg->BufferType = tch_dma_instance->BufferType.Normal;
+	cfg->BufferType = DMA_BufferMode_Normal;
 	cfg->Ch = 0;
-	cfg->Dir = tch_dma_instance->Dir.MemToPeriph;
-	cfg->FlowCtrl = tch_dma_instance->FlowCtrl.DMA;
-	cfg->Priority = tch_dma_instance->Priority.Normal;
-	cfg->mAlign = tch_dma_instance->Align.Byte;
-	cfg->pAlign = tch_dma_instance->Align.Byte;
+	cfg->Dir = DMA_Dir_MemToPeriph;
+	cfg->FlowCtrl = DMA_FlowControl_DMA;
+	cfg->Priority = DMA_Prior_Mid;
+	cfg->mAlign = DMA_DataAlign_Byte;
+	cfg->pAlign = DMA_DataAlign_Byte;
 	cfg->mInc = FALSE;
 	cfg->pInc = FALSE;
-	cfg->mBurstSize = tch_dma_instance->BurstSize.Burst1;
-	cfg->pBurstSize = tch_dma_instance->BurstSize.Burst1;
+	cfg->mBurstSize = DMA_Burst_Single;
+	cfg->pBurstSize = DMA_Burst_Single;
 }
 
 static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size){
@@ -293,7 +182,7 @@ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size
 
 
 
-static tch_DmaHandle tch_dma_openStream(tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
+static tch_DmaHandle tch_dma_openStream(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	if(dma == DMA_NOT_USED)
 		return NULL;
 

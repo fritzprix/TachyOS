@@ -19,89 +19,34 @@
 #include "tch_gpio.h"
 #include "tch_ktypes.h"
 #include "tch_kernel.h"
+#include "tch_halcfg.h"
 
 
 
 #define GPIO_Event_Signal              ((int32_t) 1)
 
-#define GPIO_Mode_IN                   (uint8_t) (0)
-#define GPIO_Mode_OUT                  (uint8_t) (1)
-#define GPIO_Mode_AF                   (uint8_t) (2)
-#define GPIO_Mode_AN                   (uint8_t) (3)
+
 #define GPIO_Mode_Msk                  (GPIO_Mode_IN |\
 		                                GPIO_Mode_OUT|\
 		                                GPIO_Mode_AF|\
 		                                GPIO_Mode_AN)
 
-#define GPIO_Otype_PP                   (uint8_t) (0)
-#define GPIO_Otype_OD                   (uint8_t) (1)
 #define GPIO_Otype_Msk                  (GPIO_Otype_PP | GPIO_Otype_OD)
 
 
-#define GPIO_OSpeed_2M                  (uint8_t) (0)
-#define GPIO_OSpeed_25M                 (uint8_t) (1)
-#define GPIO_OSpeed_50M                 (uint8_t) (2)
-#define GPIO_OSpeed_100M                (uint8_t) (3)
 #define GPIO_OSpeed_Msk                 (GPIO_OSpeed_2M|\
 		                                 GPIO_OSpeed_25M|\
 		                                 GPIO_OSpeed_50M|\
 		                                 GPIO_OSpeed_100M)
 
-#define GPIO_PuPd_Float                 (uint8_t) (0)
-#define GPIO_PuPd_PU                    (uint8_t) (1)
-#define GPIO_PuPd_PD                    (uint8_t) (2)
+
 #define GPIO_PuPd_Msk                   (GPIO_PuPd_Float|\
 		                                 GPIO_PuPd_PU|\
 		                                 GPIO_PuPd_PD)
 
-#define GPIO_EvEdge_Rise               ((uint8_t) 1)
-#define GPIO_EvEdge_Fall               ((uint8_t) 2)
+
 #define GPIO_EvEdge_Both               ((uint8_t) GPIO_EvEdge_Fall | GPIO_EvEdge_Rise)
 
-
-#define GPIO_EvType_Interrupt          ((uint8_t) 1)
-#define GPIO_EvType_Event              ((uint8_t) 2)
-
-#define INIT_GPIOPORT_TYPE             {\
-	                                     _GPIO_0,\
-	                                     _GPIO_1,\
-	                                     _GPIO_2,\
-	                                     _GPIO_3,\
-	                                     _GPIO_4,\
-	                                     _GPIO_5,\
-	                                     _GPIO_6,\
-	                                     _GPIO_7,\
-	                                     _GPIO_8,\
-	                                     _GPIO_9,\
-	                                     _GPIO_10,\
-	                                     _GPIO_11\
-}
-
-
-#define INIT_GPIOMODE_TYPE             {GPIO_Mode_OUT,\
-	                                    GPIO_Mode_IN,\
-	                                    GPIO_Mode_AN,\
-	                                    GPIO_Mode_AF}
-
-#define INIT_GPIOOTYPE_TYPE            {GPIO_Otype_PP,\
-	                                    GPIO_Otype_OD}
-
-#define INIT_GPIOSPEED_TYPE            {GPIO_OSpeed_2M,\
-	                                    GPIO_OSpeed_25M,\
-	                                    GPIO_OSpeed_50M,\
-	                                    GPIO_OSpeed_100M}
-
-#define INIT_GPIOPUPD_TYPE             {GPIO_PuPd_PU,\
-	                                    GPIO_PuPd_PD,\
-	                                    GPIO_PuPd_Float}
-
-#define INIT_GPIO_EVEdge_TYPE          {GPIO_EvEdge_Rise,\
-	                                    GPIO_EvEdge_Fall,\
-	                                    GPIO_EvEdge_Both}
-
-
-#define INIT_GPIO_EVType_TYPE          {GPIO_EvType_Interrupt,\
-	                                    GPIO_EvType_Event}
 
 
 
@@ -176,34 +121,10 @@ static inline void tch_gpioInvalidate(tch_gpio_handle_prototype* _handle);
 static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
 
 
-/**
- * 		tch_gpioPorts Ports;
-	tch_gpioMode Mode;
-	tch_gpioOtype Otype;
-	tch_gpioSpeed Speed;
-	tch_gpioPuPd PuPd;
-	tch_gpioEvEdge EvEdeg;
-	tch_gpioEvType EvType;
-	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-	void (*initCfg)(tch_GpioCfg* cfg);
-	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
-	uint16_t (*getPortCount)();
-	uint16_t (*getPincount)(const gpIo_x port);
-	uint32_t (*getPinAvailable)(const gpIo_x port);
-	void (*freeIo)(tch_GpioHandle* IoHandle);
-	*/
-
 __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 
 		{
-
-				INIT_GPIOPORT_TYPE,
-				INIT_GPIOMODE_TYPE,
-				INIT_GPIOOTYPE_TYPE,
-				INIT_GPIOSPEED_TYPE,
-				INIT_GPIOPUPD_TYPE,
-				INIT_GPIO_EVEdge_TYPE,
-				INIT_GPIO_EVType_TYPE,
+				MFEATURE_GPIO,
 				tch_gpio_allocIo,
 				tch_gpio_initCfg,
 				tch_gpio_initEvCfg,
@@ -265,15 +186,15 @@ static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint32_
 static void tch_gpio_initCfg(tch_GpioCfg* cfg){
 
 	cfg->Af = 0;
-	cfg->Mode = GPIO_StaticManager._pix.Mode.In;
-	cfg->Speed = GPIO_StaticManager._pix.Speed.Low;
-	cfg->Otype = GPIO_StaticManager._pix.Otype.PushPull;
-	cfg->PuPd = GPIO_StaticManager._pix.PuPd.NoPull;
+	cfg->Mode = GPIO_Mode_IN;
+	cfg->Speed = GPIO_OSpeed_2M;
+	cfg->Otype = GPIO_Otype_OD;
+	cfg->PuPd = GPIO_PuPd_Float;
 }
 
 static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg){
-	evcfg->EvEdge = GPIO_StaticManager._pix.EvEdeg.Rise;
-	evcfg->EvType = GPIO_StaticManager._pix.EvType.Interrupt;
+	evcfg->EvEdge = GPIO_EvEdge_Fall;
+	evcfg->EvType = GPIO_EvType_Interrupt;
 	evcfg->EvCallback = NULL;
 	evcfg->EvTimeout = osWaitForever;
 }

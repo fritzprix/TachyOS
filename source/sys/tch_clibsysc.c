@@ -45,10 +45,9 @@ tchStatus tch_kernel_initCrt0(tch* env){
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
 	ucfg.FlowCtrl = FALSE;
-	ucfg.Parity = env->Device->usart->Parity.Parity_Non;
-	ucfg.StopBit = env->Device->usart->StopBit.StopBit1B;
-	ucfg.UartCh = 0;
-	stdio_port = env->Device->usart->allocUart(env,&ucfg,osWaitForever,ActOnSleep);
+	ucfg.Parity = USART_Parity_NON;
+	ucfg.StopBit = USART_StopBit_1B;
+	stdio_port = env->Device->usart->allocUart(env,tch_USART0,&ucfg,osWaitForever,ActOnSleep);
 	return osOK;
 
 }

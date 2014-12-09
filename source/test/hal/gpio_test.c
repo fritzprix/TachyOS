@@ -49,11 +49,11 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 
 	tch_GpioCfg iocfg;
 	const tch_lld_gpio* gpio = env->Device->gpio;
-	iocfg.Mode = gpio->Mode.Out;
-	iocfg.Otype = gpio->Otype.PushPull;
-	iocfg.PuPd = gpio->PuPd.NoPull;
-	iocfg.Speed = gpio->Speed.Mid;
-	tch_GpioHandle* out = gpio->allocIo(env,gpio->Ports.gpio_1,outp,&iocfg,osWaitForever,ActOnSleep);    // set pin 8 @ port b as output
+	iocfg.Mode = GPIO_Mode_OUT;
+	iocfg.Otype = GPIO_Otype_OD;
+	iocfg.PuPd = GPIO_PuPd_Float;
+	iocfg.Speed = GPIO_OSpeed_50M;
+	tch_GpioHandle* out = gpio->allocIo(env,tch_gpio1,outp,&iocfg,osWaitForever,ActOnSleep);    // set pin 8 @ port b as output
 
 
 	out->out(out,outp,bSet);
@@ -69,15 +69,15 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	tch_GpioCfg iocfg;
 	const tch_lld_gpio* gpio = env->Device->gpio;
 	gpio->initCfg(&iocfg);
-	iocfg.Mode = gpio->Mode.In;
-	iocfg.PuPd = gpio->PuPd.PullUp;
-	iocfg.Speed = gpio->Speed.Mid;
-	in = gpio->allocIo(env,gpio->Ports.gpio_0,inp,&iocfg,osWaitForever,ActOnSleep);  // set pin 2 @ port a as input
+	iocfg.Mode = GPIO_Mode_IN;
+	iocfg.PuPd = GPIO_PuPd_PU;
+	iocfg.Speed = GPIO_OSpeed_50M;
+	in = gpio->allocIo(env,tch_gpio0,inp,&iocfg,osWaitForever,ActOnSleep);  // set pin 2 @ port a as input
 
 	tch_GpioEvCfg evcfg;
 	gpio->initEvCfg(&evcfg);
-	evcfg.EvEdge = gpio->EvEdeg.Fall;
-	evcfg.EvType = gpio->EvType.Interrupt;
+	evcfg.EvEdge = GPIO_EvEdge_Fall;
+	evcfg.EvType = GPIO_EvType_Interrupt;
 	uint32_t evpin = inp;
 	in->registerIoEvent(in,&evcfg,&evpin);
 

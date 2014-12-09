@@ -70,15 +70,7 @@ typedef enum  {
 } tchStatus;
 
 
-typedef void (*tch_sigFuncPtr)(int,uint32_t);
 
-#define SIG_DFL ((tch_sigFuncPtr) 0)	/* Default action */
-#define SIG_IGN ((tch_sigFuncPtr) 1)	/* Ignore action */
-#define SIG_ERR ((tch_sigFuncPtr)-1)	/* Error return */
-
-#define SIGKILL ((int)  0)
-#define SIGINT  ((int)  1)
-#define SIGUSR  ((int)  2)
 
 
 typedef struct  {
@@ -135,6 +127,7 @@ typedef struct _tch_mpoolDef_t{
 } tch_mpoolDef_t;
 
 
+typedef BOOL (*tch_eventHandler)(int ev_id,int ev_msg);
 
 /**
  * type definition for system timer
