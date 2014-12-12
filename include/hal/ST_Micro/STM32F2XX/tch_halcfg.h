@@ -23,6 +23,7 @@
 
 #include "tch_dma.h"
 #include "tch_gpio.h"
+#include "tch_timer.h"
 
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
@@ -181,6 +182,24 @@
 #define MFEATURE_IIC                (3)
 #endif
 
+
+#ifndef MFEATURE_ADC
+#define MFEATURE_ADC                (3)
+#endif
+
+
+#ifndef MFEATURE_ADC_Ch
+#define MFEATURE_ADC_Ch             (16)
+#endif
+
+
+
+
+typedef struct _tch_port_t {
+	gpIo_x          port;
+	uint8_t         pin;
+}tch_port;
+
 typedef struct _tch_uart_bs_t {
 	dma_t          txdma;
 	dma_t          rxdma;
@@ -226,6 +245,24 @@ typedef struct _tch_iic_bs_t {
 	uint8_t       sda;
 	uint8_t       afv;
 }tch_iic_bs;
+
+typedef struct _tch_adc_bs_t {
+	dma_t         dma;
+	uint8_t       dmaCh;
+	tch_timer     timer;
+	uint8_t       timerCh;
+	uint8_t       timerExtsel;
+}tch_adc_bs;
+
+typedef struct _tch_adc_port_t {
+	tch_port      port;
+	uint8_t       adc_msk;
+}tch_adc_port;
+
+typedef struct _tch_adc_com_bs_t{
+	tch_adc_port ports[MFEATURE_ADC_Ch];
+	uint32_t occp_status;
+}tch_adc_com_bs;
 
 
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
@@ -461,7 +498,69 @@ __attribute__((section(".data"))) static tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = 
 		}
 };
 
+/**
+ * typedef struct _tch_adc_bs_t {
+	dma_t         dma;
+	uint8_t       dmach;
+	uint8_t       afv;
+}tch_adc_bs;
 
+typedef struct _tch_adc_com_bs_t{
+	tch_port ports[MFEATURE_ADC_Ch];
+	uint32_t occp_status;
+};
+ */
+
+
+__attribute__((section(".data"))) static tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
+		{
+				.dma = DMA_Str12,
+				.dmaCh = DMA_Ch0,
+				.timer = tch_TIMER0,  // TIM2
+				.timerCh = 2,         // CH2
+				.timerExtsel = 3      // Timer 2 CC2 Event
+		},
+		{
+				.dma = DMA_Str10,
+				.dmaCh = DMA_Ch1,
+				.timer = tch_TIMER1,
+				.timerCh = 1,
+				.timerExtsel = 7     // Timer 3 CC1 Event
+		},
+		{
+				.dma = DMA_Str8,
+				.dmaCh = DMA_Ch0,
+				.timer = tch_TIMER2,
+				.timerCh = 4,
+				.timerExtsel = 9     // Timer 4 CC4 Event
+		}
+};
+
+#define ADC1_Bit            ((uint8_t) 1 << 0)
+#define ADC2_Bit            ((uint8_t) 1 << 1)
+#define ADC3_Bit            ((uint8_t) 1 << 2)
+
+__attribute__((section(".data"))) static tch_adc_com_bs ADC_COM_BD_CFGs = {
+		{
+				{tch_gpio0,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,4,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,5,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,6,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,7,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio1,0,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio1,1,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio2,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,4,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio2,5,(ADC1_Bit | ADC2_Bit)}
+		},
+		0
+};
 
 #include "stm32f2xx.h"
 

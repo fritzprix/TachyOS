@@ -35,6 +35,9 @@
 #define TIMER_UNITTIME_uSEC      ((uint8_t) 1)
 #define TIMER_UNITTIME_nSEC      ((uint8_t) 2)
 
+#define TIMER_DEFTYPE_FREQ       ((uint8_t) 0)
+#define TIMER_DEFTYPE_TIME       ((uint8_t) 1)
+
 #define TIMER_POLARITY_POSITIVE  ((uint8_t) 1)
 #define TIMER_POLARITY_NEGATIVE  ((uint8_t) 0xFF)
 
@@ -48,6 +51,7 @@ typedef struct _tch_pwm_def_t tch_pwmDef;
 
 typedef struct _tch_tcapt_handle_t tch_tcaptHandle;
 typedef struct _tch_tcapt_def_t tch_tcaptDef;
+
 
 
 
@@ -68,6 +72,7 @@ struct _tch_tcapt_handle_t {
 	tchStatus (*read)(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
 };
 
+
 struct _tch_gptimer_def_t {
 	uint8_t UnitTime;
 	tch_PwrOpt pwrOpt;
@@ -75,7 +80,7 @@ struct _tch_gptimer_def_t {
 
 struct _tch_pwm_def_t {
 	uint8_t UnitTime;
-	uint32_t PeriodInUnitTime;
+	uint16_t PeriodInUnitTime;
 	tch_PwrOpt pwrOpt;
 };
 
@@ -84,7 +89,7 @@ struct _tch_pwm_def_t {
 struct _tch_tcapt_def_t {
 	uint8_t Polarity;
 	uint8_t UnitTime;
-	uint32_t periodInUnitTime;
+	uint16_t periodInUnitTime;
 	tch_PwrOpt pwrOpt;
 };
 

@@ -52,6 +52,7 @@ struct tch_iic_cfg_t {
 };
 
 struct tch_iic_handle_t{
+	tchStatus (*close)(tch_iicHandle* self);
 	tchStatus (*write)(tch_iicHandle* self,uint8_t addr,const void* wb,size_t sz);
 	tchStatus (*read)(tch_iicHandle* self,uint8_t addr,void* rb,size_t sz,uint32_t timeout);
 };
@@ -63,7 +64,6 @@ typedef struct tch_lld_iic_t {
 	struct tch_iic_opmode_t OpMode;
 	struct tch_iic_brate_t  Baudrate;
 	tch_iicHandle* (*allocIIC)(const tch* env,tch_iic iic,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-	tchStatus (*freeIIC)(tch_iicHandle* self);
 }tch_lld_iic;
 
 
