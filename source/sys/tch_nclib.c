@@ -242,7 +242,6 @@ const tch_string_ix STRING_StaticObj = {
 		memchr,
 		memcmp,
 		memcpy,
-		memmem,
 		memmove,
 		memset,
 		strcat,

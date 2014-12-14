@@ -172,7 +172,6 @@ typedef struct _tch_string_ix_t {
 	void* (*memchr)(const void* src,int c, size_t length);
 	int (*memcmp)(const void* s1,const void* s2,size_t n);
 	void* (*memcpy)(void* out,const void* in,size_t n);
-	void* (*memmem)(const void* s1,size_t l1,const void* s2,size_t l2);
 	void* (*memmove)(void* dst,const void* src,size_t len);
 	void* (*memset)(void* dst,int c,size_t length);
 	char* (*strcat)(char* dst, const char* src);

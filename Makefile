@@ -12,9 +12,9 @@ include COMMON.mk
 TARGET=$(GEN_DIR)/tachyos.elf
 
 
-LIBS=-lnosys\
-     -lg_s\
-     -lstdc++_s\
+LIBS=-lc_nano\
+     -lg_nano\
+     -lstdc++_nano\
     
 LIB_DIR=    
 

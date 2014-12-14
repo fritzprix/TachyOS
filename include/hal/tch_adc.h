@@ -10,25 +10,28 @@
 #ifndef TCH_ADC_H_
 #define TCH_ADC_H_
 
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
-#define tch_ADC0                  ((adc_t) 0)
-#define tch_ADC1                  ((adc_t) 1)
-#define tch_ADC2                  ((adc_t) 2)
-#define tch_ADC3                  ((adc_t) 3)
-#define tch_ADC4                  ((adc_t) 4)
 
-#define tch_ADC_Ch1               ((uint8_t) 1)
-#define tch_ADC_Ch2               ((uint8_t) 2)
-#define tch_ADC_Ch3               ((uint8_t) 3)
-#define tch_ADC_Ch4               ((uint8_t) 4)
-#define tch_ADC_Ch5               ((uint8_t) 5)
-#define tch_ADC_Ch6               ((uint8_t) 6)
-#define tch_ADC_Ch7               ((uint8_t) 7)
-#define tch_ADC_Ch8               ((uint8_t) 8)
-#define tch_ADC_Ch9               ((uint8_t) 9)
-#define tch_ADC_Ch10              ((uint8_t) 10)
-#define tch_ADC_Ch11              ((uint8_t) 11)
-#define tch_ADC_Ch12              ((uint8_t) 12)
+#define tch_ADC1                  ((adc_t) 0)
+#define tch_ADC2                  ((adc_t) 1)
+#define tch_ADC3                  ((adc_t) 2)
+#define tch_ADC4                  ((adc_t) 3)
+
+#define tch_ADC_Ch1               ((uint8_t) 0)
+#define tch_ADC_Ch2               ((uint8_t) 1)
+#define tch_ADC_Ch3               ((uint8_t) 2)
+#define tch_ADC_Ch4               ((uint8_t) 3)
+#define tch_ADC_Ch5               ((uint8_t) 4)
+#define tch_ADC_Ch6               ((uint8_t) 5)
+#define tch_ADC_Ch7               ((uint8_t) 6)
+#define tch_ADC_Ch8               ((uint8_t) 7)
+#define tch_ADC_Ch9               ((uint8_t) 8)
+#define tch_ADC_Ch10              ((uint8_t) 9)
+#define tch_ADC_Ch11              ((uint8_t) 10)
+#define tch_ADC_Ch12              ((uint8_t) 11)
 
 
 
@@ -43,6 +46,7 @@
 #define ADC_SampleHold_VeryLong      ((uint8_t) 3)
 
 #define ADC_CONV_INFINITE            ((uint32_t) -1)
+#define ADC_READ_FAIL                ((uint32_t) -1)
 
 
 
@@ -86,5 +90,9 @@ typedef struct tch_lld_adc_t {
 }tch_lld_adc;
 
 extern const tch_lld_adc* tch_adc_instance;
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_ADC_H_ */

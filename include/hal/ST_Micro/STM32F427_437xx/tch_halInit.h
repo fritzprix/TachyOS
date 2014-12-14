@@ -729,4 +729,47 @@ __attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC
 };
 
 
+
+__attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
+		{
+				ADC1,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_ADC1EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_ADC1LPEN,
+				&RCC->APB2RSTR,
+				RCC_APB2RSTR_ADCRST,
+				&ADC1->SR,
+				&ADC1->CR1,
+				ADC_IRQn
+		},
+		{
+				ADC2,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_ADC2EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_ADC2PEN,
+				&RCC->APB2RSTR,
+				RCC_APB2RSTR_ADCRST,
+				&ADC2->SR,
+				&ADC2->CR1,
+				ADC_IRQn
+		},
+		{
+				ADC3,
+				NULL,
+				&RCC->APB2ENR,
+				RCC_APB2ENR_ADC3EN,
+				&RCC->APB2LPENR,
+				RCC_APB2LPENR_ADC3LPEN,
+				&RCC->APB2RSTR,
+				RCC_APB2RSTR_ADCRST,
+				&ADC3->SR,
+				&ADC3->CR1,
+				ADC_IRQn
+		}
+};
+
 #endif /* TCH_HALOBJS_H_ */

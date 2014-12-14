@@ -112,6 +112,7 @@ typedef struct tch_dma_manager_t {
 
 
 typedef struct tch_dma_handle_prototype_t{
+	tch_uobjDestr               destr;
 	tch*                        api;
 	dma_t                       dma;
 	uint8_t                     ch;
@@ -232,6 +233,7 @@ static tch_DmaHandle tch_dma_openStream(const tch* api,dma_t dma,tch_DmaCfg* cfg
 
 static tch_DmaHandle tch_dma_createHandle(tch* api,dma_t dma,uint8_t ch){
 	tch_dma_handle_prototype* dma_handle = (tch_dma_handle_prototype*) api->Mem->alloc(sizeof(tch_dma_handle_prototype));
+	dma_handle->destr = tch_dma_close;
 	dma_handle->api = api;
 	dma_handle->ch = ch;
 	dma_handle->dma = dma;

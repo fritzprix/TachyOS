@@ -20,86 +20,58 @@ tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
 static DECLARE_THREADROUTINE(childRoutine);
+float dutyArr[10] = {
+		0.1f,
+		0.2f,
+		0.3f,
+		0.4f,
+		0.5f,
+		0.6f,
+		0.7f,
+		0.8f,
+		0.9f,
+		0.99f
+};
 
 int main(const tch* api) {
 
 
-	tch_GpioCfg iocfg;
-	tch_GpioEvCfg evcfg;
-	api->Device->gpio->initEvCfg(&evcfg);
-	api->Device->gpio->initCfg(&iocfg);
 
+	tch_adcCfg adccfg;
+	api->Device->adc->initCfg(&adccfg);
+	adccfg.Precision = ADC_Precision_10B;
+	adccfg.SampleFreq = 10000;
+	adccfg.SampleHold = ADC_SampleHold_Short;
+	api->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch1);
 
-	iocfg.Mode = GPIO_Mode_OUT;
-	iocfg.Otype = GPIO_Otype_PP;
-	led = api->Device->gpio->allocIo(api,tch_gpio5,(1 << 6),&iocfg,osWaitForever,NoActOnSleep);
+	tch_pwmDef pwmDef;
+	pwmDef.pwrOpt = ActOnSleep;
+	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
+	pwmDef.PeriodInUnitTime = 1000;
 
-	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = GPIO_Mode_IN;
-	iocfg.PuPd = GPIO_PuPd_PU;
-	btn = api->Device->gpio->allocIo(api,tch_gpio5,(1 << 10),&iocfg,osWaitForever,NoActOnSleep);
+	tch_adcHandle* adc = api->Device->adc->open(api,tch_ADC1,&adccfg,ActOnSleep,osWaitForever);
+	tch_pwmHandle* pwm = api->Device->timer->openPWM(api,tch_TIMER2,&pwmDef,osWaitForever);
+	pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
+	pwm->close(pwm);
 
-	tch_assert(api,TRUE,osErrorISR);
-
-
-	uint32_t pmsk = 1 << 10;
-	evcfg.EvEdge = GPIO_EvEdge_Fall;
-	evcfg.EvType = GPIO_EvType_Interrupt;
-	btn->registerIoEvent(btn,&evcfg,&pmsk);
-
-
-	//	tch_assert(api,mtx_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,semaphore_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,barrier_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,monitor_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,mpool_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,msgq_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,mailq_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,async_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,uart_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,timer_performTest(api) == osOK,osErrorOS);
-	//	tch_assert(api,spi_performTest(api) == osOK,osErrorOS);
-
-
-	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = GPIO_Mode_OUT;
-	iocfg.Otype = GPIO_Otype_PP;
-	iocfg.Speed = GPIO_OSpeed_100M;
-	tch_gpio_handle* out = NULL;
-
-	tch_gptimerDef gptdef;
-	gptdef.UnitTime = TIMER_UNITTIME_uSEC;
-	gptdef.pwrOpt = ActOnSleep;
-
-	tch_gptimerHandle* timer = NULL;
 	uint32_t loopcnt = 0;
-	tch_threadCfg thcfg;
-	thcfg._t_name = "Child";
-	thcfg._t_routine = childRoutine;
-	thcfg.t_proior = Normal;
-	thcfg.t_stackSize = 1 << 10;
-	tch_threadId nchild = api->Thread->create(&thcfg,api->Thread->self());
-	api->Thread->start(nchild);
 
 	while(1){
-		timer = api->Device->timer->openGpTimer(api,tch_TIMER0,&gptdef,osWaitForever);
-		out = api->Device->gpio->allocIo(api,tch_gpio2,(1 << 14),&iocfg,osWaitForever,ActOnSleep);
-		out->out(out,1 << 14,bClear);
-		timer->wait(timer,15);
-		out->out(out,1 << 14,bSet);
-		timer->wait(timer,15);
-		out->out(out,1 << 14,bClear);
-		if((loopcnt++ % 10000) == 0){
+		pwm = api->Device->timer->openPWM(api,tch_TIMER2,&pwmDef,osWaitForever);
+		pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
+		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
+		if((loopcnt++ % 100) == 0){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
 		}
-		timer->wait(timer,15);
-		out->out(out,1 << 14,bSet);
-		timer->wait(timer,20);
-		timer->close(timer);
-		out->close(out);
-		if((loopcnt % 10000) == 5000){
+		/**
+		 * 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
+		 *
+		 */
+		pwm->write(pwm,1,dutyArr,10);
+		pwm->close(pwm);
+		if((loopcnt % 100) == 50){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();
 			api->Mem->printFreeList();
@@ -107,20 +79,6 @@ int main(const tch* api) {
 	}
 	return osOK;
 }
-
-static DECLARE_THREADROUTINE(childRoutine){
-	tch_threadId parent = env->Thread->getArg();
-	env->uStdLib->stdio->iprintf("\rChild Initiated \n");
-
-	uint32_t cnt = 100;
-	while(cnt){
-		env->uStdLib->stdio->iprintf("\rChild Loop %x\n",cnt++);
-		env->Thread->sleep(100);
-	}
-	env->Thread->terminate(parent,osOK);
-	return osOK;
-}
-
 
 
 

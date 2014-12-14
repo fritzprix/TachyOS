@@ -15,7 +15,10 @@
 #ifndef TCH_SPI_H_
 #define TCH_SPI_H_
 
-#include "tch.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 #define tch_spi0             ((spi_t) 0)
 #define tch_spi1             ((spi_t) 1)
@@ -72,5 +75,8 @@ typedef struct tch_lld_spi {
 
 extern const  tch_lld_spi* tch_spi_instance;
 
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_SPI_H_ */

@@ -23,6 +23,7 @@
 
 #include "tch_dma.h"
 #include "tch_gpio.h"
+#include "tch_timer.h"
 
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
@@ -173,6 +174,10 @@
 #define MFEATURE_TIMER              (10)
 #endif
 
+#ifndef MFEATURE_MAX_TIMER_CHCNT
+#define MFEATURE_MAX_TIMER_CHCNT    (4)
+#endif
+
 #ifndef MFEATURE_SPI
 #define MFEATURE_SPI                (3)
 #endif
@@ -180,6 +185,21 @@
 #ifndef MFEATURE_IIC
 #define MFEATURE_IIC                (3)
 #endif
+
+
+#ifndef MFEATURE_ADC
+#define MFEATURE_ADC                (3)
+#endif
+
+
+#ifndef MFEATURE_ADC_Ch
+#define MFEATURE_ADC_Ch             (16)
+#endif
+
+typedef struct _tch_port_t {
+	gpIo_x          port;
+	uint8_t         pin;
+}tch_port;
 
 typedef struct _tch_uart_bs_t {
 	dma_t          txdma;
@@ -197,10 +217,7 @@ typedef struct _tch_uart_bs_t {
 
 typedef struct _tch_timer_bs_t {
 	gpIo_x         port;
-	uint8_t        ch1p;
-	uint8_t        ch2p;
-	uint8_t        ch3p;
-	uint8_t        ch4p;
+	uint8_t        chp[MFEATURE_MAX_TIMER_CHCNT];
 	uint8_t        afv;
 }tch_timer_bs;
 
@@ -228,13 +245,33 @@ typedef struct _tch_iic_bs_t {
 }tch_iic_bs;
 
 
+typedef struct _tch_adc_bs_t {
+	dma_t         dma;
+	uint8_t       dmaCh;
+	tch_timer     timer;
+	uint8_t       timerCh;
+	uint8_t       timerExtsel;
+}tch_adc_bs;
+
+typedef struct _tch_adc_port_t {
+	tch_port      port;
+	uint8_t       adc_msk;
+}tch_adc_port;
+
+typedef struct _tch_adc_com_bs_t{
+	tch_adc_port ports[MFEATURE_ADC_Ch];
+	uint32_t occp_status;
+}tch_adc_com_bs;
+
+
+
 __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
 				DMA_Str15,
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				9,
 				10,
 				11,
@@ -246,7 +283,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				2,
 				3,
 				0,
@@ -259,7 +296,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch7,
 				DMA_Ch4,
-				_GPIO_1,
+				tch_gpio1,
 				10,
 				11,
 				13,
@@ -271,7 +308,7 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
-				_GPIO_0,
+				tch_gpio0,
 				0,
 				1,
 				-1,
@@ -291,83 +328,103 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 
 __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
-				_GPIO_0,
-				0,
-				1,
-				2,
-				3,
+				tch_gpio0,
+				{
+						0,
+						1,
+						2,
+						3
+				},
 				1,
 		},
 		{// TIM3
-				_GPIO_1,
-				4,
-				5,
-				0,
-				1,
+				tch_gpio1,
+				{
+						4,
+						5,
+						0,
+						1
+				},
 				2
 		},
 		{// TIM4
-				_GPIO_1,
-				6,
-				7,
-				8,
-				9,
+				tch_gpio1,
+				{
+						6,
+						7,
+						8,
+						9
+				},
 				2
 		},
 		{// TIM5
-				_GPIO_7,
-				10,
-				11,
-				12,
-				-1,
+				tch_gpio7,
+				{
+						10,
+						11,
+						12,
+						-1
+				},
 				2
 		},
 		{// TIM9
-				_GPIO_4,
-				5,
-				6,
-				-1,
-				-1,
+				tch_gpio4,
+				{
+						5,
+						6,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM10
-				_GPIO_1,
-				8,
-				-1,
-				-1,
-				-1,
+				tch_gpio1,
+				{
+						8,
+						-1,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM11
-				_GPIO_1,
-				9,
-				-1,
-				-1,
-				-1,
+				tch_gpio1,
+				{
+						9,
+						-1,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM12
-				_GPIO_1,
-				14,
-				15,
-				-1,
-				-1,
+				tch_gpio1,
+				{
+						14,
+						15,
+						-1,
+						-1
+				},
 				9
 		},
 		{// TIM13
-				_GPIO_5,
-				8,
-				-1,
-				-1,
-				-1,
+				tch_gpio5,
+				{
+						8,
+						-1,
+						-1,
+						-1
+				},
 				9
 		},
 		{// TIM14
-				_GPIO_5,
-				9,
-				-1,
-				-1,
-				-1,
+				tch_gpio5,
+				{
+						9,
+						-1,
+						-1,
+						-1
+				},
 				9
 		}
 };
@@ -461,6 +518,57 @@ __attribute__((section(".data"))) static tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = 
 		}
 };
 
+
+
+__attribute__((section(".data"))) static tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
+		{
+				.dma = DMA_Str12,
+				.dmaCh = DMA_Ch0,
+				.timer = tch_TIMER0,  // TIM2
+				.timerCh = 2,         // CH2
+				.timerExtsel = 3      // Timer 2 CC2 Event
+		},
+		{
+				.dma = DMA_Str10,
+				.dmaCh = DMA_Ch1,
+				.timer = tch_TIMER1,
+				.timerCh = 1,
+				.timerExtsel = 7     // Timer 3 CC1 Event
+		},
+		{
+				.dma = DMA_Str8,
+				.dmaCh = DMA_Ch0,
+				.timer = tch_TIMER2,
+				.timerCh = 4,
+				.timerExtsel = 9     // Timer 4 CC4 Event
+		}
+};
+
+#define ADC1_Bit            ((uint8_t) 1 << 0)
+#define ADC2_Bit            ((uint8_t) 1 << 1)
+#define ADC3_Bit            ((uint8_t) 1 << 2)
+
+__attribute__((section(".data"))) static tch_adc_com_bs ADC_COM_BD_CFGs = {
+		{
+				{tch_gpio0,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio0,4,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,5,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,6,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio0,7,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio1,0,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio1,1,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio2,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
+				{tch_gpio2,4,(ADC1_Bit | ADC2_Bit)},
+				{tch_gpio2,5,(ADC1_Bit | ADC2_Bit)}
+		},
+		0
+};
 
 
 #include "stm32f4xx.h"

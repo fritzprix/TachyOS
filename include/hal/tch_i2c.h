@@ -15,6 +15,9 @@
 #ifndef TCH_I2C_H_
 #define TCH_I2C_H_
 
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 
 typedef struct tch_iic_handle_t tch_iicHandle;
@@ -69,5 +72,9 @@ typedef struct tch_lld_iic_t {
 
 extern const tch_lld_iic* tch_i2c_instance;
 
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_I2C_H_ */

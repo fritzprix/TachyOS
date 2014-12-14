@@ -47,10 +47,11 @@ ARCH = ARM\
 CPU = cortex-m4\
 INSTR = thumb\
 FPU = HALFSOFT\
-HW_VENDOR = ST Micro\
+HW_VENDOR = ST_Micro\
 HW_PLF = STM32F40_41xxx\
 
 
+###
 ARCH=ARM
 CPU=cortex-m3
 INSTR=thumb

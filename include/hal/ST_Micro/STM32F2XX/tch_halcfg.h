@@ -216,10 +216,7 @@ typedef struct _tch_uart_bs_t {
 
 typedef struct _tch_timer_bs_t {
 	gpIo_x         port;
-	uint8_t        ch1p;
-	uint8_t        ch2p;
-	uint8_t        ch3p;
-	uint8_t        ch4p;
+	uint8_t        chp[4];
 	uint8_t        afv;
 }tch_timer_bs;
 
@@ -329,82 +326,102 @@ __attribute__((section(".data"))) static tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO]
 __attribute__((section(".data"))) static tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
 				tch_gpio0,
-				0,
-				1,
-				2,
-				3,
-				1,
+				{
+						0,
+						1,
+						2,
+						3
+				},
+				1
 		},
 		{// TIM3
 				tch_gpio1,
-				4,
-				5,
-				0,
-				1,
+				{
+						4,
+						5,
+						0,
+						1
+				},
 				2
 		},
 		{// TIM4
 				tch_gpio1,
-				6,
-				7,
-				8,
-				9,
+				{
+						6,
+						7,
+						8,
+						9
+				},
 				2
 		},
 		{// TIM5
 				tch_gpio7,
-				10,
-				11,
-				12,
-				-1,
+				{
+						10,
+						11,
+						12,
+						-1
+				},
 				2
 		},
 		{// TIM9
 				tch_gpio4,
-				5,
-				6,
-				-1,
-				-1,
+				{
+						5,
+						6,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM10
 				tch_gpio1,
-				8,
-				-1,
-				-1,
-				-1,
+				{
+						8,
+						-1,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM11
 				tch_gpio1,
-				9,
-				-1,
-				-1,
-				-1,
+				{
+						9,
+						-1,
+						-1,
+						-1
+				},
 				3
 		},
 		{// TIM12
 				tch_gpio1,
-				14,
-				15,
-				-1,
-				-1,
+				{
+						14,
+						15,
+						-1,
+						-1
+				},
 				9
 		},
 		{// TIM13
 				tch_gpio5,
-				8,
-				-1,
-				-1,
-				-1,
+				{
+						8,
+						-1,
+						-1,
+						-1
+				},
 				9
 		},
 		{// TIM14
 				tch_gpio5,
-				9,
-				-1,
-				-1,
-				-1,
+				{
+						9,
+						-1,
+						-1,
+						-1
+				},
 				9
 		}
 };

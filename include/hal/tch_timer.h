@@ -63,12 +63,14 @@ struct _tch_gptimer_handle_t {
 struct _tch_pwm_handle_t {
 	tchStatus (*close)(tch_pwmHandle* self);
 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
+	tchStatus (*setOutputEnable)(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
 	BOOL (*setDuty)(tch_pwmHandle* self,uint32_t ch,float duty);
 	float (*getDuty)(tch_pwmHandle* self,uint32_t ch);
 };
 
 struct _tch_tcapt_handle_t {
 	tchStatus (*close)(tch_tcaptHandle* self);
+	tchStatus (*setInputEnable)(tch_tcaptHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
 	tchStatus (*read)(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
 };
 

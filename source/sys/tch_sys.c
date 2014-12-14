@@ -73,7 +73,6 @@ void tch_kernelInit(void* arg){
 	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
 	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
 
-
 	/**
 	 *  dynamic binding of dependecy
 	 */
