@@ -26,19 +26,6 @@
 #define ADC_CLASS_KEY         ((uint16_t) 0x4230)
 #define ADC_FLAG_BUSY         ((uint32_t) 0x10000)
 
-#define tch_ADC_Ch0_BIT               ((uint16_t) 0x1)
-#define tch_ADC_Ch1_BIT               ((uint16_t) 0x2)
-#define tch_ADC_Ch2_BIT               ((uint16_t) 0x4)
-#define tch_ADC_Ch3_BIT               ((uint16_t) 0x8)
-#define tch_ADC_Ch4_BIT               ((uint16_t) 0x10)
-#define tch_ADC_Ch5_BIT               ((uint16_t) 0x20)
-#define tch_ADC_Ch6_BIT               ((uint16_t) 0x40)
-#define tch_ADC_Ch7_BIT               ((uint16_t) 0x80)
-#define tch_ADC_Ch8_BIT               ((uint16_t) 0x100)
-#define tch_ADC_Ch9_BIT               ((uint16_t) 0x200)
-#define tch_ADC_Ch10_BIT              ((uint16_t) 0x400)
-#define tch_ADC_Ch11_BIt              ((uint16_t) 0x800)
-
 
 #define ADC_setBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status |= ADC_FLAG_BUSY;\
@@ -315,6 +302,71 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 }
 
 static tchStatus tch_adcStartBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
+	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
+	ADC_TypeDef* adcHw = NULL;
+	tch_adc_bs* adcBs = NULL;
+	tchStatus result = osOK;
+	tch_adc_descriptor* adcDesc = NULL;
+	if(!self)
+		return osErrorParameter;
+	if(!tch_adcIsValid(self))
+		return osErrorParameter;
+
+	adcBs = ADC_BD_CFGs[ins->adc];
+	tch_timer_descriptor* timDesc = &TIMER_HWs[adcBs->timer];
+	// enable timer hw
+
+
+	adcDesc = &ADC_HWs[ins->adc];
+	adcHw = (ADC_TypeDef*) adcDesc->_hw;
+	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
+		return result;
+	while(ADC_isBusy(ins)){
+		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,osWaitForever)) != osOK)
+			return result;
+	}
+	ADC_setBusy(ins);
+	if((result = ins->env->Mtx->unlock(ins->mtx)) != osOK)
+		return result;
+
+	TIM_TypeDef* timHw = (TIM_TypeDef*) timDesc->_hw;
+	timHw->EGR |= (1 << adcBs->timerCh);
+	ins->timer->setDuty(adcBs->timer,adcBs->timerCh,0.5f);
+
+	adcHw->CR1 &= ~ADC_CR1_EOCIE;
+	ins->isr_msk &= ~ADC_SR_EOC;
+	uint32_t chnksz = ins->env->MailQ->getBlockSize(q);
+
+	tch_adc_setRegChannel(adcDesc,ch,1);
+	//enable dma
+	adcHw->CR2 |= ADC_CR2_DMA;
+	tch_DmaReqDef dmaReq;
+	uint16_t* chnk = NULL;
+	while(convCnt--){
+		chnk = (uint16_t*) ins->env->MailQ->alloc(q,osWaitForever,NULL);
+		ins->env->Device->dma->initReq(&dmaReq,chnk,adcHw->DR,chnksz);
+		ins->env->Device->dma->beginXfer(ins->dma,&dmaReq,osWaitForever,&result);
+		ins->timer->start(ins->timer);
+		if(result != osOK){
+			adcHw->CR2 &= ~ADC_CR2_DMA;
+			if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
+				return result;
+			ADC_clrBusy(ins);
+			ins->env->Condv->wakeAll(ins->condv);
+			ins->env->Mtx->unlock(ins->mtx);
+			ins->timer->stop(ins->timer);
+			return result;
+		}
+		ins->timer->stop(ins->timer);
+	}
+
+
+	adcHw->CR2 &= ~ADC_CR2_DMA;
+	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
+		return result;
+	ADC_clrBusy(ins);
+	ins->env->Condv->wakeAll(ins->condv);
+	return ins->env->Mtx->unlock(ins->mtx);
 
 }
 

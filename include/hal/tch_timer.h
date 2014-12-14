@@ -62,6 +62,8 @@ struct _tch_gptimer_handle_t {
 
 struct _tch_pwm_handle_t {
 	tchStatus (*close)(tch_pwmHandle* self);
+	tchStatus (*start)(tch_pwmHandle* self);
+	tchStatus (*stop)(tch_pwmHandle* self);
 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
 	tchStatus (*setOutputEnable)(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
 	BOOL (*setDuty)(tch_pwmHandle* self,uint32_t ch,float duty);

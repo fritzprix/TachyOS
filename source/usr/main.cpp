@@ -19,7 +19,6 @@
 tch_gpio_handle* led  = NULL;
 tch_gpio_handle* btn  = NULL;
 
-static DECLARE_THREADROUTINE(childRoutine);
 float dutyArr[10] = {
 		0.1f,
 		0.2f,
@@ -59,6 +58,7 @@ int main(const tch* api) {
 	while(1){
 		pwm = api->Device->timer->openPWM(api,tch_TIMER2,&pwmDef,osWaitForever);
 		pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
+		pwm->start(pwm);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
 		if((loopcnt++ % 100) == 0){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());

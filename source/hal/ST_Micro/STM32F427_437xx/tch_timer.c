@@ -164,6 +164,8 @@ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size
 static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
 static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch);
 static tchStatus tch_pwm_close(tch_pwmHandle* self);
+static tchStatus tch_pwm_start(tch_pwmHandle* self);
+static tchStatus tch_pwm_stop(tch_pwmHandle* self);
 
 
 /////             Pulse Capture Function                /////
@@ -364,6 +366,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	ins->_pix.setDuty = tch_pwm_setDuty;
 	ins->_pix.write = tch_pwm_write;
 	ins->_pix.close = tch_pwm_close;
+	ins->_pix.start = tch_pwm_start;
+	ins->_pix.stop = tch_pwm_stop;
 	ins->_pix.setOutputEnable = tch_pwm_setOutputEnable;
 	ins->timer = timer;
 	ins->env = env;
@@ -493,7 +497,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
-	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
+//	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
 
 	return (tch_pwmHandle*) ins;
 
@@ -857,6 +861,34 @@ static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 		break;
 	}
 	return tmpccr / tmparr;
+}
+
+static tchStatus tch_pwm_start(tch_pwmHandle* self){
+	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
+	TIM_TypeDef* timHw = NULL;
+	if(!ins)
+		return osErrorParameter;
+	if(!tch_timer_PWMIsValid(ins))
+		return osErrorParameter;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
+		return osErrorResource;
+	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
+	timHw->CR1 |= TIM_CR1_CEN;
+	ins->env->Mtx->unlock(ins->mtx);
+}
+
+static tchStatus tch_pwm_stop(tch_pwmHandle* self){
+	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
+	TIM_TypeDef* timHw = NULL;
+	if(!ins)
+		return osErrorParameter;
+	if(!tch_timer_PWMIsValid(ins))
+		return osErrorParameter;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
+		return osErrorResource;
+	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
+	timHw->CR1 &= ~TIM_CR1_CEN;
+	ins->env->Mtx->unlock(ins->mtx);
 }
 
 static tchStatus tch_pwm_close(tch_pwmHandle* self){
