@@ -27,6 +27,8 @@ static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result
 static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static tchStatus tch_mailq_put(tch_mailqId qid,void* mail);
 static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
+static uint32_t tch_mailq_getBlockSize(tch_mailqId qid);
+static uint32_t tch_mailq_getLength(tch_mailqId qid);
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
 static tchStatus tch_mailq_destroy(tch_mailqId qid);
 
@@ -34,13 +36,26 @@ static void tch_mailqValidate(tch_mailqId qid);
 static void tch_mailqInvalidate(tch_mailqId qid);
 static BOOL tch_mailqIsValid(tch_mailqId qid);
 
-
+/**
+ *
+ * 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
+	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
+	tchStatus (*put)(tch_mailqId qid,void* mail);
+	osEvent (*get)(tch_mailqId qid,uint32_t millisec);
+	uint32_t (*getBlockSize)(tch_mailqId qid);
+	uint32_t (*getLength)(tch_mailqId qid);
+	tchStatus (*free)(tch_mailqId qid,void* mail);
+	tchStatus (*destroy)(tch_mailqId qid);
+ */
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		tch_mailq_create,
 		tch_mailq_alloc,
 		tch_mailq_calloc,
 		tch_mailq_put,
 		tch_mailq_get,
+		tch_mailq_getBlockSize,
+		tch_mailq_getLength,
 		tch_mailq_free,
 		tch_mailq_destroy
 };
@@ -144,6 +159,15 @@ static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec){
 	return evt;
 }
 
+static uint32_t tch_mailq_getBlockSize(tch_mailqId qid){
+	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
+	return mailqcb->bsz;
+}
+
+static uint32_t tch_mailq_getLength(tch_mailqId qid){
+	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
+	return MsgQ->getLength(mailqcb->msgq);
+}
 
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;

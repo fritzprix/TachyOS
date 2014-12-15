@@ -35,6 +35,7 @@ float dutyArr[10] = {
 int main(const tch* api) {
 
 
+	tch_mailqId adcReadQ = api->MailQ->create(100,2);
 
 	tch_adcCfg adccfg;
 	api->Device->adc->initCfg(&adccfg);
@@ -54,12 +55,19 @@ int main(const tch* api) {
 	pwm->close(pwm);
 
 	uint32_t loopcnt = 0;
-
+	uint16_t* readb;
+	osEvent evt;
 	while(1){
 		pwm = api->Device->timer->openPWM(api,tch_TIMER2,&pwmDef,osWaitForever);
 		pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
 		pwm->start(pwm);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
+		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
+		evt = api->MailQ->get(adcReadQ,osWaitForever);
+		if(evt.status == osEventMail){
+			readb = (uint16_t*) evt.value.p;
+			api->MailQ->free(adcReadQ,readb);
+		}
 		if((loopcnt++ % 100) == 0){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();

@@ -31,6 +31,7 @@ tchStatus tch_msgq_kdestroy(tch_msgqId);
 static tch_msgqId tch_msgq_create(uint32_t len);
 static tchStatus tch_msgq_put(tch_msgqId,uint32_t msg,uint32_t millisec);
 static osEvent tch_msgq_get(tch_msgqId,uint32_t millisec);
+static uint32_t tch_msgq_getLength(tch_msgqId);
 static tchStatus tch_msgq_destroy(tch_msgqId);
 
 static void tch_msgqValidate(tch_msgqId);
@@ -45,6 +46,7 @@ __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
 		tch_msgq_create,
 		tch_msgq_put,
 		tch_msgq_get,
+		tch_msgq_getLength,
 		tch_msgq_destroy
 };
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
@@ -198,6 +200,12 @@ tchStatus tch_msgq_kget(tch_msgqId mqId,tch_msgq_karg* arg){
 	tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
 	return osEventMessage;
 }
+
+static uint32_t tch_msgq_getLength(tch_msgqId mqId){
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
+	return msgqCb->sz;
+}
+
 
 static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;

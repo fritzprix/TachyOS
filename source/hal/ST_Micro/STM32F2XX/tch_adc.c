@@ -68,9 +68,7 @@ typedef struct tch_adc_handle_prototype {
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 static tchStatus tch_adcClose(tch_adcHandle* self);
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
-static tchStatus tch_adcStartBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
-static tchStatus tch_adcPauseBurstConvert(const tch_adcHandle* self);
-static tchStatus tch_adcStopBurstConvert(const tch_adcHandle* self);
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
 
 
 
@@ -206,16 +204,15 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	tch_pwmDef pwmDef;
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.PeriodInUnitTime = _1_MHZ / cfg->SampleFreq;
+	pwmDef.pwrOpt = popt;
 	ins->timer = env->Device->timer->openPWM(env,adcBs->timer,&pwmDef,timeout);
 
-	ins->isr_msk |= ADC_SR_OVR;
-	adcHw->CR1 |= (cfg->Precision << ADC_Precision_Pos) | ADC_CR1_OVRIE;
+	ins->isr_msk |= ADC_SR_OVR | ADC_SR_EOC;
+	adcHw->CR1 |= (cfg->Precision << ADC_Precision_Pos) | ADC_CR1_OVRIE | ADC_CR1_EOCIE;
 	adcHw->CR2 |= (ADC_CR2_ADON | (adcBs->timerExtsel << ADC_CR2_EXTSEL_Pos));
 
 	ins->pix.close = tch_adcClose;
-	ins->pix.pauseBurstConvert = tch_adcPauseBurstConvert;
-	ins->pix.startBurstConvert = tch_adcStartBurstConvert;
-	ins->pix.stopBurstConvert = tch_adcStopBurstConvert;
+	ins->pix.readBurst = tch_adcBurstConvert;
 	ins->pix.read = tch_adcRead;
 	ins->env = env;
 
@@ -272,7 +269,8 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
-	ADC_TypeDef* adcHw = (ADC_TypeDef*) ADC_HWs[ins->adc]._hw;
+	tch_adc_descriptor* adcDesc = &ADC_HWs[ins->adc];
+	ADC_TypeDef* adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	osEvent evt;
 	if(!ins)
 		return ADC_READ_FAIL;
@@ -287,13 +285,13 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	ADC_setBusy(ins);
 	if(ins->env->Mtx->unlock(ins->mtx))
 		return ADC_READ_FAIL;
-	tch_adc_setRegChannel(ins,ch,1);
-	adcHw->CR1 |= ADC_CR1_EOCIE;
-	ins->isr_msk |= ADC_SR_EOC;
+	tch_adc_setRegChannel(adcDesc,ch,1);
+//	adcHw->CR1 |= ADC_CR1_EOCIE;
+//	ins->isr_msk |= ADC_SR_EOC;
 	adcHw->CR2 |= ADC_CR2_SWSTART;    /// start conversion
 	evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
-	adcHw->CR1 &= ~ADC_CR1_EOCIE;
-	ins->isr_msk &= ~ADC_SR_EOC;
+//	adcHw->CR1 &= ~ADC_CR1_EOCIE;
+//	ins->isr_msk &= ~ADC_SR_EOC;
 	ADC_clrBusy(ins);
 	if(evt.status == osEventMessage)
 		return evt.value.v;
@@ -301,22 +299,19 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 
 }
 
-static tchStatus tch_adcStartBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
 	ADC_TypeDef* adcHw = NULL;
 	tch_adc_bs* adcBs = NULL;
+	osEvent evt;
 	tchStatus result = osOK;
 	tch_adc_descriptor* adcDesc = NULL;
-	if(!self)
+	if(!ins)
 		return osErrorParameter;
-	if(!tch_adcIsValid(self))
+	if(!tch_adcIsValid(ins))
 		return osErrorParameter;
 
-	adcBs = ADC_BD_CFGs[ins->adc];
-	tch_timer_descriptor* timDesc = &TIMER_HWs[adcBs->timer];
-	// enable timer hw
-
-
+	adcBs = &ADC_BD_CFGs[ins->adc];
 	adcDesc = &ADC_HWs[ins->adc];
 	adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
@@ -329,39 +324,37 @@ static tchStatus tch_adcStartBurstConvert(const tch_adcHandle* self,uint8_t ch,t
 	if((result = ins->env->Mtx->unlock(ins->mtx)) != osOK)
 		return result;
 
-	TIM_TypeDef* timHw = (TIM_TypeDef*) timDesc->_hw;
-	timHw->EGR |= (1 << adcBs->timerCh);
-	ins->timer->setDuty(adcBs->timer,adcBs->timerCh,0.5f);
+	ins->timer->setDuty(ins->timer,adcBs->timerCh,0.5f);
 
-	adcHw->CR1 &= ~ADC_CR1_EOCIE;
-	ins->isr_msk &= ~ADC_SR_EOC;
 	uint32_t chnksz = ins->env->MailQ->getBlockSize(q);
 
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	//enable dma
 	adcHw->CR2 |= ADC_CR2_DMA;
+	adcHw->CR2 |= ADC_CR2_EXTEN_0;
 	tch_DmaReqDef dmaReq;
 	uint16_t* chnk = NULL;
 	while(convCnt--){
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,osWaitForever,NULL);
-		ins->env->Device->dma->initReq(&dmaReq,chnk,adcHw->DR,chnksz);
-		ins->env->Device->dma->beginXfer(ins->dma,&dmaReq,osWaitForever,&result);
+		ins->env->Device->dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
 		ins->timer->start(ins->timer);
-		if(result != osOK){
+		ins->env->Device->dma->beginXfer(ins->dma,&dmaReq,0,&result);
+		evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
+		ins->timer->stop(ins->timer);
+		ins->env->MailQ->put(q,chnk);
+		if(evt.status != osEventMessage){
 			adcHw->CR2 &= ~ADC_CR2_DMA;
+			adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
 			if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
 				return result;
 			ADC_clrBusy(ins);
 			ins->env->Condv->wakeAll(ins->condv);
 			ins->env->Mtx->unlock(ins->mtx);
-			ins->timer->stop(ins->timer);
-			return result;
 		}
-		ins->timer->stop(ins->timer);
 	}
 
-
 	adcHw->CR2 &= ~ADC_CR2_DMA;
+	adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
 	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
 		return result;
 	ADC_clrBusy(ins);
@@ -440,6 +433,7 @@ static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_pr
 		if(adcHw->SR & ADC_SR_EOC){
 			ins->env->MsgQ->put(ins->msgq,adcHw->DR,0);
 			adcHw->SR &= ~ADC_SR_STRT;
+			adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
 			return TRUE;
 		}
 		if(adcHw->SR & ADC_SR_OVR){

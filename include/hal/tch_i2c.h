@@ -20,32 +20,25 @@ extern "C"{
 #endif
 
 
+#define IIc1                  ((tch_iic) 0)
+#define IIc2                  ((tch_iic) 1)
+#define IIc3                  ((tch_iic) 2)
+
+#define IIC_ROLE_MASTER       ((uint8_t) 1)
+#define IIC_ROLE_SLAVE        ((uint8_t) 0)
+
+#define IIC_OPMODE_FAST       ((uint8_t) 1)
+#define IIC_OPMODE_STANDARD   ((uint8_t) 0)
+
+#define IIC_BAUDRATE_HIGH     ((uint8_t) 2)
+#define IIC_BAUDRATE_MID      ((uint8_t) 1)
+#define IIC_BUADRATE_LOW      ((uint8_t) 0)
+
+
 typedef struct tch_iic_handle_t tch_iicHandle;
 typedef uint8_t tch_iic;
 typedef struct tch_iic_cfg_t tch_iicCfg;
 
-struct tch_iic_str_t{
-	uint8_t iic1;
-	uint8_t iic2;
-	uint8_t iic3;
-};
-
-struct tch_iic_role_t {
-	uint8_t Master;
-	uint8_t Slave;
-};
-
-
-struct tch_iic_opmode_t {
-	uint8_t Standard;
-	uint8_t Fast;
-};
-
-struct tch_iic_brate_t {
-	uint8_t High;
-	uint8_t Mid;
-	uint8_t Low;
-};
 
 struct tch_iic_cfg_t {
 	uint8_t Role;       // Master or Slave Role
@@ -62,10 +55,6 @@ struct tch_iic_handle_t{
 
 
 typedef struct tch_lld_iic_t {
-	struct tch_iic_str_t    iic;
-	struct tch_iic_role_t   Role;
-	struct tch_iic_opmode_t OpMode;
-	struct tch_iic_brate_t  Baudrate;
 	tch_iicHandle* (*allocIIC)(const tch* env,tch_iic iic,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_iic;
 
