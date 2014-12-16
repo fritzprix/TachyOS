@@ -58,9 +58,6 @@ int main(const tch* api) {
 	uint16_t* readb;
 	osEvent evt;
 	while(1){
-		pwm = api->Device->timer->openPWM(api,tch_TIMER2,&pwmDef,osWaitForever);
-		pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
-		pwm->start(pwm);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = api->MailQ->get(adcReadQ,osWaitForever);
@@ -77,8 +74,6 @@ int main(const tch* api) {
 		 * 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
 		 *
 		 */
-		pwm->write(pwm,1,dutyArr,10);
-		pwm->close(pwm);
 		if((loopcnt % 100) == 50){
 			api->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",api->Mem->avail());
 			api->Mem->printAllocList();

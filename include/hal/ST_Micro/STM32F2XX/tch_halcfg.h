@@ -531,25 +531,25 @@ typedef struct _tch_adc_com_bs_t{
 
 __attribute__((section(".data"))) static tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
-				.dma = DMA_Str12,
-				.dmaCh = DMA_Ch0,
-				.timer = tch_TIMER0,  // TIM2
-				.timerCh = 2,         // CH2
-				.timerExtsel = 3      // Timer 2 CC2 Event
+				DMA_Str12,
+				DMA_Ch0,
+				tch_TIMER0,  // TIM2
+				2,         // CH2
+				3      // Timer 2 CC2 Event
 		},
 		{
-				.dma = DMA_Str10,
-				.dmaCh = DMA_Ch1,
-				.timer = tch_TIMER1,
-				.timerCh = 1,
-				.timerExtsel = 7     // Timer 3 CC1 Event
+				DMA_Str10,
+				DMA_Ch1,
+				tch_TIMER1,
+				1,
+				7     // Timer 3 CC1 Event
 		},
 		{
-				.dma = DMA_Str8,
-				.dmaCh = DMA_Ch0,
-				.timer = tch_TIMER2,
-				.timerCh = 4,
-				.timerExtsel = 9     // Timer 4 CC4 Event
+				DMA_Str8,
+				DMA_Ch0,
+				tch_TIMER2,
+				4,
+				9     // Timer 4 CC4 Event
 		}
 };
 

@@ -68,12 +68,6 @@ extern "C" {
 #define DMA_Burst_Inc8            (uint8_t) 2
 #define DMA_Burst_Inc16           (uint8_t) 3
 
-#define DMA_Minc_Enable           (uint8_t) 1
-#define DMA_Minc_Disable          (uint8_t) 0
-
-#define DMA_Pinc_Enable           (uint8_t) 1
-#define DMA_Pinc_Disable          (uint8_t) 0
-
 #define DMA_Dir_PeriphToMem       (uint8_t) 0
 #define DMA_Dir_MemToPeriph       (uint8_t) 1
 #define DMA_Dir_MemToMem          (uint8_t) 2
