@@ -13,7 +13,7 @@ include tchConfig.mk
 ROOT_DIR= $(CURDIR)
 ifeq ($(PUBLISH_TYPE),)
 	PUBLISH_TYPE=Release
-#	PUBLISH_TYPE=Debug
+	PUBLISH_TYPE=Debug
 endif
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/Debug

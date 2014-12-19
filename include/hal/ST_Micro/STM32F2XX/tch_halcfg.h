@@ -582,5 +582,4 @@ __attribute__((section(".data"))) static tch_adc_com_bs ADC_COM_BD_CFGs = {
 #include "stm32f2xx.h"
 
 
-
 #endif /* TCH_HALCFG_H_ */

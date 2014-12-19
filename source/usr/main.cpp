@@ -32,6 +32,12 @@ float dutyArr[10] = {
 		0.99f
 };
 
+const uint8_t vars[10] = {
+		0,1,2,3,4,5,6,7,8,9
+};
+
+
+uint16_t msAddr = 0x1D2;
 int main(const tch* api) {
 
 
@@ -54,10 +60,24 @@ int main(const tch* api) {
 	pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
 	pwm->close(pwm);
 
+	tch_iicCfg iicCfg;
+	api->Device->i2c->initCfg(&iicCfg);
+	iicCfg.Addr = 0xD2;
+	iicCfg.AddrMode = IIC_ADDRMODE_7B;
+	iicCfg.Baudrate = IIC_BAUDRATE_HIGH;
+	iicCfg.Filter = TRUE;
+	iicCfg.Role = IIC_ROLE_MASTER;
+	iicCfg.OpMode = IIC_OPMODE_FAST;
+
+	tch_iicHandle* iic = api->Device->i2c->allocIIC(api,IIc1,&iicCfg,osWaitForever,ActOnSleep);
+
 	uint32_t loopcnt = 0;
 	uint16_t* readb;
 	osEvent evt;
 	while(1){
+		/*	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz);
+		 * */
+		iic->write(iic,msAddr,vars,10);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = api->MailQ->get(adcReadQ,osWaitForever);
