@@ -81,7 +81,7 @@ int main(const tch* api) {
 	while(1){
 		/*	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz);
 		 * */
-		iic->write(iic,msAddr,&whoami,1,TRUE);
+		iic->write(iic,msAddr,&whoami,1);
 		iic->read(iic,msAddr,buf,1,osWaitForever);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
@@ -96,7 +96,6 @@ int main(const tch* api) {
 			api->Mem->printFreeList();
 		}
 		/**
-		 * 	tchStatus (*write)(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
 		 *
 		 */
 		if((loopcnt % 100) == 50){
