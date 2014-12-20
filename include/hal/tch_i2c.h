@@ -56,7 +56,7 @@ struct tch_iic_cfg_t {
 
 struct tch_iic_handle_t{
 	tchStatus (*close)(tch_iicHandle* self);
-	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz);
+	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz,BOOL stop);
 	tchStatus (*read)(tch_iicHandle* self,uint16_t addr,void* rb,size_t sz,uint32_t timeout);
 };
 

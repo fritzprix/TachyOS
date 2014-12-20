@@ -36,6 +36,8 @@ const uint8_t vars[10] = {
 		0,1,2,3,4,5,6,7,8,9
 };
 
+const uint8_t whoami = 0xF;
+
 
 uint16_t msAddr = 0x1D2;
 int main(const tch* api) {
@@ -74,10 +76,13 @@ int main(const tch* api) {
 	uint32_t loopcnt = 0;
 	uint16_t* readb;
 	osEvent evt;
+	uint8_t buf[10];
+	api->uStdLib->string->memset(buf,0,sizeof(uint8_t) * 10);
 	while(1){
 		/*	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz);
 		 * */
-		iic->write(iic,msAddr,vars,10);
+		iic->write(iic,msAddr,&whoami,1,TRUE);
+		iic->read(iic,msAddr,buf,1,osWaitForever);
 		api->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = api->MailQ->get(adcReadQ,osWaitForever);
