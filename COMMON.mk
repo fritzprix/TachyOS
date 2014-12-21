@@ -15,14 +15,11 @@ ifeq ($(PUBLISH_TYPE),)
 	PUBLISH_TYPE=Release
 #	PUBLISH_TYPE=Debug
 endif
+
 ifeq ($(GEN_DIR),)
-	GEN_DIR=$(ROOT_DIR)/Debug
+	GEN_DIR=$(ROOT_DIR)/$(PUBLISH_TYPE)
 endif
 
-ifeq ($(PUBLISH_TYPE),Release)
-	GEN_DIR=$(ROOT_DIR)/Release
-	PUBLISH_TYPE=Release
-endif
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/sys
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)

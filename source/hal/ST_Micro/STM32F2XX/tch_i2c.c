@@ -24,6 +24,7 @@
 #define TCH_IIC_CLASS_KEY                      ((uint16_t) 0x62D1)
 #define TCH_IIC_BUSY_FLAG                      ((uint32_t) 0x10000)
 #define TCH_IIC_ADDMOD_FLAG                    ((uint32_t) 0x20000)
+#define TCH_IIC_MASTER_FLAG                    ((uint32_t) 0x40000)
 
 #define IIC_isBusy(ins)                        ((tch_iic_handle_prototype*) ins)->status & TCH_IIC_BUSY_FLAG
 #define IIC_setBusy(ins)                     do {\
@@ -34,6 +35,16 @@
 	((tch_iic_handle_prototype*) ins)->status &= ~TCH_IIC_BUSY_FLAG;\
 }while(0)
 
+
+#define IIC_isMaster(ins)                      ((tch_iic_handle_prototype*) ins)->status & TCH_IIC_MASTER_FLAG
+
+#define IIC_setMaster(ins)                     do {\
+	((tch_iic_handle_prototype*) ins)->status |= TCH_IIC_MASTER_FLAG;\
+}while(0)
+
+#define IIC_clrMaster(ins)                     do {\
+	((tch_iic_handle_prototype*) ins)->status &= TCH_IIC_MASTER_FLAG;\
+}while(0)
 
 
 #define TCH_IIC_OCCP_MSK                       ((uint32_t) 0x0010)
@@ -345,6 +356,8 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	tx_msg.bp = ((uint8_t*) wb);
 
 	iicHw->CR1 |= I2C_CR1_PE;   //enable i2c
+	if(ins->txdma)
+		iicHw->CR2 |= I2C_CR2_DMAEN;
 
 	if(ins->status & TCH_IIC_ADDMOD_FLAG){
 		/// 10bit addressing mode
@@ -374,18 +387,33 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
 		if((evt.status != osEventMessage) || (evt.value.v != I2C_SR1_SB))
 			return osErrorValue;
-	//	iicHw->CR2 |= I2C_CR2_ITBUFEN;
 		ins->isr_msg = (uint32_t) &tx_msg;
 		evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
 		if((evt.status != osEventMessage) || (evt.value.v != I2C_SR1_ADDR))
 			return evt.status;
 	}
-	ins->isr_msg = (uint32_t)&tx_msg;
-	iicHw->CR2 |= I2C_CR2_ITBUFEN;
-//	iicHw->DR = ((uint8_t*) wb)[0];  // trigger communication
-	evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
-	if((evt.status != osEventMessage) || (evt.value.v != osOK))
-		return osErrorValue;
+
+	if(!ins->txdma){
+		ins->isr_msg = (uint32_t)&tx_msg;
+		iicHw->CR2 |= I2C_CR2_ITBUFEN;
+		evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
+		if((evt.status != osEventMessage) || (evt.value.v != osOK))
+			return osErrorValue;
+	}else{
+		tch_DmaReqDef txreq;
+		txreq.MemAddr[0] = wb;
+		txreq.MemInc = TRUE;
+		txreq.PeriphAddr[0] = &iicHw->DR;
+		txreq.PeriphInc = FALSE;
+		txreq.size = sz;
+		if(!ins->env->Device->dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL))
+			return osErrorResource;
+		iicHw->CR2 &= ~I2C_CR2_DMAEN;
+		evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
+		if((evt.status != osEventMessage) || (evt.value.v != I2C_SR1_BTF))
+			return osErrorResource;
+	}
+
 	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	if((evt.status = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
 		return evt.status;
@@ -394,8 +422,8 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		return evt.status;
 	ins->env->Mtx->unlock(ins->mtx);
 	return osOK;
-
 }
+
 
 static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,size_t sz,uint32_t timeout){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
@@ -423,6 +451,10 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 	iicHw->CR1 |= I2C_CR1_PE;   //enable i2c
 	if(sz > 1)
 		iicHw->CR1 |= I2C_CR1_ACK;
+
+	if(ins->rxdma && sz > 1){
+		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
+	}
 
 	if(ins->status & TCH_IIC_ADDMOD_FLAG){
 		/// 10bit addressing mode
@@ -461,9 +493,22 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 	}
 
 
-	evt = ins->env->MsgQ->get(ins->mq,timeout);
-	if((evt.status != osEventMessage) || (evt.value.v != osOK))
-		return evt.status;
+	if((!ins->rxdma) || (sz == 1)){
+		evt = ins->env->MsgQ->get(ins->mq,timeout);
+		if((evt.status != osEventMessage) || (evt.value.v != osOK))
+			return evt.status;
+	}else{
+		tch_DmaReqDef rx_req;
+		rx_req.MemAddr[0] = rb;
+		rx_req.MemInc = TRUE;
+		rx_req.PeriphAddr[0] = &iicHw->DR;
+		rx_req.PeriphInc = FALSE;
+		rx_req.size = sz;
+		if(!ins->env->Device->dma->beginXfer(ins->rxdma,&rx_req,osWaitForever,NULL))
+			return osErrorResource;
+		iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
+		iicHw->CR1 |= I2C_CR1_STOP;
+	}
 	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	if((evt.status = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
 		return evt.status;
@@ -515,6 +560,11 @@ static BOOL tch_IIC_handleEvent(tch_iic_handle_prototype* ins,tch_iic_descriptor
 				env->MsgQ->put(ins->mq,osOK,0);
 			}
 		}
+		return TRUE;
+	}
+	if(sr & I2C_SR1_BTF){
+		iicHw->CR1 |= I2C_CR1_STOP;
+		env->MsgQ->put(ins->mq,I2C_SR1_BTF,0);
 		return TRUE;
 	}
 	if(sr & I2C_SR1_SB){
