@@ -451,22 +451,6 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 };
 
 
-/**
- * 		void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*   rstr;
-	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
-	const uint8_t        channelCnt;
-	const uint8_t        precision;
-	uint8_t              ch_occp;
-	IRQn_Type            irq;
- * */
 __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 		{
 				TIM2,

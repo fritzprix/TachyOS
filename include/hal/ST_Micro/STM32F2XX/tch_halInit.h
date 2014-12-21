@@ -633,8 +633,6 @@ __attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI
 				RCC_APB2LPENR_SPI1LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_SPI1RST,
-				&SPI1->SR,
-				&SPI1->SR,
 				SPI1_IRQn
 		},
 		{
@@ -646,8 +644,6 @@ __attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI
 				RCC_APB1LPENR_SPI2LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_SPI2RST,
-				&SPI2->SR,
-				&SPI2->SR,
 				SPI2_IRQn
 		},
 		{
@@ -659,25 +655,9 @@ __attribute__((section(".data"))) static tch_spi_descriptor SPI_HWs[MFEATURE_SPI
 				RCC_APB1LPENR_SPI3LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_SPI3RST,
-				&SPI3->SR,
-				&SPI3->SR,
 				SPI3_IRQn
 		}
 };
-
-/*
- * 	void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*  _rstr;
-	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
-	IRQn_Type            irq;
- */
 
 __attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
@@ -689,8 +669,6 @@ __attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC
 				RCC_APB1LPENR_I2C1LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_I2C1RST,
-				&I2C1->SR1,
-				&I2C1->SR2,
 				I2C1_EV_IRQn
 		},
 		{
@@ -702,8 +680,6 @@ __attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC
 				RCC_APB1LPENR_I2C2LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_I2C2RST,
-				&I2C2->SR1,
-				&I2C2->SR2,
 				I2C2_EV_IRQn
 		},
 		{
@@ -715,29 +691,11 @@ __attribute__((section(".data"))) static tch_iic_descriptor IIC_HWs[MFEATURE_IIC
 				RCC_APB1LPENR_I2C3LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_I2C3RST,
-				&I2C3->SR1,
-				&I2C3->SR2,
 				I2C3_EV_IRQn
 		}
 };
 
 
-/**
- * typedef struct _tch_adc_descriptor {
-	void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*  _rstr;
-	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
-	IRQn_Type            irq;
-	const uint8_t        chcnt;
-}tch_adc_descriptor;
- */
 
 __attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 		{
@@ -749,8 +707,6 @@ __attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_AD
 				RCC_APB2LPENR_ADC1LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_ADCRST,
-				&ADC1->SR,
-				&ADC1->CR1,
 				ADC_IRQn
 		},
 		{
@@ -762,8 +718,6 @@ __attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_AD
 				RCC_APB2LPENR_ADC2PEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_ADCRST,
-				&ADC2->SR,
-				&ADC2->CR1,
 				ADC_IRQn
 		},
 		{
@@ -775,8 +729,6 @@ __attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_AD
 				RCC_APB2LPENR_ADC3LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_ADCRST,
-				&ADC3->SR,
-				&ADC3->CR1,
 				ADC_IRQn
 		}
 };

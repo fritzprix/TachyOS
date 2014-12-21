@@ -286,12 +286,8 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	if(ins->env->Mtx->unlock(ins->mtx))
 		return ADC_READ_FAIL;
 	tch_adc_setRegChannel(adcDesc,ch,1);
-//	adcHw->CR1 |= ADC_CR1_EOCIE;
-//	ins->isr_msk |= ADC_SR_EOC;
 	adcHw->CR2 |= ADC_CR2_SWSTART;    /// start conversion
 	evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
-//	adcHw->CR1 &= ~ADC_CR1_EOCIE;
-//	ins->isr_msk &= ~ADC_SR_EOC;
 	ADC_clrBusy(ins);
 	if(evt.status == osEventMessage)
 		return evt.value.v;
@@ -363,13 +359,6 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 
 }
 
-static tchStatus tch_adcPauseBurstConvert(const tch_adcHandle* self){
-
-}
-
-static tchStatus tch_adcStopBurstConvert(const tch_adcHandle* self){
-
-}
 
 
 static void tch_adcCfgInit(tch_adcCfg* cfg){

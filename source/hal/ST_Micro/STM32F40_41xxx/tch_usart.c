@@ -375,7 +375,7 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 		return osErrorParameter;
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
-	tch* env = ins->env;
+	const tch* env = ins->env;
 	osEvent evt;
 	evt.status = osOK;
 	if(!tch_uartIsValid(ins))
@@ -422,7 +422,7 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 		return osErrorParameter;
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
-	tch* env = ins->env;
+	const tch* env = ins->env;
 	tchStatus result = osOK;
 	*bp = '\0';
 	size_t idx = 0;
@@ -511,7 +511,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
-	tch* env = ins->env;
+	const tch* env = ins->env;
 	tchStatus result = osOK;
 
 
@@ -562,7 +562,7 @@ static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle){
 
 static BOOL tch_uartInterruptHandler(tch_UartHandlePrototype* _handle,void* _hw){
 	USART_TypeDef* uhw = (USART_TypeDef*) _hw;
-	tch* env = _handle->env;
+	const tch* env = _handle->env;
 	tchStatus result = osOK;
 	uint16_t dm = 0;
 	if(uhw->SR & USART_SR_RXNE){

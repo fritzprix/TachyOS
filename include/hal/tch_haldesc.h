@@ -96,8 +96,6 @@ typedef struct _tch_spi_descriptor {
 	const uint32_t       lpclkmsk;
 	volatile uint32_t*  _rstr;
 	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
 	IRQn_Type            irq;
 }tch_spi_descriptor;
 
@@ -110,8 +108,6 @@ typedef struct _tch_iic_descriptor {
 	const uint32_t       lpclkmsk;
 	volatile uint32_t*  _rstr;
 	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
 	IRQn_Type            irq;
 }tch_iic_descriptor;
 
@@ -125,8 +121,6 @@ typedef struct _tch_adc_descriptor {
 	const uint32_t       lpclkmsk;
 	volatile uint32_t*  _rstr;
 	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
 	IRQn_Type            irq;
 }tch_adc_descriptor;
 

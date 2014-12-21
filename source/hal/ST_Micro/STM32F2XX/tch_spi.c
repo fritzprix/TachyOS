@@ -306,6 +306,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	SPI_setBusy(hnd);
 	if((evt.status = env->Mtx->unlock(hnd->mtx)) != osOK)
 		return evt.status;
+	spiHw->CR1 |= SPI_CR1_SPE;
 
 	while(sz--){
 		spiHw->DR = *((uint8_t*)twb);  // load data to tx buffer
@@ -327,6 +328,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	}
 	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return evt.status;
+	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	evt.status = env->Condv->wakeAll(hnd->condv);
 	env->Mtx->unlock(hnd->mtx);
@@ -354,6 +356,8 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	SPI_setBusy(hnd);
 	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)
 		return result;
+
+	spiHw->CR1 |= SPI_CR1_SPE;
 	dmaReq.MemAddr[0] = rb;
 	if(rb)
 		dmaReq.MemInc = TRUE;
@@ -373,6 +377,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 
 	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return result;
+	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	env->Condv->wakeAll(hnd->condv);
 	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)

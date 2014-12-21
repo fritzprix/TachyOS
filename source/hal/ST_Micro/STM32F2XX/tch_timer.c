@@ -874,6 +874,7 @@ static tchStatus tch_pwm_start(tch_pwmHandle* self){
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 |= TIM_CR1_CEN;
 	ins->env->Mtx->unlock(ins->mtx);
+	return osOK;
 }
 
 static tchStatus tch_pwm_stop(tch_pwmHandle* self){
@@ -888,6 +889,7 @@ static tchStatus tch_pwm_stop(tch_pwmHandle* self){
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 &= ~TIM_CR1_CEN;
 	ins->env->Mtx->unlock(ins->mtx);
+	return osOK;
 }
 
 static tchStatus tch_pwm_close(tch_pwmHandle* self){

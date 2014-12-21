@@ -750,20 +750,19 @@ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 		return FALSE;
 	if(!(ch < TIMER_HWs[ins->timer].channelCnt))
 		return FALSE;
-
 	uint32_t dutyd = timerHw->ARR;
 	dutyd = (uint32_t) ((float) dutyd * duty);
 	switch(ch){
-	case 0:
+	case 1:
 		timerHw->CCR1 = dutyd;
 		return TRUE;
-	case 1:
+	case 2:
 		timerHw->CCR2 = dutyd;
 		return TRUE;
-	case 2:
+	case 3:
 		timerHw->CCR3 = dutyd;
 		return TRUE;
-	case 3:
+	case 4:
 		timerHw->CCR4 = dutyd;
 		return TRUE;
 	}
@@ -875,6 +874,7 @@ static tchStatus tch_pwm_start(tch_pwmHandle* self){
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 |= TIM_CR1_CEN;
 	ins->env->Mtx->unlock(ins->mtx);
+	return osOK;
 }
 
 static tchStatus tch_pwm_stop(tch_pwmHandle* self){
@@ -889,6 +889,7 @@ static tchStatus tch_pwm_stop(tch_pwmHandle* self){
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 &= ~TIM_CR1_CEN;
 	ins->env->Mtx->unlock(ins->mtx);
+	return osOK;
 }
 
 static tchStatus tch_pwm_close(tch_pwmHandle* self){
