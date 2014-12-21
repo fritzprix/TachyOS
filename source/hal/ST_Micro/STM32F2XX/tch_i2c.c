@@ -267,17 +267,18 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	case IIC_ROLE_MASTER:
 		ins->pix.read = tch_IIC_readMaster;
 		ins->pix.write = tch_IIC_writeMaster;
+		IIC_setMaster(ins);
 		break;
 	case IIC_ROLE_SLAVE:
 		ins->pix.read = tch_IIC_readSlave;
 		ins->pix.write = tch_IIC_writeSlave;
+		IIC_clrMaster(ins);
 		break;
 	}
 
 
 	env->Device->interrupt->setPriority(iicDesc->irq,env->Device->interrupt->Priority.Normal);
 	env->Device->interrupt->enable(iicDesc->irq);
-	ins->status = 0;
 	tch_IICValidate(ins);
 	return (tch_iicHandle*) ins;
 }
@@ -299,6 +300,8 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 		if((result = env->Condv->wait(ins->condv,ins->mtx,osWaitForever)) != osOK)
 			return result;
 	}
+	IIC_setBusy(ins);
+	tch_IICInvalidate(ins);
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
 	env->MsgQ->destroy(ins->mq);
@@ -338,6 +341,8 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	if(!ins)
 		return osErrorParameter;
 	if(!tch_IICisValid(ins))
+		return osErrorParameter;
+	if(!IIC_isMaster(ins))
 		return osErrorParameter;
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) IIC_HWs[ins->iic]._hw;
 	if((evt.status = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
@@ -431,6 +436,8 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 	if((!self) || (!addr) || (!sz))
 		return osErrorParameter;
 	if(!tch_IICisValid(ins))
+		return osErrorParameter;
+	if(!IIC_isMaster(ins))
 		return osErrorParameter;
 	I2C_TypeDef* iicHw = IIC_HWs[ins->iic]._hw;
 	if((evt.status = ins->env->Mtx->lock(ins->mtx,timeout)) != osOK)
@@ -543,53 +550,76 @@ static void tch_IICInvalidate(tch_iic_handle_prototype* hnd){
 static BOOL tch_IIC_handleEvent(tch_iic_handle_prototype* ins,tch_iic_descriptor* iicDesc){
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) iicDesc->_hw;
 	tch_iic_isr_msg* isr_req = NULL;
-	uint16_t sr = 0;
+	uint16_t sr;
 	if(!ins)
+		return FALSE;
+	if(!tch_IICisValid(ins))
 		return FALSE;
 	sr = iicHw->SR1;
 	const tch* env = ins->env;
-	if(sr & I2C_SR1_RXNE){
-		isr_req = (tch_iic_isr_msg*) ins->isr_msg;
-		if(isr_req->sz--){
-			if(!isr_req->sz == 1){
-				iicHw->CR1 &= ~I2C_CR1_ACK;
+	if(IIC_isMaster(ins)){
+		if(sr & I2C_SR1_RXNE){
+			isr_req = (tch_iic_isr_msg*) ins->isr_msg;
+			if(isr_req->sz--){
+				if(!isr_req->sz == 1){
+					iicHw->CR1 &= ~I2C_CR1_ACK;
+				}
+				*isr_req->bp = iicHw->DR;
+				if(!isr_req->sz){
+					iicHw->CR1 |= I2C_CR1_STOP;
+					env->MsgQ->put(ins->mq,osOK,0);
+				}
 			}
-			*isr_req->bp = iicHw->DR;
-			if(!isr_req->sz){
-				iicHw->CR1 |= I2C_CR1_STOP;
-				env->MsgQ->put(ins->mq,osOK,0);
-			}
+			return TRUE;
 		}
-		return TRUE;
-	}
-	if(sr & I2C_SR1_BTF){
-		iicHw->CR1 |= I2C_CR1_STOP;
-		env->MsgQ->put(ins->mq,I2C_SR1_BTF,0);
-		return TRUE;
-	}
-	if(sr & I2C_SR1_SB){
-		env->MsgQ->put(ins->mq,I2C_SR1_SB,0);
-		iicHw->DR = ins->isr_msg;
-		return TRUE;
-	}
-	if(sr & I2C_SR1_ADDR){
-		sr = iicHw->SR2;
-		env->MsgQ->put(ins->mq,I2C_SR1_ADDR,0);
-		return TRUE;
-	}
-	if(sr & I2C_SR1_TXE){
-		isr_req = (tch_iic_isr_msg*)ins->isr_msg;
-		if(isr_req->sz--)
-			iicHw->DR = *((uint8_t*)isr_req->bp++);
-		else{
-			env->MsgQ->put(ins->mq,osOK,0);
+		if(sr & I2C_SR1_BTF){
 			iicHw->CR1 |= I2C_CR1_STOP;
+			env->MsgQ->put(ins->mq,I2C_SR1_BTF,0);
+			return TRUE;
 		}
-		return TRUE;
-	}
-	if(sr & I2C_SR1_ADD10){
-		env->MsgQ->put(ins->mq,I2C_SR1_ADD10,0);
-		return TRUE;
+		if(sr & I2C_SR1_SB){
+			env->MsgQ->put(ins->mq,I2C_SR1_SB,0);
+			iicHw->DR = ins->isr_msg;
+			return TRUE;
+		}
+		if(sr & I2C_SR1_ADDR){
+			sr = iicHw->SR2;
+			env->MsgQ->put(ins->mq,I2C_SR1_ADDR,0);
+			return TRUE;
+		}
+		if(sr & I2C_SR1_TXE){
+			isr_req = (tch_iic_isr_msg*)ins->isr_msg;
+			if(isr_req->sz--)
+				iicHw->DR = *((uint8_t*)isr_req->bp++);
+			else{
+				env->MsgQ->put(ins->mq,osOK,0);
+				iicHw->CR1 |= I2C_CR1_STOP;
+			}
+			return TRUE;
+		}
+		if(sr & I2C_SR1_ADD10){
+			env->MsgQ->put(ins->mq,I2C_SR1_ADD10,0);
+			return TRUE;
+		}
+	}else{
+		if(sr & I2C_SR1_RXNE){
+			return TRUE;
+		}
+		if(sr & I2C_SR1_BTF){
+			return TRUE;
+		}
+		if(sr & I2C_SR1_SB){
+			return TRUE;
+		}
+		if(sr & I2C_SR1_ADDR){
+			return TRUE;
+		}
+		if(sr & I2C_SR1_TXE){
+			return TRUE;
+		}
+		if(sr & I2C_SR1_ADD10){
+			return TRUE;
+		}
 	}
 	return FALSE;
 }
