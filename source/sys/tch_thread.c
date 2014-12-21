@@ -44,7 +44,6 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
-static BOOL tch_threadIsValid(tch_threadId id);
 static BOOL tch_threadIsRoot();
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status) __attribute__((naked));
@@ -60,7 +59,6 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadSetPriority,
 		tch_threadGetPriorty,
 		tch_threadGetArg,
-		tch_threadIsValid,
 		tch_threadIsRoot
 };
 
@@ -115,7 +113,6 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	*thread_p->t_chks = (uint32_t) tch_noop_destr;                                           // thread has no-op destructor
 	thread_p->t_flag = 0;
 
-
 	_REENT_INIT_PTR(&thread_p->t_reent);
 	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
 		thread_p->t_refNode.root = tch_currentThread;
@@ -124,7 +121,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	}else{                                                  // if new thread is root thread
 		thread_p->t_refNode.childs = kMem->alloc(sizeof(tch_lnode_t));
 		tch_listInit(thread_p->t_refNode.childs);
-		thread_p->t_mem = tch_memCreate(th_mem,TCH_CFG_PROC_HEAP_SIZE);
+		thread_p->t_mem = tch_memCreate(th_mem + sizeof(uint32_t*),TCH_CFG_PROC_HEAP_SIZE);
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
 		tch_listPutFirst((tch_lnode_t*)&tch_procList,(tch_lnode_t*)&thread_p->t_childNode);
 	}
@@ -135,7 +132,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){          // check current execution mode (Thread or Handler)
-		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
+		tch_schedReadyThread(thread);    // if handler mode call, put current thread in ready queue
 		                           // optionally check preemption required or not
 		return osOK;
 	}else{
@@ -181,6 +178,8 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 
 
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior){
+	if(nprior > Unpreemtible)
+		return;
 	getThreadHeader(id)->t_prior = nprior;
 }
 
@@ -190,16 +189,6 @@ static tch_thread_prior tch_threadGetPriorty(tch_threadId id){
 
 static void* tch_threadGetArg(){
 	return getThreadHeader(tch_currentThread)->t_arg;
-}
-
-
-static BOOL tch_threadIsValid(tch_threadId id){
-	tch_thread_header* th_p = NULL;
-	if(!id)
-		th_p = tch_currentThread;
-	else
-		th_p = (tch_thread_header*) id;
-	return *th_p->t_chks == ((uint32_t)th_p->t_arg + (uint32_t)th_p->t_fn)? TRUE:FALSE;
 }
 
 static BOOL tch_threadIsRoot(){

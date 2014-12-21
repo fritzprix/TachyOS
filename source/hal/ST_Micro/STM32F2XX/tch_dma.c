@@ -254,6 +254,8 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 	uint8_t err_cnt = 0;
 	osEvent evt;
 	evt.status = osOK;
+	if(!result)
+		result = &evt.status;
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus lresult = osOK;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;

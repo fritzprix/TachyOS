@@ -27,19 +27,6 @@ extern "C"{
 #define THREAD_DEATH_BIT     ((uint8_t) 1 << 1)
 
 
-/**
- *  Thread relevant type definition
- */
-
-
-
-
-
-/**
- * Thread Interface
- */
-
-
 
 
 #if defined(__cplusplus)

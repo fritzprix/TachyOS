@@ -125,7 +125,7 @@ tchStatus tch_msgq_kput(tch_msgqId mqId,tch_msgq_karg* arg){
 			tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,osOK,TRUE);
 			return osOK;
 	}
-	tch_schedSuspend((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
+	tch_schedSuspendThread((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
 	return osErrorNoMemory;
 }
 
@@ -190,7 +190,7 @@ tchStatus tch_msgq_kget(tch_msgqId mqId,tch_msgq_karg* arg){
 	if(!tch_msgqIsValid(msgqCb))
 		return osErrorResource;
 	if(msgqCb->updated == 0){
-		tch_schedSuspend((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
+		tch_schedSuspendThread((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
 		return osOK;
 	}
 	arg->msg = *((uword_t*)msgqCb->bp + msgqCb->gidx++);

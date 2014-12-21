@@ -133,24 +133,6 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 }
 
 
-void tch_port_buildTemporalContext(void* cth,void (*fn)(int),int arg1){
-	asm volatile(
-#ifdef MFEATURE_HFLOAT
-			"vpush {s16-s31}\n"
-#endif
-			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
-			"str sp,[%0]\n"                      ///< store
-			: : "r"(&((tch_thread_header*) cth)->t_ctx):);
-	fn(arg1);
-	asm volatile(
-			"ldr sp,[%0]\n"
-			"pop {r4-r11,lr}\n"
-#ifdef MFEATURE_HFLOAT
-			"vpop {s16-s31}\n"
-#endif
-			"ldr r0,=%1\n"
-			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
-}
 
 
 
@@ -232,25 +214,6 @@ void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	memset(th_ctx,0,sizeof(tch_thread_context) - 8);
 	return (uint32_t*) th_ctx;
 
-}
-
-int tch_port_atomicCompareModify(uaddr_t dval,uaddr_t tval){
-	volatile int result = 0;
-	asm volatile(
-			"LDR r4,[r0]\n"
-			"LDR r3,=#1\n"
-			"TRY:\n"
-			"LDREX r5,[r1]\n"
-			"CMP r5,r4\n"
-			"ITTEE NE\n"
-			"STREXNE r6,r5,[r0]\n"
-			"ADDNE r3,r3,r3\n"
-			"STREXEQ r6,r4,[r1]\n"
-			"SUBEQ r3,r3,r3\n"
-			"CMP r6,#0\n"
-			"BNE TRY\n"
-			"STR r3,[%0]" : : "r"(&result) : "r4","r5","r6","r3");
-	return result;
 }
 
 int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){

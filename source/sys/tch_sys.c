@@ -120,11 +120,11 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedStartThread((tch_threadId) arg1);
 		break;
 	case SV_THREAD_SLEEP:
-		tch_schedSleep(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
+		tch_schedSleepThread(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
 		break;
 	case SV_THREAD_JOIN:
 		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
-			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
+			tch_schedSuspendThread((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
 			break;
 		}
 		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
@@ -136,15 +136,15 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
 		break;
 	case SV_THREAD_SUSPEND:
-		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
+		tch_schedSuspendThread((tch_thread_queue*)arg1,arg2);
 		break;
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
-		tch_schedTerminate((tch_threadId) cth,arg2);
+		tch_schedTerminateThread((tch_threadId) cth,arg2);
 		break;
 	case SV_THREAD_DESTROY:
 		cth = (tch_thread_header*) arg1;
-		tch_schedDestroy((tch_threadId) cth,arg2);
+		tch_schedDestroyThread((tch_threadId) cth,arg2);
 		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;

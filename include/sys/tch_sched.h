@@ -53,18 +53,18 @@ extern tch_threadId tch_schedGetRunningThread();
  *  put thread into ready queue of scheduler rather than starting immediately
  *  this can be ivnoked from ISR
  */
-extern void tch_schedReady(tch_threadId thr_id);
+extern void tch_schedReadyThread(tch_threadId thr_id);
 
 
 /**
  *  suspend thread for given amount of time
  */
-extern void tch_schedSleep(uint32_t timeout,tch_thread_state nextState);
+extern void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState);
 
 /**
  *
  */
-extern void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout);
+extern void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout);
 
 extern int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt);   // resume specific thread in wait queue
 
@@ -76,8 +76,8 @@ extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL pre
  */
 extern tchStatus tch_schedCancelTimeout(tch_threadId thread);
 
-extern void tch_schedTerminate(tch_threadId thread, int result);
-extern void tch_schedDestroy(tch_threadId thread,int result);
+extern void tch_schedTerminateThread(tch_threadId thread, int result);
+extern void tch_schedDestroyThread(tch_threadId thread,int result);
 extern BOOL tch_schedLivenessChk(tch_threadId thread);
 
 

@@ -32,8 +32,9 @@ USR_SRC_DIR=$(ROOT_DIR)/source/usr
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include
 KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
-PORT_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)/$(CPU)
-PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
+PORT_HDR_BASE_DIR= $(ROOT_DIR)/include/port
+PORT_COMMON_HDR_DIR=$(PORT_HDR_BASE_DIR)/$(ARCH)
+PORT_ARCH_HDR_DIR=$(PORT_COMMON_HDR_DIR)/$(CPU)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
 BOARD_HDR_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
@@ -52,8 +53,9 @@ OBJCP=$(TOOL_CHAIN)objcopy
 SIZEPrt=$(TOOL_CHAIN)size
 
 ifeq ($(INC),)
-	INC = -I$(PORT_HDR_DIR)\
+	INC = -I$(PORT_ARCH_HDR_DIR)\
 	      -I$(PORT_COMMON_HDR_DIR)\
+	      -I$(PORT_HDR_BASE_DIR)\
 	      -I$(HAL_VND_HDR_DIR)\
 	      -I$(HAL_COMMON_HDR_DIR)\
 	      -I$(KERNEL_HDR_DIR)\
