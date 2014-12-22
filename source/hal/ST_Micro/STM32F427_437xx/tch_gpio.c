@@ -89,9 +89,6 @@ typedef struct _tch_gpio_handle_prototype {
 static tch_GpioHandle* tch_gpio_allocIo(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 static void tch_gpio_initCfg(tch_GpioCfg* cfg);
 static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg);
-static uint16_t tch_gpio_getPortCount();
-static uint16_t tch_gpio_getPincount(const gpIo_x port);
-static uint32_t tch_gpio_getPinAvailable(const gpIo_x port);
 static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self);
 
 
@@ -128,9 +125,6 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 				tch_gpio_allocIo,
 				tch_gpio_initCfg,
 				tch_gpio_initEvCfg,
-				tch_gpio_getPortCount,
-				tch_gpio_getPincount,
-				tch_gpio_getPinAvailable
 		},
 		NULL,
 		NULL,
@@ -199,18 +193,6 @@ static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg){
 	evcfg->EvTimeout = osWaitForever;
 }
 
-
-static uint16_t tch_gpio_getPortCount(){
-	return GPIO_StaticManager.port_cnt;
-}
-
-static uint16_t tch_gpio_getPincount(const gpIo_x port){
-	return GPIO_StaticManager.io_cnt;
-}
-
-static uint32_t tch_gpio_getPinAvailable(const gpIo_x port){
-	return GPIO_HWs[port].io_ocpstate;
-}
 
 static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	tch_gpio_handle_prototype* _handle = NULL;
@@ -330,7 +312,7 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,uint32_t
 		return osErrorParameter;
 	if(__get_IPSR())
 		return osErrorISR;
-	tch_ioInterrupt_descriptor* ioIrqObj = NULL;
+	tch_ioInterrupt_descriptor* ioIntrDesc = NULL;
 	uint8_t pin = 0;
 	uint32_t cmsk = 1;               // declare bit mask to clear interrupt config register
 	const tch* api = _handle->env;
@@ -339,16 +321,16 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,uint32_t
 		return osErrorResource;
 	while(pmsk){
 		if(pmsk & 0x01){
-			ioIrqObj = &IoInterrupt_HWs[pin];
-			ioIrqObj->io_occp = NULL;
-			api->Device->interrupt->disable(ioIrqObj->irq);
+			ioIntrDesc = &IoInterrupt_HWs[pin];
+			ioIntrDesc->io_occp = NULL;
+			NVIC_DisableIRQ(ioIntrDesc->irq);
 			SYSCFG->EXTICR[pin >> 2] = 0;
 			EXTI->EMR &= ~cmsk;
 			EXTI->IMR &= ~cmsk;
 			EXTI->FTSR &= ~cmsk;
 			EXTI->RTSR &= ~cmsk;
-			api->Barrier->signal(ioIrqObj->evbar,osErrorResource);
-			api->Condv->wakeAll(ioIrqObj->condv);   // wake up thread wating for interrupt allocation
+			api->Barrier->signal(ioIntrDesc->evbar,osErrorResource);
+			api->Condv->wakeAll(ioIntrDesc->condv);   // wake up thread wating for interrupt allocation
 		}
 		cmsk <<= 1;
 		pin++;
@@ -467,7 +449,7 @@ static void tch_gpio_initGpioHandle(tch_gpio_handle_prototype* handle){
 
 
 static void tch_gpio_setIrq(tch_gpio_handle_prototype* _handle,uint8_t pin,const tch_GpioEvCfg* cfg){
-	tch_ioInterrupt_descriptor* ioIntObj = &IoInterrupt_HWs[pin];
+	tch_ioInterrupt_descriptor* ioDesc = &IoInterrupt_HWs[pin];
 	EXTI->RTSR &= ~_handle->pMsk;
 	EXTI->FTSR &= ~_handle->pMsk;
 
@@ -486,9 +468,8 @@ static void tch_gpio_setIrq(tch_gpio_handle_prototype* _handle,uint8_t pin,const
 	if(cfg->EvType & GPIO_EvType_Interrupt){
 		EXTI->IMR |= _handle->pMsk;
 	}
-	const tch_lld_intr* intr = _handle->env->Device->interrupt;
-	intr->setPriority(ioIntObj->irq,intr->Priority.Normal);
-	intr->enable(ioIntObj->irq);
+	NVIC_SetPriority(ioDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(ioDesc->irq);
 	SYSCFG->EXTICR[pin >> 2] |= _handle->idx << ((pin % 4) *4);
 }
 

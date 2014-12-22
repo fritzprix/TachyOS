@@ -4,11 +4,6 @@
 include tchConfig.mk
 
 
-
-
-#OBJS=
-#SRCS=
-
 # Tachyos Src Tree Structure
 ROOT_DIR= $(CURDIR)
 ifeq ($(PUBLISH_TYPE),)
@@ -32,8 +27,7 @@ USR_SRC_DIR=$(ROOT_DIR)/source/usr
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include
 KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
-PORT_HDR_BASE_DIR= $(ROOT_DIR)/include/port
-PORT_COMMON_HDR_DIR=$(PORT_HDR_BASE_DIR)/$(ARCH)
+PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 PORT_ARCH_HDR_DIR=$(PORT_COMMON_HDR_DIR)/$(CPU)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
 BOARD_HDR_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
@@ -55,7 +49,6 @@ SIZEPrt=$(TOOL_CHAIN)size
 ifeq ($(INC),)
 	INC = -I$(PORT_ARCH_HDR_DIR)\
 	      -I$(PORT_COMMON_HDR_DIR)\
-	      -I$(PORT_HDR_BASE_DIR)\
 	      -I$(HAL_VND_HDR_DIR)\
 	      -I$(HAL_COMMON_HDR_DIR)\
 	      -I$(KERNEL_HDR_DIR)\
@@ -69,10 +62,13 @@ endif
 
 
 ifeq ($(OPT_FLAG),)
-	OPT_FLAG=-O0 -g3
+	OPT_FLAG=
+endif
+
 ifeq ($(PUBLISH_TYPE),Release)
 	OPT_FLAG=-O2 -g3
-endif
+else
+	OPT_FLAG=-O0 -g3
 endif
 
 ifeq ($(LDFLAG),)
@@ -80,21 +76,19 @@ ifeq ($(LDFLAG),)
 endif
 
 ifeq ($(CFLAG),)
-	CFLAG = -fsigned-char\
-		-ffunction-sections\
-		-fdata-sections\
-		-ffreestanding\
-		-nostartfiles\
-		-Xlinker\
-		--gc-sections\
-		-T$(LDSCRIPT)\
-		$(OPT_FLAG)
-		
+	CFLAG =-fsigned-char\
+		   -ffunction-sections\
+		   -fdata-sections\
+		   -ffreestanding\
+		   -nostartfiles\
+		   -Xlinker\
+		   --gc-sections\
+		   -T$(LDSCRIPT)\
+		   $(OPT_FLAG)
 endif
 
 ifeq ($(CPFLAG),)
-	CPFLAG = -c\
-	         -mlong-calls\
+	CPFLAG = -mlong-calls\
 	         -ffunction-sections\
 	         -ffreestanding\
 	         -fno-rtti\
@@ -102,7 +96,7 @@ ifeq ($(CPFLAG),)
 	         -Wall\
 	         -fpermissive\
 	         -T$(LDSCRIPT)\
-	         $(OPT_FLAG)
+	          $(OPT_FLAG)
 endif
 
 
@@ -126,7 +120,7 @@ ifeq ($(FPU),SOFT)
 endif
 
 
-ifneq (&(FLOAT_FLAG),)
+ifneq ($(FLOAT_FLAG),)
 	CPFLAG += $(FLOAT_FLAG)
 	CFLAG += $(FLOAT_FLAG)
 endif

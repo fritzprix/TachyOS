@@ -207,17 +207,17 @@ typedef struct _tch_uart_bs_t {
 	uint8_t        txch;
 	uint8_t        rxch;
 	gpIo_x         port;
-	uint8_t        txp;
-	uint8_t        rxp;
-	uint8_t        ctsp;
-	uint8_t        rtsp;
+	int8_t         txp;
+	int8_t         rxp;
+	int8_t         ctsp;
+	int8_t         rtsp;
 	uint8_t        afv;
 }tch_uart_bs;
 
 
 typedef struct _tch_timer_bs_t {
 	gpIo_x         port;
-	uint8_t        chp[MFEATURE_MAX_TIMER_CHCNT];
+	int8_t         chp[4];
 	uint8_t        afv;
 }tch_timer_bs;
 
@@ -227,9 +227,9 @@ typedef struct _tch_spi_bs_t {
 	uint8_t        txch;
 	uint8_t        rxch;
 	gpIo_x         port;
-	uint8_t        mosi;
-	uint8_t        miso;
-	uint8_t        sck;
+	int8_t         mosi;
+	int8_t         miso;
+	int8_t         sck;
 	uint8_t        afv;
 }tch_spi_bs;
 
@@ -243,7 +243,6 @@ typedef struct _tch_iic_bs_t {
 	uint8_t       sda;
 	uint8_t       afv;
 }tch_iic_bs;
-
 
 typedef struct _tch_adc_bs_t {
 	dma_t         dma;

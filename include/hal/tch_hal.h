@@ -42,7 +42,6 @@ extern "C"{
 
 #include "tch_rtc.h"
 #include "tch_timer.h"
-#include "tch_intr.h"
 #include "tch_gpio.h"
 #include "tch_dma.h"
 
@@ -68,7 +67,6 @@ struct tch_hal_t{
 	const tch_lld_dma*   dma;
 	const tch_lld_rtc*   rtc;
 	const tch_lld_timer* timer;
-	const tch_lld_intr*  interrupt;
 };
 
 extern void __tch_stderr(const void*,size_t);

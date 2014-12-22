@@ -398,8 +398,6 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB2LPENR_USART1LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_USART1RST,
-				&USART1->SR,
-				&USART1->SR,
 				USART1_IRQn
 		},
 		{
@@ -411,8 +409,6 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1LPENR_USART2LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_USART2RST,
-				&USART2->SR,
-				&USART2->SR,
 				USART2_IRQn
 		},
 		{
@@ -424,8 +420,6 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1LPENR_USART3LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_USART3RST,
-				&USART3->SR,
-				&USART3->SR,
 				USART3_IRQn
 		},
 		{
@@ -437,28 +431,12 @@ __attribute__((section(".data"))) static tch_uart_descriptor UART_HWs[MFEATURE_U
 				RCC_APB1LPENR_UART4LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_UART4RST,
-				&UART4->SR,
-				&UART4->SR,
 				UART4_IRQn
 		}
 };
 
 
 /**
- * 		void*               _hw;
-	void*               _handle;
-	volatile uint32_t*  _clkenr;
-	const uint32_t       clkmsk;
-	volatile uint32_t*  _lpclkenr;
-	const uint32_t       lpclkmsk;
-	volatile uint32_t*   rstr;
-	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
-	const uint8_t        channelCnt;
-	const uint8_t        precision;
-	uint8_t              ch_occp;
-	IRQn_Type            irq;
  * */
 __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 		{
@@ -470,8 +448,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM2LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM2RST,
-				&TIM2->SR,
-				&TIM2->SR,
 				4,
 				32,
 				0,
@@ -486,8 +462,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM3LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM3RST,
-				&TIM3->SR,
-				&TIM3->SR,
 				4,
 				16,
 				0,
@@ -502,8 +476,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM4LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM4RST,
-				&TIM4->SR,
-				&TIM4->SR,
 				4,
 				16,
 				0,
@@ -518,8 +490,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM5LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM5RST,
-				&TIM5->SR,
-				&TIM5->SR,
 				4,
 				32,
 				0,
@@ -534,8 +504,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB2LPENR_TIM9LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_TIM9RST,
-				&TIM9->SR,
-				&TIM9->SR,
 				2,
 				16,
 				0,
@@ -550,8 +518,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB2LPENR_TIM10LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_TIM10RST,
-				&TIM10->SR,
-				&TIM10->SR,
 				1,
 				16,
 				0,
@@ -566,8 +532,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB2LPENR_TIM11LPEN,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_TIM11RST,
-				&TIM11->SR,
-				&TIM11->SR,
 				1,
 				16,
 				0,
@@ -582,8 +546,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM12LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM12RST,
-				&TIM12->SR,
-				&TIM12->SR,
 				2,
 				16,
 				0,
@@ -598,8 +560,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM13LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM13RST,
-				&TIM13->SR,
-				&TIM13->SR,
 				1,
 				16,
 				0,
@@ -614,8 +574,6 @@ __attribute__((section(".data"))) static tch_timer_descriptor TIMER_HWs[MFEATURE
 				RCC_APB1LPENR_TIM14LPEN,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM14RST,
-				&TIM14->SR,
-				&TIM14->SR,
 				1,
 				16,
 				0,

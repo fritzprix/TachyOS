@@ -5,6 +5,16 @@
 
 
 #### initialize Configuartion into default value ####
+ifeq ($(MAJOR_VER),)
+	MAJOR_VER=0
+endif
+
+ifeq ($(MINOR_VER),)
+	MINOR_VER=1
+endif
+
+
+
 # Architecture Conf.
 ifeq ($(ARCH),)
 	ARCH = ARM

@@ -9,7 +9,7 @@
 include COMMON.mk
 
 
-TARGET=$(GEN_DIR)/tachyos.elf
+TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
 
 
 LIBS=-lc_nano\

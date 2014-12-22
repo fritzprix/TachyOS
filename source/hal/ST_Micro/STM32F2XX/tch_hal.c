@@ -43,7 +43,6 @@ const tch_hal* tch_kernel_initHAL(){
 	tch_hal_instance.spi = tch_spi_instance;
 	tch_hal_instance.i2c = tch_i2c_instance;
 	tch_hal_instance.rtc = tch_rtc_instance;
-	tch_hal_instance.interrupt = tch_interrupt_instance;
 
 
 	return &tch_hal_instance;

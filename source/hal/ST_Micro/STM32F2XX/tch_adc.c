@@ -17,6 +17,7 @@
 #include "tch_halcfg.h"
 #include "tch_halinit.h"
 #include "tch_adc.h"
+#include "tch_port.h"
 
 
 #define _1_MHZ                ((uint32_t) 1000000)
@@ -216,8 +217,8 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ins->pix.read = tch_adcRead;
 	ins->env = env;
 
-	env->Device->interrupt->setPriority(adcDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(adcDesc->irq);
+	NVIC_SetPriority(adcDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(adcDesc->irq);
 
 	tch_adcValidate(ins);
 	return (tch_adcHandle*) ins;

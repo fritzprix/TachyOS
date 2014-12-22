@@ -17,7 +17,7 @@
 #include "tch_spi.h"
 #include "tch_halInit.h"
 #include "tch_halcfg.h"
-
+#include "tch_port.h"
 
 typedef struct _tch_lld_spi_prototype tch_lld_spi_prototype;
 typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
@@ -253,8 +253,8 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		spiHw->CR2 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	else{
 		spiHw->CR2 |= (SPI_CR2_RXNEIE | SPI_CR2_ERRIE);
-		env->Device->interrupt->setPriority(spiDesc->irq,env->Device->interrupt->Priority.Normal);
-		env->Device->interrupt->enable(spiDesc->irq);
+		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
+		NVIC_EnableIRQ(spiDesc->irq);
 		__DMB();
 		__ISB();
 	}
@@ -306,6 +306,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	SPI_setBusy(hnd);
 	if((evt.status = env->Mtx->unlock(hnd->mtx)) != osOK)
 		return evt.status;
+	spiHw->CR1 |= SPI_CR1_SPE;
 
 	while(sz--){
 		spiHw->DR = *((uint8_t*)twb);  // load data to tx buffer
@@ -327,6 +328,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	}
 	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return evt.status;
+	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	evt.status = env->Condv->wakeAll(hnd->condv);
 	env->Mtx->unlock(hnd->mtx);
@@ -354,6 +356,8 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	SPI_setBusy(hnd);
 	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)
 		return result;
+
+	spiHw->CR1 |= SPI_CR1_SPE;
 	dmaReq.MemAddr[0] = rb;
 	if(rb)
 		dmaReq.MemInc = TRUE;
@@ -373,6 +377,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 
 	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return result;
+	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	env->Condv->wakeAll(hnd->condv);
 	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)

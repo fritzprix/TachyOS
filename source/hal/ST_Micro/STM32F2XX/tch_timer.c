@@ -326,8 +326,8 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
 
-	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(timDesc->irq);
+	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(timDesc->irq);
 	__DMB();
 	__ISB();
 
@@ -492,8 +492,8 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		timerHw->CCR4 = 0;
 	}
 
-	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(timDesc->irq);
+	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(timDesc->irq);
 
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
@@ -632,8 +632,8 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 	}
 
 
-	env->Device->interrupt->setPriority(timDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(timDesc->irq);
+	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(timDesc->irq);
 
 
 	timerHw->CNT = 0;
@@ -724,7 +724,7 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
 	timDesc->_handle = NULL;
-	env->Device->interrupt->disable(timDesc->irq);
+	NVIC_DisableIRQ(timDesc->irq);
 
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
@@ -917,7 +917,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-	env->Device->interrupt->disable(timDesc->irq);
+	NVIC_DisableIRQ(timDesc->irq);
 	timDesc->_handle = NULL;
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
@@ -935,7 +935,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	if(!tch_timer_tCaptIsValid(ins))
 		return osErrorParameter;
 	const tch* env = ins->env;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 	osEvent evt;
 	evt.status = osOK;
@@ -1014,7 +1014,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	if(!tch_timer_tCaptIsValid(ins))
 		return osErrorParameter;
 	const tch* env = ins->env;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	uint8_t chcnt = timDesc->channelCnt / 2;
@@ -1043,7 +1043,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	*timDesc->rstr &= ~timDesc->rstmsk;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-	env->Device->interrupt->disable(timDesc->irq);
+	NVIC_DisableIRQ(timDesc->irq);
 
 
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);

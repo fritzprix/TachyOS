@@ -190,13 +190,10 @@ struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
-	const uint16_t IOPORT_COUNT;
+	const uint16_t FEATURE_COUNT;
 	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	void (*initCfg)(tch_GpioCfg* cfg);
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
-	uint16_t (*getPortCount)();
-	uint16_t (*getPincount)(const gpIo_x port);
-	uint32_t (*getPinAvailable)(const gpIo_x port);
 }tch_lld_gpio;
 
 extern const tch_lld_gpio* tch_gpio_instance;

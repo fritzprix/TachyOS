@@ -17,6 +17,7 @@
 #include "tch_i2c.h"
 #include "tch_halInit.h"
 #include "tch_halcfg.h"
+#include "tch_port.h"
 
 
 
@@ -277,8 +278,8 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	}
 
 
-	env->Device->interrupt->setPriority(iicDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(iicDesc->irq);
+	NVIC_SetPriority(iicDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(iicDesc->irq);
 	tch_IICValidate(ins);
 	return (tch_iicHandle*) ins;
 }
@@ -406,9 +407,9 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 			return osErrorValue;
 	}else{
 		tch_DmaReqDef txreq;
-		txreq.MemAddr[0] = wb;
+		txreq.MemAddr[0] = (uaddr_t) wb;
 		txreq.MemInc = TRUE;
-		txreq.PeriphAddr[0] = &iicHw->DR;
+		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
 		txreq.PeriphInc = FALSE;
 		txreq.size = sz;
 		if(!ins->env->Device->dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL))
@@ -508,7 +509,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 		tch_DmaReqDef rx_req;
 		rx_req.MemAddr[0] = rb;
 		rx_req.MemInc = TRUE;
-		rx_req.PeriphAddr[0] = &iicHw->DR;
+		rx_req.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
 		rx_req.PeriphInc = FALSE;
 		rx_req.size = sz;
 		if(!ins->env->Device->dma->beginXfer(ins->rxdma,&rx_req,osWaitForever,NULL))

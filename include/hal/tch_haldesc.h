@@ -65,8 +65,6 @@ typedef struct _tch_uart_descriptor {
 	const uint32_t       lpclkmsk;
 	volatile uint32_t*  _rstr;
 	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
 	IRQn_Type            irq;
 }tch_uart_descriptor;
 
@@ -79,8 +77,6 @@ typedef struct _tch_timer_descriptor {
 	const uint32_t       lpclkmsk;
 	volatile uint32_t*   rstr;
 	const uint32_t       rstmsk;
-	volatile uint16_t*  _isr;
-	volatile uint16_t*  _icr;
 	const uint8_t        channelCnt;
 	const uint8_t        precision;
 	uint8_t              ch_occp;

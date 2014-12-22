@@ -17,6 +17,7 @@
 #include "tch_halinit.h"
 #include "tch_dma.h"
 #include "tch_halcfg.h"
+#include "tch_port.h"
 
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)
@@ -138,7 +139,7 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		UART_StaticInstance.mtx = env->Mtx->create();
 	if(!UART_StaticInstance.condv)
 		UART_StaticInstance.condv = env->Condv->create();
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return NULL;
 
 
@@ -291,8 +292,8 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 	uhw->CR1 |= USART_CR1_UE;
 	uhw->SR = 0;
 
-	env->Device->interrupt->setPriority(uDesc->irq,env->Device->interrupt->Priority.Normal);
-	env->Device->interrupt->enable(uDesc->irq);
+	NVIC_SetPriority(uDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(uDesc->irq);
 	__DMB();
 	__ISB();
 
@@ -310,7 +311,7 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	const tch* env = ins->env;
 	if(!tch_uartIsValid(ins))
 		return osErrorParameter;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorParameter;
 
 
@@ -354,7 +355,7 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	*uDesc->_rstr |= uDesc->rstmsk;
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
-	env->Device->interrupt->disable(uDesc->irq);
+	NVIC_DisableIRQ(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
 	env->Mem->free(handle);
 	uDesc->_handle = NULL;
@@ -381,7 +382,7 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 	evt.status = osOK;
 	if(!tch_uartIsValid(ins))
 		return osErrorResource;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 
 	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
@@ -428,7 +429,7 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 	size_t idx = 0;
 	if(!tch_uartIsValid(ins))
 		return osErrorResource;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
 		return result;
@@ -476,7 +477,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 		return osErrorParameter;
 	if(!tch_uartIsValid(ins))
 		return osErrorResource;
-	if(env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
 		return result;
@@ -519,7 +520,7 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 		return osErrorParameter;
 	if(!tch_uartIsValid(ins))
 		return osErrorResource;
-	if(ins->env->Device->interrupt->isISR())
+	if(tch_port_isISR())
 		return osErrorISR;
 
 
