@@ -193,7 +193,8 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Af = iicbs->afv;
 	iocfg.Mode = GPIO_Mode_AF;
-	ins->iohandle = env->Device->gpio->allocIo(env,iicbs->port,((1 << iicbs->scl) | (1 << iicbs->sda)),&iocfg,timeout,popt);
+	iocfg.popt = popt;
+	ins->iohandle = env->Device->gpio->allocIo(env,iicbs->port,((1 << iicbs->scl) | (1 << iicbs->sda)),&iocfg,timeout);
 
 
 	*iicDesc->_clkenr |= iicDesc->clkmsk;

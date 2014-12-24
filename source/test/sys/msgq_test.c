@@ -52,13 +52,13 @@ tchStatus msgq_performTest(tch* api){
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_PU;
 	iocfg.Speed = GPIO_OSpeed_50M;
-	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,osWaitForever,ActOnSleep);
+	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,osWaitForever);
 	out->out(out,1 << 2,bSet);
 
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;;
 	iocfg.Speed = GPIO_OSpeed_50M;
-	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,osWaitForever,ActOnSleep);
+	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,osWaitForever);
 
 	tch_GpioEvCfg evcfg;
 	api->Device->gpio->initEvCfg(&evcfg);

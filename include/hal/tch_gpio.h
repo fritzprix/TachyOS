@@ -64,6 +64,7 @@ extern "C" {
 
 
 typedef uint8_t gpIo_x;
+typedef uint8_t pin;
 typedef struct tch_gpio_handle tch_GpioHandle;
 typedef BOOL (*tch_IoEventCallback_t) (tch_GpioHandle* self,uint8_t pin);
 
@@ -133,11 +134,12 @@ typedef struct _tch_gpio_pupd_t{
 }tch_gpioPuPd;
 
 typedef struct tch_gpio_cfg_t {
-	uint8_t Mode;
-	uint8_t Otype;
-	uint8_t Speed;
-	uint8_t PuPd;
-	uint8_t Af;
+	uint8_t    Mode;
+	uint8_t    Otype;
+	uint8_t    Speed;
+	uint8_t    PuPd;
+	uint8_t    Af;
+	tch_PwrOpt popt;
 }tch_GpioCfg;
 
 
@@ -164,17 +166,17 @@ struct tch_gpio_handle {
 	 *  \param[in] timeout when requested interrupt is already in use, wait given amount of time
 	 *
 	 */
-	tchStatus (*registerIoEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* cfg,uint32_t* pmsk);
+	tchStatus (*registerIoEvent)(tch_GpioHandle* self,pin p,const tch_GpioEvCfg* cfg);
 
 	/*!
 	 *
 	 */
-	tchStatus (*unregisterIoEvent)(tch_GpioHandle* self,uint32_t pmsk);
+	tchStatus (*unregisterIoEvent)(tch_GpioHandle* self,pin p);
 
 	/*!
 	 *
 	 */
-	tchStatus (*configureEvent)(tch_GpioHandle* self,const tch_GpioEvCfg* evcfg,uint32_t pmsk);
+	tchStatus (*configureEvent)(tch_GpioHandle* self,pin p,const tch_GpioEvCfg* evcfg);
 
 	/*!
 	 *
@@ -184,14 +186,14 @@ struct tch_gpio_handle {
 	/*!
 	 *
 	 */
-	BOOL (*listen)(tch_GpioHandle* self,uint8_t pin,uint32_t timeout);
+	BOOL (*listen)(tch_GpioHandle* self,pin pin,uint32_t timeout);
 
 };
 
 
 typedef struct tch_lld_gpio {
 	const uint16_t FEATURE_COUNT;
-	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout);
 	void (*initCfg)(tch_GpioCfg* cfg);
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
 }tch_lld_gpio;

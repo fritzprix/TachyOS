@@ -46,6 +46,7 @@ const uint8_t MO_OUT_X_L = 0x28;
 uint16_t msAddr = 0x1D2;
 
 static DECLARE_THREADROUTINE(childThreadRoutine);
+static DECLARE_THREADROUTINE(btnHandler);
 
 
 int main(const tch* env) {
@@ -60,7 +61,13 @@ int main(const tch* env) {
 	thcfg.t_stackSize = 512;
 	tch_threadId childId = env->Thread->create(&thcfg,NULL);
 
+	thcfg._t_name = "btnHandler";
+	thcfg._t_routine = btnHandler;
+	thcfg.t_stackSize = 512;
+	tch_threadId btnHandler = env->Thread->create(&thcfg,NULL);
+
 	env->Thread->start(childId);
+	env->Thread->start(btnHandler);
 
 
 	tch_pwmDef pwmDef;
@@ -80,6 +87,7 @@ int main(const tch* env) {
 	iicCfg.Filter = TRUE;
 	iicCfg.Role = IIC_ROLE_MASTER;
 	iicCfg.OpMode = IIC_OPMODE_FAST;
+
 
 	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc1,&iicCfg,osWaitForever,ActOnSleep);
 
@@ -108,7 +116,7 @@ int main(const tch* env) {
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,6,osWaitForever);
 		env->uStdLib->stdio->iprintf("\rRead Motion X : %d, Y : %d, Z : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
-		env->Thread->sleep(100);
+		env->Thread->sleep(1000);
 
 		if((loopcnt++ % 1000) == 0){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
@@ -124,6 +132,28 @@ int main(const tch* env) {
 			env->Mem->printFreeList();
 		}
 	}
+	return osOK;
+}
+
+
+static DECLARE_THREADROUTINE(btnHandler){
+	tch_GpioCfg iocfg;
+	env->Device->gpio->initCfg(&iocfg);
+	iocfg.Mode = GPIO_Mode_IN;
+	iocfg.PuPd = GPIO_PuPd_PU;
+	tch_GpioHandle* iohandle = env->Device->gpio->allocIo(env,tch_gpio5,(1 << 13),&iocfg,osWaitForever);
+
+	tch_GpioEvCfg evcfg;
+	env->Device->gpio->initEvCfg(&evcfg);
+	evcfg.EvEdge = GPIO_EvEdge_Fall;
+	evcfg.EvType = GPIO_EvType_Interrupt;
+	iohandle->registerIoEvent(iohandle,13,&evcfg);
+
+	while(TRUE){
+		if(iohandle->listen(iohandle,13,osWaitForever))
+			env->uStdLib->stdio->iprintf("\rButton Pressed\n");
+	}
+
 	return osOK;
 }
 
@@ -148,7 +178,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
-		env->Thread->sleep(100);
+		env->Thread->sleep(1000);
 	}
 	return osOK;
 }

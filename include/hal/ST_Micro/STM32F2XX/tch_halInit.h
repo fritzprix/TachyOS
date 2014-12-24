@@ -92,96 +92,80 @@ __attribute__((section(".data"))) static tch_ioInterrupt_descriptor IoInterrupt_
 		{
 				0,
 				NULL,
-				NULL,
 				EXTI0_IRQn
 		},
 		{
 				0,
-				NULL,
 				NULL,
 				EXTI1_IRQn
 		},
 		{
 				0,
 				NULL,
-				NULL,
 				EXTI2_IRQn
 		},
 		{
 				0,
-				NULL,
 				NULL,
 				EXTI3_IRQn
 		},
 		{
 				0,
 				NULL,
-				NULL,
 				EXTI4_IRQn
 		},
 		{
 				0,
 				NULL,
+				EXTI9_5_IRQn
+		},
+		{
+				0,
 				NULL,
 				EXTI9_5_IRQn
 		},
 		{
 				0,
 				NULL,
+				EXTI9_5_IRQn
+		},
+		{
+				0,
 				NULL,
 				EXTI9_5_IRQn
 		},
 		{
 				0,
 				NULL,
-				NULL,
 				EXTI9_5_IRQn
 		},
 		{
 				0,
 				NULL,
-				NULL,
-				EXTI9_5_IRQn
+				EXTI15_10_IRQn
 		},
 		{
 				0,
-				NULL,
-				NULL,
-				EXTI9_5_IRQn
-		},
-		{
-				0,
-				NULL,
 				NULL,
 				EXTI15_10_IRQn
 		},
 		{
 				0,
 				NULL,
+				EXTI15_10_IRQn
+		},
+		{
+				0,
 				NULL,
 				EXTI15_10_IRQn
 		},
 		{
 				0,
 				NULL,
-				NULL,
 				EXTI15_10_IRQn
 		},
 		{
 				0,
-				NULL,
-				NULL,
-				EXTI15_10_IRQn
-		},
-		{
-				0,
-				NULL,
-				NULL,
-				EXTI15_10_IRQn
-		},
-		{
-				0,
-				NULL,
 				NULL,
 				EXTI15_10_IRQn
 		}

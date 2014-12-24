@@ -826,7 +826,8 @@ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL ena
 		ins->env->Device->gpio->initCfg(&iocfg);
 		iocfg.Af = timBcfg->afv;
 		iocfg.Mode = GPIO_Mode_AF;
-		ins->iohandle[ch] = ins->env->Device->gpio->allocIo(ins->env,timBcfg->port,(1 << timBcfg->chp[ch]),&iocfg,timeout,tch_timer_PWMIsLpActive(ins) ? ActOnSleep : NoActOnSleep);
+		iocfg.popt = tch_timer_PWMIsLpActive(ins) ? ActOnSleep : NoActOnSleep;
+		ins->iohandle[ch] = ins->env->Device->gpio->allocIo(ins->env,timBcfg->port,(1 << timBcfg->chp[ch]),&iocfg,timeout);
 		return osOK;
 	}
 	if(!enable && ins->iohandle[ch]){
@@ -994,7 +995,8 @@ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL 
 		ins->env->Device->gpio->initCfg(&iocfg);
 		iocfg.Mode = GPIO_Mode_AF;
 		iocfg.Af = tbs->afv;
-		ins->iohandle[ch] = ins->env->Device->gpio->allocIo(ins->env,tbs->port,tbs->chp[ch],&iocfg,timeout,tch_timer_tCaptIsLpActive(ins)? ActOnSleep : NoActOnSleep);
+		iocfg.popt = tch_timer_tCaptIsLpActive(ins)? ActOnSleep : NoActOnSleep;
+		ins->iohandle[ch] = ins->env->Device->gpio->allocIo(ins->env,tbs->port,tbs->chp[ch],&iocfg,timeout);
 		return osOK;
 	}
 	if(!enable && ins->iohandle[ch]){

@@ -143,8 +143,9 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	iocfg.Af = spibs->afv;
 	iocfg.Speed = GPIO_OSpeed_25M;
 	iocfg.Mode = GPIO_Mode_AF;
+	iocfg.popt = popt;
 
-	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout,popt);
+	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout);
 
 	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED)){
 		dmaCfg.BufferType = DMA_BufferMode_Normal;

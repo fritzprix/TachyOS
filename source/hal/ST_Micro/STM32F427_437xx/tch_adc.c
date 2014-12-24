@@ -148,6 +148,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_AN;
 	iocfg.PuPd = GPIO_PuPd_Float;
+	iocfg.popt = popt;
 
 
 	*adcDesc->_clkenr |= adcDesc->clkmsk;
@@ -173,7 +174,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	for(ch_idx = 0,ins->chcnt = 0;(cfg->chdef.chselMsk && (cfg->chdef.chcnt));cfg->chdef.chcnt--){
 		if(cfg->chdef.chselMsk & 1){
 			if(adc_common->ports[ch_idx].adc_msk & (1 << adc)){
-				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adc_common->ports[ch_idx].port.port,(1 << adc_common->ports[ch_idx].port.pin),&iocfg,timeout,popt);
+				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adc_common->ports[ch_idx].port.port,(1 << adc_common->ports[ch_idx].port.pin),&iocfg,timeout);
 				tch_adc_setRegSampleHold(adcDesc,ch_idx,smphld);
 				tch_adc_setRegChannel(adcDesc,ch_idx,0);
 			}
