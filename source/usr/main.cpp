@@ -48,7 +48,8 @@ uint16_t msAddr = 0x1D2;
 static DECLARE_THREADROUTINE(childThreadRoutine);
 static DECLARE_THREADROUTINE(btnHandler);
 
-
+tch_threadId btnHandleThread;
+tch_threadId childId;
 int main(const tch* env) {
 
 
@@ -67,16 +68,16 @@ int main(const tch* env) {
 	thcfg._t_routine = childThreadRoutine;
 	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 512;
-	tch_threadId childId = env->Thread->create(&thcfg,NULL);
+	childId = env->Thread->create(&thcfg,spi);
 
 	thcfg._t_name = "btnHandler";
 	thcfg._t_routine = btnHandler;
 	thcfg.t_stackSize = 512;
 	thcfg.t_proior = Normal;
-	tch_threadId btnHandler = env->Thread->create(&thcfg,spi);
+	btnHandleThread = env->Thread->create(&thcfg,spi);
 
 	env->Thread->start(childId);
-	env->Thread->start(btnHandler);
+	env->Thread->start(btnHandleThread);
 
 
 	tch_pwmDef pwmDef;
@@ -124,23 +125,22 @@ int main(const tch* env) {
 		 * 		 */
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,6,osWaitForever);
-		env->uStdLib->stdio->iprintf("\rRead Motion X : %d, Y : %d, Z : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
-		env->Thread->sleep(500);
-
+		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
+/*
 		if((loopcnt++ % 10000) == 0){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
-		}
-		spi->write(spi,"Hello",5);
+		}*/
+		spi->write(spi,"Hello World,Im the main!!!",16);
 		/**
 		 *
 		 */
-		if((loopcnt % 10000) == 5000){
+/*		if((loopcnt % 10000) == 5000){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
-		}
+		}*/
 	}
 	return osOK;
 }
@@ -151,10 +151,9 @@ static DECLARE_THREADROUTINE(btnHandler){
 	tch_spiHandle* spi = (tch_spiHandle*) env->Thread->getArg();
 
 
-	uint8_t val[2] = {1,2};
 	while(TRUE){
-		spi->write(spi,val,2);
-		env->Thread->sleep(100);
+		spi->write(spi,"Press Button",11);
+		env->Thread->sleep(0);
 	}
 
 	return osOK;
@@ -162,6 +161,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 
 
 static DECLARE_THREADROUTINE(childThreadRoutine){
+	tch_spiHandle* spi = (tch_spiHandle*)  env->Thread->getArg();
 	tch_mailqId adcReadQ = env->MailQ->create(100,2);
 	osEvent evt;
 	env->uStdLib->string->memset(&evt,0,sizeof(osEvent));
@@ -175,13 +175,13 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,osWaitForever);
 
 	while(TRUE){
-		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d\n",adc->read(adc,tch_ADC_Ch1));
+		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = env->MailQ->get(adcReadQ,osWaitForever);
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
-		env->Thread->sleep(500);
+		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return osOK;
 }

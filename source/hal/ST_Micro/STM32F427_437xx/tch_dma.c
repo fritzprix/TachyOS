@@ -246,8 +246,11 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 
 
 static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
+	if(!self)
+		return FALSE;
 	if(!tch_dmaIsValid((tch_dma_handle_prototype*)self))
 		return FALSE;
+
 	uint8_t err_cnt = 0;
 	osEvent evt;
 	evt.status = osOK;
@@ -259,12 +262,13 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 
 	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != osOK)
 		return FALSE;
+	/*
 	while(DMA_IS_BUSY(ins)){
 		if((*result = ins->env->Condv->wait(ins->condv,ins->mtxId,timeout)) != osOK)
 			return FALSE;
 	}
 	DMA_SET_BUSY(ins);
-	ins->env->Mtx->unlock(ins->mtxId);
+	ins->env->Mtx->unlock(ins->mtxId);*/
 	if(!result)
 		result = &lresult;
 
@@ -281,10 +285,11 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 		}
 	}
 
+	/*
 	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != osOK)   // lock mutex for condition variable operation
 		return FALSE;
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
-	ins->env->Condv->wakeAll(ins->condv);
+	ins->env->Condv->wakeAll(ins->condv);*/
 	if(ins->env->Mtx->unlock(ins->mtxId) != osOK) // unlock mutex
 		return FALSE;
 

@@ -25,18 +25,18 @@
 #define ADC_CR2_EXTSEL_Pos    ((uint8_t) 24)
 
 #define ADC_CLASS_KEY         ((uint16_t) 0x4230)
-#define ADC_FLAG_BUSY         ((uint32_t) 0x10000)
+#define ADC_BUSY_FLAG         ((uint32_t) 0x10000)
 
 
 #define ADC_setBusy(ins)             do{\
-	((tch_adc_handle_prototype*) ins)->status |= ADC_FLAG_BUSY;\
+	((tch_adc_handle_prototype*) ins)->status |= ADC_BUSY_FLAG;\
 }while(0)
 
 #define ADC_clrBusy(ins)             do{\
-	((tch_adc_handle_prototype*) ins)->status &= ~ADC_FLAG_BUSY;\
+	((tch_adc_handle_prototype*) ins)->status &= ~ADC_BUSY_FLAG;\
 }while(0)
 
-#define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_FLAG_BUSY
+#define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_BUSY_FLAG
 
 
 
@@ -285,16 +285,22 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 			return ADC_READ_FAIL;
 	}
 	ADC_setBusy(ins);
-	if(ins->env->Mtx->unlock(ins->mtx))
+	if(ins->env->Mtx->unlock(ins->mtx) != osOK)
 		return ADC_READ_FAIL;
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	adcHw->CR2 |= ADC_CR2_SWSTART;    /// start conversion
 	evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
-	ADC_clrBusy(ins);
-	if(evt.status == osEventMessage)
-		return evt.value.v;
-	return ADC_READ_FAIL;
 
+	if(evt.status != osEventMessage)
+		return ADC_READ_FAIL;
+
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
+		return ADC_READ_FAIL;
+	ADC_clrBusy(ins);
+	ins->env->Condv->wakeAll(ins->condv);
+	ins->env->Mtx->unlock(ins->mtx);
+
+	return evt.value.v;
 }
 
 static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
