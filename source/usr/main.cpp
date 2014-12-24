@@ -52,19 +52,28 @@ static DECLARE_THREADROUTINE(btnHandler);
 int main(const tch* env) {
 
 
+	tch_spiCfg spicfg;
+	spicfg.Baudrate = SPI_BAUDRATE_NORMAL;
+	spicfg.Role = SPI_ROLE_MASTER;
+	spicfg.ClkMode = SPI_CLKMODE_0;
+	spicfg.FrmFormat = SPI_FRM_FORMAT_8B;
+	spicfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
 
+	tch_spiHandle* spi = env->Device->spi->allocSpi(env,tch_spi0,&spicfg,osWaitForever,ActOnSleep);
 
 	tch_threadCfg thcfg;
 	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
 	thcfg._t_name = "child1";
 	thcfg._t_routine = childThreadRoutine;
+	thcfg.t_proior = Normal;
 	thcfg.t_stackSize = 512;
 	tch_threadId childId = env->Thread->create(&thcfg,NULL);
 
 	thcfg._t_name = "btnHandler";
 	thcfg._t_routine = btnHandler;
 	thcfg.t_stackSize = 512;
-	tch_threadId btnHandler = env->Thread->create(&thcfg,NULL);
+	thcfg.t_proior = Normal;
+	tch_threadId btnHandler = env->Thread->create(&thcfg,spi);
 
 	env->Thread->start(childId);
 	env->Thread->start(btnHandler);
@@ -116,17 +125,18 @@ int main(const tch* env) {
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,6,osWaitForever);
 		env->uStdLib->stdio->iprintf("\rRead Motion X : %d, Y : %d, Z : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
-		env->Thread->sleep(1000);
+		env->Thread->sleep(500);
 
-		if((loopcnt++ % 1000) == 0){
+		if((loopcnt++ % 10000) == 0){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
+		spi->write(spi,"Hello",5);
 		/**
 		 *
 		 */
-		if((loopcnt % 1000) == 500){
+		if((loopcnt % 10000) == 5000){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
@@ -137,21 +147,14 @@ int main(const tch* env) {
 
 
 static DECLARE_THREADROUTINE(btnHandler){
-	tch_GpioCfg iocfg;
-	env->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = GPIO_Mode_IN;
-	iocfg.PuPd = GPIO_PuPd_PU;
-	tch_GpioHandle* iohandle = env->Device->gpio->allocIo(env,tch_gpio5,(1 << 13),&iocfg,osWaitForever);
 
-	tch_GpioEvCfg evcfg;
-	env->Device->gpio->initEvCfg(&evcfg);
-	evcfg.EvEdge = GPIO_EvEdge_Fall;
-	evcfg.EvType = GPIO_EvType_Interrupt;
-	iohandle->registerIoEvent(iohandle,13,&evcfg);
+	tch_spiHandle* spi = (tch_spiHandle*) env->Thread->getArg();
 
+
+	uint8_t val[2] = {1,2};
 	while(TRUE){
-		if(iohandle->listen(iohandle,13,osWaitForever))
-			env->uStdLib->stdio->iprintf("\rButton Pressed\n");
+		spi->write(spi,val,2);
+		env->Thread->sleep(100);
 	}
 
 	return osOK;
@@ -178,7 +181,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
-		env->Thread->sleep(1000);
+		env->Thread->sleep(500);
 	}
 	return osOK;
 }

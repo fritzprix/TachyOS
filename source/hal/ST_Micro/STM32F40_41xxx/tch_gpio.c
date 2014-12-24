@@ -196,34 +196,41 @@ static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg){
 
 
 static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
-	tch_gpio_handle_prototype* _handle = NULL;
+	tch_gpio_handle_prototype* ins = NULL;
 	tchStatus result = 0;
 	if(!self)
 		return osErrorParameter;
-	_handle = (tch_gpio_handle_prototype*) self;
-	if(!tch_gpioIsValid(_handle))
+	ins = (tch_gpio_handle_prototype*) self;
+	if(!tch_gpioIsValid(ins))
 		return osErrorResource;
-	const tch* env = _handle->env;
-	if(env->Mtx->lock(_handle->mtxId,osWaitForever) != osOK)
+	const tch* env = ins->env;
+	if(env->Mtx->lock(ins->mtxId,osWaitForever) != osOK)
 		return osErrorTimeoutResource;
-	tch_gpioInvalidate(_handle);
-	env->Mtx->destroy(_handle->mtxId);
+
+	tch_gpio_descriptor* gpio = &GPIO_HWs[ins->idx];
+	tch_GpioCfg initCfg;
+	tch_gpio_initCfg(&initCfg);
+	tch_gpio_handle_configure(self,&initCfg,ins->pMsk);
+	uint16_t pmsk = ins->pMsk;
+	pin p = 0;
+	while(pmsk){
+		tch_gpio_handle_unregisterIoEvent(self,p);
+		pmsk >>= 1;
+		p++;
+	}
+
+	tch_gpioInvalidate(ins);
+	env->Mtx->destroy(ins->mtxId);
 
 	if((result = env->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever)) != osOK)
 		return result;
-	tch_gpio_descriptor* gpio = &GPIO_HWs[_handle->idx];
-	tch_GpioCfg initCfg;
-	tch_gpio_initCfg(&initCfg);
-	tch_gpio_handle_configure(self,&initCfg,_handle->pMsk);
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
-
-
-	gpio->io_ocpstate &= ~_handle->pMsk;
+	gpio->io_ocpstate &= ~ins->pMsk;
 	env->Condv->wakeAll(GPIO_StaticManager.condvId);
-	tch_gpioInvalidate(_handle);
+	tch_gpioInvalidate(ins);
 	env->Mtx->unlock(GPIO_StaticManager.mtxId);
-	env->Mem->free(_handle);
+	env->Mem->free(ins);
 	return osOK;
 }
 
@@ -298,14 +305,15 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,pin p){
 		return osErrorParameter;
 	if(__get_IPSR())
 		return osErrorISR;
-	tch_ioInterrupt_descriptor* ioIntrDesc = NULL;
-	const tch* api = ins->env;
+	tch_ioInterrupt_descriptor* ioIntrDesc = &IoInterrupt_HWs[p];
+	if(ioIntrDesc->io_occp != self)
+		return osErrorParameter;
 
+	const tch* api = ins->env;
 	if(api->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever) != osOK)   // lock mtx of singleton
 		return osErrorResource;
 
 	uint16_t pmsk = (1 << p);
-	ioIntrDesc = &IoInterrupt_HWs[p];
 	ioIntrDesc->io_occp = NULL;
 	api->Barrier->destroy(ioIntrDesc->evbar);
 	NVIC_DisableIRQ(ioIntrDesc->irq);

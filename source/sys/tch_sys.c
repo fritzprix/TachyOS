@@ -38,6 +38,9 @@ static DECLARE_THREADROUTINE(idle);
 
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
+
+tch_threadId mainThread = NULL;
+tch_threadId idleThread = NULL;
 tch_mailqId sysTaskQ;
 tch_memId sharedMem;
 
@@ -200,12 +203,9 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 
 static DECLARE_THREADROUTINE(systhreadRoutine){
 	// perform runtime initialization
-	tch_threadId mainThread = NULL;
-	tch_threadId idleThread = NULL;
 
 	osEvent evt;
 	tch_sysTask* task = NULL;
-
 
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)

@@ -20,7 +20,7 @@ tchStatus spi_performTest(tch* env){
 	spiCfg.ClkMode = SPI_CLKMODE_0;
 	spiCfg.FrmFormat = SPI_FRM_FORMAT_8B;
 	spiCfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
-	spiCfg.Role = SPI_OPMODE_MASTER;
+	spiCfg.Role = SPI_ROLE_MASTER;
 
 
 	do{

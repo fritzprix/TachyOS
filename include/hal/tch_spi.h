@@ -20,15 +20,15 @@
 extern "C"{
 #endif
 
-#define tch_spi0             ((spi_t) 0)
-#define tch_spi1             ((spi_t) 1)
-#define tch_spi2             ((spi_t) 2)
-#define tch_spi3             ((spi_t) 3)
-#define tch_spi4             ((spi_t) 4)
-#define tch_spi5             ((spi_t) 5)
-#define tch_spi6             ((spi_t) 6)
-#define tch_spi7             ((spi_t) 7)
-#define tch_spi8             ((spi_t) 8)
+#define tch_spi0                     ((spi_t) 0)
+#define tch_spi1                     ((spi_t) 1)
+#define tch_spi2                     ((spi_t) 2)
+#define tch_spi3                     ((spi_t) 3)
+#define tch_spi4                     ((spi_t) 4)
+#define tch_spi5                     ((spi_t) 5)
+#define tch_spi6                     ((spi_t) 6)
+#define tch_spi7                     ((spi_t) 7)
+#define tch_spi8                     ((spi_t) 8)
 
 #define SPI_FRM_FORMAT_16B           ((uint8_t) 1)
 #define SPI_FRM_FORMAT_8B            ((uint8_t) 0)
@@ -36,8 +36,8 @@ extern "C"{
 #define SPI_FRM_ORI_MSBFIRST         ((uint8_t) 0)
 #define SPI_FRM_ORI_LSBFIRST         ((uint8_t) 1)
 
-#define SPI_OPMODE_MASTER            ((uint8_t) 0)
-#define SPI_OPMODE_SLAVE             ((uint8_t) 1)
+#define SPI_ROLE_MASTER              ((uint8_t) 0)
+#define SPI_ROLE_SLAVE               ((uint8_t) 1)
 
 #define SPI_CLKMODE_0                ((uint8_t) 0)
 #define SPI_CLKMODE_1                ((uint8_t) 1)
