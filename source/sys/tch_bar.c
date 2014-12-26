@@ -68,7 +68,7 @@ static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){
 		return osErrorResource;
 	if(tch_port_isISR())
 		return osErrorISR;
-	return tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&((tch_barCb*)bar)->wq,timeout);
+	return tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&((tch_barCb*)bar)->wq,timeout);
 }
 
 static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
@@ -83,7 +83,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 		tch_schedResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,osOK,TRUE);
 		return osOK;
 	}
-	return tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osOK);
+	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osOK);
 }
 
 static tchStatus tch_bar_destroy(tch_barId barId){
@@ -94,7 +94,7 @@ static tchStatus tch_bar_destroy(tch_barId barId){
 	if(tch_port_isISR())
 		return osErrorISR;
 	else
-		tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osErrorResource);
+		tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osErrorResource);
 	shMem->free(bar);
 	return osOK;
 }

@@ -63,7 +63,7 @@ static tchStatus tch_semaphore_wait(tch_semId id,uint32_t timeout){
 	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	tchStatus result = osOK;
 	while(!tch_port_exclusiveCompareDecrement((int*)&sem->count,0)){                // try to exclusively decrement count value
-		result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&sem->wq,timeout);
+		result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&sem->wq,timeout);
 		if(!tch_semaphoreIsValid(id))                                                            // validity of semaphore is double-checked because waiting thread is siganled and in ready state before semaphore destroyed
 			return osErrorResource;
 		switch(result){
@@ -86,9 +86,8 @@ static tchStatus tch_semaphore_unlock(tch_semId id){
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
 			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,osOK,TRUE);
-			//tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
 		else
-			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
 	}
 	return osOK;
 }
@@ -103,9 +102,8 @@ static tchStatus tch_semaphore_destroy(tch_semId id){
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
 			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,osOK,TRUE);
-			//tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
 		else
-			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
 	}
 	shMem->free(sem);
 	return  osOK;

@@ -36,18 +36,6 @@ static void tch_mailqValidate(tch_mailqId qid);
 static void tch_mailqInvalidate(tch_mailqId qid);
 static BOOL tch_mailqIsValid(tch_mailqId qid);
 
-/**
- *
- * 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
-	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	tchStatus (*put)(tch_mailqId qid,void* mail);
-	osEvent (*get)(tch_mailqId qid,uint32_t millisec);
-	uint32_t (*getBlockSize)(tch_mailqId qid);
-	uint32_t (*getLength)(tch_mailqId qid);
-	tchStatus (*free)(tch_mailqId qid,void* mail);
-	tchStatus (*destroy)(tch_mailqId qid);
- */
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		tch_mailq_create,
 		tch_mailq_alloc,
@@ -95,7 +83,7 @@ static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result
 		karg.timeout = millisec;
 		karg.chunk = NULL;
 		*result = osOK;
-		while((*result = tch_port_enterSvFromUsr(SV_MAILQ_ALLOC,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
+		while((*result = tch_port_enterSv(SV_MAILQ_ALLOC,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
 			if(!tch_mailqIsValid(mailqcb))
 				return NULL;
 			switch(*result){
@@ -182,7 +170,7 @@ static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 		tch_mailq_karg karg;
 		karg.chunk = mail;
 		karg.timeout = 0;
-		while((result = tch_port_enterSvFromUsr(SV_MAILQ_FREE,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
+		while((result = tch_port_enterSv(SV_MAILQ_FREE,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
 			if(!tch_mailqIsValid(mailqcb))
 				return osErrorResource;
 			switch(result){
@@ -214,7 +202,7 @@ static tchStatus tch_mailq_destroy(tch_mailqId qid){
 		return osErrorResource;
 	if(tch_port_isISR())
 		return osErrorISR;
-	if((result = tch_port_enterSvFromUsr(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
+	if((result = tch_port_enterSv(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
 		return result;
 	MsgQ->destroy(mailqcb->msgq);
 	shMem->free(qid);

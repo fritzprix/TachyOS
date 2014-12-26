@@ -313,7 +313,7 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 
 	thr_p->t_state = RUNNING;
 	int result = thr_p->t_fn(thr_p->t_arg);
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
+	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 
 

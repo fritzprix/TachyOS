@@ -136,7 +136,7 @@ static tchStatus tch_threadStart(tch_threadId thread){
 		                           // optionally check preemption required or not
 		return osOK;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_START,(uint32_t)thread,0);
+		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);
 	}
 }
 
@@ -147,7 +147,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thread,err);
+		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err);
 	}
 }
 
@@ -163,7 +163,7 @@ static tchStatus tch_threadSleep(uint32_t millisec){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_SLEEP,millisec,0);
+		return tch_port_enterSv(SV_THREAD_SLEEP,millisec,0);
 	}
 }
 
@@ -172,7 +172,7 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSvFromUsr(SV_THREAD_JOIN,(uint32_t) thread,timeout);
+		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout);
 	}
 }
 
@@ -204,7 +204,7 @@ __attribute__((naked))static void __tch_thread_entry(tch_thread_header* thr_p,tc
 #endif
 	thr_p->t_state = RUNNING;
 	tchStatus res = thr_p->t_fn(tch_rti);
-	tch_port_enterSvFromUsr(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
+	tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
 }
 
 
@@ -233,6 +233,6 @@ __attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 		tch_currentThread = tch_currentThread->t_refNode.root;
 	}
 	mem->free(getThreadHeader(thread)->t_chks);
-	tch_port_enterSvFromUsr(SV_THREAD_TERMINATE,(uint32_t) thread,status);
+	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thread,status);
 }
 

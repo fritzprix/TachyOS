@@ -84,7 +84,7 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 	tch_condvSetWait(condv);
 	Mtx->unlock(lock);
 	tchStatus result = osOK;
-	if((result = tch_port_enterSvFromUsr(SV_THREAD_SUSPEND,(uint32_t)&condv->wq,timeout)) != osOK){
+	if((result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&condv->wq,timeout)) != osOK){
 		if(!tch_condvIsValid(condv))
 			return osErrorResource;
 		switch(result){
@@ -115,7 +115,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 	if(tch_port_isISR()){                  // if isr mode, no locked mtx is supplied
 		if(tch_condvIsWait(condv)){    // check condv is not done
 			tch_condvClrWait(condv);   // set condv to done
-			tch_port_enterSvFromIsr(SV_THREAD_RESUME,(uint32_t)&condv->wq,osOK);     // wake
+			tch_schedResumeM((tch_thread_queue*) &condv->wq,1,osOK,TRUE);
 			return osOK;
 		}else{
 			return osErrorParameter;
@@ -125,7 +125,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 			tch_condvClrWait(condv);
 			if(Mtx->unlock(condv->wakeMtx) != osOK)          // if mtx is not locked by this thread
 				return osErrorResource;
-			tch_port_enterSvFromUsr(SV_THREAD_RESUME,(uint32_t)&condv->wq,osOK);   // wake single thread from wait queue
+			tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&condv->wq,osOK);   // wake single thread from wait queue
 			return Mtx->lock(condv->wakeMtx,osWaitForever);                        // lock mtx and return
 		}
 		return osErrorParameter;
@@ -139,7 +139,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 	if(tch_port_isISR()){
 		if(tch_condvIsWait(condv)){
 			tch_condvClrWait(condv);
-			tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&condv->wq,osOK); // wake all
+			tch_schedResumeM((tch_thread_queue*) &condv->wq,SCHED_THREAD_ALL,osOK,TRUE);
 			return osOK;
 		}else{
 			return osErrorParameter;
@@ -149,7 +149,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 			tch_condvClrWait(condv);
 			if(Mtx->unlock(condv->wakeMtx) != osOK)
 				return osErrorParameter;
-			tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,osOK);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,osOK);
 			return Mtx->lock(condv->wakeMtx,osWaitForever);
 		}
 		return osErrorResource;
@@ -166,7 +166,7 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 	}else{
 		Mtx->lock(condv->wakeMtx,osWaitForever);
 		tch_condvInvalidate(condv);
-		result = tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,osErrorResource);
+		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,osErrorResource);
 		Mtx->unlock(condv->wakeMtx);
 		shMem->free(condv);
 		return result;

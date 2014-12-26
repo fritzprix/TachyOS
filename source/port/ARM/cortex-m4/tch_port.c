@@ -45,7 +45,7 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-//	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
+	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
@@ -129,9 +129,8 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV):);
+			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r7","r8","r9","r10","r11","lr");
 }
-
 
 
 
@@ -140,9 +139,6 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
  *  this function redirect execution to thread mode for thread context manipulation
  */
 void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
-	//if(isr_svc_cnt)
-//		tch_kernel_errorHandler(FALSE,osErrorISR);
-	//isr_svc_cnt++;
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
 	                                                              //   prepare fake exception stack
 	                                                              //    - passing arguement to kernel mode thread
@@ -153,7 +149,6 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R2 = arg3;
-//	tch_kernelSetResult(arg1,ret_val);
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -169,15 +164,16 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 
 
 
-int tch_port_enterSvFromUsr(word_t sv_id,uword_t arg1,uword_t arg2){
+int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
 			"dmb\n"
 			"isb\n"
 			"svc #0"   : : : );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_header*)tch_currentThread)->t_kRet;
 }
+
+
 /***
- */
 int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
 		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
@@ -190,9 +186,14 @@ int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	org_sp->Return = (uint32_t)__pend_loop;
 	org_sp->xPSR = EPSR_THUMB_MODE;
 	__set_PSP((uint32_t)org_sp);
+	__ISB();
+	__DMB();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	return 0;
 }
+*/
+
+
 
 /**
  *  prepare initial context for start thread
@@ -270,14 +271,14 @@ void SVC_Handler(void){
 	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 
-
+/*
 void PendSV_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
 	tch_exc_stack* org_sp = exsp + 1;
 	__set_PSP((uint32_t)org_sp);                                       // discard stack used to transfer arguements
 	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
-
+*/
 
 void HardFault_Handler(){
 	tch_kernel_faulthandle(FAULT_TYPE_HARD);

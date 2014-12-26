@@ -95,7 +95,7 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = msg;
-		while((result = tch_port_enterSvFromUsr(SV_MSGQ_PUT,(uword_t)mqId,(uword_t)&arg)) != osOK){
+		while((result = tch_port_enterSv(SV_MSGQ_PUT,(uword_t)mqId,(uword_t)&arg)) != osOK){
 			if(!tch_msgqIsValid(msgqCb))
 				return osErrorResource;
 			switch(result){
@@ -160,7 +160,7 @@ static osEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = 0;
-		while((evt.status = tch_port_enterSvFromUsr(SV_MSGQ_GET,(uword_t)mqId,(uword_t)&arg)) != osEventMessage){
+		while((evt.status = tch_port_enterSv(SV_MSGQ_GET,(uword_t)mqId,(uword_t)&arg)) != osEventMessage){
 				if(!tch_msgqIsValid(msgqCb)){
 					evt.status = osErrorResource;
 					return evt;
@@ -222,7 +222,7 @@ static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 		msgqCb->updated = 0;
 		shMem->free(msgqCb);
 	}else{
-		tch_port_enterSvFromUsr(SV_MSGQ_DESTROY,(uword_t)mqId,0);
+		tch_port_enterSv(SV_MSGQ_DESTROY,(uword_t)mqId,0);
 		shMem->free(msgqCb);
 	}
 	return osOK;
