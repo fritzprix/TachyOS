@@ -45,7 +45,7 @@ tchStatus mtx_performTest(tch* api){
 	if(api->Mtx->lock(mmtx,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(child1);
-	api->Thread->sleep(200);
+	api->Thread->yield(200);
 	api->Mtx->unlock(mmtx);
 
 
@@ -61,7 +61,7 @@ static void race(tch* api){
 	const tch_mtx_ix* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){
 		if(Mtx->lock(mmtx,osWaitForever) == osOK){
-			api->Thread->sleep(0);
+			api->Thread->yield(0);
 			Mtx->unlock(mmtx);
 		}
 	}
@@ -84,7 +84,7 @@ static DECLARE_THREADROUTINE(child1Routine){
 static DECLARE_THREADROUTINE(child2Routine){
 	race(env);
 	tchStatus result = osOK;
-	env->Thread->sleep(50);
+	env->Thread->yield(50);
 	if((result = env->Mtx->lock(mmtx,osWaitForever)) == osErrorResource)
 		return osOK;
 	return osErrorOS;

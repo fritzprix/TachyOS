@@ -201,7 +201,7 @@ static DECLARE_THREADROUTINE(pulsDrv1Run){
 	float a = 0.f;
 	while(cnt--){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
-		env->Thread->sleep(1);
+		env->Thread->yield(1);
 	}
 	cnt = 0;
 	return osOK;
@@ -212,7 +212,7 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 	int cnt = 1000;
 	while(cnt--){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
-		env->Thread->sleep(1);
+		env->Thread->yield(1);
 	}
 	cnt = 0;
 	do{

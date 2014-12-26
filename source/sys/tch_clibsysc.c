@@ -155,7 +155,7 @@ int _getpid(void){
 
 
 time_t _times(void* _reent){
-	return (time_t) 0;
+	return (time_t) 0 ;
 }
 
 int _gettimeofday(void* _reent){

@@ -104,13 +104,13 @@ static DECLARE_THREADROUTINE(sender){
 	while(cnt < 50){
 		env->MsgQ->put(mid,0xFF,osWaitForever);
 		out->out(out,1 << 2,bClear);
-		env->Thread->sleep(1);
+		env->Thread->yield(1);
 		out->out(out,1 << 2,bSet);
-		env->Thread->sleep(1);
+		env->Thread->yield(1);
 		cnt++;
 	}
 	env->Barrier->wait(mBar,osWaitForever);
-	env->Thread->sleep(10);
+	env->Thread->yield(10);
 	env->MsgQ->destroy(mid);
 	return osOK;
 }

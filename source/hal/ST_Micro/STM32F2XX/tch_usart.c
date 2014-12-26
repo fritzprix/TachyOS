@@ -549,6 +549,7 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	UART_CLR_RXBUSY(ins);
 	env->Condv->wakeAll(ins->rxCondv);
 	env->Mtx->unlock(ins->rxMtx);
+	return osOK;
 }
 
 

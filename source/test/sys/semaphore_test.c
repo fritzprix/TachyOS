@@ -14,7 +14,7 @@
 static DECLARE_THREADROUTINE(child1Routine);
 static DECLARE_THREADROUTINE(child2Routine);
 static DECLARE_THREADROUTINE(child3Routine);
-static void race(tch* api);
+static void race(const tch* api);
 
 
 static tch_threadId ch1Id;
@@ -51,7 +51,7 @@ tchStatus semaphore_performTest(tch* api){
 	if(api->Sem->lock(ts,osWaitForever) != osOK)
 		return osErrorOS;
 	api->Thread->start(ch1Id);
-	api->Thread->sleep(200);
+	api->Thread->yield(200);
 	if(api->Thread->join(ch3Id,osWaitForever) != osOK)
 		return osErrorOS;
 	if(api->Thread->join(ch2Id,osWaitForever) != osOK)
@@ -76,7 +76,7 @@ static DECLARE_THREADROUTINE(child1Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
 		race(env);
-	env->Thread->sleep(5);
+	env->Thread->yield(5);
 	env->Sem->destroy(ts);
 	spin = FALSE;
 
@@ -87,7 +87,7 @@ static DECLARE_THREADROUTINE(child2Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
 		race(env);
-	while(spin) env->Thread->sleep(0);
+	while(spin) env->Thread->yield(0);
 	if(env->Sem->lock(ts,osWaitForever) != osErrorResource)
 		return osErrorOS;
 	return osOK;
@@ -100,11 +100,11 @@ static DECLARE_THREADROUTINE(child3Routine){
 	return osOK;
 }
 
-void race(tch* api){
+void race(const tch* api){
 	tchStatus res = osOK;
 	if((res = api->Sem->lock(ts,osWaitForever)) != osOK)
 		return;
 	shVar++;
-	api->Thread->sleep(0);
+	api->Thread->yield(0);
 	api->Sem->unlock(ts);
 }

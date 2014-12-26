@@ -154,6 +154,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) env->Mem->alloc(sizeof(tch_iic_handle_prototype));
 	iicDesc->_handle = ins;
 	env->uStdLib->string->memset(ins,0,sizeof(tch_iic_handle_prototype));
+	ins->iic = i2c;
 	ins->env = env;
 	ins->condv = env->Condv->create();
 	ins->mtx = env->Mtx->create();

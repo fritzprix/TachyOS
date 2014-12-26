@@ -45,7 +45,7 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-//	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
+	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
@@ -133,6 +133,9 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 }
 
 
+
+
+
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
@@ -187,6 +190,8 @@ int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
 	org_sp->Return = (uint32_t)__pend_loop;
 	org_sp->xPSR = EPSR_THUMB_MODE;
 	__set_PSP((uint32_t)org_sp);
+	__ISB();
+	__DMB();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	return 0;
 }
@@ -212,7 +217,6 @@ void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	return (uint32_t*) th_ctx;
 
 }
-
 
 int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 	int result = 0;

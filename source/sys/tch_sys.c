@@ -28,6 +28,7 @@
 #include "tch_syscfg.h"
 #include "tch_thread.h"
 #include "tch_board.h"
+#include <time.h>
 
 
 

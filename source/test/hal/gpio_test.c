@@ -57,7 +57,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 
 
 	out->out(out,outp,bSet);
-	env->Thread->sleep(50);
+	env->Thread->yield(50);
 	out->out(out,outp,bClear);
 //	out->close(out);
 	return osOK;

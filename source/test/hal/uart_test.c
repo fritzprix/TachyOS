@@ -41,9 +41,9 @@ tchStatus uart_performTest(tch* env){
 	while(mcnt--){
 		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openMsg,env->uStdLib->string->strlen(openMsg));
-		env->Thread->sleep(0);
+		env->Thread->yield(0);
 		serial->write(serial,myname,size);
-		env->Thread->sleep(0);
+		env->Thread->yield(0);
 		serial->close(serial);
 	}
 
@@ -68,9 +68,9 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 	while(pcnt--){
 		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
 		serial->write(serial,openedMsg,env->uStdLib->string->strlen(openedMsg));
-		env->Thread->sleep(0);
+		env->Thread->yield(0);
 		serial->write(serial,myname,size);
-		env->Thread->sleep(0);
+		env->Thread->yield(0);
 		serial->close(serial);
 	}
 	return osOK;

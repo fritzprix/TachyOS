@@ -10,7 +10,8 @@ include COMMON.mk
 
 
 TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
-
+TIME_STAMP=$(shell date +%s%N)
+TIME_FLAG=__BUILD_TIME_NS=$(TIME_STAMP)
 
 LIBS=-lc_nano\
      -lg_nano\
@@ -20,6 +21,7 @@ LIB_DIR=
 
 CFLAG+=\
        -D$(HW_PLF)\
+       -D$(TIME_FLAG)\
        -D__NEWLIB__\
        -D_REENT_SMALL\
        -D__DYNAMIC_REENT__\

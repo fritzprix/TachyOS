@@ -10,7 +10,7 @@
 /*! unit test for barrier
  *  -> 3 Thread(s) is initiated and wait in barrier
  *  -> one of the thread will signal main thread before wait in barrier
- *  -> main thread is woke up and sleep 50 ms to guarantee all child thread in waiting
+ *  -> main thread is woke up and yield 50 ms to guarantee all child thread in waiting
  *  -> and unlock barrier ==> all child thread should get 'osOk'
  *
  *
@@ -66,7 +66,7 @@ tchStatus barrier_performTest(tch* api){
 	api->Thread->start(child3Id);
 
 
-	api->Thread->sleep(10);
+	api->Thread->yield(10);
 	api->Barrier->signal(bid,osOK);
 	if(api->Barrier->wait(bid,osWaitForever) != osErrorResource)
 		return osErrorOS;
@@ -103,7 +103,7 @@ static DECLARE_THREADROUTINE(child2Routine){
 static DECLARE_THREADROUTINE(child3Routine){
 	if(env->Barrier->wait(bid,osWaitForever) != osOK)
 		return osErrorOS;
-	env->Thread->sleep(20);
+	env->Thread->yield(20);
 	env->Barrier->destroy(bid);
 	return osOK;
 }

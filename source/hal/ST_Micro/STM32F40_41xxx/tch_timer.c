@@ -123,6 +123,7 @@ typedef struct tch_pwm_handle_proto_t{
 	const tch*             env;
 	tch_GpioHandle**       iohandle;
 	tch_barId              uev_bar;
+	tch_semId              uev_sem;
 	tch_mtxId              mtx;
 }tch_pwm_handle_proto;
 
@@ -372,6 +373,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 	ins->timer = timer;
 	ins->env = env;
 	ins->uev_bar = env->Barrier->create();
+	ins->uev_sem = env->Sem->create(timDesc->channelCnt);
 	ins->mtx = env->Mtx->create();
 
 
@@ -799,12 +801,12 @@ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size
 	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
 		return result;
 	TimerHw->DIER |= TIM_DIER_UIE;    // enable update
+	uint32_t dutyd = TimerHw->ARR;
 	while(sz--){
-		uint32_t dutyd = TimerHw->ARR;
-		dutyd = (uint32_t) (*(fduty++) * dutyd);
-		*ccr = dutyd;
+		*ccr = (uint32_t) (*(fduty++) * dutyd);
 		if(sz){
 			result = ins->env->Barrier->wait(ins->uev_bar,osWaitForever);
+	//		result = ins->env->Sem->lock(ins->uev_sem,osWaitForever);
 		}
 	}
 	TimerHw->DIER &= ~TIM_DIER_UIE;
@@ -909,6 +911,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	env->Mtx->destroy(ins->mtx);
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
 	env->Barrier->destroy(ins->uev_bar);
+	env->Sem->destroy(ins->uev_sem);
 	while(chcnt--){
 		if(ins->iohandle[chcnt])          // free io resource
 			ins->iohandle[chcnt]->close(ins->iohandle[chcnt]);
@@ -1099,6 +1102,7 @@ static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_de
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)desc->_hw;
 	timerHw->SR &= ~TIM_SR_UIF;
 	return ins->env->Barrier->signal(ins->uev_bar,osOK) == osOK;
+//	return ins->env->Sem->unlock(ins->uev_sem) == osOK;
 }
 
 

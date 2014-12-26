@@ -495,13 +495,13 @@ __attribute__((section(".data"))) static tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = 
 				4            // afv
 		},
 		{
-				DMA_Str2,   // dma1_stream 2
-				DMA_Str7,   // dma1_stream 7
+				DMA_Str7,   // dma1_stream 2
+				DMA_Str2,   // dma1_stream 7
 				7,          // dma channel 7
 				7,          // dma channel 7
-				5,          // port B(1)
-				0,          // pin 10
-				1,          // pin 11
+				1,          // port B(1)
+				10,          // pin 10
+				11,          // pin 11
 				4           // afv
 		},
 		{

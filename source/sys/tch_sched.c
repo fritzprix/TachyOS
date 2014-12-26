@@ -18,10 +18,17 @@
 #include "tch_thread.h"
 #include "tch_mem.h"
 
+
+
+
 /* =================  private internal function declaration   ========================== */
 
 
-
+#if defined(__BUILD_TIME_NS)
+#define INIT_SYSTIME (__BUILD_TIME_NS / 1000000)
+#else
+#define INIT_SYSTIME 0
+#endif
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
 #define getListNode(th_id)    ((tch_lnode_t*) th_id)
 
@@ -62,7 +69,7 @@ void tch_schedInit(void* _systhread){
 	tch_listInit((tch_lnode_t*)&tch_readyQue);
 	tch_listInit((tch_lnode_t*)&tch_pendQue);
 
-	tch_systimeTick = 0;                        ///< main system timer tick
+	tch_systimeTick = INIT_SYSTIME;                        ///< main system timer tick
 	tch_port_enableSysTick();                    ///< enable system timer tick
 
 	//_sys->tch_api.pTask = tch_initpTask(_sys);
@@ -250,7 +257,7 @@ tch_threadId tch_schedGetRunningThread(){
 BOOL tch_schedIsPreemptable(tch_threadId nth){
 	if(!nth)
 		return FALSE;
-	return tch_schedReadyQRule(nth,tch_currentThread) || tch_currentThread->t_tslot > 10;
+	return tch_schedReadyQRule(nth,tch_currentThread) || ((tch_currentThread->t_tslot > 10) && (getThreadHeader(nth)->t_prior != Idle));
 }
 
 void tch_schedTerminateThread(tch_threadId thread,int result){

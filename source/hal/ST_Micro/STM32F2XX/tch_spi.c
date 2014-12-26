@@ -306,6 +306,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	SPI_setBusy(hnd);
 	if((evt.status = env->Mtx->unlock(hnd->mtx)) != osOK)
 		return evt.status;
+
 	spiHw->CR1 |= SPI_CR1_SPE;
 
 	while(sz--){

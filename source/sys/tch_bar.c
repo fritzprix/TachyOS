@@ -14,6 +14,7 @@
 #include "tch.h"
 #include "tch_kernel.h"
 #include "tch_bar.h"
+#include "tch_sched.h"
 #include "tch_mem.h"
 
 
@@ -79,7 +80,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 	if(tch_listIsEmpty(&bar->wq))
 		return osOK;
 	if(tch_port_isISR()){
-		tch_port_enterSvFromIsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osOK);
+		tch_schedResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,osOK,TRUE);
 		return osOK;
 	}
 	return tch_port_enterSvFromUsr(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,osOK);

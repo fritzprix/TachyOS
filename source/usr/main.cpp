@@ -29,7 +29,7 @@ float dutyArr[10] = {
 		0.7f,
 		0.8f,
 		0.9f,
-		0.99f
+		0.95f
 };
 
 const uint8_t vars[10] = {
@@ -87,7 +87,6 @@ int main(const tch* env) {
 
 	tch_pwmHandle* pwm = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,osWaitForever);
 	pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
-	pwm->close(pwm);
 
 	tch_iicCfg iicCfg;
 	env->Device->i2c->initCfg(&iicCfg);
@@ -99,7 +98,7 @@ int main(const tch* env) {
 	iicCfg.OpMode = IIC_OPMODE_FAST;
 
 
-	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc1,&iicCfg,osWaitForever,ActOnSleep);
+	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc2,&iicCfg,osWaitForever,ActOnSleep);
 
 	uint32_t loopcnt = 0;
 	uint8_t buf[10];
@@ -120,23 +119,22 @@ int main(const tch* env) {
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
 
 
-	while(1){
-		/*	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz);
-		 * 		 */
+	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,6,osWaitForever);
 		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
+
+		pwm->start(pwm);
+		pwm->write(pwm,1,dutyArr,10);
+		pwm->stop(pwm);
 /*
-		if((loopcnt++ % 10000) == 0){
+		if((loopcnt++ % 1000) == 0){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}*/
 		spi->write(spi,"Hello World,Im the main!!!",16);
-		/**
-		 *
-		 */
-/*		if((loopcnt % 10000) == 5000){
+/*		if((loopcnt % 1000) == 500){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
@@ -153,7 +151,8 @@ static DECLARE_THREADROUTINE(btnHandler){
 
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
-		env->Thread->sleep(0);
+		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
+		env->Thread->yield(0);
 	}
 
 	return osOK;
@@ -182,6 +181,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
+		env->Thread->yield(0);
 	}
 	return osOK;
 }

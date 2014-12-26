@@ -14,6 +14,7 @@
 
 
 
+#include "tch_rtc.h"
 #include "hal/tch_hal.h"
 
 
