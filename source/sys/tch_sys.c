@@ -208,6 +208,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	osEvent evt;
 	tch_sysTask* task = NULL;
 
+	tch_rtcHandle* rtc_handle = rtc->open(env,tch_systimeTick,UTC_0);
+
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
 		tch_kernel_errorHandler(TRUE,osErrorOS);

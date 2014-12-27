@@ -87,6 +87,7 @@ extern const tch_hal* Hal;
 
 
 extern tch_thread_header* tch_currentThread;
+extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue tch_procList;
 extern const tch* tch_rti;
 extern tch_mailqId sysTaskQ;

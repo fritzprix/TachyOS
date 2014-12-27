@@ -127,7 +127,6 @@ int main(const tch* env) {
 		pwm->start(pwm);
 		pwm->write(pwm,1,dutyArr,10);
 		pwm->stop(pwm);
-		env->Thread->yield(1000);
 		if((loopcnt++ % 1000) == 0){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
@@ -152,7 +151,6 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
-		env->Thread->yield(1000);
 	}
 
 	return osOK;
@@ -181,7 +179,6 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
-		env->Thread->yield(1000);
 	}
 	return osOK;
 }

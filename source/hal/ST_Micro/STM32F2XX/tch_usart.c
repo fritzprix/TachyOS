@@ -205,7 +205,6 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 	uhw->CR2 = (cfg->StopBit << USART_StopBit_Pos_CR2);  // set stop bit
 
 	tch_DmaCfg dmaCfg;
-	tch_lld_dma* DMA = (tch_lld_dma*)env->Device->dma;
 
 	uins->txCh.txDma = NULL;
 	uins->rxCh.rxDma = NULL;
@@ -225,7 +224,7 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->txCh.txDma = DMA->allocDma(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
+		uins->txCh.txDma = dma->allocDma(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
 		if(uins->txCh.txDma)
 			txDma = TRUE;
 	}else{
@@ -246,7 +245,7 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->rxCh.rxDma = DMA->allocDma(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
+		uins->rxCh.rxDma = dma->allocDma(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
 		if(uins->rxCh.rxDma)
 			rxDma = TRUE;
 	}else{
@@ -334,11 +333,11 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	env->Condv->destroy(ins->txCondv);
 
 	if(ins->txCh.txDma){
-		env->Device->dma->freeDma(ins->txCh.txDma);
+		dma->freeDma(ins->txCh.txDma);
 		env->MsgQ->destroy(ins->txCh.txQ);
 	}
 	if(ins->rxCh.rxDma){
-		env->Device->dma->freeDma(ins->rxCh.rxDma);
+		dma->freeDma(ins->rxCh.rxDma);
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
 	ins->ioHandle->close(ins->ioHandle);
@@ -489,7 +488,6 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 
 
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
-	tch_lld_dma* dma = (tch_lld_dma*) env->Device->dma;
 	tch_DmaReqDef req;
 	dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
 	req.MemInc = TRUE;
@@ -533,7 +531,6 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 		return result;
 
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
-	tch_lld_dma* dma = (tch_lld_dma*)env->Device->dma;
 	tch_DmaReqDef req;
 	dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
 	req.MemInc = TRUE;

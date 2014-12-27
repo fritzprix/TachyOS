@@ -64,15 +64,11 @@ struct tch_hal_t{
 #endif
 
 	const tch_lld_gpio*  gpio;
-	const tch_lld_dma*   dma;
-	const tch_lld_rtc*   rtc;
 	const tch_lld_timer* timer;
 };
 
-extern void __tch_stderr(const void*,size_t);
-extern void __tch_stdout(const void*,size_t);
-extern void __tch_stdin(void*,size_t);
-
+extern const tch_lld_rtc* rtc;
+extern const tch_lld_dma* dma;
 
 #if defined(__cplusplus)
 }

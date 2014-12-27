@@ -50,7 +50,7 @@ static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((alw
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
 static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
 
-static uint64_t tch_systimeTick;
+volatile uint64_t tch_systimeTick;
 tch_thread_header* tch_currentThread;
 
 

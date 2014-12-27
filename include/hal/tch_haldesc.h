@@ -119,6 +119,15 @@ typedef struct _tch_adc_descriptor {
 	IRQn_Type            irq;
 }tch_adc_descriptor;
 
+typedef struct _tch_rtc_descriptor {
+	void*               _hw;
+	void*               _handle;
+	volatile uint32_t*  _clkenr;
+	const uint32_t       clkmsk;
+	IRQn_Type            irq_0;
+	IRQn_Type            irq_1;
+}tch_rtc_descriptor;
+
 
 
 /////////////////////////////  Platform specific mapping  ////////////////////////////
