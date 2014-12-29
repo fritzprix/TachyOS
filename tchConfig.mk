@@ -60,21 +60,21 @@ FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F40_41xxx\
 
-### Open 427Z ###
-ARCH = ARM
-CPU = cortex-m4
-INSTR = thumb
-FPU = HALFSOFT
-HW_VENDOR = ST_Micro
-HW_PLF = STM32F427_437xx
+### Open 427Z ###\
+ARCH = ARM\
+CPU = cortex-m4\
+INSTR = thumb\
+FPU = HALFSOFT\
+HW_VENDOR = ST_Micro\
+HW_PLF = STM32F427_437xx\
 
-###\
-ARCH=ARM\
-CPU=cortex-m3\
-INSTR=thumb\
-FPU=SOFT\
-HW_VENDOR=ST_Micro\
-HW_PLF=STM32F2XX\
+###
+ARCH=ARM
+CPU=cortex-m3
+INSTR=thumb
+FPU=SOFT
+HW_VENDOR=ST_Micro
+HW_PLF=STM32F2XX
 
 
 

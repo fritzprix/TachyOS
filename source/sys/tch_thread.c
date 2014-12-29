@@ -155,7 +155,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
  *
  */
 static tch_threadId tch_threadSelf(){
-	return tch_schedGetRunningThread();
+	return (tch_threadId) tch_currentThread;
 }
 
 static tchStatus tch_threadSleep(uint32_t millisec){

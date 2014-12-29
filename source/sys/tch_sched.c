@@ -23,10 +23,7 @@
 
 /* =================  private internal function declaration   ========================== */
 
-
 #define getListNode(th_id)    ((tch_lnode_t*) th_id)
-
-
 
 /***
  *  Scheduling policy Implementation
@@ -41,8 +38,6 @@ static inline void tch_schedInitKernelThread(tch_threadId thr)__attribute__((alw
 
 
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
-static tch_thread_queue tch_pendQue;         ///< thread wait to become ready state after being suspended
-
 tch_thread_header* tch_currentThread;
 
 
@@ -59,10 +54,6 @@ void tch_schedInit(void* _systhread){
 	 *
 	 */
 	tch_listInit((tch_lnode_t*)&tch_readyQue);
-	tch_listInit((tch_lnode_t*)&tch_pendQue);
-
-
-	//_sys->tch_api.pTask = tch_initpTask(_sys);
 
 	tch_currentThread = _systhread;
 	tch_schedInitKernelThread(tch_currentThread);
@@ -206,28 +197,9 @@ void tch_schedTryPreemption(void){
 }
 
 
-
-
-tchStatus tch_schedCancelTimeout(tch_threadId thread){
-	if(!thread)
-		return osErrorParameter;
-	tch_genericQue_remove((tch_lnode_t*)&tch_pendQue,(tch_lnode_t*)thread);
-	getThreadHeader(thread)->t_to = 0;
-	tch_schedReadyThread(thread);
-	return osOK;
-}
-
-
-tch_threadId tch_schedGetRunningThread(){
-	return tch_currentThread;
-}
-
-
 BOOL tch_schedIsEmpty(){
 	return tch_listIsEmpty(&tch_readyQue);
 }
-
-
 
 BOOL tch_schedIsPreemptable(tch_threadId nth){
 	if(!nth)

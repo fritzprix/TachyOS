@@ -37,7 +37,6 @@
  * \brief
  */
 extern void tch_kernelInit(void* arg);
-extern void tch_kernelSysTick(uint64_t systick);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
