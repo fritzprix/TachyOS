@@ -138,6 +138,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
+		env->Thread->yield(1000);
 	}
 	return osOK;
 }
@@ -151,6 +152,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
+		env->Thread->yield(1000);
 	}
 
 	return osOK;
@@ -178,6 +180,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
+		env->Thread->yield(1000);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return osOK;

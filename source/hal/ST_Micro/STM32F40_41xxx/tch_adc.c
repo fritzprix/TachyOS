@@ -198,7 +198,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pAlign = DMA_DataAlign_Hword;
 		dmacfg.pBurstSize = DMA_Burst_Single;
 		dmacfg.pInc = TRUE;
-		ins->dma = env->Device->dma->allocDma(env,adcBs->dma,&dmacfg,timeout,popt);
+		ins->dma = dma->allocDma(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
 		// handle dma_not_used
 	}
@@ -255,7 +255,7 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 		ins->io_handle[ins->chcnt]->close(ins->io_handle[ins->chcnt]);
 	}
 	env->Mem->free(ins->io_handle);
-	env->Device->dma->freeDma(ins->dma);
+	dma->freeDma(ins->dma);
 	ins->timer->close(ins->timer);
 
 	if((result = env->Mtx->lock(ADC_StaticInstance.mtx,osWaitForever)) != osOK)
@@ -340,9 +340,9 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 	uint16_t* chnk = NULL;
 	while(convCnt--){
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,osWaitForever,NULL);
-		ins->env->Device->dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
+		dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
 		ins->timer->start(ins->timer);
-		ins->env->Device->dma->beginXfer(ins->dma,&dmaReq,0,&result);
+		dma->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk);

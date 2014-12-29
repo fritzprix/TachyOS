@@ -499,7 +499,6 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
-//	timerHw->CR1 |= TIM_CR1_CEN;              // enable counter
 
 	return (tch_pwmHandle*) ins;
 

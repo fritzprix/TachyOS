@@ -21,7 +21,11 @@
 extern "C"{
 #endif
 
-extern tch_systime_ix* tch_systimeInit(uint64_t timeInMills);
+extern tch_systime_ix* tch_systimeInit(const tch* env,uint64_t timeInMills);
+extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout);
+extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
+extern void tch_systimeTickHandler();
+extern BOOL tch_systimeHasPending();
 
 #if defined(__cplusplus)
 }

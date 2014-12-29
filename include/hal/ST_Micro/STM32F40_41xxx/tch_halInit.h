@@ -11,7 +11,7 @@
 #include "stm32f4xx.h"
 #include "tch_haldesc.h"
 
-__attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[] = {
+__attribute__((section(".data"))) static tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO] = {
 		{
 				GPIOA,
 				&RCC->AHB1ENR,
@@ -679,6 +679,16 @@ __attribute__((section(".data")))  static tch_adc_descriptor ADC_HWs[MFEATURE_AD
 				RCC_APB2RSTR_ADCRST,
 				ADC_IRQn
 		}
+};
+
+
+__attribute__((section(".data"))) static tch_rtc_descriptor RTC_HW = {
+		RTC,
+		NULL,
+		&RCC->BDCR,
+		RCC_BDCR_RTCEN,
+		RTC_WKUP_IRQn,
+		RTC_Alarm_IRQn
 };
 
 #endif /* TCH_HALOBJS_H_ */

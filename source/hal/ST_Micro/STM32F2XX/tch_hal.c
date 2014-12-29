@@ -26,6 +26,10 @@ const tch_hal* tch_kernel_initHAL(){
 	 */
 	SystemInit();
 
+	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
+	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
+
 	/***
 	 *  bind hal interface
 	 */
@@ -43,6 +47,45 @@ const tch_hal* tch_kernel_initHAL(){
 }
 
 
+void tch_hal_enableSystick(){
+	SysTick_Config(SYS_CLK / 1000);
+	NVIC_DisableIRQ(SysTick_IRQn);
+	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
+	NVIC_EnableIRQ(SysTick_IRQn);
+}
+
+void tch_hal_disableSystick(){
+	NVIC_DisableIRQ(SysTick_IRQn);
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+}
 
 
+void tch_hal_setSleepMode(tch_lplvl lplvl){
+	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
+	switch(lplvl){
+	case LP_LEVEL0:
+		break;
+	case LP_LEVEL1:
+		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+		PWR->CR |= PWR_CR_LPDS;
+		break;
+	case LP_LEVEL2:
+		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+		PWR->CR |= (PWR_CR_LPDS | PWR_CR_FPDS);
+		break;
+	}
+}
 
+void tch_hal_enterSleepMode(){
+	__DMB();
+	__ISB();
+	__WFI();
+	__DMB();
+	__ISB();
+}
+
+
+void SysTick_Handler(void){
+	tch_systimeTickHandler();
+}

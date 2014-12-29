@@ -28,15 +28,16 @@
 
 
 #define TCH_SYS_TASKQ_SZ                     (16)
-
+#define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
+#define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
 
 
 /*!
  * \brief
  */
 extern void tch_kernelInit(void* arg);
-extern void tch_kernelSysTick(void);
+extern void tch_kernelSysTick(uint64_t systick);
 extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();

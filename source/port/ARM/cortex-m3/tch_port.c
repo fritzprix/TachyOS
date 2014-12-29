@@ -72,20 +72,13 @@ BOOL tch_kernel_initPort(){
 
 	// set Handler Priority
 
-	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_SetPriority(SVCall_IRQn,HANDLER_SVC_PRIOR);
 	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
-	NVIC_EnableIRQ(SysTick_IRQn);
 	NVIC_EnableIRQ(SVCall_IRQn);
 	NVIC_EnableIRQ(PendSV_IRQn);
 
 
 	return TRUE;
-}
-
-
-void tch_port_enableSysTick(void){
-	SysTick_Config(SYS_CLK / 1000);
 }
 
 
@@ -261,9 +254,6 @@ void __pend_loop(void){
 	__WFI();
 }
 
-void SysTick_Handler(void){
-	tch_kernelSysTick();
-}
 
 
 void SVC_Handler(void){

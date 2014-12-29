@@ -55,11 +55,13 @@ extern tch_threadId tch_schedGetRunningThread();
  */
 extern void tch_schedReadyThread(tch_threadId thr_id);
 
+extern BOOL tch_schedIsEmpty();
+
 
 /**
  *  suspend thread for given amount of time
  */
-extern void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState);
+extern void tch_schedYieldThread(uint32_t timeout,tch_thread_state nextState);
 
 /**
  *
@@ -71,20 +73,11 @@ extern int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchSta
 extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
 
 
-/**
- *
- */
-extern tchStatus tch_schedCancelTimeout(tch_threadId thread);
-
 extern void tch_schedTerminateThread(tch_threadId thread, int result);
 extern void tch_schedDestroyThread(tch_threadId thread,int result);
 extern BOOL tch_schedLivenessChk(tch_threadId thread);
+extern void tch_schedTryPreemption(void);
 
-
-/***
- *  wait other thread is terminated
- */
-extern BOOL tch_schedJoin(tch_threadId thr_id);
 
 
 #endif /* TCH_SCHED_H_ */

@@ -27,14 +27,16 @@
 #include "tch_port.h"
 #include "tch_syscfg.h"
 #include "tch_thread.h"
+#include "tch_time.h"
 #include "tch_board.h"
-#include <time.h>
 
 
 
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
+static DECLARE_SYSTASK(kernelTaskHandler);
+#define SYSTSK_ID_SLEEP        ((int) -1)
 
 
 static tch RuntimeInterface;
@@ -71,6 +73,7 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MailQ = MailQ;
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
+
 
 	tch_listInit((tch_lnode_t*) &tch_procList);
 
@@ -208,11 +211,13 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	osEvent evt;
 	tch_sysTask* task = NULL;
 
-	tch_rtcHandle* rtc_handle = rtc->open(env,tch_systimeTick,UTC_0);
+	// bind kernel interface(s) which has hal dependency
+	RuntimeInterface.Timer = tch_systimeInit(&RuntimeInterface,tch_systimeTick);
 
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
 		tch_kernel_errorHandler(TRUE,osErrorOS);
+
 
 	// initialize sys thread mail box for task queueing
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
@@ -234,7 +239,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
-	idleThread = Thread->create(&thcfg,&RuntimeInterface);
+	idleThread = Thread->create(&thcfg,NULL);
 
 
 	if((!mainThread) || (!idleThread))
@@ -268,20 +273,29 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 static DECLARE_THREADROUTINE(idle){
-
+	tch_rtcHandle* rtc_handle = env->Thread->getArg();
 
 	while(TRUE){
 		// some function entering sleep mode
-		__DMB();
-		__ISB();
-		__WFI();
-		__DMB();
-		__ISB();
+		if((tch_currentThread->t_tslot > 10) && tch_schedIsEmpty() && tch_systimeHasPending())
+			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
+		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
 	}
 	return 0;
 }
 
+static DECLARE_SYSTASK(kernelTaskHandler){
+	switch(id){
+	case SYSTSK_ID_SLEEP:
+		tch_hal_disableSystick();
+		tch_hal_setSleepMode(LP_LEVEL1);
+		tch_hal_enterSleepMode();
+		tch_hal_setSleepMode(LP_LEVEL0);
+		tch_hal_enableSystick();
+		break;
+	}
+}
 
 
 void tch_kernel_faulthandle(int fault){

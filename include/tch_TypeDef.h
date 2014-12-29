@@ -9,6 +9,7 @@
 #define TCH_TYPEDEF_H_
 
 #include <stddef.h>
+#include <time.h>
 #include "tch_ptypes.h"
 
 #if defined(__cplusplus)

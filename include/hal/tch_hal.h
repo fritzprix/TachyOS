@@ -21,6 +21,11 @@ extern "C"{
 
 #include "tch_halcfg.h"
 
+typedef enum {
+	LP_LEVEL0 = ((uint8_t) 0),
+	LP_LEVEL1 = ((uint8_t) 1),
+	LP_LEVEL2 = ((uint8_t) 2)
+}tch_lplvl;
 
 #if MFEATURE_UART
 #include "tch_usart.h"
@@ -46,6 +51,8 @@ extern "C"{
 #include "tch_dma.h"
 
 
+
+
 struct tch_hal_t{
 #if MFEATURE_UART
 	const tch_lld_usart* usart;
@@ -69,6 +76,13 @@ struct tch_hal_t{
 
 extern const tch_lld_rtc* rtc;
 extern const tch_lld_dma* dma;
+
+extern void tch_hal_enableSystick();
+extern void tch_hal_disableSystick();
+
+extern void tch_hal_setSleepMode(tch_lplvl lplvl);
+extern void tch_hal_enterSleepMode();
+
 
 #if defined(__cplusplus)
 }

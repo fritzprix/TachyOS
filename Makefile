@@ -10,8 +10,8 @@ include COMMON.mk
 
 
 TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
-TIME_STAMP=$(shell date +%s%N)
-TIME_FLAG=__BUILD_TIME_NS=$(TIME_STAMP)
+TIME_STAMP=$(shell date +%s)
+TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
 
 LIBS=-lc_nano\
      -lg_nano\

@@ -16,7 +16,7 @@ extern "C" {
 // Static Initializer for List Node
 #define INIT_LIST   {NULL,NULL}
 // Decl for Compare Function for priority queue operation
-#define LIST_CMP_FN(fn) int fn(void* prior,void* post)
+#define DECLARE_COMPARE_FN(fn) int fn(void* prior,void* post)
 #define tch_listIsEmpty(lhead)   (((tch_lnode_t*)lhead)->next == NULL)
 
 typedef struct _tch_lnode_t tch_lnode_t;

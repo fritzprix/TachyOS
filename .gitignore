@@ -18,3 +18,5 @@
 *.hex
 
 *.map
+
+*.prefs

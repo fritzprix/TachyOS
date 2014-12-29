@@ -52,21 +52,19 @@ typedef struct tch_rtc_handle tch_rtcHandle;
 typedef uint32_t tch_alrId;
 
 
-
-
 struct tch_rtc_handle {
 	tchStatus (*close)(tch_rtcHandle* self);
-	tchStatus (*setTime)(tch_rtcHandle* self,time_t localtime);
-	time_t (*getTime)(tch_rtcHandle* self);
+	tchStatus (*setTime)(tch_rtcHandle* self,time_t gmt_epoch,tch_timezone tz,BOOL force);
+	time_t (*getTime)(tch_rtcHandle* self,struct tm* ltm);
 	tch_alrId (*setAlarm)(tch_rtcHandle* self,time_t alrtm);
 	tchStatus (*cancelAlarm)(tch_rtcHandle* self,tch_alrId alrm);
-	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint32_t periodInSec);
+	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec);
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
 	tchStatus (*waitUntilWakeup)(tch_rtcHandle* self);
 };
 
 typedef struct tch_lld_rtc {
-	tch_rtcHandle* (*open)(const tch* env,time_t lt,tch_timezone tz);
+	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
 }tch_lld_rtc;
 
 extern const tch_lld_rtc* tch_rtc_instance;

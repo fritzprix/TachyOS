@@ -173,7 +173,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		dmaCfg.pAlign = DMA_DataAlign_Byte;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->rxdma = env->Device->dma->allocDma(env,iicbs->rxdma,&dmaCfg,timeout,popt);
+		ins->rxdma = dma->allocDma(env,iicbs->rxdma,&dmaCfg,timeout,popt);
 	}
 
 	if(iicbs->txdma != DMA_NOT_USED){
@@ -188,7 +188,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		dmaCfg.pAlign = DMA_DataAlign_Byte;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->txdma = env->Device->dma->allocDma(env,iicbs->txdma,&dmaCfg,timeout,popt);
+		ins->txdma = dma->allocDma(env,iicbs->txdma,&dmaCfg,timeout,popt);
 	}
 
 	tch_GpioCfg iocfg;
@@ -309,8 +309,8 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
 	env->MsgQ->destroy(ins->mq);
-	env->Device->dma->freeDma(ins->rxdma);
-	env->Device->dma->freeDma(ins->txdma);
+	dma->freeDma(ins->rxdma);
+	dma->freeDma(ins->txdma);
 
 	*iicDesc->_rstr |= iicDesc->rstmsk;
 	*iicDesc->_clkenr &= ~iicDesc->clkmsk;
@@ -415,7 +415,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
 		txreq.PeriphInc = FALSE;
 		txreq.size = sz;
-		if(!ins->env->Device->dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL))
+		if(!dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL))
 			return osErrorResource;
 		iicHw->CR2 &= ~I2C_CR2_DMAEN;
 		evt = ins->env->MsgQ->get(ins->mq,osWaitForever);
@@ -515,7 +515,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 		rx_req.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
 		rx_req.PeriphInc = FALSE;
 		rx_req.size = sz;
-		if(!ins->env->Device->dma->beginXfer(ins->rxdma,&rx_req,osWaitForever,NULL))
+		if(!dma->beginXfer(ins->rxdma,&rx_req,osWaitForever,NULL))
 			return osErrorResource;
 		iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
 		iicHw->CR1 |= I2C_CR1_STOP;

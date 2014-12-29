@@ -117,7 +117,7 @@ struct _tch_bar_ix_t {
 
 
 struct _tch_systime_ix_t {
-	uint64_t (*setCurrentTimeMills)(uint64_t time);
+	void (*setCurrentTimeMills)(uint64_t* time);
 	uint64_t (*getCurrentTimeMills)();
 	uint64_t (*currentThreadTimeMills)();
 	uint64_t (*elapsedRealtime)();
