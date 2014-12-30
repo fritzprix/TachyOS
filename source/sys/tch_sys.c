@@ -42,9 +42,11 @@ static DECLARE_SYSTASK(kernelTaskHandler);
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
 
-tch_threadId mainThread = NULL;
-tch_threadId idleThread = NULL;
-tch_mailqId sysTaskQ;
+static tch_threadId mainThread = NULL;
+static tch_threadId idleThread = NULL;
+
+static tch_thread_queue tch_lpWaitQ;
+static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
 
 
@@ -76,6 +78,7 @@ void tch_kernelInit(void* arg){
 
 
 	tch_listInit((tch_lnode_t*) &tch_procList);
+	tch_listInit((tch_lnode_t*) &tch_lpWaitQ);
 
 	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
 	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
@@ -109,7 +112,7 @@ void tch_kernelInit(void* arg){
 
 
 
-void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
+void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_thread_header* cth = NULL;
 	tch_thread_header* nth = NULL;
 	tch_exc_stack* sp = NULL;
@@ -126,8 +129,11 @@ void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_THREAD_START:              // start thread first time
 		tch_schedStartThread((tch_threadId) arg1);
 		break;
+	case SV_THREAD_YIELD:
+		tch_schedSleepThread(arg1,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
+		break;
 	case SV_THREAD_SLEEP:
-		tch_schedSleepThread(arg1,SLEEP);    // put current thread in pending queue and will be waken up at given after given time duration is passed
+		tch_schedSuspendThread(&tch_lpWaitQ,osWaitForever);
 		break;
 	case SV_THREAD_JOIN:
 		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
@@ -212,7 +218,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tch_sysTask* task = NULL;
 
 	// bind kernel interface(s) which has hal dependency
-	RuntimeInterface.Timer = tch_systimeInit(&RuntimeInterface,tch_systimeTick);
+	RuntimeInterface.Timer = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
 
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
@@ -277,13 +283,19 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((tch_currentThread->t_tslot > 10) && tch_schedIsEmpty() && tch_systimeHasPending())
+		if((tch_currentThread->t_tslot > 10) && tch_schedIsEmpty()  && tch_systimeHasPending())
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
 	}
 	return 0;
 }
+
+
+void tch_kernelOnWakeup(){
+	tch_schedResumeM(&tch_lpWaitQ,SCHED_THREAD_ALL,osOK,TRUE);
+}
+
 
 static DECLARE_SYSTASK(kernelTaskHandler){
 	switch(id){

@@ -74,8 +74,8 @@ struct tch_hal_t{
 	const tch_lld_timer* timer;
 };
 
-extern const tch_lld_rtc* rtc;
-extern const tch_lld_dma* dma;
+extern const tch_lld_rtc* tch_rtc;
+extern const tch_lld_dma* tch_dma;
 
 extern void tch_hal_enableSystick();
 extern void tch_hal_disableSystick();

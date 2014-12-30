@@ -224,7 +224,7 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->txCh.txDma = dma->allocDma(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
+		uins->txCh.txDma = tch_dma->allocDma(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
 		if(uins->txCh.txDma)
 			txDma = TRUE;
 	}else{
@@ -245,7 +245,7 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->rxCh.rxDma = dma->allocDma(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
+		uins->rxCh.rxDma = tch_dma->allocDma(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
 		if(uins->rxCh.rxDma)
 			rxDma = TRUE;
 	}else{
@@ -333,11 +333,11 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	env->Condv->destroy(ins->txCondv);
 
 	if(ins->txCh.txDma){
-		dma->freeDma(ins->txCh.txDma);
+		tch_dma->freeDma(ins->txCh.txDma);
 		env->MsgQ->destroy(ins->txCh.txQ);
 	}
 	if(ins->rxCh.rxDma){
-		dma->freeDma(ins->rxCh.rxDma);
+		tch_dma->freeDma(ins->rxCh.rxDma);
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
 	ins->ioHandle->close(ins->ioHandle);
@@ -489,12 +489,12 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
 	tch_DmaReqDef req;
-	dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
+	tch_dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
 	req.MemInc = TRUE;
 	req.PeriphInc = FALSE;
 	while(!(uhw->SR & USART_SR_TC)) __NOP();
 	uhw->SR &= ~USART_SR_TC;    // clear tc
-	while(!dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
+	while(!tch_dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
 		if(result == osErrorResource){
 			return result;
 		}
@@ -532,10 +532,10 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
 	tch_DmaReqDef req;
-	dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
+	tch_dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
 	req.MemInc = TRUE;
 	req.PeriphInc = FALSE;
-	while(!dma->beginXfer(ins->rxCh.rxDma,&req,timeout,&result)){
+	while(!tch_dma->beginXfer(ins->rxCh.rxDma,&req,timeout,&result)){
 		if(result == osErrorResource)
 			return result;
 	}

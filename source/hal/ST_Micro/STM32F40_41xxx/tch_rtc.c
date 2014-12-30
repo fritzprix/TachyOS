@@ -97,7 +97,7 @@ __attribute__((section(".data"))) static tch_lld_rtc_prototype RTC_StaticInstanc
 };
 
 
-const tch_lld_rtc* rtc = (const tch_lld_rtc*) &RTC_StaticInstance;
+const tch_lld_rtc* tch_rtc = (const tch_lld_rtc*) &RTC_StaticInstance;
 
 
 

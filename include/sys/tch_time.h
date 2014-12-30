@@ -15,16 +15,16 @@
 #ifndef TCH_TIME_H_
 #define TCH_TIME_H_
 
-#include "tch_TypeDef.h"
 
 #if defined(__cplusplus)
 extern "C"{
 #endif
 
-extern tch_systime_ix* tch_systimeInit(const tch* env,uint64_t timeInMills);
+typedef void (*tch_wkup_handler)(void);
+
+extern tch_systime_ix* tch_systimeInit(const tch* env,time_t itm,tch_timezone itz,tch_wkup_handler wkup_handler);
 extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout);
 extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
-extern void tch_systimeTickHandler();
 extern BOOL tch_systimeHasPending();
 
 #if defined(__cplusplus)

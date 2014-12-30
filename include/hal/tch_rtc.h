@@ -15,8 +15,16 @@
 #ifndef TCH_RTC_H_
 #define TCH_RTC_H_
 
+
+
 #include "tch_TypeDef.h"
 #include <time.h>
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
+
+#define DECLARE_RTC_WKUP_FN(fn)           void fn(void)
 
 typedef enum {
 	UTC_N12 = ((int8_t) -12),
@@ -50,6 +58,7 @@ typedef enum {
 
 typedef struct tch_rtc_handle tch_rtcHandle;
 typedef uint32_t tch_alrId;
+typedef void (*tch_rtc_wkupHandler)(void);
 
 
 struct tch_rtc_handle {
@@ -58,15 +67,16 @@ struct tch_rtc_handle {
 	time_t (*getTime)(tch_rtcHandle* self,struct tm* ltm);
 	tch_alrId (*setAlarm)(tch_rtcHandle* self,time_t alrtm);
 	tchStatus (*cancelAlarm)(tch_rtcHandle* self,tch_alrId alrm);
-	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec);
+	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
-	tchStatus (*waitUntilWakeup)(tch_rtcHandle* self);
 };
 
 typedef struct tch_lld_rtc {
 	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
 }tch_lld_rtc;
 
-extern const tch_lld_rtc* tch_rtc_instance;
 
+#if defined(__cplusplus)
+}
+#endif
 #endif /* TCH_RTC_H_ */

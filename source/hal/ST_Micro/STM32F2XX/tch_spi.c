@@ -164,20 +164,20 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		dmaCfg.mInc = TRUE;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		hnd->rxCh.dma = dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
+		hnd->rxCh.dma = tch_dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
 		if(hnd->rxCh.dma)
 			rxDma = TRUE;
 
 		dmaCfg.Ch = spibs->txch;
 		dmaCfg.Dir = DMA_Dir_MemToPeriph;
-		hnd->txCh.dma = dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
+		hnd->txCh.dma = tch_dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
 		if(hnd->txCh.dma)
 			txDma = TRUE;
 	}
 
 	if(!rxDma || !txDma){
-		dma->freeDma(hnd->rxCh.dma);
-		dma->freeDma(hnd->txCh.dma);
+		tch_dma->freeDma(hnd->rxCh.dma);
+		tch_dma->freeDma(hnd->txCh.dma);
 		hnd->rxCh.mq = env->MsgQ->create(1);
 		hnd->txCh.mq = env->MsgQ->create(1);
 	}
@@ -191,13 +191,13 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 			hnd->iohandle->close(hnd->iohandle);
 		if(hnd->rxCh.dma){
 			if(rxDma)
-				dma->freeDma(hnd->rxCh.dma);
+				tch_dma->freeDma(hnd->rxCh.dma);
 			else
 				env->MsgQ->destroy(hnd->rxCh.mq);
 		}
 		if(hnd->txCh.dma){
 			if(txDma)
-				dma->freeDma(hnd->txCh.dma);
+				tch_dma->freeDma(hnd->txCh.dma);
 			else
 				env->MsgQ->destroy(hnd->txCh.mq);
 		}
@@ -367,14 +367,14 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result);
+	tch_dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result);
 
 	dmaReq.MemAddr[0] = (uaddr_t)wb;
 	dmaReq.MemInc = TRUE;
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	result = dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result);
+	result = tch_dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result);
 
 	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
 		return result;
@@ -410,8 +410,8 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
 
-	dma->freeDma(ins->rxCh.dma);
-	dma->freeDma(ins->txCh.dma);
+	tch_dma->freeDma(ins->rxCh.dma);
+	tch_dma->freeDma(ins->txCh.dma);
 	env->MsgQ->destroy(ins->rxCh.mq);
 	env->MsgQ->destroy(ins->txCh.mq);
 

@@ -14,16 +14,15 @@
 
 
 #include "tch_kernel.h"
+#include "tch_pmgr.h"
 #include "tch_time.h"
 #include "tch_list.h"
 
-#if !defined(__BUILD_TIME_EPOCH)
-#define __BUILD_TIME_EPOCH 0UL
-#endif
 
 static tch_rtcHandle* rtcHandle;
 static tch_lnode_t tch_systimeWaitQ;
 volatile uint64_t tch_systimeTick;
+static tch_wkup_handler tch_sysWkuphandler;
 
 
 
@@ -35,6 +34,7 @@ static uint64_t tch_systime_uptimeMills();
 
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
+static DECLARE_RTC_WKUP_FN(tch_systimeWkupHandler);
 
 __attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
 		tch_systime_setCurrentTimeMills,
@@ -45,14 +45,17 @@ __attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
 };
 
 
-tch_systime_ix* tch_systimeInit(const tch* env,uint64_t timeInMills){
+tch_systime_ix* tch_systimeInit(const tch* env,time_t init_tm,tch_timezone init_tz,tch_wkup_handler wkup_handler){
 
 	tch_hal_disableSystick();
 	tch_listInit(&tch_systimeWaitQ);
-	tch_systimeTick = __BUILD_TIME_EPOCH * 1000;
-	rtcHandle = rtc->open(env,__BUILD_TIME_EPOCH,UTC_P9);
+	rtcHandle = tch_rtc->open(env,init_tm,init_tz);
+	rtcHandle->enablePeriodicWakeup(rtcHandle,1,wkup_handler);
+	tch_sysWkuphandler = wkup_handler;
+	tch_systimeTick = 0;
 
 	tch_hal_enableSystick();
+
 	return &TIMER_StaticInstance;
 }
 
@@ -98,7 +101,7 @@ BOOL tch_systimeHasPending(){
 	return tch_listIsEmpty(&tch_systimeWaitQ);
 }
 
-void tch_systimeTickHandler(){
+void tch_KernelOnSystick(){
 	tch_thread_header* nth = NULL;
 	tch_systimeTick++;
 	tch_currentThread->t_tslot++;
@@ -118,5 +121,9 @@ void tch_systimeTickHandler(){
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule){
 	return getThreadHeader(prior)->t_to < getThreadHeader(post)->t_to;
+}
+
+static DECLARE_RTC_WKUP_FN(tch_systimeWkupHandler){
+	tch_kernelOnWakeup();
 }
 

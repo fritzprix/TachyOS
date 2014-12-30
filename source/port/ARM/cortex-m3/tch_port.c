@@ -258,7 +258,7 @@ void __pend_loop(void){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 
 /*

@@ -99,12 +99,13 @@ struct tch_thread_header_t {
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
-#define SV_THREAD_SLEEP                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
+#define SV_THREAD_YIELD                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
 #define SV_THREAD_JOIN                   ((uint32_t) 0x23)              ///< Supervisor call id for wait another thread is terminated
 #define SV_THREAD_SUSPEND                ((uint32_t) 0x24)
 #define SV_THREAD_RESUME                 ((uint32_t) 0x25)
 #define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
 #define SV_THREAD_DESTROY                ((uint32_t) 0x27)
+#define SV_THREAD_SLEEP                  ((uint32_t) 0x28)               ///< Supervisor call id to put thread in low power stand-by mode
 
 #define SV_MSGQ_PUT                      ((uint32_t) 0x2D)               ///< Supervisor call id to put msg to msgq
 #define SV_MSGQ_GET                      ((uint32_t) 0x2E)               ///< Supervisor call id to get msg from msgq

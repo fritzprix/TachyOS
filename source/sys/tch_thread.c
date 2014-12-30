@@ -39,7 +39,8 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
 static tchStatus tch_threadStart(tch_threadId thread);
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err);
 static tch_threadId tch_threadSelf();
-static tchStatus tch_threadSleep(uint32_t millisec);
+static tchStatus tch_threadSleep();
+static tchStatus tch_threadYield(uint32_t millisec);
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
@@ -54,6 +55,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadStart,
 		tch_threadTerminate,
 		tch_threadSelf,
+		tch_threadYield,
 		tch_threadSleep,
 		tch_threadJoin,
 		tch_threadSetPriority,
@@ -144,7 +146,6 @@ static tchStatus tch_threadStart(tch_threadId thread){
  */
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err);
@@ -158,12 +159,21 @@ static tch_threadId tch_threadSelf(){
 	return (tch_threadId) tch_currentThread;
 }
 
-static tchStatus tch_threadSleep(uint32_t millisec){
+static tchStatus tch_threadSleep(){
+	if(tch_port_isISR()){
+		return osErrorISR;
+	}else{
+		return tch_port_enterSv(SV_THREAD_SLEEP,0,0);
+	}
+}
+
+
+static tchStatus tch_threadYield(uint32_t millisec){
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,osErrorISR);
 		return osErrorISR;
 	}else{
-		return tch_port_enterSv(SV_THREAD_SLEEP,millisec,0);
+		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0);
 	}
 }
 

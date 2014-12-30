@@ -155,7 +155,7 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		0
 };
 
-const tch_lld_dma* dma = (tch_lld_dma*)&DMA_StaticInstance;
+const tch_lld_dma* tch_dma = (tch_lld_dma*)&DMA_StaticInstance;
 
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg){

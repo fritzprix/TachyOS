@@ -241,7 +241,6 @@ struct dma_cfg_t {
 	BOOL                   pInc;
 };
 
-extern const tch_lld_dma* tch_dma_instance;
 
 #if defined(__cplusplus)
 }

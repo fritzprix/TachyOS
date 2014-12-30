@@ -50,6 +50,7 @@ static DECLARE_THREADROUTINE(btnHandler);
 
 tch_threadId btnHandleThread;
 tch_threadId childId;
+
 int main(const tch* env) {
 
 
@@ -138,7 +139,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-		env->Thread->yield(1000);
+		env->Thread->sleep();
 	}
 	return osOK;
 }
@@ -152,7 +153,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
-		env->Thread->yield(1000);
+		env->Thread->sleep();
 	}
 
 	return osOK;
@@ -180,7 +181,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
-		env->Thread->yield(1000);
+		env->Thread->sleep();
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return osOK;

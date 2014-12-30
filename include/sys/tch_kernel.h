@@ -27,6 +27,10 @@
 #include "tch_hal.h"
 
 
+#if !defined(__BUILD_TIME_EPOCH)
+#define __BUILD_TIME_EPOCH 0UL
+#endif
+
 #define TCH_SYS_TASKQ_SZ                     (16)
 #define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
 #define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
@@ -37,14 +41,20 @@
  * \brief
  */
 extern void tch_kernelInit(void* arg);
-extern void tch_kernelSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
+extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
+extern void tch_KernelOnSystick();
+extern void tch_kernelOnWakeup();
+
+
+
 extern const tch_hal* tch_kernel_initHAL();
 extern BOOL tch_kernel_initPort();
 extern tchStatus tch_kernel_initCrt0(tch* env);
-extern uint32_t tch_kHeapAvail(void);
-extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((naked));
+
+extern uint32_t tch_kHeapAvail(void);
+extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 
 
 
@@ -69,7 +79,6 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
  * - are bound statically in compile time
  */
 extern const tch_thread_ix* Thread;
-extern const tch_systime_ix* Timer;
 extern const tch_condv_ix* Condv;
 extern const tch_mtx_ix* Mtx;
 extern const tch_semaph_ix* Sem;
@@ -82,6 +91,7 @@ extern const tch_mem_ix* kMem;
 extern const tch_mem_ix* shMem;
 extern const tch_ustdlib_ix* uStdLib;
 extern const tch_event_ix* Event;
+
 extern const tch_hal* Hal;
 
 
@@ -90,7 +100,6 @@ extern tch_thread_header* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue tch_procList;
 extern const tch* tch_rti;
-extern tch_mailqId sysTaskQ;
 extern tch_memId sharedMem;
 
 
