@@ -82,6 +82,8 @@ extern void tch_hal_disableSystick();
 
 extern void tch_hal_setSleepMode(tch_lplvl lplvl);
 extern void tch_hal_enterSleepMode();
+extern void tch_hal_suspendSysClock();
+extern void tch_hal_resumeSysClock();
 
 
 #if defined(__cplusplus)

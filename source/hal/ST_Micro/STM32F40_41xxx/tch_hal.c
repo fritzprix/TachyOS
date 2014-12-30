@@ -61,7 +61,7 @@ void tch_hal_disableSystick(){
 
 
 void tch_hal_setSleepMode(tch_lplvl lplvl){
-	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
 	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
 	switch(lplvl){
 	case LP_LEVEL0:
@@ -87,5 +87,5 @@ void tch_hal_enterSleepMode(){
 
 
 void SysTick_Handler(void){
-	tch_systimeTickHandler();
+	tch_KernelOnSystick();
 }

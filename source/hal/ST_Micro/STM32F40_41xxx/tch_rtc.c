@@ -47,7 +47,7 @@
 
 typedef struct tch_lld_rtc_prototype {
 	tch_lld_rtc                           pix;
-	void*                                 occp;
+	void*                                 _handle;
 	tch_mtxId                             mtx;
 	tch_condvId                           condv;
 } tch_lld_rtc_prototype;
@@ -56,22 +56,9 @@ typedef struct tch_rtc_handle_prototype_t {
 	tch_rtcHandle                         pix;
 	uint32_t                              status;
 	tch_mtxId                             mtx;
-	tch_barId                             wkup_barrier;
 	const tch*                            env;
+	tch_rtc_wkupHandler                   wkup_handler;
 }tch_rtc_handle_prototype;
-
-struct tch_tm {
-	  uint8_t	tm_sec;
-	  uint8_t	tm_min;
-	  uint8_t	tm_hour;
-	  uint8_t	tm_mday;
-	  uint8_t	tm_mon;
-	  uint32_t	tm_year;
-	  uint8_t	tm_wday;
-	  uint16_t	tm_yday;
-}__attribute__((packed));
-
-
 
 
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t lt,tch_timezone tz);
@@ -81,9 +68,8 @@ static tchStatus tch_rtcSetTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone t
 static time_t tch_rtcGetTime(tch_rtcHandle* self,struct tm* ltm);
 static tch_alrId tch_rtcSetAlarm(tch_rtcHandle* self,time_t alrtm);
 static tchStatus tch_rtcCancelAlarm(tch_rtcHandle* self,tch_alrId alrm);
-static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec);
+static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self);
-static tchStatus tch_rtcWaitUntilWakeup(tch_rtcHandle* self);
 
 
 
@@ -91,7 +77,7 @@ __attribute__((section(".data"))) static tch_lld_rtc_prototype RTC_StaticInstanc
 		{
 				tch_rtcOpen
 		},
-		0,
+		NULL,
 		NULL,
 		NULL
 };
@@ -104,6 +90,10 @@ const tch_lld_rtc* tch_rtc = (const tch_lld_rtc*) &RTC_StaticInstance;
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone tz){
 	tch_rtc_handle_prototype* ins = NULL;
 
+#if DBG
+	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
+#endif
+
 
 	if(!RTC_StaticInstance.condv)
 		RTC_StaticInstance.condv = env->Condv->create();
@@ -113,12 +103,12 @@ static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone t
 	if(env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != osOK)
 		return NULL;
 
-	while(RTC_StaticInstance.occp){
+	while(RTC_StaticInstance._handle){
 		if(env->Condv->wait(RTC_StaticInstance.condv,RTC_StaticInstance.mtx,osWaitForever) != osOK)
 			return NULL;
 	}
 
-	RTC_StaticInstance.occp = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
+	RTC_StaticInstance._handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
 	if(env->Mtx->unlock(RTC_StaticInstance.mtx) != osOK)
 		return NULL;
 	env->uStdLib->string->memset(ins,0,sizeof(tch_rtc_handle_prototype));
@@ -149,7 +139,6 @@ static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone t
 
 
 	ins->mtx = env->Mtx->create();
-	ins->wkup_barrier = env->Barrier->create();
 	ins->pix.cancelAlarm = tch_rtcCancelAlarm;
 	ins->pix.close = tch_rtcClose;
 	ins->pix.disablePeriodicWakeup = tch_rtcDisablePeriodicWakeup;
@@ -157,7 +146,6 @@ static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone t
 	ins->pix.getTime = tch_rtcGetTime;
 	ins->pix.setTime = tch_rtcSetTime;
 	ins->pix.setAlarm = tch_rtcSetAlarm;
-	ins->pix.waitUntilWakeup = tch_rtcWaitUntilWakeup;
 
 	ins->env = env;
 	tch_rtcValidate(ins);
@@ -177,21 +165,26 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	if(!tch_rtcIsValid(ins))
 		return osErrorParameter;
 
+	tch_rtcDisablePeriodicWakeup(self);
+
 	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
 		return osErrorResource;
 	tch_rtcInvalidate(ins);
 	ins->env->Mtx->destroy(ins->mtx);
-	ins->env->Barrier->destroy(ins->wkup_barrier);
 
 	if(ins->env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != osOK)
 		return osErrorResource;
 	NVIC_DisableIRQ(RTC_HW.irq_0);
 	NVIC_DisableIRQ(RTC_HW.irq_1);
 
+	RCC->BDCR |= RCC_BDCR_BDRST;
+	RCC->BDCR &= RCC_BDCR_BDRST;
+	RCC->BDCR &= ~RCC_BDCR_RTCEN;
+
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
 	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
 	RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
-	RTC_StaticInstance.occp = 0;
+	RTC_StaticInstance._handle = 0;
 	ins->env->Condv->wakeAll(RTC_StaticInstance.condv);
 	ins->env->Mtx->unlock(RTC_StaticInstance.mtx);
 	ins->env->Mem->free(ins);
@@ -256,7 +249,7 @@ static tchStatus tch_rtcCancelAlarm(tch_rtcHandle* self,tch_alrId alrm){
 
 }
 
-static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec){
+static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler wkup_handler){
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
 		return osErrorParameter;
@@ -265,6 +258,8 @@ static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t period
 	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
 		return osErrorResource;
 
+	EXTI->IMR |= (1 << 22);
+	EXTI->RTSR |= (1 << 22);
 	RTC->CR &= ~(7 | RTC_CR_WUTE); // clear wuclk
 	while(!(RTC->ISR & RTC_ISR_WUTWF))
 		/*NOP*/;
@@ -273,8 +268,7 @@ static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t period
 	RTC->CR |= RTC_CR_WUTIE;
 	RTC->CR |= RTC_CR_WUTE;
 	RTC->ISR &= ~RTC_ISR_WUTF;
-
-
+	ins->wkup_handler = wkup_handler;
 
 	NVIC_SetPriority(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(RTC_WKUP_IRQn);
@@ -297,23 +291,14 @@ static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self){
 	RTC->CR |= 0;  // set rtc / 16 : 2048 Hz
 	RTC->CR &= ~RTC_CR_WUTE;
 	RTC->CR &= ~RTC_CR_WUTIE;
+	EXTI->IMR &= ~(1 << 22);
+	EXTI->RTSR &= ~(1 << 22);
+	ins->wkup_handler = NULL;
 
 	NVIC_DisableIRQ(RTC_WKUP_IRQn);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 
-}
-
-static tchStatus tch_rtcWaitUntilWakeup(tch_rtcHandle* self){
-	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
-	tchStatus result = osOK;
-	if(!ins)
-		return osErrorParameter;
-	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
-	if((result = ins->env->Barrier->wait(ins->wkup_barrier,osWaitForever)) != osOK)
-		return result;
-	return osOK;
 }
 
 
@@ -322,11 +307,15 @@ void RTC_Alarm_IRQHandler(){
 }
 
 void RTC_WKUP_IRQHandler(){
-	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*)RTC_StaticInstance.occp;
-	RTC->ISR &= ~RTC_ISR_WUTF;
+	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*)RTC_StaticInstance._handle;
 	if(!ins)
 		return;
 	if(!tch_rtcIsValid(ins))
 		return;
-	ins->env->Barrier->signal(ins->wkup_barrier,osOK);
+	if(ins->wkup_handler)
+		ins->wkup_handler();
+	EXTI->PR |= (1 << 22);
+	RTC->ISR &= ~RTC_ISR_WUTF;
+	PWR->CR |= PWR_CR_CWUF;
+
 }

@@ -302,7 +302,9 @@ static DECLARE_SYSTASK(kernelTaskHandler){
 	case SYSTSK_ID_SLEEP:
 		tch_hal_disableSystick();
 		tch_hal_setSleepMode(LP_LEVEL1);
+		tch_hal_suspendSysClock();
 		tch_hal_enterSleepMode();
+		tch_hal_resumeSysClock();
 		tch_hal_setSleepMode(LP_LEVEL0);
 		tch_hal_enableSystick();
 		break;
