@@ -85,6 +85,28 @@ void tch_hal_enterSleepMode(){
 	__ISB();
 }
 
+void tch_hal_suspendSysClock(){
+
+}
+
+void tch_hal_resumeSysClock(){
+	uint32_t tmp = 0;
+	RCC->CR |= RCC_CR_HSEON;
+	while(!(RCC->CR & RCC_CR_HSERDY))
+		__NOP();
+
+	RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;
+	RCC->CR |= RCC_CR_PLLON;
+	while(!(RCC->CR & RCC_CR_PLLRDY))
+		__NOP();
+	tmp = RCC->CFGR;
+	tmp &= ~RCC_CFGR_SW;
+	tmp |= RCC_CFGR_SW_PLL;
+	RCC->CFGR = tmp;
+	while((RCC->CFGR & RCC_CFGR_SWS_PLL) != RCC_CFGR_SWS_PLL)
+		__NOP();
+}
+
 
 void SysTick_Handler(void){
 	tch_KernelOnSystick();

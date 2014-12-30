@@ -7,8 +7,8 @@ include tchConfig.mk
 # Tachyos Src Tree Structure
 ROOT_DIR= $(CURDIR)
 ifeq ($(PUBLISH_TYPE),)
-#	PUBLISH_TYPE=Release
-	PUBLISH_TYPE=Debug
+	PUBLISH_TYPE=Release
+#	PUBLISH_TYPE=Debug
 endif
 
 ifeq ($(GEN_DIR),)
