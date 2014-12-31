@@ -218,7 +218,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tch_sysTask* task = NULL;
 
 	// bind kernel interface(s) which has hal dependency
-	RuntimeInterface.Timer = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
+	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
 
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)

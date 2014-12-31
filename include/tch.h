@@ -118,10 +118,9 @@ struct _tch_bar_ix_t {
 
 
 struct _tch_systime_ix_t {
-	void (*setCurrentTimeMills)(uint64_t* time);
+	tchStatus (*getLocaltime)(struct tm* tm);
+	tchStatus (*setLocaltime)(const struct tm* tm,const tch_timezone tz);
 	uint64_t (*getCurrentTimeMills)();
-	uint64_t (*currentThreadTimeMills)();
-	uint64_t (*elapsedRealtime)();
 	uint64_t (*uptimeMills)();
 };
 

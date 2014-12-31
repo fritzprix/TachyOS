@@ -24,7 +24,6 @@ const tch_hal* tch_kernel_initHAL(){
 	/***
 	 *  initialize clock subsystem
 	 */
-	SystemInit();
 
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;

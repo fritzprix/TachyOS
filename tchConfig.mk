@@ -5,6 +5,14 @@
 
 
 #### initialize Configuartion into default value ####
+
+
+ifeq ($(PUBLISH_TYPE),)
+	PUBLISH_TYPE=Release
+#	PUBLISH_TYPE=Debug
+endif
+
+
 ifeq ($(MAJOR_VER),)
 	MAJOR_VER=0
 endif
@@ -52,13 +60,13 @@ endif
 
 
 
-### Open 407Z ###\
-ARCH = ARM\
-CPU = cortex-m4\
-INSTR = thumb\
-FPU = HALFSOFT\
-HW_VENDOR = ST_Micro\
-HW_PLF = STM32F40_41xxx\
+### Open 407Z ###
+ARCH = ARM
+CPU = cortex-m4
+INSTR = thumb
+FPU = HALFSOFT
+HW_VENDOR = ST_Micro
+HW_PLF = STM32F40_41xxx
 
 ### Open 427Z ###\
 ARCH = ARM\
@@ -68,13 +76,13 @@ FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F427_437xx\
 
-###
-ARCH=ARM
-CPU=cortex-m3
-INSTR=thumb
-FPU=SOFT
-HW_VENDOR=ST_Micro
-HW_PLF=STM32F2XX
+###\
+ARCH=ARM\
+CPU=cortex-m3\
+INSTR=thumb\
+FPU=SOFT\
+HW_VENDOR=ST_Micro\
+HW_PLF=STM32F2XX\
 
 
 

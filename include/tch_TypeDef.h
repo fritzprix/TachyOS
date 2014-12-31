@@ -36,7 +36,7 @@ typedef struct _tch_event_ix_t tch_event_ix;
 
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
-	const tch_systime_ix* Timer;
+	const tch_systime_ix* Time;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
 	const tch_semaph_ix* Sem;
@@ -70,6 +70,35 @@ typedef enum  {
   os_status_reserved      =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
+typedef enum {
+	UTC_N12 = ((int8_t) -12),
+	UTC_N11 = ((int8_t) -11),
+	UTC_N10 = ((int8_t) -10),
+	UTC_N9 =  ((int8_t) -9),
+	UTC_N8 =  ((int8_t) -8),
+	UTC_N7 =  ((int8_t) -7),
+	UTC_N6 =  ((int8_t) -6),
+	UTC_N5 =  ((int8_t) -5),
+	UTC_N4 =  ((int8_t) -4),
+	UTC_N3 =  ((int8_t) -3),
+	UTC_N2 =  ((int8_t) -2),
+	UTC_N1 =  ((int8_t) -1),
+	UTC_0 =   ((int8_t) 0),
+	UTC_P1 =  ((int8_t) 1),
+	UTC_P2 =  ((int8_t) 2),
+	UTC_P3 =  ((int8_t) 3),
+	UTC_P4 =  ((int8_t) 4),
+	UTC_P5 =  ((int8_t) 5),
+	UTC_P6 =  ((int8_t) 6),
+	UTC_P7 =  ((int8_t) 7),
+	UTC_P8 =  ((int8_t) 8),
+	UTC_P9 =  ((int8_t) 9),
+	UTC_P10 = ((int8_t) 10),
+	UTC_P11 = ((int8_t) 11),
+	UTC_P12 = ((int8_t) 12),
+	UTC_P13 = ((int8_t) 13),
+	UTC_P14 = ((int8_t) 14)
+}tch_timezone;
 
 
 

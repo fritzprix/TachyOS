@@ -24,12 +24,15 @@ static tch_lnode_t tch_systimeWaitQ;
 volatile uint64_t tch_systimeTick;
 static tch_wkup_handler tch_sysWkuphandler;
 
+/*
+ *
+	tchStatus (*getLocaltime)(struct tm* tm);
+	tchStatus (*setLocaltime)(const struct tm* tm,const tch_timezone tz);
+ */
 
-
-static uint64_t tch_systime_setCurrentTimeMills(uint64_t time);
+static tchStatus tch_systime_getLocalTime(struct tm* dest_tm);
+static tchStatus tch_systime_setLocalTime(const struct tm* time,tch_timezone ltz);
 static uint64_t tch_systime_getCurrentTimeMills();
-static uint64_t tch_systime_currentThreadTimeMills();
-static uint64_t tch_systime_elapsedRealtime();
 static uint64_t tch_systime_uptimeMills();
 
 
@@ -37,10 +40,9 @@ static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
 static DECLARE_RTC_WKUP_FN(tch_systimeWkupHandler);
 
 __attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
-		tch_systime_setCurrentTimeMills,
+		tch_systime_getLocalTime,
+		tch_systime_setLocalTime,
 		tch_systime_getCurrentTimeMills,
-		tch_systime_currentThreadTimeMills,
-		tch_systime_elapsedRealtime,
 		tch_systime_uptimeMills
 };
 
@@ -75,21 +77,26 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread){
 	return osOK;
 }
 
+static tchStatus tch_systime_getLocalTime(struct tm* dest_tm){
+	if(!rtcHandle)
+		return osErrorResource;
+	if(!dest_tm)
+		return osErrorParameter;
+	return rtcHandle->getTime(rtcHandle,dest_tm);
+}
 
 
-static uint64_t tch_systime_setCurrentTimeMills(uint64_t time){
-
+static tchStatus tch_systime_setLocalTime(const struct tm* time,tch_timezone ltz){
+	time_t tm;
+	if(!rtcHandle)
+		return osErrorResource;
+	if(!time)
+		return osErrorParameter;
+	tm = mktime(time);
+	return rtcHandle->setTime(rtcHandle,tm,ltz,TRUE);
 }
 
 static uint64_t tch_systime_getCurrentTimeMills(){
-
-}
-
-static uint64_t tch_systime_currentThreadTimeMills(){
-
-}
-
-static uint64_t tch_systime_elapsedRealtime(){
 
 }
 

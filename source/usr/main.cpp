@@ -163,6 +163,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 static DECLARE_THREADROUTINE(childThreadRoutine){
 	tch_spiHandle* spi = (tch_spiHandle*)  env->Thread->getArg();
 	tch_mailqId adcReadQ = env->MailQ->create(100,2);
+	struct tm ltm;
 	osEvent evt;
 	env->uStdLib->string->memset(&evt,0,sizeof(osEvent));
 	tch_adcCfg adccfg;
@@ -171,6 +172,8 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	adccfg.SampleFreq = 10000;
 	adccfg.SampleHold = ADC_SampleHold_Short;
 	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch1);
+
+	time_t lt = 0;
 
 	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,osWaitForever);
 
@@ -181,6 +184,9 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		if(evt.status == osEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
+
+		env->Time->getLocaltime(&ltm);
+		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
 		env->Thread->sleep();
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
