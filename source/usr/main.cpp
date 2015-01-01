@@ -173,7 +173,6 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	adccfg.SampleHold = ADC_SampleHold_Short;
 	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch1);
 
-	time_t lt = 0;
 
 	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,osWaitForever);
 

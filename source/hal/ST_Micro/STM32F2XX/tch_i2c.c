@@ -531,11 +531,19 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,s
 }
 
 static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void* wb,size_t sz){
-
+	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
+	if(!ins)
+		return osErrorParameter;
+	if(!tch_IICisValid(ins))
+		return osErrorParameter;
 }
 
 static tchStatus tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,size_t sz,uint32_t timeout){
-
+	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
+	if(!ins)
+		return osErrorParameter;
+	if(!tch_IICisValid(ins))
+		return osErrorParameter;
 }
 
 static void tch_IICValidate(tch_iic_handle_prototype* hnd){
