@@ -48,7 +48,7 @@ tchStatus tch_kernel_initCrt0(tch* env){
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
 	stdio_port = env->Device->usart->allocUart(env,tch_USART0,&ucfg,osWaitForever,ActOnSleep);
-	return osOK;
+	return tchOK;
 
 }
 
@@ -59,11 +59,11 @@ uint32_t tch_kHeapAvail(void){
 tchStatus tch_kHeapFreeAll(tch_threadId thread){
 	tch_thread_header* th_hdr = (tch_thread_header*) thread;
 	if(!Thread->isRoot())
-		return osErrorParameter;
+		return tchErrorParameter;
 	uMem->forceRelease(thread);
 	shMem->forceRelease(thread);
 	free(th_hdr->t_chks);
-	return osOK;
+	return tchOK;
 }
 
 
@@ -75,7 +75,7 @@ void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	prev_heap_end = heap_end;
 	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
 		if(!tch_port_isISR()){
-			Thread->terminate(tch_currentThread,osErrorNoMemory);
+			Thread->terminate(tch_currentThread,tchErrorNoMemory);
 		}
 		return NULL;
 	}

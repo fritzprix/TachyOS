@@ -57,56 +57,56 @@ static tch_semId tch_semaphore_create(uint32_t count){
 
 static tchStatus tch_semaphore_wait(tch_semId id,uint32_t timeout){
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 	if(!tch_semaphoreIsValid(id))
-		return osErrorResource;
+		return tchErrorResource;
 	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	while(!tch_port_exclusiveCompareDecrement((int*)&sem->count,0)){                // try to exclusively decrement count value
 		result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&sem->wq,timeout);
 		if(!tch_semaphoreIsValid(id))                                                            // validity of semaphore is double-checked because waiting thread is siganled and in ready state before semaphore destroyed
-			return osErrorResource;
+			return tchErrorResource;
 		switch(result){
-		case osEventTimeout:                                   // if timeout expires, sv call will return osEventTimeout
-			return osErrorTimeoutResource;
-		case osErrorResource:                                  // if semaphore destroyed sv call will return osErrorResource
-			return osErrorResource;
+		case tchEventTimeout:                                   // if timeout expires, sv call will return tchEventTimeout
+			return tchErrorTimeoutResource;
+		case tchErrorResource:                                  // if semaphore destroyed sv call will return tchErrorResource
+			return tchErrorResource;
 		}
 	}
-	if(result == osOK)
-		return osOK;
-	return osErrorOS;                      // unreachable code
+	if(result == tchOK)
+		return tchOK;
+	return tchErrorOS;                      // unreachable code
 }
 
 static tchStatus tch_semaphore_unlock(tch_semId id){
 	if(!tch_semaphoreIsValid(id))
-		return osErrorResource;
+		return tchErrorResource;
 	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,osOK,TRUE);
+			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
-			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osOK);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchOK);
 	}
-	return osOK;
+	return tchOK;
 }
 
 static tchStatus tch_semaphore_destroy(tch_semId id){
 	if(!tch_semaphoreIsValid(id))
-		return osErrorParameter;
+		return tchErrorParameter;
 	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	sem->state = 0;
 	sem->count = 0;
 	tch_semaphoreInvalidate(id);
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,osOK,TRUE);
+			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
-			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,osErrorResource);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchErrorResource);
 	}
 	shMem->free(sem);
-	return  osOK;
+	return  tchOK;
 }
 
 

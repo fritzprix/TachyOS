@@ -104,23 +104,23 @@ void* tch_mpool_calloc(tch_mpoolId mpool){
 tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
 	tch_mpool_cb* mpcb = (tch_mpool_cb*) mpool;
 	if((block < mpcb->bpool) || (block > mpcb->bend))
-		return osErrorParameter;
+		return tchErrorParameter;
 	tch_port_kernel_lock();
 	*((void**)block) = mpcb->bfree;
 	mpcb->bfree = block;
 	tch_port_kernel_unlock();
-	return osOK;
+	return tchOK;
 }
 
 
 static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
 	if(!tch_mpoolIsValid(mpool)){
-		return osErrorParameter;
+		return tchErrorParameter;
 	}
 	tch_mpoolInvalidate(mpool);
 	tch_mpool_cb* mcb = (tch_mpool_cb*) mpool;
 	shMem->free(mcb);
-	return osOK;
+	return tchOK;
 }
 
 

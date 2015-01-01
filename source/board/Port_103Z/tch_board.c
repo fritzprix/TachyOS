@@ -9,5 +9,9 @@
 
 
 tchStatus tch_boardInit(const tch* env){
-	return osOK;
+	return tchOK;
+}
+
+tchStatus tch_boardDeinit(const tch* env){
+	return tchOK;
 }

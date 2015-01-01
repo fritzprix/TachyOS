@@ -75,10 +75,10 @@ void tch_schedStartThread(tch_threadId nth){
 		tch_currentThread = nth;
 		getThreadHeader(tch_currentThread)->t_state = RUNNING;
 		getThreadHeader(getListNode(tch_currentThread)->prev)->t_state = READY;
-		tch_port_jmpToKernelModeThread((uaddr_t) tch_port_switchContext,(uword_t)nth,(uword_t) getListNode(nth)->prev,osOK);
+		tch_port_jmpToKernelModeThread((uaddr_t) tch_port_switchContext,(uword_t)nth,(uword_t) getListNode(nth)->prev,tchOK);
 	}else{
 		getThreadHeader(nth)->t_state = READY;
-		tch_kernelSetResult(tch_currentThread,osOK);
+		tch_kernelSetResult(tch_currentThread,tchOK);
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(nth),tch_schedReadyQRule);
 	}
 }
@@ -103,8 +103,8 @@ void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState){
 	tch_systimeSetTimeout(tch_currentThread,timeout);
 	nth = tch_listDequeue((tch_lnode_t*)&tch_readyQue);
 	if(!nth)
-		tch_kernel_errorHandler(FALSE,osErrorOS);
-	tch_kernelSetResult(tch_currentThread,osEventTimeout);
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
+	tch_kernelSetResult(tch_currentThread,tchEventTimeout);
 	getListNode(nth)->prev = (tch_lnode_t*) tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = nextState;
@@ -121,7 +121,7 @@ void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout){
 	tch_listEnqueuePriority((tch_lnode_t*) wq,&getThreadHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
 	nth = tch_listDequeue((tch_lnode_t*) &tch_readyQue);
 	if(!nth)
-		tch_kernel_errorHandler(FALSE,osErrorOS);
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	getListNode(nth)->prev = (tch_lnode_t*) tch_currentThread;
 	getThreadHeader(nth)->t_state = RUNNING;
 	getThreadHeader(tch_currentThread)->t_state = WAIT;
@@ -239,7 +239,7 @@ BOOL tch_schedLivenessChk(tch_threadId thread){
 		return FALSE;
 	}
 	if((*getThreadHeader(thread)->t_chks != (uint32_t)tch_noop_destr)){  // stack overflow
-		getThreadHeader(thread)->t_reent._errno = osErrorNoMemory;
+		getThreadHeader(thread)->t_reent._errno = tchErrorNoMemory;
 		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,getThreadHeader(thread)->t_reent._errno,0);
 		return FALSE;
 	}

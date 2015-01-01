@@ -33,14 +33,14 @@ tchStatus gpio_performTest(const tch* api){
 	api->Thread->start(evconsThread);
 
 
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 
-	if((result = api->Thread->join(evgenThread,osWaitForever)) != osOK)
-		return osErrorOS;
-	if((result = api->Thread->join(evconsThread,osWaitForever)) != osOK)
-		return osErrorOS;
+	if((result = api->Thread->join(evgenThread,osWaitForever)) != tchOK)
+		return tchErrorOS;
+	if((result = api->Thread->join(evconsThread,osWaitForever)) != tchOK)
+		return tchErrorOS;
 
-	return osOK;
+	return tchOK;
 }
 
 
@@ -60,7 +60,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 	env->Thread->yield(50);
 	out->out(out,outp,bClear);
 //	out->close(out);
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(evconsRoutine){
@@ -82,11 +82,11 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	in->registerIoEvent(in,&evcfg,&evpin);
 
 	if(!in->listen(in,2,osWaitForever))
-		return osErrorOS;
+		return tchErrorOS;
 	in->unregisterIoEvent(in,inp);
 	if(in->listen(in,2,osWaitForever))
-		return osErrorOS;
+		return tchErrorOS;
 	in->unregisterIoEvent(in,inp);
 //	in->close(in);
-	return osOK;
+	return tchOK;
 }

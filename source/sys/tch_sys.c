@@ -31,12 +31,18 @@
 #include "tch_board.h"
 
 
-
+struct tch_err_descriptor {
+	int            errtype;
+	int            errno;
+	tch_threadId   subj;
+};
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
 static DECLARE_SYSTASK(kernelTaskHandler);
-#define SYSTSK_ID_SLEEP        ((int) -1)
+#define SYSTSK_ID_SLEEP             ((int) -3)
+#define SYSTSK_ID_ERR_HANDLE        ((int) -2)
+#define SYSTSK_ID_RESET             ((int) -1)
 
 
 static tch RuntimeInterface;
@@ -45,7 +51,9 @@ const tch* tch_rti = &RuntimeInterface;
 static tch_threadId mainThread = NULL;
 static tch_threadId idleThread = NULL;
 
-static tch_thread_queue tch_lpWaitQ;
+static tch_thread_queue tch_lpTickWaitQ;
+static tch_thread_queue tch_lpEvtWaitQ;
+
 static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
 
@@ -78,7 +86,8 @@ void tch_kernelInit(void* arg){
 
 
 	tch_listInit((tch_lnode_t*) &tch_procList);
-	tch_listInit((tch_lnode_t*) &tch_lpWaitQ);
+	tch_listInit((tch_lnode_t*) &tch_lpTickWaitQ);
+	tch_listInit((tch_lnode_t*) &tch_lpEvtWaitQ);
 
 	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
 	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
@@ -88,11 +97,11 @@ void tch_kernelInit(void* arg){
 	 */
 	RuntimeInterface.Device = tch_kernel_initHAL();
 	if(!RuntimeInterface.Device)
-		tch_kernel_errorHandler(FALSE,osErrorValue);
+		tch_kernel_errorHandler(FALSE,tchErrorValue);
 
 
 	if(!tch_kernel_initPort()){
-		tch_kernel_errorHandler(FALSE,osErrorOS);
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	}
 
 	tch_port_kernel_lock();
@@ -133,14 +142,16 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedSleepThread(arg1,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
 		break;
 	case SV_THREAD_SLEEP:
-		tch_schedSuspendThread(&tch_lpWaitQ,osWaitForever);
+		cth = tch_currentThread;
+		tch_schedSuspendThread(&tch_lpTickWaitQ,osWaitForever);
+		cth->t_state = SLEEP;
 		break;
 	case SV_THREAD_JOIN:
 		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
 			tch_schedSuspendThread((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
 			break;
 		}
-		tch_kernelSetResult(tch_currentThread,osOK);                                           //..otherwise, it returns immediately
+		tch_kernelSetResult(tch_currentThread,tchOK);                                           //..otherwise, it returns immediately
 		break;
 	case SV_THREAD_RESUME:
 		tch_schedResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
@@ -187,14 +198,14 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 }
 
 tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	tch_sysTask* task = tch_rti->MailQ->alloc(sysTaskQ,osWaitForever,&result);
 	task->arg = arg;
 	task->fn = fn;
 	task->id = id;
 	task->prior = tch_currentThread->t_prior;
-	task->status = osOK;
-	if(result == osOK)
+	task->status = tchOK;
+	if(result == tchOK)
 		tch_rti->MailQ->put(sysTaskQ,task);
 	return result;
 }
@@ -214,21 +225,21 @@ void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 static DECLARE_THREADROUTINE(systhreadRoutine){
 	// perform runtime initialization
 
-	osEvent evt;
+	tchEvent evt;
 	tch_sysTask* task = NULL;
 
 	// bind kernel interface(s) which has hal dependency
 	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
 
 
-	if(tch_kernel_initCrt0(&RuntimeInterface) != osOK)
-		tch_kernel_errorHandler(TRUE,osErrorOS);
+	if(tch_kernel_initCrt0(&RuntimeInterface) != tchOK)
+		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 
 	// initialize sys thread mail box for task queueing
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
-		tch_kernel_errorHandler(TRUE,osErrorOS);
+		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 	tch_threadId th = tch_currentThread;
 	tch_currentThread = ROOT_THREAD;      // create thread as root
@@ -249,14 +260,15 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	if((!mainThread) || (!idleThread))
-		tch_kernel_errorHandler(TRUE,osErrorOS);
+		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 	tch_boardInit(&RuntimeInterface);
+
 
 	Thread->start(idleThread);
 	Thread->start(mainThread);
 
-	uStdLib->string->memset(&evt,0,sizeof(osEvent));
+	uStdLib->string->memset(&evt,0,sizeof(tchEvent));
 
 	uStdLib->stdio->iprintf("\rUser Heap Top:  %x\n",&Heap_Limit);
 	uStdLib->stdio->iprintf("\rUser Heap Bottom : %x\n",&Heap_Base);
@@ -267,14 +279,13 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	// loop for handling system tasks (from ISR / from any user thread)
 	while(TRUE){
 		evt = MailQ->get(sysTaskQ,osWaitForever);
-		if(evt.status == osEventMail){
+		if(evt.status == tchEventMail){
 			task = (tch_sysTask*) evt.value.p;
 			task->fn(task->id,&RuntimeInterface,task->arg);
 			MailQ->free(sysTaskQ,evt.value.p);
 		}
 	}
-	return osOK;    // unreachable point
-
+	return tchOK;    // unreachable point
 }
 
 
@@ -293,11 +304,13 @@ static DECLARE_THREADROUTINE(idle){
 
 
 void tch_kernelOnWakeup(){
-	tch_schedResumeM(&tch_lpWaitQ,SCHED_THREAD_ALL,osOK,TRUE);
+	tch_schedResumeM(&tch_lpTickWaitQ,SCHED_THREAD_ALL,tchOK,TRUE);
 }
 
 
 static DECLARE_SYSTASK(kernelTaskHandler){
+	struct tch_err_descriptor* err = NULL;
+	struct tm lt;
 	switch(id){
 	case SYSTSK_ID_SLEEP:
 		tch_hal_disableSystick();
@@ -308,20 +321,36 @@ static DECLARE_SYSTASK(kernelTaskHandler){
 		tch_hal_setSleepMode(LP_LEVEL0);
 		tch_hal_enableSystick();
 		break;
+	case SYSTSK_ID_ERR_HANDLE:
+		// handle err
+		err = arg;
+		env->Time->getLocaltime(&lt);
+		env->uStdLib->stdio->iprintf("\r\n===SYSTEM FAULT (SUBJECT : %s) (ERR TYPE : %d)===\n",getThreadHeader(err->subj)->t_name,err->errtype);
+		env->uStdLib->stdio->iprintf("\r\n===Local Time : %d/%d/%d %d:%d:%d ===============\n",lt.tm_year + 1900,lt.tm_mon + 1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
+		env->Thread->terminate(err->subj,err->errno);
+		kMem->free(err);
+		break;
+	case SYSTSK_ID_RESET:
+		tch_boardDeinit(env);
+		tch_port_reset();
+		break;
 	}
 }
 
 
-void tch_kernel_faulthandle(int fault){
+void tch_kernelOnHardFault(int fault,int type){
+	struct tch_err_descriptor* err = kMem->alloc(sizeof(struct tch_err_descriptor));
+	err->errtype = fault;
+	err->errno = type;
+	err->subj = tch_currentThread;
 	switch(fault){
-	case FAULT_TYPE_BUS:
-		break;
-	case FAULT_TYPE_HARD:
-		break;
-	case FAULT_TYPE_MEM:
-		break;
-	case FAULT_TYPE_USG:
-		break;
+	case HARDFAULT_UNRECOVERABLE:
+		tch_kernel_postSysTask(SYSTSK_ID_RESET,kernelTaskHandler,err);
+		tch_port_clearFault(type);
+		return;
+	case HARDFAULT_RECOVERABLE:
+		tch_kernel_postSysTask(SYSTSK_ID_ERR_HANDLE,kernelTaskHandler,err);
+		return;
 	}
 	while(1){
 		asm volatile("NOP");

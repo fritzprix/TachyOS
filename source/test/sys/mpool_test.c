@@ -47,14 +47,14 @@ tchStatus mpool_performTest(tch* api){
 
 	for(i = 0;i < 10;i++){
 		if(ps[i]->age != i)
-			return osErrorOS;
+			return tchErrorOS;
 	}
 
 	person* pn = api->Mempool->calloc(person_mpool);
 	if(pn)                      ///< should be null
-		return osErrorOS;
-	if(osOK == api->Mempool->free(person_mpool,NULL))
-		return osErrorOS;
+		return tchErrorOS;
+	if(tchOK == api->Mempool->free(person_mpool,NULL))
+		return tchErrorOS;
 
 	return api->Mempool->free(person_mpool,ps[1]);
 }

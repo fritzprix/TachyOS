@@ -589,7 +589,7 @@ static void SetSysClock(void)
   else
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
-	  tch_kernel_errorHandler(FALSE,osErrorTimeoutResource);
+	  while(1)		  __NOP();
   }
 
 }

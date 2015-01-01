@@ -104,16 +104,16 @@ static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone t
 	if(!RTC_StaticInstance.mtx)
 		RTC_StaticInstance.mtx = env->Mtx->create();
 
-	if(env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != osOK)
+	if(env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != tchOK)
 		return NULL;
 
 	while(RTC_StaticInstance._handle){
-		if(env->Condv->wait(RTC_StaticInstance.condv,RTC_StaticInstance.mtx,osWaitForever) != osOK)
+		if(env->Condv->wait(RTC_StaticInstance.condv,RTC_StaticInstance.mtx,osWaitForever) != tchOK)
 			return NULL;
 	}
 
 	RTC_StaticInstance._handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
-	if(env->Mtx->unlock(RTC_StaticInstance.mtx) != osOK)
+	if(env->Mtx->unlock(RTC_StaticInstance.mtx) != tchOK)
 		return NULL;
 	env->uStdLib->string->memset(ins,0,sizeof(tch_rtc_handle_prototype));
 
@@ -163,21 +163,22 @@ static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone t
 static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
+		return tchErrorParameter;
 
 	tch_rtcDisablePeriodicWakeup(self);
 
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
-		return osErrorResource;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+		return tchErrorResource;
 	tch_rtcInvalidate(ins);
 	ins->env->Mtx->destroy(ins->mtx);
 
-	if(ins->env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != osOK)
-		return osErrorResource;
-	NVIC_DisableIRQ(RTC_HW.irq_0);
-	NVIC_DisableIRQ(RTC_HW.irq_1);
+	if(ins->env->Mtx->lock(RTC_StaticInstance.mtx,osWaitForever) != tchOK)
+		return tchErrorResource;
+
+	NVIC_DisableIRQ(RTC_WKUP_IRQn);
+	NVIC_DisableIRQ(RTC_Alarm_IRQn);
 
 	RCC->BDCR |= RCC_BDCR_BDRST;
 	RCC->BDCR &= RCC_BDCR_BDRST;
@@ -190,7 +191,7 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	ins->env->Condv->wakeAll(RTC_StaticInstance.condv);
 	ins->env->Mtx->unlock(RTC_StaticInstance.mtx);
 	ins->env->Mem->free(ins);
-	return osOK;
+	return tchOK;
 }
 
 static tchStatus tch_rtcSetTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone tz,BOOL force){
@@ -200,15 +201,15 @@ static tchStatus tch_rtcSetTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone t
 	uint32_t tr = 0;
 	uint32_t tmp = 0;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
+		return tchErrorParameter;
 	if((RTC->ISR & RTC_ISR_INITS) || !force)   // RTC is already initialized or not forced, it'll not be updated
-		return osOK;
+		return tchOK;
 	gmt_tm += tz * (HOUR_IN_SEC);
 	localtime_r(&gmt_tm,&localTm);
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
-		return osErrorResource;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+		return tchErrorResource;
 	RTC->ISR |= RTC_ISR_INIT;
 	while(!(RTC->ISR & RTC_ISR_INITF))
 		/*NOP*/;
@@ -241,9 +242,9 @@ static tchStatus tch_rtcSetTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone t
 
 	RTC->ISR &= ~RTC_ISR_INIT;
 
-	if(ins->env->Mtx->unlock(ins->mtx) != osOK)
-		return osErrorResource;
-	return osOK;
+	if(ins->env->Mtx->unlock(ins->mtx) != tchOK)
+		return tchErrorResource;
+	return tchOK;
 }
 
 static tchStatus tch_rtcGetTime(tch_rtcHandle* self,struct tm* ltm){
@@ -252,11 +253,11 @@ static tchStatus tch_rtcGetTime(tch_rtcHandle* self,struct tm* ltm){
 	uint32_t date, time = 0;
 	time_t lt;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
+		return tchErrorParameter;
 
-	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != osOK)
+	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
 		return result;
 
 	date = RTC->DR;
@@ -291,7 +292,7 @@ static tchStatus tch_rtcGetTime(tch_rtcHandle* self,struct tm* ltm){
 	if(time & RTC_TR_PM)
 		RTC->TR |= RTC_TR_PM;
 	ins->env->Mtx->unlock(ins->mtx);
-	return osOK;
+	return tchOK;
 }
 
 static tch_alrId tch_rtcSetAlarm(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution){
@@ -305,11 +306,11 @@ static tchStatus tch_rtcCancelAlarm(tch_rtcHandle* self,tch_alrId alrm){
 static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler wkup_handler){
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
-		return osErrorResource;
+		return tchErrorParameter;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+		return tchErrorResource;
 
 	ins->wkup_period = periodInSec;
 
@@ -335,12 +336,12 @@ static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t period
 static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self){
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_rtcIsValid(ins))
-		return osErrorParameter;
+		return tchErrorParameter;
 
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != osOK)
-		return osErrorResource;
+	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+		return tchErrorResource;
 
 	RTC->CR &= ~7; // clear wuclk
 	RTC->CR |= 0;  // set rtc / 16 : 2048 Hz

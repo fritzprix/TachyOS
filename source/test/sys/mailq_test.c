@@ -63,17 +63,17 @@ DECLARE_THREADROUTINE(sender){
 		env->MailQ->put(testmailq_id,p);
 		cnt++;
 	}
-	return osOK;
+	return tchOK;
 }
 
 DECLARE_THREADROUTINE(receiver){
 	uint32_t cnt = 0;
-	osEvent evt;
+	tchEvent evt;
 	while(cnt < 100){
 		evt = env->MailQ->get(testmailq_id,osWaitForever);
 		env->MailQ->free(testmailq_id,(void*)evt.value.v);
-		if(evt.status == osEventMail)
+		if(evt.status == tchEventMail)
 			cnt++;
 	}
-	return osOK;
+	return tchOK;
 }

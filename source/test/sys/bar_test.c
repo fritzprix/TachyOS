@@ -57,7 +57,7 @@ tchStatus barrier_performTest(tch* api){
 	tcfg.t_stackSize = 512;
 	child3Id = api->Thread->create(&tcfg,api);
 
-	tch_assert(api,child1Id && child2Id && child3Id,osErrorOS);
+	tch_assert(api,child1Id && child2Id && child3Id,tchErrorOS);
 
 	bid = api->Barrier->create();
 
@@ -67,43 +67,43 @@ tchStatus barrier_performTest(tch* api){
 
 
 	api->Thread->yield(10);
-	api->Barrier->signal(bid,osOK);
-	if(api->Barrier->wait(bid,osWaitForever) != osErrorResource)
-		return osErrorOS;
+	api->Barrier->signal(bid,tchOK);
+	if(api->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+		return tchErrorOS;
 
-	if(api->Thread->join(child1Id,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(child2Id,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(child3Id,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Thread->join(child1Id,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(child2Id,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(child3Id,osWaitForever) != tchOK)
+		return tchErrorOS;
 
 
 
-	return osOK;
+	return tchOK;
 }
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != osOK)
-		return osErrorOS;
-	if(env->Barrier->wait(bid,osWaitForever) != osErrorResource)
-		return osErrorOS;
-	return osOK;
+	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(env->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+		return tchErrorOS;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != osOK)
-		return osErrorOS;
-	if(env->Barrier->wait(bid,osWaitForever) != osErrorResource)
-		return osErrorOS;
-	return osOK;
+	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(env->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+		return tchErrorOS;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != osOK)
-		return osErrorOS;
+	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+		return tchErrorOS;
 	env->Thread->yield(20);
 	env->Barrier->destroy(bid);
-	return osOK;
+	return tchOK;
 }

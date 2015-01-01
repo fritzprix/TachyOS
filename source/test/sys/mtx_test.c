@@ -42,8 +42,8 @@ tchStatus mtx_performTest(tch* api){
 	child2 = Thread->create(&thCfg,api);
 
 	mmtx = api->Mtx->create();
-	if(api->Mtx->lock(mmtx,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Mtx->lock(mmtx,osWaitForever) != tchOK)
+		return tchErrorOS;
 	api->Thread->start(child1);
 	api->Thread->yield(200);
 	api->Mtx->unlock(mmtx);
@@ -60,7 +60,7 @@ static void race(tch* api){
 	uint32_t idx = 0;
 	const tch_mtx_ix* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){
-		if(Mtx->lock(mmtx,osWaitForever) == osOK){
+		if(Mtx->lock(mmtx,osWaitForever) == tchOK){
 			api->Thread->yield(0);
 			Mtx->unlock(mmtx);
 		}
@@ -68,13 +68,13 @@ static void race(tch* api){
 }
 
 static DECLARE_THREADROUTINE(child1Routine){
-	tchStatus result = osOK;
-	if((result = env->Mtx->lock(mmtx,10)) != osErrorTimeoutResource)    // Timeout expected
-		return osErrorOS;
-	if((result = env->Mtx->unlock(mmtx)) != osErrorResource)
-		return osErrorOS;
-	if((result = env->Mtx->lock(mmtx,osWaitForever)) != osOK)
-		return osErrorOS;
+	tchStatus result = tchOK;
+	if((result = env->Mtx->lock(mmtx,10)) != tchErrorTimeoutResource)    // Timeout expected
+		return tchErrorOS;
+	if((result = env->Mtx->unlock(mmtx)) != tchErrorResource)
+		return tchErrorOS;
+	if((result = env->Mtx->lock(mmtx,osWaitForever)) != tchOK)
+		return tchErrorOS;
 	env->Thread->start(child2);
 	race(env);
 	env->Mtx->destroy(mmtx);
@@ -83,9 +83,9 @@ static DECLARE_THREADROUTINE(child1Routine){
 
 static DECLARE_THREADROUTINE(child2Routine){
 	race(env);
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	env->Thread->yield(50);
-	if((result = env->Mtx->lock(mmtx,osWaitForever)) == osErrorResource)
-		return osOK;
-	return osErrorOS;
+	if((result = env->Mtx->lock(mmtx,osWaitForever)) == tchErrorResource)
+		return tchOK;
+	return tchErrorOS;
 }

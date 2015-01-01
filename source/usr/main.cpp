@@ -141,7 +141,7 @@ int main(const tch* env) {
 		}
 		env->Thread->sleep();
 	}
-	return osOK;
+	return tchOK;
 }
 
 
@@ -156,7 +156,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 		env->Thread->sleep();
 	}
 
-	return osOK;
+	return tchOK;
 }
 
 
@@ -164,8 +164,8 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	tch_spiHandle* spi = (tch_spiHandle*)  env->Thread->getArg();
 	tch_mailqId adcReadQ = env->MailQ->create(100,2);
 	struct tm ltm;
-	osEvent evt;
-	env->uStdLib->string->memset(&evt,0,sizeof(osEvent));
+	tchEvent evt;
+	env->uStdLib->string->memset(&evt,0,sizeof(tchEvent));
 	tch_adcCfg adccfg;
 	env->Device->adc->initCfg(&adccfg);
 	adccfg.Precision = ADC_Precision_10B;
@@ -180,7 +180,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = env->MailQ->get(adcReadQ,osWaitForever);
-		if(evt.status == osEventMail){
+		if(evt.status == tchEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
 
@@ -189,7 +189,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		env->Thread->sleep();
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
-	return osOK;
+	return tchOK;
 }
 
 

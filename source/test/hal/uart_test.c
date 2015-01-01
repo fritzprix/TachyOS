@@ -47,10 +47,10 @@ tchStatus uart_performTest(tch* env){
 		serial->close(serial);
 	}
 
-	if(env->Thread->join(printer,osWaitForever) != osOK)
-		return osErrorOS;
+	if(env->Thread->join(printer,osWaitForever) != tchOK)
+		return tchErrorOS;
 	serial->close(serial);
-	return osOK;
+	return tchOK;
 }
 
 
@@ -73,6 +73,6 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 		env->Thread->yield(0);
 		serial->close(serial);
 	}
-	return osOK;
+	return tchOK;
 }
 

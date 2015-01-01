@@ -29,6 +29,11 @@
 #define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
 #define CTRL_FPCA                  (uint32_t) (1 << 2)
 
+#define FAULT_TYPE_HARD            ((int) -1)
+#define FAULT_TYPE_BUS             ((int) -2)
+#define FAULT_TYPE_MEM             ((int) -3)
+#define FAULT_TYPE_USG             ((int) -4)
+
 static void __pend_loop(void) __attribute__((naked));
 //static int isr_svc_cnt;
 
@@ -166,27 +171,6 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 }
 
 
-/***
-int tch_port_enterSvFromIsr(word_t sv_id,uword_t arg1,uword_t arg2){
-	if(SCB->ICSR & SCB_ICSR_PENDSVSET_Msk)
-		tch_kernel_errorHandler(FALSE,osErrorISRRecursive);
-	tch_currentThread->t_kRet = osOK;
-	tch_exc_stack* org_sp = (tch_exc_stack*) __get_PSP();
-	org_sp--;                                              // push stack to prepare manipulated stack for passing arguements to sv call(or handler)
-	org_sp->R0 = sv_id;
-	org_sp->R1 = arg1;
-	org_sp->R2 = arg2;
-	org_sp->Return = (uint32_t)__pend_loop;
-	org_sp->xPSR = EPSR_THUMB_MODE;
-	__set_PSP((uint32_t)org_sp);
-	__ISB();
-	__DMB();
-	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	return 0;
-}
-*/
-
-
 
 /**
  *  prepare initial context for start thread
@@ -198,7 +182,7 @@ void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = (uint32_t)th_header;
-	exc_sp->R1 = osOK;
+	exc_sp->R1 = tchOK;
 #if MFEATURE_HFLOAT
 	exc_sp->S0 = (float)0.2f;
 #endif
@@ -258,30 +242,40 @@ void __pend_loop(void){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 
-/*
-void PendSV_Handler(void){
-	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_exc_stack* org_sp = exsp + 1;
-	__set_PSP((uint32_t)org_sp);                                       // discard stack used to transfer arguements
-	tch_kernelSvCall(exsp->R0,exsp->R1,exsp->R2);
+int tch_port_clearFault(int type){
+	switch(type){
+	case FAULT_TYPE_HARD:
+		break;
+	case FAULT_TYPE_BUS:
+		break;
+	case FAULT_TYPE_MEM:
+		break;
+	case FAULT_TYPE_USG:
+		break;
+	}
 }
-*/
+
+
+int tch_port_reset(){
+
+}
+
 
 void HardFault_Handler(){
-	tch_kernel_faulthandle(FAULT_TYPE_HARD);
+	tch_kernelOnHardFault(HARDFAULT_UNRECOVERABLE,FAULT_TYPE_HARD);
 }
 
 void MemManage_Handler(){
-	tch_kernel_faulthandle(FAULT_TYPE_MEM);
+	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_MEM);
 }
 
 void BusFault_Handler(){
-	tch_kernel_faulthandle(FAULT_TYPE_BUS);
+	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_BUS);
 }
 
 void UsageFault_Handler(){
-	tch_kernel_faulthandle(FAULT_TYPE_USG);
+	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_USG);
 }

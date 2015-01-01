@@ -119,7 +119,7 @@ struct _tch_bar_ix_t {
 
 struct _tch_systime_ix_t {
 	tchStatus (*getLocaltime)(struct tm* tm);
-	tchStatus (*setLocaltime)(const struct tm* tm,const tch_timezone tz);
+	tchStatus (*setLocaltime)(struct tm* tm,const tch_timezone tz);
 	uint64_t (*getCurrentTimeMills)();
 	uint64_t (*uptimeMills)();
 };
@@ -199,7 +199,7 @@ struct _tch_msgque_ix_t {
 	 *           osEventMessage: message received, value.p contains the pointer to message.
 	 *           osErrorParameter: a parameter is invalid or outside of a permitted range.
 	 */
-	osEvent (*get)(tch_msgqId,uint32_t millisec);
+	tchEvent (*get)(tch_msgqId,uint32_t millisec);
 
 	uint32_t (*getLength)(tch_msgqId);
 
@@ -215,7 +215,7 @@ struct _tch_mailbox_ix_t {
 	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 	tchStatus (*put)(tch_mailqId qid,void* mail);
-	osEvent (*get)(tch_mailqId qid,uint32_t millisec);
+	tchEvent (*get)(tch_mailqId qid,uint32_t millisec);
 	uint32_t (*getBlockSize)(tch_mailqId qid);
 	uint32_t (*getLength)(tch_mailqId qid);
 	tchStatus (*free)(tch_mailqId qid,void* mail);

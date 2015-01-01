@@ -195,10 +195,10 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 		DMA_StaticInstance.condvId = Condv->create();
 		tch_port_kernel_unlock();
 	}
-	if(Mtx->lock(DMA_StaticInstance.mtxId,timeout) != osOK)
+	if(Mtx->lock(DMA_StaticInstance.mtxId,timeout) != tchOK)
 		return NULL;
 	while(DMA_StaticInstance.occp_state & (1 << dma)){
-		if(Condv->wait(DMA_StaticInstance.condvId,DMA_StaticInstance.mtxId,timeout) != osOK)
+		if(Condv->wait(DMA_StaticInstance.condvId,DMA_StaticInstance.mtxId,timeout) != tchOK)
 			return NULL;
 	}
 	DMA_StaticInstance.occp_state |= (1 << dma);
@@ -252,18 +252,18 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 		return FALSE;
 
 	uint8_t err_cnt = 0;
-	osEvent evt;
-	evt.status = osOK;
+	tchEvent evt;
+	evt.status = tchOK;
 	if(!result)
 		result = &evt.status;
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	tchStatus lresult = osOK;
+	tchStatus lresult = tchOK;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 
-	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != osOK)
+	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != tchOK)
 		return FALSE;
 	while(DMA_IS_BUSY(ins)){
-		if((*result = ins->env->Condv->wait(ins->condv,ins->mtxId,timeout)) != osOK)
+		if((*result = ins->env->Condv->wait(ins->condv,ins->mtxId,timeout)) != tchOK)
 			return FALSE;
 	}
 	DMA_SET_BUSY(ins);
@@ -279,16 +279,16 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 	if(timeout){
 		evt = ins->env->MsgQ->get(ins->dma_mq,timeout);
 		*result = evt.status;
-		if(evt.status != osEventMessage){
+		if(evt.status != tchEventMessage){
 			return FALSE;
 		}
 	}
 
-	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != osOK)   // lock mutex for condition variable operation
+	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != tchOK)   // lock mutex for condition variable operation
 		return FALSE;
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
 	ins->env->Condv->wakeAll(ins->condv);
-	if(ins->env->Mtx->unlock(ins->mtxId) != osOK) // unlock mutex
+	if(ins->env->Mtx->unlock(ins->mtxId) != tchOK) // unlock mutex
 		return FALSE;
 
 	return TRUE;
@@ -318,16 +318,16 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 
 static tchStatus tch_dma_close(tch_DmaHandle self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	if(!tch_dmaIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	const tch* env = ins->env;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) DMA_HWs[ins->dma]._hw;
 	// wait until dma is busy
-	if((result = env->Mtx->lock(ins->mtxId,osWaitForever)) != osOK)
+	if((result = env->Mtx->lock(ins->mtxId,osWaitForever)) != tchOK)
 		return result;
 	while(DMA_IS_BUSY(ins)){
-		if((result = env->Condv->wait(ins->condv,ins->mtxId,osWaitForever)) != osOK)
+		if((result = env->Condv->wait(ins->condv,ins->mtxId,osWaitForever)) != tchOK)
 			return result;
 	}
 	tch_dmaInvalidate(ins);
@@ -337,7 +337,7 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 	env->Condv->destroy(ins->condv);
 
 
-	if((result = env->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever)) != osOK)
+	if((result = env->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever)) != tchOK)
 		return result;
 	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
 	DMA_StaticInstance.lpoccp_state &= ~(1 << ins->dma);
@@ -384,11 +384,11 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	}
 	const tch* env = handle->env;
 	if(isr & DMA_FLAG_EvTC){
-		env->MsgQ->put(handle->dma_mq,osOK,0);
+		env->MsgQ->put(handle->dma_mq,tchOK,0);
 		*dma_desc->_icr = isrclr;
 		return TRUE;
 	}else{
-		env->MsgQ->put(handle->dma_mq,osErrorOS,0);
+		env->MsgQ->put(handle->dma_mq,tchErrorOS,0);
 		*dma_desc->_icr = isrclr;
 		return FALSE;
 	}

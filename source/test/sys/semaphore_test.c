@@ -48,28 +48,28 @@ tchStatus semaphore_performTest(tch* api){
 	ch3Id = api->Thread->create(&thcfg,api);
 
 	ts = api->Sem->create(1);
-	if(api->Sem->lock(ts,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Sem->lock(ts,osWaitForever) != tchOK)
+		return tchErrorOS;
 	api->Thread->start(ch1Id);
 	api->Thread->yield(200);
-	if(api->Thread->join(ch3Id,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(ch2Id,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(ch1Id,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Thread->join(ch3Id,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(ch2Id,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(ch1Id,osWaitForever) != tchOK)
+		return tchErrorOS;
 
-	return osOK;
+	return tchOK;
 }
 
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(env->Sem->lock(ts,10) != osErrorTimeoutResource)
-		return osErrorOS;
+	if(env->Sem->lock(ts,10) != tchErrorTimeoutResource)
+		return tchErrorOS;
 	env->Sem->unlock(ts);
-	if(env->Sem->lock(ts,osWaitForever) != osOK)
-		return osErrorOS;
+	if(env->Sem->lock(ts,osWaitForever) != tchOK)
+		return tchErrorOS;
 	env->Sem->unlock(ts);
 	env->Thread->start(ch2Id);
 	env->Thread->start(ch3Id);
@@ -80,7 +80,7 @@ static DECLARE_THREADROUTINE(child1Routine){
 	env->Sem->destroy(ts);
 	spin = FALSE;
 
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
@@ -88,21 +88,21 @@ static DECLARE_THREADROUTINE(child2Routine){
 	for(;cnt < TEST_CNT;cnt++)
 		race(env);
 	while(spin) env->Thread->yield(0);
-	if(env->Sem->lock(ts,osWaitForever) != osErrorResource)
-		return osErrorOS;
-	return osOK;
+	if(env->Sem->lock(ts,osWaitForever) != tchErrorResource)
+		return tchErrorOS;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
 		race(env);
-	return osOK;
+	return tchOK;
 }
 
 void race(const tch* api){
-	tchStatus res = osOK;
-	if((res = api->Sem->lock(ts,osWaitForever)) != osOK)
+	tchStatus res = tchOK;
+	if((res = api->Sem->lock(ts,osWaitForever)) != tchOK)
 		return;
 	shVar++;
 	api->Thread->yield(0);

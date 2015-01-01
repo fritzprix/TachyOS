@@ -100,14 +100,14 @@ static void* tch_usrAlloc(size_t size){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return NULL;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return NULL;
 	tch_memHdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
 	if(!hdr)
-		Thread->terminate(tch_currentThread,osErrorNoMemory);
+		Thread->terminate(tch_currentThread,tchErrorNoMemory);
 	hdr--;
 	tch_listPutFirst(&tch_currentThread->t_ualc,(tch_lnode_t*)hdr);
-	if(Mtx->unlock(&m_entry->mtx) != osOK)
+	if(Mtx->unlock(&m_entry->mtx) != tchOK)
 		return NULL;
 	return ++hdr;
 }
@@ -122,7 +122,7 @@ static void tch_usrFree(void* chnk){
 		return;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	hdr = chnk;
 	hdr--;
@@ -144,7 +144,7 @@ static void tch_usrPrintFreeList(void){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	tch_listPrint(tch_currentThread->t_mem,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -154,7 +154,7 @@ static void tch_usrPrintAllocList(void){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	tch_listPrint(&tch_currentThread->t_ualc,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -165,14 +165,14 @@ void* tch_sharedAlloc(size_t sz){
 	tch_memEntry* _entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return NULL;
-	if(Mtx->lock(&_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&_entry->mtx,osWaitForever) != tchOK)
 		return NULL;
 
 	tch_memHdr* hdr = tch_memAlloc(sharedMem,sz);
 
 	if(!hdr){
 		Mtx->unlock(&_entry->mtx);
-		Thread->terminate(tch_currentThread,osErrorNoMemory);
+		Thread->terminate(tch_currentThread,tchErrorNoMemory);
 	}
 	hdr--;
 	tch_listPutFirst(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
@@ -186,7 +186,7 @@ void tch_sharedFree(void* chnk){
 		return;
 	tch_memHdr* hdr = chnk;
 	hdr--;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	tch_listRemove(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	tch_memFree(sharedMem,chnk);
@@ -206,7 +206,7 @@ static void tch_sharedPrintFreeList(void){
 	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	tch_listPrint(sharedMem,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -217,7 +217,7 @@ static void tch_sharedPrintAllocList(void){
 	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != osOK)
+	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
 		return;
 	tch_listPrint(&tch_currentThread->t_shalc,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -249,11 +249,11 @@ static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
 	while(!tch_listIsEmpty(alloc_list)){
 		uobj = tch_listDequeue(alloc_list);
 		if(uobj && uobj->__obj.destructor){
-			if(uobj->__obj.destructor(&uobj->__obj) == osOK)
+			if(uobj->__obj.destructor(&uobj->__obj) == tchOK)
 				uStdLib->stdio->iprintf("\r leaked resources closed\n");
 		}
 	}
-	return osOK;
+	return tchOK;
 }
 
 static void tch_memPrint(void* m){
@@ -354,7 +354,7 @@ static void tch_memFree(tch_memId mh,void* p){
 }
 
 
-tchStatus tch_noop_destr(tch_uobj* obj){return osOK;}
+tchStatus tch_noop_destr(tch_uobj* obj){return tchOK;}
 
 
 static uint32_t tch_memAvail(tch_memId mh){

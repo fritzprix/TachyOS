@@ -125,15 +125,15 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		SPI_StaticInstance.condv = env->Condv->create();
 
 
-	if(env->Mtx->lock(SPI_StaticInstance.mtx,timeout) != osOK)
+	if(env->Mtx->lock(SPI_StaticInstance.mtx,timeout) != tchOK)
 		return NULL;
 	while(spiDesc->_handle){
-		if(env->Condv->wait(SPI_StaticInstance.mtx,SPI_StaticInstance.condv,timeout) != osOK)
+		if(env->Condv->wait(SPI_StaticInstance.mtx,SPI_StaticInstance.condv,timeout) != tchOK)
 			return NULL;
 	}
 
 	spiDesc->_handle = hnd = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
-	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != osOK){
+	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != tchOK){
 		return NULL;
 	}
 
@@ -269,14 +269,14 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spiIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	return ins->pix.transceive(self,wb,NULL,sz,osWaitForever);
 }
 
 static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spiIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	return ins->pix.transceive(self,NULL,rb,sz,timeout);
 }
 
@@ -284,10 +284,10 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	tch_spi_handle_prototype* hnd = (tch_spi_handle_prototype*) self;
 	void* twb = (void*) wb;
 	if(!hnd)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_spiIsValid(hnd))
-		return osErrorResource;
-	osEvent evt;
+		return tchErrorResource;
+	tchEvent evt;
 
 
 	tch_spi_descriptor* spiDesc = &SPI_HWs[hnd->spi];
@@ -297,14 +297,14 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	if(spiHw->CR1 & SPI_CR1_DFF)
 		offset = 2;
 
-	if((evt.status = env->Mtx->lock(hnd->mtx,timeout)) != osOK)
+	if((evt.status = env->Mtx->lock(hnd->mtx,timeout)) != tchOK)
 		return evt.status;
 	while(SPI_isBusy(hnd)){
-		if((evt.status = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != osOK)
+		if((evt.status = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != tchOK)
 			return evt.status;
 	}
 	SPI_setBusy(hnd);
-	if((evt.status = env->Mtx->unlock(hnd->mtx)) != osOK)
+	if((evt.status = env->Mtx->unlock(hnd->mtx)) != tchOK)
 		return evt.status;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
@@ -314,11 +314,11 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 		if(twb)                           // if wb is null, address isn't incremented
 			twb += offset;
 		evt = hnd->env->MsgQ->get(hnd->rxCh.mq,timeout);   // get rx data
-		if(evt.status != osEventMessage){                  // check message has been received successfully
+		if(evt.status != tchEventMessage){                  // check message has been received successfully
 			return evt.status;
 		}
 		if(evt.value.v & SPI_ERR_MSK)
-			return osErrorValue;
+			return tchErrorValue;
 		if(offset == 1){
 			*(uint8_t*) rb = evt.value.v;                    // if message is obtained successfully, save it to rx buffer
 		}else if(offset == 2){
@@ -327,35 +327,35 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 		if(rb)                            // if rb is null, address isn't incremented
 			rb += offset;
 	}
-	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
+	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != tchOK)
 		return evt.status;
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	evt.status = env->Condv->wakeAll(hnd->condv);
 	env->Mtx->unlock(hnd->mtx);
-	return osOK;
+	return tchOK;
 }
 
 static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
 	tch_spi_handle_prototype* hnd = (tch_spi_handle_prototype*) self;
 	if(!hnd)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_spiIsValid(hnd))
-		return osErrorResource;
-	tchStatus result = osOK;
+		return tchErrorResource;
+	tchStatus result = tchOK;
 	tch_spi_descriptor* spiDesc = &SPI_HWs[hnd->spi];
 	SPI_TypeDef* spiHw = (SPI_TypeDef*) spiDesc->_hw;
 	const tch* env = hnd->env;
 	tch_DmaReqDef dmaReq;
 
-	if((result = env->Mtx->lock(hnd->mtx,timeout)) != osOK)
+	if((result = env->Mtx->lock(hnd->mtx,timeout)) != tchOK)
 		return result;
 	while(SPI_isBusy(hnd)){
-		if((result = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != osOK)
+		if((result = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != tchOK)
 			return result;
 	}
 	SPI_setBusy(hnd);
-	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)
+	if((result = env->Mtx->unlock(hnd->mtx)) != tchOK)
 		return result;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
@@ -376,14 +376,14 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.size = sz;
 	result = tch_dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result);
 
-	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != osOK)
+	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != tchOK)
 		return result;
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	env->Condv->wakeAll(hnd->condv);
-	if((result = env->Mtx->unlock(hnd->mtx)) != osOK)
+	if((result = env->Mtx->unlock(hnd->mtx)) != tchOK)
 		return result;
-	return osOK;
+	return tchOK;
 }
 
 
@@ -392,16 +392,16 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	tch_spi_descriptor* spiDesc = NULL;
 	SPI_TypeDef* spiHw = NULL;
 	if(!ins)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_spiIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 
 	spiDesc = &SPI_HWs[ins->spi];
 	spiHw = spiDesc->_hw;
 
 
 	const tch* env = ins->env;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	env->Mtx->lock(ins->mtx,osWaitForever);
 	while(SPI_isBusy(ins)){
 		env->Condv->wait(ins->condv,ins->mtx,osWaitForever);
@@ -429,7 +429,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 
 	env->Mem->free(ins);
 
-	return osOK;
+	return tchOK;
 
 }
 

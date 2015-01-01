@@ -38,6 +38,6 @@ tchStatus spi_performTest(tch* env){
 	while(1){
 		spihandle->write(spihandle,str,len);
 	}
-	return osOK;
+	return tchOK;
 
 }

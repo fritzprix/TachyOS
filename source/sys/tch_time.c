@@ -14,7 +14,6 @@
 
 
 #include "tch_kernel.h"
-#include "tch_pmgr.h"
 #include "tch_time.h"
 #include "tch_list.h"
 
@@ -31,7 +30,7 @@ static tch_wkup_handler tch_sysWkuphandler;
  */
 
 static tchStatus tch_systime_getLocalTime(struct tm* dest_tm);
-static tchStatus tch_systime_setLocalTime(const struct tm* time,tch_timezone ltz);
+static tchStatus tch_systime_setLocalTime(struct tm* time,tch_timezone ltz);
 static uint64_t tch_systime_getCurrentTimeMills();
 static uint64_t tch_systime_uptimeMills();
 
@@ -63,35 +62,35 @@ tch_systime_ix* tch_systimeInit(const tch* env,time_t init_tm,tch_timezone init_
 
 tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout){
 	if((timeout == osWaitForever) || !thread)
-		return osErrorParameter;
+		return tchErrorParameter;
 	getThreadHeader(thread)->t_to = tch_systimeTick + timeout;
 	tch_listEnqueuePriority(&tch_systimeWaitQ,(tch_lnode_t*) thread,tch_systimeWaitQRule);
-	return osOK;
+	return tchOK;
 }
 
 tchStatus tch_systimeCancelTimeout(tch_threadId thread){
 	if(!thread)
-		return osErrorParameter;
+		return tchErrorParameter;
 	getThreadHeader(thread)->t_to = 0;
 	tch_listRemove(&tch_systimeWaitQ,(tch_lnode_t*) thread);
-	return osOK;
+	return tchOK;
 }
 
 static tchStatus tch_systime_getLocalTime(struct tm* dest_tm){
 	if(!rtcHandle)
-		return osErrorResource;
+		return tchErrorResource;
 	if(!dest_tm)
-		return osErrorParameter;
+		return tchErrorParameter;
 	return rtcHandle->getTime(rtcHandle,dest_tm);
 }
 
 
-static tchStatus tch_systime_setLocalTime(const struct tm* time,tch_timezone ltz){
+static tchStatus tch_systime_setLocalTime(struct tm* time,tch_timezone ltz){
 	time_t tm;
 	if(!rtcHandle)
-		return osErrorResource;
+		return tchErrorResource;
 	if(!time)
-		return osErrorParameter;
+		return tchErrorParameter;
 	tm = mktime(time);
 	return rtcHandle->setTime(rtcHandle,tm,ltz,TRUE);
 }
@@ -116,7 +115,7 @@ void tch_KernelOnSystick(){
 		nth = (tch_thread_header*) tch_listDequeue(&tch_systimeWaitQ);
 		nth->t_to = 0;
 		tch_schedReadyThread(nth);
-		tch_kernelSetResult(nth,osEventTimeout);
+		tch_kernelSetResult(nth,tchEventTimeout);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&nth->t_waitNode);
 			nth->t_waitQ = NULL;

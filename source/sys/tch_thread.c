@@ -136,7 +136,7 @@ static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){          // check current execution mode (Thread or Handler)
 		tch_schedReadyThread(thread);    // if handler mode call, put current thread in ready queue
 		                           // optionally check preemption required or not
-		return osOK;
+		return tchOK;
 	}else{
 		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);
 	}
@@ -146,7 +146,7 @@ static tchStatus tch_threadStart(tch_threadId thread){
  */
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 	if(tch_port_isISR()){
-		return osErrorISR;
+		return tchErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err);
 	}
@@ -161,7 +161,7 @@ static tch_threadId tch_threadSelf(){
 
 static tchStatus tch_threadSleep(){
 	if(tch_port_isISR()){
-		return osErrorISR;
+		return tchErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_SLEEP,0,0);
 	}
@@ -170,8 +170,8 @@ static tchStatus tch_threadSleep(){
 
 static tchStatus tch_threadYield(uint32_t millisec){
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,osErrorISR);
-		return osErrorISR;
+		tch_kernel_errorHandler(FALSE,tchErrorISR);
+		return tchErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0);
 	}
@@ -179,8 +179,8 @@ static tchStatus tch_threadYield(uint32_t millisec){
 
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,osErrorISR);
-		return osErrorISR;
+		tch_kernel_errorHandler(FALSE,tchErrorISR);
+		return tchErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout);
 	}

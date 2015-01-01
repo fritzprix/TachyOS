@@ -53,21 +53,21 @@ typedef struct _tch_runtime_t {
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
 typedef enum  {
-  osOK                    =     0,       ///< function completed; no error or event occurred.
-  osEventSignal           =  0x08,       ///< function completed; signal event occurred.
-  osEventMessage          =  0x10,       ///< function completed; message event occurred.
-  osEventMail             =  0x20,       ///< function completed; mail event occurred.
-  osEventTimeout          =  0x40,       ///< function completed; timeout occurred.
-  osErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
-  osErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
-  osErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.
-  osErrorISR              =  0x82,       ///< not allowed in ISR context: the function cannot be called from interrupt service routines.
-  osErrorISRRecursive     =  0x83,       ///< function called multiple times from ISR with same object.
-  osErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
-  osErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
-  osErrorValue            =  0x86,       ///< value of a parameter is out of range.
-  osErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
-  os_status_reserved      =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
+  tchOK                    =     0,       ///< function completed; no error or event occurred.
+  tchEventSignal           =  0x08,       ///< function completed; signal event occurred.
+  tchEventMessage          =  0x10,       ///< function completed; message event occurred.
+  tchEventMail             =  0x20,       ///< function completed; mail event occurred.
+  tchEventTimeout          =  0x40,       ///< function completed; timeout occurred.
+  tchErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
+  tchErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
+  tchErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.
+  tchErrorISR              =  0x82,       ///< not allowed in ISR context: the function cannot be called from interrupt service routines.
+  tchErrorISRRecursive     =  0x83,       ///< function called multiple times from ISR with same object.
+  tchErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
+  tchErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
+  tchErrorValue            =  0x86,       ///< value of a parameter is out of range.
+  tchErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
+  tch_status_reserved       =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
 typedef enum {
@@ -111,7 +111,7 @@ typedef struct  {
     int32_t               signals;     ///< signal flags
   } value;                             ///< event value
   void* def;
-} osEvent;
+} tchEvent;
 
 
 /***

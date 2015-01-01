@@ -84,8 +84,8 @@ tchStatus msgq_performTest(tch* api){
 	Thread->start(sender_id);
 
 
-	tch_assert(api,Thread->join(receiver_id,osWaitForever) == osOK,osErrorOS);
-	tch_assert(api,Thread->join(sender_id,osWaitForever) == osOK,osErrorOS);
+	tch_assert(api,Thread->join(receiver_id,osWaitForever) == tchOK,tchErrorOS);
+	tch_assert(api,Thread->join(sender_id,osWaitForever) == tchOK,tchErrorOS);
 	api->Barrier->destroy(mBar);
 
 
@@ -94,7 +94,7 @@ tchStatus msgq_performTest(tch* api){
 	out->close(out);
 	in->close(in);
 
-	return osOK;
+	return tchOK;
 
 }
 
@@ -112,18 +112,18 @@ static DECLARE_THREADROUTINE(sender){
 	env->Barrier->wait(mBar,osWaitForever);
 	env->Thread->yield(10);
 	env->MsgQ->destroy(mid);
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(receiver){
 	uint32_t cnt = 0;
-	osEvent evt;
+	tchEvent evt;
 	uint32_t mval = 0;
 	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
 		evt = env->MsgQ->get(mid,osWaitForever);
 		totalMsgcnt++;
-		if(evt.status == osEventMessage){
+		if(evt.status == tchEventMessage){
 			cnt++;
 			if(evt.value.v == 0xFF){
 				usrcnt++;
@@ -136,13 +136,13 @@ static DECLARE_THREADROUTINE(receiver){
 		}
 	}
 	evt = env->MsgQ->get(mid,10);
-	if(evt.status != osErrorTimeoutResource)
-		return osErrorOS;
-	env->Barrier->signal(mBar,osOK);
+	if(evt.status != tchErrorTimeoutResource)
+		return tchErrorOS;
+	env->Barrier->signal(mBar,tchOK);
 	evt = env->MsgQ->get(mid,osWaitForever);
-	if(evt.status != osErrorResource)
-		return osErrorResource;
-	return osOK;
+	if(evt.status != tchErrorResource)
+		return tchErrorResource;
+	return tchOK;
 }
 
 static DECLARE_IO_CALLBACK(ioEventListener){

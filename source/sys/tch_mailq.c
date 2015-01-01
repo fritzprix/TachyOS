@@ -26,7 +26,7 @@ static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen);
 static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static tchStatus tch_mailq_put(tch_mailqId qid,void* mail);
-static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
+static tchEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
 static uint32_t tch_mailq_getBlockSize(tch_mailqId qid);
 static uint32_t tch_mailq_getLength(tch_mailqId qid);
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
@@ -71,7 +71,7 @@ static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 
 static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
-	tchStatus lresult = osOK;
+	tchStatus lresult = tchOK;
 	if(!result)
 		result = &lresult;
 	if(!tch_mailqIsValid(mailqcb))
@@ -82,20 +82,20 @@ static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result
 		tch_mailq_karg karg;
 		karg.timeout = millisec;
 		karg.chunk = NULL;
-		*result = osOK;
-		while((*result = tch_port_enterSv(SV_MAILQ_ALLOC,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
+		*result = tchOK;
+		while((*result = tch_port_enterSv(SV_MAILQ_ALLOC,(uword_t)mailqcb,(uword_t)&karg)) != tchOK){
 			if(!tch_mailqIsValid(mailqcb))
 				return NULL;
 			switch(*result){
-			case osErrorResource:
+			case tchErrorResource:
 				return NULL;
-			case osEventTimeout:
+			case tchEventTimeout:
 				return NULL;
-			case osErrorNoMemory:
+			case tchErrorNoMemory:
 				/*signaled from no memory wait, and will retry allocation*/;
 			}
 		}
-		if(*result == osOK)
+		if(*result == tchOK)
 			return karg.chunk;
 		return NULL;
 	}
@@ -105,14 +105,14 @@ tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	if(!tch_mailqIsValid(mailqcb)){
 		arg->chunk = NULL;
-		return osErrorResource;
+		return tchErrorResource;
 	}
-	if((!arg) || (!qid)) return osErrorParameter;
+	if((!arg) || (!qid)) return tchErrorParameter;
 	arg->chunk = Mempool->alloc(mailqcb->bpool);
 	if(arg->chunk)
-		return osOK;
+		return tchOK;
 	tch_schedSuspendThread((tch_thread_queue*)&mailqcb->wq,arg->timeout);
-	return osErrorNoMemory;
+	return tchErrorNoMemory;
 }
 
 
@@ -127,23 +127,23 @@ static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* resul
 
 static tchStatus tch_mailq_put(tch_mailqId qid,void* mail){
 	if(!tch_mailqIsValid(qid))
-		return osErrorResource;
+		return tchErrorResource;
 	if(!mail)
-		return osErrorParameter;
+		return tchErrorParameter;
 	return MsgQ->put(((tch_mailq_cb*) qid)->msgq,(uword_t)mail,osWaitForever);
 }
 
 
-static osEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec){
-	osEvent evt;
+static tchEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec){
+	tchEvent evt;
 	if(!tch_mailqIsValid(qid)){
-		evt.status = osErrorResource;
+		evt.status = tchErrorResource;
 		evt.value.v = 0;
 		return evt;
 	}
 	evt = MsgQ->get(((tch_mailq_cb*) qid)->msgq,millisec);
-	if(evt.status == osEventMessage)
-		evt.status = osEventMail;
+	if(evt.status == tchEventMessage)
+		evt.status = tchEventMail;
 	return evt;
 }
 
@@ -160,22 +160,22 @@ static uint32_t tch_mailq_getLength(tch_mailqId qid){
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
 	if(!tch_mailqIsValid(mailqcb))
-		return osErrorResource;
+		return tchErrorResource;
 	if(!mail)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(tch_port_isISR()){
 		return Mempool->free(mailqcb->bpool,mail);
 	}else{
-		tchStatus result = osOK;
+		tchStatus result = tchOK;
 		tch_mailq_karg karg;
 		karg.chunk = mail;
 		karg.timeout = 0;
-		while((result = tch_port_enterSv(SV_MAILQ_FREE,(uword_t)mailqcb,(uword_t)&karg)) != osOK){
+		while((result = tch_port_enterSv(SV_MAILQ_FREE,(uword_t)mailqcb,(uword_t)&karg)) != tchOK){
 			if(!tch_mailqIsValid(mailqcb))
-				return osErrorResource;
+				return tchErrorResource;
 			switch(result){
-			case osErrorResource:
-				return osErrorResource;
+			case tchErrorResource:
+				return tchErrorResource;
 			}
 		}
 		return result;
@@ -183,43 +183,43 @@ static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 }
 
 tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg){
-	if((!arg) || (!qid)) return osErrorParameter;
+	if((!arg) || (!qid)) return tchErrorParameter;
 	if(!tch_mailqIsValid(qid))
-		return osErrorResource;
-	if(Mempool->free(((tch_mailq_cb*)qid)->bpool,arg->chunk) != osOK)
-		return osErrorParameter;
-	tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq),SCHED_THREAD_ALL,osErrorNoMemory,TRUE);
-	return osOK;
+		return tchErrorResource;
+	if(Mempool->free(((tch_mailq_cb*)qid)->bpool,arg->chunk) != tchOK)
+		return tchErrorParameter;
+	tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq),SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	return tchOK;
 }
 
 
 static tchStatus tch_mailq_destroy(tch_mailqId qid){
 	tch_mailq_cb* mailqcb = (tch_mailq_cb*) qid;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	if(!qid)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_mailqIsValid(mailqcb))
-		return osErrorResource;
+		return tchErrorResource;
 	if(tch_port_isISR())
-		return osErrorISR;
-	if((result = tch_port_enterSv(SV_MAILQ_DESTROY,(uword_t)qid,0)) != osOK)
+		return tchErrorISR;
+	if((result = tch_port_enterSv(SV_MAILQ_DESTROY,(uword_t)qid,0)) != tchOK)
 		return result;
 	MsgQ->destroy(mailqcb->msgq);
 	shMem->free(qid);
-	return osOK;
+	return tchOK;
 }
 
 tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg){
 	if(!tch_mailqIsValid(qid))
-		return osErrorResource;
-	tchStatus result = osOK;
+		return tchErrorResource;
+	tchStatus result = tchOK;
 	result = Mempool->destroy(((tch_mailq_cb*)qid)->bpool);
-	if(result == osOK){
+	if(result == tchOK){
 		tch_mailqInvalidate(qid);
-		tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq) ,SCHED_THREAD_ALL,osErrorResource,TRUE);
-		return osOK;
+		tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq) ,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+		return tchOK;
 	}
-	return osErrorParameter;
+	return tchErrorParameter;
 }
 
 static void tch_mailqValidate(tch_mailqId qid){

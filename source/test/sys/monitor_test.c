@@ -58,7 +58,7 @@ tchStatus monitor_performTest(tch* api){
 	uint8_t* prod2stk = NULL;
 
 
-	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,osErrorOS);
+	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,tchErrorOS);
 
 	tch_threadCfg thcfg;
 	thcfg._t_name = "consumer1";
@@ -93,10 +93,10 @@ tchStatus monitor_performTest(tch* api){
 
 
 
-	if(api->Thread->join(producer1Thread,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(producer2Thread,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Thread->join(producer1Thread,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(producer2Thread,osWaitForever) != tchOK)
+		return tchErrorOS;
 
 
 	api->Mtx->destroy(mtid);
@@ -104,44 +104,44 @@ tchStatus monitor_performTest(tch* api){
 	api->Condv->destroy(condC);
 
 
-	if(api->Thread->join(consumer1Thread,osWaitForever) != osOK)
-		return osErrorOS;
-	if(api->Thread->join(consumer2Thread,osWaitForever) != osOK)
-		return osErrorOS;
+	if(api->Thread->join(consumer1Thread,osWaitForever) != tchOK)
+		return tchErrorOS;
+	if(api->Thread->join(consumer2Thread,osWaitForever) != tchOK)
+		return tchErrorOS;
 
 
 	api->Condv->destroy(condP);
 	api->Condv->destroy(condC);
 
 	if(tstBuf.updated == 0)
-		return osOK;
-	return osErrorOS;
+		return tchOK;
+	return tchErrorOS;
 
 }
 
 
 static BOOL consume(tch* api,struct VBuf* vb,uint32_t timeout){
-	if(api->Mtx->lock(mtid,osWaitForever) != osOK)
+	if(api->Mtx->lock(mtid,osWaitForever) != tchOK)
 		return FALSE;
 	while(vb->updated == 0){
-		if(api->Condv->wait(condC,mtid,timeout) != osOK)
+		if(api->Condv->wait(condC,mtid,timeout) != tchOK)
 			return FALSE;
 	}
 	vb->updated--;
 	api->Condv->wakeAll(condP);
-	return api->Mtx->unlock(mtid) == osOK;
+	return api->Mtx->unlock(mtid) == tchOK;
 }
 
 static BOOL produce(tch* api,struct VBuf* vb,uint32_t timeout){
-	 if(api->Mtx->lock(mtid,osWaitForever) != osOK)
+	 if(api->Mtx->lock(mtid,osWaitForever) != tchOK)
 		 return FALSE;
 	 while(vb->updated == vb->size){
-		 if(api->Condv->wait(condP,mtid,timeout) != osOK)
+		 if(api->Condv->wait(condP,mtid,timeout) != tchOK)
 			 return FALSE;
 	 }
 	 vb->updated++;
 	 api->Condv->wakeAll(condC);
-	 return api->Mtx->unlock(mtid) == osOK;
+	 return api->Mtx->unlock(mtid) == tchOK;
 }
 
 
@@ -152,7 +152,7 @@ static DECLARE_THREADROUTINE(producerRoutine){
 		produce(env,&tstBuf,osWaitForever);
 		env->Thread->yield(0);
 	}
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(consumerRoutine){
@@ -162,8 +162,8 @@ static DECLARE_THREADROUTINE(consumerRoutine){
 		env->Thread->yield(0);
 	}
 	if(!consume(env,&tstBuf,osWaitForever))
-		return osOK;
-	return osErrorOS;
+		return tchOK;
+	return tchErrorOS;
 }
 
 

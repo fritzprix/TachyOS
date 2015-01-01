@@ -136,10 +136,10 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 		return NULL;
 
 
-	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != osOK)
+	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != tchOK)
 		return NULL;
 	while(UART_StaticInstance.occp_state & umskb){
-		if(env->Condv->wait(UART_StaticInstance.condv,UART_StaticInstance.mtx,timeout) != osOK)
+		if(env->Condv->wait(UART_StaticInstance.condv,UART_StaticInstance.mtx,timeout) != tchOK)
 			return NULL;
 	}
 	UART_StaticInstance.occp_state |= umskb;   // mark as occupied
@@ -299,27 +299,27 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	tch_uart_descriptor* uDesc;
 	USART_TypeDef* uhw;
-	tchStatus res = osOK;
+	tchStatus res = tchOK;
 	if(!handle)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_uartIsValid(ins))
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(tch_port_isISR())
-		return osErrorParameter;
+		return tchErrorParameter;
 	 uDesc = &UART_HWs[ins->pno];
 	 uhw = (USART_TypeDef*) uDesc->_hw;
 	const tch* env = ins->env;
 
 
 	// block tx / rx operation by setting busy
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
+	if(env->Mtx->lock(ins->txMtx,osWaitForever) != tchOK)
 		return FALSE;
 	while(UART_IS_TXBUSY(ins)){
 		env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever);
 	}
 	UART_SET_TXBUSY(ins);
 
-	if(env->Mtx->lock(ins->rxMtx,osWaitForever) != osOK)
+	if(env->Mtx->lock(ins->rxMtx,osWaitForever) != tchOK)
 		return FALSE;
 	while(UART_IS_RXBUSY(ins)){
 		env->Condv->wait(ins->rxCondv,ins->rxMtx,osWaitForever);
@@ -341,7 +341,7 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
 	ins->ioHandle->close(ins->ioHandle);
-	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != osOK){
+	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != tchOK){
 		return FALSE;
 	}
 	UART_StaticInstance.occp_state &= ~(1 << ins->pno); // clear Occupation flag
@@ -369,39 +369,39 @@ static tchStatus tch_uartGetc(tch_UartHandle* handle,uint8_t* rc,uint32_t timeou
 static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t sz){
 	tch_UartHandlePrototype* ins;
 	if(!handle)
-		return osErrorParameter;
+		return tchErrorParameter;
 	 ins = (tch_UartHandlePrototype*) handle;
 	if(!tch_uartIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
 	size_t idx = 0;
 	const tch* env = ins->env;
-	osEvent evt;
-	evt.status = osOK;
+	tchEvent evt;
+	evt.status = tchOK;
 
 
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != osOK)
-		return osErrorResource;
+	if(env->Mtx->lock(ins->txMtx,osWaitForever) != tchOK)
+		return tchErrorResource;
 	while(UART_IS_TXBUSY(ins)){
-		if((evt.status = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != osOK)
+		if((evt.status = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != tchOK)
 			return evt.status;
 	}
 	UART_SET_TXBUSY(ins);
-	if((evt.status = env->Mtx->unlock(ins->txMtx)) != osOK)
+	if((evt.status = env->Mtx->unlock(ins->txMtx)) != tchOK)
 		return evt.status;
 
 	for(;idx < sz;idx++){
 		while(!(uhw->SR & USART_SR_TXE)) /*NOP*/;
 		uhw->DR = *((uint8_t*) bp + idx);
 		evt = env->MsgQ->get(ins->txCh.txQ,osWaitForever);
-		if(evt.status != osEventMessage)
+		if(evt.status != tchEventMessage)
 			return evt.status;
 	}
 
-	if((evt.status = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
+	if((evt.status = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
 		return evt.status;
 
 	UART_CLR_TXBUSY(ins);
@@ -415,43 +415,43 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout){
 	tch_UartHandlePrototype* ins;
 	if(!handle)
-		return osErrorParameter;
+		return tchErrorParameter;
 	ins = (tch_UartHandlePrototype*) handle;
 	if(!tch_uartIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
 	const tch* env = ins->env;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	*bp = '\0';
 	size_t idx = 0;
 
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
 		return result;
 	while(UART_IS_RXBUSY(ins)){
-		if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != osOK)
+		if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != tchOK)
 			return result;
 	}
 	UART_SET_RXBUSY(ins);
-	if((result = env->Mtx->unlock(ins->rxMtx)) != osOK)
+	if((result = env->Mtx->unlock(ins->rxMtx)) != tchOK)
 		return result;
 
 	if(uhw->SR & USART_SR_ORE)
 		result = uhw->DR;
 	uhw->CR1 |= USART_CR1_RXNEIE;       // enable usart rx inter
-	osEvent evt;
-	evt.status = osEventMessage;
-	while(evt.status == osEventMessage){
+	tchEvent evt;
+	evt.status = tchEventMessage;
+	while(evt.status == tchEventMessage){
 		evt = env->MsgQ->get(ins->rxCh.rxQ,timeout);
 		*(bp + idx++) = evt.value.v;
 		if(idx >= sz)
-			evt.status = osOK;
+			evt.status = tchOK;
 	}
 
 
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
 		return result;
 
 	UART_CLR_RXBUSY(ins);
@@ -465,25 +465,25 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 
 static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_t sz){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	if(!handle)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_uartIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 	const tch* env = ins->env;
 
 
-	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
+	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
 		return result;
 
 	while(UART_IS_TXBUSY(ins)){
-		if((result = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != osOK)
+		if((result = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != tchOK)
 			return result;
 	}
 	UART_SET_TXBUSY(ins);
-	if((result = env->Mtx->unlock(ins->txMtx)) != osOK)
+	if((result = env->Mtx->unlock(ins->txMtx)) != tchOK)
 		return result;
 
 
@@ -495,39 +495,39 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	while(!(uhw->SR & USART_SR_TC)) __NOP();
 	uhw->SR &= ~USART_SR_TC;    // clear tc
 	while(!tch_dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
-		if(result == osErrorResource){
+		if(result == tchErrorResource){
 			return result;
 		}
 	}
 
-	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != osOK)
+	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
 		return result;
 	UART_CLR_TXBUSY(ins);
 	env->Condv->wakeAll(ins->txCondv);
 	env->Mtx->unlock(ins->txMtx);
-	return osOK;
+	return tchOK;
 }
 
 static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout){
 	tch_UartHandlePrototype* ins = (tch_UartHandlePrototype*) handle;
 	if(!handle)
-		return osErrorParameter;
+		return tchErrorParameter;
 	if(!tch_uartIsValid(ins))
-		return osErrorResource;
+		return tchErrorResource;
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 	const tch* env = ins->env;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 
 
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
 		return result;
 	while(UART_IS_RXBUSY(ins)){
-		if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != osOK)
+		if((result = env->Condv->wait(ins->rxCondv,ins->rxMtx,timeout)) != tchOK)
 			return result;
 	}
 	UART_SET_RXBUSY(ins);
-	if((result = env->Mtx->unlock(ins->rxMtx)) != osOK)
+	if((result = env->Mtx->unlock(ins->rxMtx)) != tchOK)
 		return result;
 
 	USART_TypeDef* uhw = (USART_TypeDef*)UART_HWs[ins->pno]._hw;
@@ -536,17 +536,17 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	req.MemInc = TRUE;
 	req.PeriphInc = FALSE;
 	while(!tch_dma->beginXfer(ins->rxCh.rxDma,&req,timeout,&result)){
-		if(result == osErrorResource)
+		if(result == tchErrorResource)
 			return result;
 	}
 
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != osOK)
+	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
 		return result;
 
 	UART_CLR_RXBUSY(ins);
 	env->Condv->wakeAll(ins->rxCondv);
 	env->Mtx->unlock(ins->rxMtx);
-	return osOK;
+	return tchOK;
 }
 
 
@@ -566,14 +566,14 @@ static inline BOOL tch_uartIsValid(tch_UartHandlePrototype* _handle){
 static BOOL tch_uartInterruptHandler(tch_UartHandlePrototype* _handle,void* _hw){
 	USART_TypeDef* uhw = (USART_TypeDef*) _hw;
 	const tch* env = _handle->env;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	uint16_t dm = 0;
 	if(uhw->SR & USART_SR_RXNE){
 		env->MsgQ->put(_handle->rxCh.rxQ,uhw->DR,0);
 	}
 	if(uhw->SR & USART_SR_TC){
 		uhw->SR &= ~USART_SR_TC;
-		env->MsgQ->put(_handle->txCh.txQ,osOK,0);
+		env->MsgQ->put(_handle->txCh.txQ,tchOK,0);
 		return TRUE;
 	}
 	if(uhw->SR & USART_SR_ORE){

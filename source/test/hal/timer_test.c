@@ -25,7 +25,7 @@ static uint32_t ffvs1[1000];
 
 tchStatus timer_performTest(tch* env){
 
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 
 	// ************* Start of test for Basic Timer Function ********************** //
 	tch_gptimerDef gptDef;
@@ -67,8 +67,8 @@ tchStatus timer_performTest(tch* env){
 	// ************* End of test for Basic Timer Function ********************** //
 
 
-	if(result != osOK)
-		return osErrorOS;
+	if(result != tchOK)
+		return tchErrorOS;
 
 
 	// ************* Start of test for PWM Out Function ********************** //
@@ -121,7 +121,7 @@ tchStatus timer_performTest(tch* env){
 
 	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,osWaitForever);
 	if(!pwmDrv)
-		return osErrorOS;
+		return tchErrorOS;
 
 	tch_tcaptDef captDef;
 	captDef.Polarity = TIMER_POLARITY_NEGATIVE;
@@ -131,7 +131,7 @@ tchStatus timer_performTest(tch* env){
 
 	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,tch_TIMER0,&captDef,osWaitForever);
 	if(!capt)
-		return osErrorOS;
+		return tchErrorOS;
 
 	thcfg._t_name = "Pgen";
 	thcfg._t_routine = pulseGenRun;
@@ -182,7 +182,7 @@ static DECLARE_THREADROUTINE(waiter1Run){
 	int cnt = 1000;
 	while(cnt--)
 		gptimer->wait(gptimer,10);
-	return osOK;
+	return tchOK;
 
 }
 
@@ -191,7 +191,7 @@ static DECLARE_THREADROUTINE(waiter2Run){
 	int cnt = 1000;
 	while(cnt--)
 		gptimer->wait(gptimer,10);
-	return osOK;
+	return tchOK;
 }
 
 
@@ -204,7 +204,7 @@ static DECLARE_THREADROUTINE(pulsDrv1Run){
 		env->Thread->yield(1);
 	}
 	cnt = 0;
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulsDrv2Run){
@@ -220,7 +220,7 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 	}while(cnt++ < 1000);
 
 	pwmDrv->write(pwmDrv,1,fvs,1000);
-	return osOK;
+	return tchOK;
 }
 
 
@@ -228,18 +228,18 @@ static DECLARE_THREADROUTINE(pulseGenRun){
 	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) env->Thread->getArg();
 	pwmDrv->setDuty(pwmDrv,2,0.5);
 	pwmDrv->write(pwmDrv,0,fvs,1000);
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulseCon1Run){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
 	capt->read(capt,0,ffvs,1000,osWaitForever);
-	return osOK;
+	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulseCon2Run){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
 	capt->read(capt,2,ffvs1,1000,osWaitForever);
-	return osOK;
+	return tchOK;
 }
 

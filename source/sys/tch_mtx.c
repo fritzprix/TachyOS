@@ -84,36 +84,36 @@ tch_mtxId tch_mtx_create(){
  */
 tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 	if(!id)                                   // check mtx id is not null
-		return osErrorParameter;              // otherwise return 'osErrorParameter'
-	tchStatus result = osOK;
+		return tchErrorParameter;              // otherwise return 'tchErrorParameter'
+	tchStatus result = tchOK;
 	if(tch_port_isISR()){                     // if in isr return isr error
-		tch_kernel_errorHandler(FALSE,osErrorISR);
-		return osErrorISR;
+		tch_kernel_errorHandler(FALSE,tchErrorISR);
+		return tchErrorISR;
 	}
 	tch_mtxCb* mcb = (tch_mtxCb*) id;
 	if(!tch_mtxIsValid(mcb))
-		return osErrorResource;              // validity check of mutex control block
+		return tchErrorResource;              // validity check of mutex control block
 	tch_threadId tid = Thread->self();           // get current thread id
 	if(mcb->own == tid)
-		return osOK;                         // if this mutex is locked by current thread, return 'ok'
+		return tchOK;                         // if this mutex is locked by current thread, return 'ok'
 	while(tch_port_exclusiveCompareUpdate((uaddr_t)&mcb->own,0,(uword_t) tid)){
 		tch_thread_prior prior = Thread->getPriorty((tch_threadId)tid);                         // mutex is already locked
 		if(Thread->getPriorty((tch_threadId)mcb->own) < prior)
 			Thread->setPriority((tch_threadId)mcb->own,prior);
 		result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&mcb->que,timeout);
 		if(!tch_mtxIsValid(mcb))
-			return osErrorResource;
+			return tchErrorResource;
 		switch(result){
-		case osEventTimeout:
-			return osErrorTimeoutResource;
-		case osErrorResource:
-			return osErrorResource;
+		case tchEventTimeout:
+			return tchErrorTimeoutResource;
+		case tchErrorResource:
+			return tchErrorResource;
 		}
 	}
-	if(result == osOK){
+	if(result == tchOK){
 		mcb->svdPrior = Thread->getPriorty((tch_threadId) tid);
 		mcb->own = (tch_threadId) tid;
-		return osOK;
+		return tchOK;
 	}
 	return result;
 }
@@ -122,32 +122,32 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 tchStatus tch_mtx_unlock(tch_mtxId id){
 	tch_mtxCb* mcb = (tch_mtxCb*) id;
 	if(tch_port_isISR()){
-		return osErrorISR;
+		return tchErrorISR;
 	}
 	tch_threadId tid = Thread->self();
 	if(mcb->own != tid)
-		return osErrorResource;
+		return tchErrorResource;
 	if(!tch_mtxIsValid(mcb))
-		return osErrorResource;
+		return tchErrorResource;
 	Thread->setPriority(mcb->own,mcb->svdPrior);
 	mcb->svdPrior = Idle;
 	mcb->own = NULL;
 	if(!tch_listIsEmpty(&mcb->que))
-		tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&mcb->que,osOK);
-	return osOK;
+		tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&mcb->que,tchOK);
+	return tchOK;
 }
 
 tchStatus tch_mtx_destroy(tch_mtxId id){
 	tch_mtxCb* mcb = (tch_mtxCb*)id;
-	tchStatus result = osOK;
+	tchStatus result = tchOK;
 	if(tch_port_isISR())
-		return osErrorISR;
+		return tchErrorISR;
 	if(!tch_mtxIsValid(mcb))
-		return osErrorResource;
-	if(tch_mtx_lock(id,osWaitForever) != osOK)
-		return osErrorTimeoutResource;
+		return tchErrorResource;
+	if(tch_mtx_lock(id,osWaitForever) != tchOK)
+		return tchErrorTimeoutResource;
 	tch_mtxInvalidate(mcb);
-	result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&mcb->que,osErrorResource);
+	result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&mcb->que,tchErrorResource);
 	mcb->own = NULL;
 	Thread->setPriority(Thread->self(),mcb->svdPrior);
 	mcb->svdPrior = Idle;
