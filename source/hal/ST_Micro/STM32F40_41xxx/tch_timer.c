@@ -14,8 +14,6 @@
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_timer.h"
-#include "tch_halInit.h"
-#include "tch_halcfg.h"
 
 
 

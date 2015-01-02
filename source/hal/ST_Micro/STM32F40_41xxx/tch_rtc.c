@@ -16,7 +16,6 @@
 
 #include "tch_rtc.h"
 #include "tch_hal.h"
-#include "tch_halinit.h"
 #include "tch_kernel.h"
 
 #define RTC_CLASS_KEY               ((uint16_t) 0xAB5D)

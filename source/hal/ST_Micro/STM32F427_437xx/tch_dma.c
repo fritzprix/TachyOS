@@ -16,7 +16,6 @@
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_dma.h"
-#include "tch_halInit.h"
 
 
 #define DMA_MAX_ERR_CNT           ((uint8_t)  2)

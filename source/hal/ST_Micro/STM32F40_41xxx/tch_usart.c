@@ -14,10 +14,8 @@
 
 
 #include "tch_hal.h"
-#include "tch_halinit.h"
 #include "tch_dma.h"
-#include "tch_halcfg.h"
-#include "tch_port.h"
+#include "tch_kernel.h"
 
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)

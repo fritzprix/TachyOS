@@ -14,11 +14,9 @@
  */
 
 
-#include "hal/tch_hal.h"
+#include "tch_hal.h"
+#include "tch_kernel.h"
 #include "tch_i2c.h"
-#include "tch_halInit.h"
-#include "tch_halcfg.h"
-#include "tch_port.h"
 
 
 

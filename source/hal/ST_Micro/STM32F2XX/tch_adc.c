@@ -13,11 +13,9 @@
  */
 
 
-#include "hal/tch_hal.h"
-#include "tch_halcfg.h"
-#include "tch_halinit.h"
+#include "tch_hal.h"
 #include "tch_adc.h"
-#include "tch_port.h"
+#include "tch_kernel.h"
 
 
 #define _1_MHZ                ((uint32_t) 1000000)

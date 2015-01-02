@@ -133,9 +133,8 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 }
 
 static tchStatus tch_threadStart(tch_threadId thread){
-	if(tch_port_isISR()){          // check current execution mode (Thread or Handler)
+	if(tch_port_isISR()){                // check current execution mode (Thread or Handler)
 		tch_schedReadyThread(thread);    // if handler mode call, put current thread in ready queue
-		                           // optionally check preemption required or not
 		return tchOK;
 	}else{
 		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);

@@ -20,6 +20,7 @@ extern "C"{
 #endif
 
 #include "tch_halcfg.h"
+#include "tch_haldesc.h"
 
 typedef enum {
 	LP_LEVEL0 = ((uint8_t) 0),
@@ -27,24 +28,10 @@ typedef enum {
 	LP_LEVEL2 = ((uint8_t) 2)
 }tch_lplvl;
 
-#if MFEATURE_UART
 #include "tch_usart.h"
-#endif
-
-#if MFEATURE_SPI
 #include "tch_spi.h"
-#endif
-
-#if MFEATURE_IIC
 #include "tch_i2c.h"
-#endif
-
-#if MFEATURE_ADC
 #include "tch_adc.h"
-#endif
-
-
-
 #include "tch_rtc.h"
 #include "tch_timer.h"
 #include "tch_gpio.h"
@@ -52,24 +39,30 @@ typedef enum {
 
 
 
+extern __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO];
+extern __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[MFEATURE_PINCOUNT_pPORT];
+extern __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[MFEATURE_DMA];
+extern __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART];
+extern __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER];
+extern __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI];
+extern __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC];
+extern __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC];
+
+
+
+extern __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO];
+extern __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER];
+extern __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI];
+extern __TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC];
+extern __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC];
+extern __TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs;
+
 
 struct tch_hal_t{
-#if MFEATURE_UART
 	const tch_lld_usart* usart;
-#endif
-
-#if MFEATURE_SPI
 	const tch_lld_spi*   spi;
-#endif
-
-#if MFEATURE_IIC
 	const tch_lld_iic*   i2c;
-#endif
-
-#if MFEATURE_ADC
 	const tch_lld_adc*   adc;
-#endif
-
 	const tch_lld_gpio*  gpio;
 	const tch_lld_timer* timer;
 };

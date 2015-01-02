@@ -14,12 +14,10 @@
 
 
 #include <stdlib.h>
-#include "tch.h"
-#include "tch_halInit.h"
 #include "tch_gpio.h"
+#include "tch_hal.h"
 #include "tch_ktypes.h"
 #include "tch_kernel.h"
-#include "tch_halcfg.h"
 
 
 
@@ -127,7 +125,7 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 		NULL,
 		NULL,
 		MFEATURE_GPIO,
-		MFEATURE_PINCOUNT_pPort
+		MFEATURE_PINCOUNT_pPORT
 };
 
 const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticManager;

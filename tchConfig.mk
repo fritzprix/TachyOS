@@ -22,6 +22,34 @@ ifeq ($(MINOR_VER),)
 endif
 
 
+### Open 407Z ###\
+ARCH = ARM\
+CPU = cortex-m4\
+INSTR = thumb\
+FPU = HALFSOFT\
+HW_VENDOR = ST_Micro\
+HW_PLF = STM32F40_41xxx\
+APP_NAME = 
+
+### Open 427Z ###\
+ARCH = ARM\
+CPU = cortex-m4\
+INSTR = thumb\
+FPU = HALFSOFT\
+HW_VENDOR = ST_Micro\
+HW_PLF = STM32F427_437xx\
+
+###
+ARCH=ARM
+CPU=cortex-m3
+INSTR=thumb
+FPU=SOFT
+HW_VENDOR=ST_Micro
+HW_PLF=STM32F2XX
+
+
+
+
 
 # Architecture Conf.
 ifeq ($(ARCH),)
@@ -57,35 +85,9 @@ ifeq ($(BOARD_NAME),)
 	BOARD_NAME=Port_103Z
 endif
 
-
-
-
-### Open 407Z ###
-ARCH = ARM
-CPU = cortex-m4
-INSTR = thumb
-FPU = HALFSOFT
-HW_VENDOR = ST_Micro
-HW_PLF = STM32F40_41xxx
-
-### Open 427Z ###\
-ARCH = ARM\
-CPU = cortex-m4\
-INSTR = thumb\
-FPU = HALFSOFT\
-HW_VENDOR = ST_Micro\
-HW_PLF = STM32F427_437xx\
-
-###\
-ARCH=ARM\
-CPU=cortex-m3\
-INSTR=thumb\
-FPU=SOFT\
-HW_VENDOR=ST_Micro\
-HW_PLF=STM32F2XX\
-
-
-
+ifeq ($(APP_NAME),)
+	APP_NAME=tch_test
+endif
 
 
 

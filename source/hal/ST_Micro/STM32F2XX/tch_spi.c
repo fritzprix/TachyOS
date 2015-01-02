@@ -12,11 +12,9 @@
  *      Author: innocentevil
  */
 
-#include "hal/tch_hal.h"
+#include "tch_hal.h"
 #include "tch_spi.h"
-#include "tch_halInit.h"
-#include "tch_halcfg.h"
-#include "tch_port.h"
+#include "tch_kernel.h"
 
 typedef struct _tch_lld_spi_prototype tch_lld_spi_prototype;
 typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
