@@ -27,6 +27,8 @@
 #include "tch_hal.h"
 
 
+
+
 #if !defined(__BUILD_TIME_EPOCH)
 #define __BUILD_TIME_EPOCH 0UL
 #endif
@@ -49,7 +51,7 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 
 
-extern const tch_hal* tch_kernel_initHAL();
+extern const tch_hal* tch_kernel_initHAL(const tch* env);
 extern BOOL tch_kernel_initPort();
 extern tchStatus tch_kernel_initCrt0(tch* env);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);

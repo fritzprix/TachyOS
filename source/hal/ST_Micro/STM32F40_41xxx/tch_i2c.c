@@ -122,16 +122,20 @@ __attribute__((section(".data"))) static tch_lld_i2c_prototype IIC_StaticInstanc
 };
 
 
-const tch_lld_iic* tch_i2c_instance = (const tch_lld_iic*) &IIC_StaticInstance;
+tch_lld_iic* tch_iicHalInit(const tch* env){
+	if(IIC_StaticInstance.condv || IIC_StaticInstance.mtx)
+		return NULL;
+	if(!env)
+		return NULL;
+	IIC_StaticInstance.mtx = env->Mtx->create();
+	IIC_StaticInstance.condv = env->Condv->create();
+	return &IIC_StaticInstance;
+}
 
 
 static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	if(!(i2c < MFEATURE_IIC))
 		return NULL;
-	if(!IIC_StaticInstance.mtx)
-		IIC_StaticInstance.mtx = env->Mtx->create();
-	if(!IIC_StaticInstance.condv)
-		IIC_StaticInstance.condv = env->Condv->create();
 
 	tch_DmaCfg dmaCfg;
 	tch_iic_descriptor* iicDesc = &IIC_HWs[i2c];

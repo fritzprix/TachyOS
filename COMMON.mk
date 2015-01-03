@@ -17,9 +17,9 @@ HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
 TEST_SYS_SRC_DIR=$(ROOT_DIR)/source/test/sys
 TEST_HAL_SRC_DIR=$(ROOT_DIR)/source/test/hal
-
-
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
+APP_SRC_DIR=$(USR_SRC_DIR)/app/$(APP_NAME)
+MODULE_BASE_SRC_DIR=$(ROOT_DIR)/source/usr/module
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include
 KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
@@ -30,8 +30,9 @@ BOARD_HDR_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
 HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
 TEST_SYS_HDR_DIR=$(ROOT_DIR)/include/test/sys
 TEST_HAL_HDR_DIR=$(ROOT_DIR)/include/test/hal
-
 USR_HDR_DIR=$(ROOT_DIR)/include/usr
+APP_HDR_DIR=$(USR_HDR_DIR)/app/$(APP_NAME)
+MODULE_HDR_DIR=$(USR_HDR_DIR)/module
 
 
 
@@ -123,5 +124,4 @@ ifneq ($(FLOAT_FLAG),)
 	CPFLAG += $(FLOAT_FLAG)
 	CFLAG += $(FLOAT_FLAG)
 endif
-
 

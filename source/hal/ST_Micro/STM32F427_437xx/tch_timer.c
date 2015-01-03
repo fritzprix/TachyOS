@@ -189,8 +189,15 @@ __attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance
 };
 
 
-const tch_lld_timer* tch_timer_instance = (tch_lld_timer*) &TIMER_StaticInstance;
-tch_GpioHandle* iohandle;
+tch_lld_timer* tch_timerHalInit(const tch* env){
+	if(TIMER_StaticInstance.mtx || TIMER_StaticInstance.condv)
+		return NULL;
+	if(!env)
+		return NULL;
+	TIMER_StaticInstance.mtx = env->Mtx->create();
+	TIMER_StaticInstance.condv = env->Condv->create();
+	return &TIMER_StaticInstance;
+}
 
 ///////            Timer Manager Function               ///////
 static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){

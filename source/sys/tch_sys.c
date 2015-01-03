@@ -18,11 +18,14 @@
  */
 
 
+
+#include "tch.h"
+
+#include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mailq.h"
 #include "tch_msgq.h"
 #include "tch_mem.h"
-#include "tch_halcfg.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
 #include "tch_syscfg.h"
@@ -31,18 +34,16 @@
 #include "tch_board.h"
 
 
-struct tch_err_descriptor {
-	int            errtype;
-	int            errno;
-	tch_threadId   subj;
-};
+
+#define SYSTSK_ID_SLEEP             ((int) -3)
+#define SYSTSK_ID_ERR_HANDLE        ((int) -2)
+#define SYSTSK_ID_RESET             ((int) -1)
+
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
 static DECLARE_SYSTASK(kernelTaskHandler);
-#define SYSTSK_ID_SLEEP             ((int) -3)
-#define SYSTSK_ID_ERR_HANDLE        ((int) -2)
-#define SYSTSK_ID_RESET             ((int) -1)
+
 
 
 static tch RuntimeInterface;
@@ -56,7 +57,7 @@ static tch_thread_queue tch_lpEvtWaitQ;
 
 static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
-
+const struct tch_bin_descriptor BIN_DESC;
 
 
 /***
@@ -95,10 +96,6 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  dynamic binding of dependecy
 	 */
-	RuntimeInterface.Device = tch_kernel_initHAL();
-	if(!RuntimeInterface.Device)
-		tch_kernel_errorHandler(FALSE,tchErrorValue);
-
 
 	if(!tch_kernel_initPort()){
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
@@ -228,15 +225,15 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tchEvent evt;
 	tch_sysTask* task = NULL;
 
-	// bind kernel interface(s) which has hal dependency
-	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
+	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
+	if(!RuntimeInterface.Device)
+		tch_kernel_errorHandler(FALSE,tchErrorValue);
 
+	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != tchOK)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
-
-	// initialize sys thread mail box for task queueing
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
@@ -269,10 +266,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	Thread->start(mainThread);
 
 	uStdLib->string->memset(&evt,0,sizeof(tchEvent));
-
-	uStdLib->stdio->iprintf("\rUser Heap Top:  %x\n",&Heap_Limit);
-	uStdLib->stdio->iprintf("\rUser Heap Bottom : %x\n",&Heap_Base);
-	uStdLib->stdio->iprintf("\rThread Header Size : %d\n",sizeof(tch_thread_header));
 
 
 

@@ -67,7 +67,8 @@ typedef struct tch_lld_iic_t {
 }tch_lld_iic;
 
 
-extern const tch_lld_iic* tch_i2c_instance;
+extern tch_lld_iic* tch_iicHalInit(const tch* env);
+
 
 
 #if defined(__cplusplus)

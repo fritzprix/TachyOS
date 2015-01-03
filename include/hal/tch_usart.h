@@ -69,8 +69,7 @@ typedef struct tch_lld_usart {
 	tch_UartHandle* (*allocUart)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_usart;
 
-extern const tch_lld_usart* tch_usart_instance;
-
+extern tch_lld_usart* tch_usartHalInit(const tch* env);
 
 #if defined(_cplusplus)
 }

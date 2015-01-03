@@ -116,7 +116,16 @@ __attribute__((section(".data"))) static tch_lld_uart_prototype UART_StaticInsta
 
 
 
-const tch_lld_usart* tch_usart_instance = (const tch_lld_usart*) &UART_StaticInstance;
+tch_lld_usart* tch_usartHalInit(const tch* env){
+	if(UART_StaticInstance.mtx || UART_StaticInstance.condv)
+		return NULL;
+	if(!env)
+		return NULL;
+	UART_StaticInstance.mtx = env->Mtx->create();
+	UART_StaticInstance.condv = env->Condv->create();
+	return (tch_lld_usart*) &UART_StaticInstance;
+}
+
 
 static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	tch_UartHandlePrototype* uins = NULL;

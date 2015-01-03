@@ -22,6 +22,23 @@ extern "C" {
 
 #include "tch_TypeDef.h"
 
+#include "tch_usart.h"
+#include "tch_spi.h"
+#include "tch_i2c.h"
+#include "tch_adc.h"
+#include "tch_timer.h"
+#include "tch_gpio.h"
+
+
+struct tch_hal_t{
+	const tch_lld_usart* usart;
+	const tch_lld_spi*   spi;
+	const tch_lld_iic*   i2c;
+	const tch_lld_adc*   adc;
+	const tch_lld_gpio*  gpio;
+	const tch_lld_timer* timer;
+};
+
 /*!
  * \mainpage
  *  this is main page
@@ -56,20 +73,6 @@ typedef struct _tch_runtime_t tch;
  *  tachyos kernel interface
  */
 
-
-typedef void* tch_threadId;
-typedef void* tch_mtxId;
-typedef void* tch_semId;
-typedef void* tch_barId;
-typedef void* tch_timerId;
-/*! \brief condition variable identifier
- */
-typedef void* tch_condvId;
-typedef void* tch_mpoolId;
-typedef void* tch_msgqId;
-typedef void* tch_mailqId;
-typedef void* tch_memId;
-typedef void* tch_eventTree;
 
 
 
@@ -243,7 +246,6 @@ struct _tch_event_ix_t {
 
 
 #include "sys/tch_nclib.h"
-#include "hal/tch_hal.h"
 
 
 extern DECLARE_THREADROUTINE(main);

@@ -94,9 +94,16 @@ __attribute__((section(".data"))) static tch_lld_spi_prototype SPI_StaticInstanc
 
 };
 
-const tch_lld_spi* tch_spi_instance = (const tch_lld_spi*) &SPI_StaticInstance;
 
-
+tch_lld_spi* tch_spiHalInit(const tch* env){
+	if(SPI_StaticInstance.mtx || SPI_StaticInstance.condv)
+		return NULL;
+	if(!env)
+		return NULL;
+	SPI_StaticInstance.mtx = env->Mtx->create();
+	SPI_StaticInstance.condv = env->Condv->create();
+	return &SPI_StaticInstance;
+}
 
 static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->Baudrate = SPI_BAUDRATE_NORMAL;

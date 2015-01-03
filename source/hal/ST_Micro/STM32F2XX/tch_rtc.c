@@ -86,8 +86,15 @@ __attribute__((section(".data"))) static tch_lld_rtc_prototype RTC_StaticInstanc
 };
 
 
-const tch_lld_rtc* tch_rtc = (const tch_lld_rtc*) &RTC_StaticInstance;
-
+tch_lld_rtc* tch_rtcHalInit(const tch* env){
+	if(RTC_StaticInstance.mtx || RTC_StaticInstance.condv)
+		return NULL;
+	if(!env)
+		return NULL;
+	RTC_StaticInstance.mtx = env->Mtx->create();
+	RTC_StaticInstance.condv = env->Condv->create();
+	return (tch_lld_rtc*) &RTC_StaticInstance;
+}
 
 
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone tz){

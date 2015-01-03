@@ -241,6 +241,9 @@ struct dma_cfg_t {
 	BOOL                   pInc;
 };
 
+extern tch_lld_dma* tch_dmaHalInit(const tch* env);
+
+
 
 #if defined(__cplusplus)
 }

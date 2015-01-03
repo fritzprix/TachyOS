@@ -22,20 +22,14 @@ extern "C"{
 #include "tch_halcfg.h"
 #include "tch_haldesc.h"
 
+#include "tch_rtc.h"
+#include "tch_dma.h"
+
 typedef enum {
 	LP_LEVEL0 = ((uint8_t) 0),
 	LP_LEVEL1 = ((uint8_t) 1),
 	LP_LEVEL2 = ((uint8_t) 2)
 }tch_lplvl;
-
-#include "tch_usart.h"
-#include "tch_spi.h"
-#include "tch_i2c.h"
-#include "tch_adc.h"
-#include "tch_rtc.h"
-#include "tch_timer.h"
-#include "tch_gpio.h"
-#include "tch_dma.h"
 
 
 
@@ -58,17 +52,10 @@ extern __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC];
 extern __TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs;
 
 
-struct tch_hal_t{
-	const tch_lld_usart* usart;
-	const tch_lld_spi*   spi;
-	const tch_lld_iic*   i2c;
-	const tch_lld_adc*   adc;
-	const tch_lld_gpio*  gpio;
-	const tch_lld_timer* timer;
-};
+extern tch_lld_rtc* tch_rtc;
+extern tch_lld_dma* tch_dma;
 
-extern const tch_lld_rtc* tch_rtc;
-extern const tch_lld_dma* tch_dma;
+
 
 extern void tch_hal_enableSystick();
 extern void tch_hal_disableSystick();

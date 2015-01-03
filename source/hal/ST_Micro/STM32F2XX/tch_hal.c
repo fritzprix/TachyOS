@@ -12,7 +12,7 @@
  *      Author: innocentevil
  */
 
-#include "hal/tch_hal.h"
+#include "tch_hal.h"
 #include "tch_kernel.h"
 
 
@@ -57,39 +57,7 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_GPIOELPEN,
 				0
-		},
-		{
-				GPIOF,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOFEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOFLPEN,
-				0
-		},
-		{
-				GPIOG,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOGEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOGLPEN,
-				0
-		},
-		{
-				GPIOH,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOHEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOHLPEN,
-				0
-		},
-		{
-				GPIOI,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOIEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOILPEN,
-				0
-		},
+		}
 };
 
 
@@ -1002,8 +970,10 @@ __TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs = {
 
 
 tch_hal tch_hal_instance;
+tch_lld_rtc* tch_rtc;
+tch_lld_dma* tch_dma;
 
-const tch_hal* tch_kernel_initHAL(){
+const tch_hal* tch_kernel_initHAL(const tch* env){
 	/***
 	 *  initialize clock subsystem
 	 */
@@ -1012,19 +982,18 @@ const tch_hal* tch_kernel_initHAL(){
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
 	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
 
+	tch_rtc = tch_rtcHalInit(env);
+	tch_dma = tch_dmaHalInit(env);
 	/***
 	 *  bind hal interface
 	 */
-	tch_hal_instance.adc = tch_adc_instance;
+	tch_hal_instance.adc = tch_adcHalInit(env);
+	tch_hal_instance.gpio  = tch_gpioHalInit(env);
+	tch_hal_instance.timer = tch_timerHalInit(env);
+	tch_hal_instance.usart = tch_usartHalInit(env);
+	tch_hal_instance.spi = tch_spiHalInit(env);
+	tch_hal_instance.i2c = tch_iicHalInit(env);
 
-#if MFEATURE_GPIO
-	tch_hal_instance.gpio  = tch_gpio_instance;
-#endif
-
-	tch_hal_instance.timer = tch_timer_instance;
-	tch_hal_instance.usart = tch_usart_instance;
-	tch_hal_instance.spi = tch_spi_instance;
-	tch_hal_instance.i2c = tch_i2c_instance;
 	return &tch_hal_instance;
 }
 

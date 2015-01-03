@@ -198,8 +198,8 @@ typedef struct tch_lld_gpio {
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
 }tch_lld_gpio;
 
-extern const tch_lld_gpio* tch_gpio_instance;
 
+extern tch_lld_gpio* tch_gpioHalInit(const tch* env);
 
 #if defined(__cplusplus)
 }

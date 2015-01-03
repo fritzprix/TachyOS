@@ -19,6 +19,14 @@
 extern "C" {
 #endif
 
+struct tch_bin_descriptor {
+	const char*          hw_vendor;
+	const char*          hw_plf;
+	const char*          build_time;
+	uint32_t             major_ver;
+	uint32_t             minor_ver;
+
+};
 
 typedef enum tch_thread_state_t {
 	PENDED =  ((int8_t) 1),                              // state in which thread is created but not started yet (waiting in ready queue)
@@ -36,6 +44,12 @@ typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_header_t tch_thread_header;
 typedef struct tch_uobj_t tch_uobj;
 typedef tchStatus (*tch_uobjDestr)(tch_uobj* obj);
+
+struct tch_err_descriptor {
+	int            errtype;
+	int            errno;
+	tch_threadId   subj;
+};
 
 
 

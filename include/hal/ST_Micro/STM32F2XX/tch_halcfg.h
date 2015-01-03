@@ -28,12 +28,6 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
-#define TACHYOS_HAL_VENDOR               HW_VENDOR                      ///< vendor name field
-#define TACHYOS_HAL_PLATFORM_NAME        HW_PLF                          ///< hw platform name (product name of mcu / mpu ic)
-#define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              ///< hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
-#define TACHYOS_HAL_MAIN_VERSION          0                              ///< hal version
-#define TACHYOS_HAL_SUB_VERSION           0                              ///< hal sub version
-
 ///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
 /**
  *  @brief Us External Crystal, so that internal inverter is enabled for generating main clock

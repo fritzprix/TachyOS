@@ -8,8 +8,8 @@
 
 
 ifeq ($(PUBLISH_TYPE),)
-	PUBLISH_TYPE=Release
-#	PUBLISH_TYPE=Debug
+#	PUBLISH_TYPE=Release
+	PUBLISH_TYPE=Debug
 endif
 
 
@@ -86,7 +86,7 @@ ifeq ($(BOARD_NAME),)
 endif
 
 ifeq ($(APP_NAME),)
-	APP_NAME=tch_test
+	APP_NAME=default
 endif
 
 

@@ -105,7 +105,15 @@ static tch_lld_adc_prototype ADC_StaticInstance = {
 		NULL
 };
 
-const tch_lld_adc* tch_adc_instance = (tch_lld_adc*) &ADC_StaticInstance;
+tch_lld_adc* tch_adcHalInit(const tch* env){
+	if(ADC_StaticInstance.mtx || ADC_StaticInstance.condv)
+		return NULL;
+	if(!env)
+		return NULL;
+	ADC_StaticInstance.mtx = env->Mtx->create();
+	ADC_StaticInstance.condv = env->Condv->create();
+	return (tch_lld_adc*) &ADC_StaticInstance;
+}
 
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout){
 	tch_adc_handle_prototype* ins = NULL;

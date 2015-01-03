@@ -17,6 +17,23 @@ extern "C"{
 #endif
 
 
+typedef void* tch_threadId;
+typedef void* tch_mtxId;
+typedef void* tch_semId;
+typedef void* tch_barId;
+typedef void* tch_timerId;
+/*! \brief condition variable identifier
+ */
+typedef void* tch_condvId;
+typedef void* tch_mpoolId;
+typedef void* tch_msgqId;
+typedef void* tch_mailqId;
+typedef void* tch_memId;
+typedef void* tch_eventTree;
+
+
+
+
 typedef struct _tch_thread_ix_t tch_thread_ix;
 typedef struct _tch_condvar_ix_t tch_condv_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
@@ -66,6 +83,7 @@ typedef enum  {
   tchErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
   tchErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
   tchErrorValue            =  0x86,       ///< value of a parameter is out of range.
+  tchErrorIo               =  0x87,       ///< Error occurs in IO operation
   tchErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
   tch_status_reserved       =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;

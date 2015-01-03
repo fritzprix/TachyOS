@@ -114,7 +114,7 @@ static inline void tch_gpioInvalidate(tch_gpio_handle_prototype* _handle);
 static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
 
 
-__attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
+__attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticInstance = {
 
 		{
 				MFEATURE_GPIO,
@@ -128,7 +128,15 @@ __attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticManager = {
 		MFEATURE_PINCOUNT_pPORT
 };
 
-const tch_lld_gpio* tch_gpio_instance = (tch_lld_gpio*) &GPIO_StaticManager;
+tch_lld_gpio* tch_gpioHalInit(const tch* env){
+	if(GPIO_StaticInstance.mtxId || GPIO_StaticInstance.condvId)
+		return NULL;
+	if(!env)
+		return NULL;
+	GPIO_StaticInstance.mtxId = env->Mtx->create();
+	GPIO_StaticInstance.condvId = env->Condv->create();
+	return (tch_lld_gpio*) &GPIO_StaticInstance;
+}
 
 
 
@@ -136,18 +144,18 @@ static tch_GpioHandle* tch_gpio_allocIo(const tch* env,const gpIo_x port,uint32_
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	if(!gpio->_clkenr)                   /// given GPIO port is not supported in this H/W
 		return NULL;
-	if(!GPIO_StaticManager.mtxId)
-		GPIO_StaticManager.mtxId = Mtx->create();
-	if(!GPIO_StaticManager.condvId)
-		GPIO_StaticManager.condvId = Condv->create();
-	if(env->Mtx->lock(GPIO_StaticManager.mtxId,timeout) != tchOK)
+	if(!GPIO_StaticInstance.mtxId)
+		GPIO_StaticInstance.mtxId = Mtx->create();
+	if(!GPIO_StaticInstance.condvId)
+		GPIO_StaticInstance.condvId = Condv->create();
+	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,timeout) != tchOK)
 		return NULL;
 	while(gpio->io_ocpstate & pmsk){           /// if there is pin which is occupied by another instance
-		if(env->Condv->wait(GPIO_StaticManager.condvId,GPIO_StaticManager.mtxId,timeout) != tchOK)
+		if(env->Condv->wait(GPIO_StaticInstance.condvId,GPIO_StaticInstance.mtxId,timeout) != tchOK)
 			return NULL;
 	}
 	gpio->io_ocpstate |= pmsk;     // mark pin as occupied
-	env->Mtx->unlock(GPIO_StaticManager.mtxId);
+	env->Mtx->unlock(GPIO_StaticInstance.mtxId);
 
 	tch_gpio_handle_prototype* ins = env->Mem->alloc(sizeof(tch_gpio_handle_prototype));   // allocate gpio handle
 	ins->env = env;
@@ -220,14 +228,14 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	tch_gpioInvalidate(ins);
 	env->Mtx->destroy(ins->mtxId);
 
-	if((result = env->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever)) != tchOK)
 		return result;
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
 	gpio->io_ocpstate &= ~ins->pMsk;
-	env->Condv->wakeAll(GPIO_StaticManager.condvId);
+	env->Condv->wakeAll(GPIO_StaticInstance.condvId);
 	tch_gpioInvalidate(ins);
-	env->Mtx->unlock(GPIO_StaticManager.mtxId);
+	env->Mtx->unlock(GPIO_StaticInstance.mtxId);
 	env->Mem->free(ins);
 	return tchOK;
 }
@@ -275,7 +283,7 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_GpioHandle* self,pin p,cons
 
 
 	const tch* env = ins->env;
-	if(env->Mtx->lock(GPIO_StaticManager.mtxId,cfg->EvTimeout) != tchOK){
+	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,cfg->EvTimeout) != tchOK){
 		return tchErrorResource;
 	}
 
@@ -288,7 +296,7 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_GpioHandle* self,pin p,cons
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	ins->cb = cfg->EvCallback;
 	tch_gpio_handle_configureEvent(self,p,cfg);
-	env->Mtx->unlock(GPIO_StaticManager.mtxId);
+	env->Mtx->unlock(GPIO_StaticInstance.mtxId);
 	return tchOK;
 }
 
@@ -308,7 +316,7 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,pin p){
 		return tchErrorParameter;
 
 	const tch* api = ins->env;
-	if(api->Mtx->lock(GPIO_StaticManager.mtxId,osWaitForever) != tchOK)   // lock mtx of singleton
+	if(api->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever) != tchOK)   // lock mtx of singleton
 		return tchErrorResource;
 
 	uint16_t pmsk = (1 << p);
@@ -323,7 +331,7 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,pin p){
 	api->Barrier->signal(ioIntrDesc->evbar,tchErrorResource);
 	ins->cb = NULL;
 	CLR_INTERRUPT(ins);    // clear interrupt flag in status
-	api->Mtx->unlock(GPIO_StaticManager.mtxId);   // release mtx of singleton
+	api->Mtx->unlock(GPIO_StaticInstance.mtxId);   // release mtx of singleton
 
 	return tchOK;
 

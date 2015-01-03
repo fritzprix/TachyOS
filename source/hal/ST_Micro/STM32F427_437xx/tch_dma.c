@@ -123,6 +123,9 @@ typedef struct tch_dma_handle_prototype_t{
 }tch_dma_handle_prototype;
 
 
+
+
+
 static void tch_dma_initCfg(tch_DmaCfg* cfg);
 static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
 static tch_DmaHandle tch_dma_openStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
@@ -154,8 +157,16 @@ __attribute__((section(".data"))) static tch_dma_manager DMA_StaticInstance = {
 		0
 };
 
-const tch_lld_dma* tch_dma = (tch_lld_dma*)&DMA_StaticInstance;
 
+tch_lld_dma* tch_dmaHalInit(const tch* env){
+	if(DMA_StaticInstance.mtxId || DMA_StaticInstance.condvId)
+		return NULL;
+	if(!env)
+		return NULL;
+	DMA_StaticInstance.mtxId = env->Mtx->create();
+	DMA_StaticInstance.condvId = env->Condv->create();
+	return (tch_lld_dma*) &DMA_StaticInstance;
+}
 
 static void tch_dma_initCfg(tch_DmaCfg* cfg){
 	cfg->BufferType = DMA_BufferMode_Normal;

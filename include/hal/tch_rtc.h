@@ -52,6 +52,7 @@ typedef struct tch_lld_rtc {
 	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
 }tch_lld_rtc;
 
+extern tch_lld_rtc* tch_rtcHalInit(const tch* env);
 
 #if defined(__cplusplus)
 }
