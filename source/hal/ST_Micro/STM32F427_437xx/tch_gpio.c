@@ -228,13 +228,12 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	tch_gpioInvalidate(ins);
 	env->Mtx->destroy(ins->mtxId);
 
-	if((result = env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever)) != tchOK)
-		return result;
+	env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever);
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
+	tch_gpioInvalidate(ins);
 	gpio->io_ocpstate &= ~ins->pMsk;
 	env->Condv->wakeAll(GPIO_StaticInstance.condvId);
-	tch_gpioInvalidate(ins);
 	env->Mtx->unlock(GPIO_StaticInstance.mtxId);
 	env->Mem->free(ins);
 	return tchOK;
@@ -287,8 +286,10 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_GpioHandle* self,pin p,cons
 		return tchErrorResource;
 	}
 
-	if(ioIrqObj->io_occp)
+	if(ioIrqObj->io_occp){
+		env->Mtx->unlock(GPIO_StaticInstance.mtxId);
 		return tchErrorResource;
+	}
 	ioIrqObj->evbar = env->Barrier->create();
 
 	ioIrqObj->io_occp = ins;

@@ -26,6 +26,9 @@
 
 #define USART_StopBit_Pos_CR2               (uint8_t) (12)
 
+#define SET_SAFE_EXIT();                    SAFE_EXIT:
+#define RETURN_SAFELY()                     goto SAFE_EXIT;
+
 
 #define UART_RXBUSY                         ((uint32_t) 0x10000)
 #define UART_TXBUSY                         ((uint32_t) 0x20000)
@@ -135,10 +138,6 @@ static tch_UartHandle* tch_uartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,
 
 	if(port >= MFEATURE_UART)    // if requested channel is larger than uart channel count
 		return NULL;                    // return null
-	if(!UART_StaticInstance.mtx)
-		UART_StaticInstance.mtx = env->Mtx->create();
-	if(!UART_StaticInstance.condv)
-		UART_StaticInstance.condv = env->Condv->create();
 	if(tch_port_isISR())
 		return NULL;
 
@@ -404,13 +403,15 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 		while(!(uhw->SR & USART_SR_TXE)) /*NOP*/;
 		uhw->DR = *((uint8_t*) bp + idx);
 		evt = env->MsgQ->get(ins->txCh.txQ,osWaitForever);
-		if(evt.status != tchEventMessage)
-			return evt.status;
+		if(evt.status != tchEventMessage){
+			evt.status = tchErrorIo;
+			RETURN_SAFELY();
+		}
 	}
 
-	if((evt.status = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
-		return evt.status;
+	SET_SAFE_EXIT();
 
+	env->Mtx->lock(ins->txMtx,osWaitForever);
 	UART_CLR_TXBUSY(ins);
 	env->Condv->wakeAll(ins->txCondv);
 	env->Mtx->unlock(ins->txMtx);
@@ -457,10 +458,7 @@ static tchStatus tch_uartRead(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint
 			evt.status = tchOK;
 	}
 
-
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
-		return result;
-
+	env->Mtx->lock(ins->rxMtx,timeout);
 	UART_CLR_RXBUSY(ins);
 	env->Condv->wakeAll(ins->rxCondv);
 	env->Mtx->unlock(ins->rxMtx);
@@ -503,12 +501,13 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	uhw->SR &= ~USART_SR_TC;    // clear tc
 	while(!tch_dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
 		if(result == tchErrorResource){
-			return result;
+			result = tchErrorIo;
+			RETURN_SAFELY();
 		}
 	}
 
-	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
-		return result;
+	SET_SAFE_EXIT();
+	env->Mtx->lock(ins->txMtx,osWaitForever);
 	UART_CLR_TXBUSY(ins);
 	env->Condv->wakeAll(ins->txCondv);
 	env->Mtx->unlock(ins->txMtx);
@@ -543,13 +542,14 @@ static tchStatus tch_uartReadDma(tch_UartHandle* handle,uint8_t* bp, size_t sz,u
 	req.MemInc = TRUE;
 	req.PeriphInc = FALSE;
 	while(!tch_dma->beginXfer(ins->rxCh.rxDma,&req,timeout,&result)){
-		if(result == tchErrorResource)
-			return result;
+		if(result == tchErrorResource){
+			result = tchErrorIo;
+			RETURN_SAFELY();
+		}
 	}
 
-	if((result = env->Mtx->lock(ins->rxMtx,timeout)) != tchOK)
-		return result;
-
+	SET_SAFE_EXIT();
+	env->Mtx->lock(ins->rxMtx,timeout);
 	UART_CLR_RXBUSY(ins);
 	env->Condv->wakeAll(ins->rxCondv);
 	env->Mtx->unlock(ins->rxMtx);

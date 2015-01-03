@@ -57,6 +57,14 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_GPIOELPEN,
 				0
+		},
+		{
+				GPIOF,
+				&RCC->AHB1ENR,
+				RCC_AHB1ENR_GPIOFEN,
+				&RCC->AHB1LPENR,
+				RCC_AHB1LPENR_GPIOFLPEN,
+				0
 		}
 };
 

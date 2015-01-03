@@ -17,7 +17,8 @@
 #include "tch_adc.h"
 #include "tch_kernel.h"
 
-
+#define SET_SAFE_EXIT();      RETURN_EXIT:
+#define RETURN_SAFE()         goto RETURN_EXIT
 #define _1_MHZ                ((uint32_t) 1000000)
 #define ADC_Precision_Pos     ((uint8_t) 24)
 #define ADC_CR2_EXTSEL_Pos    ((uint8_t) 24)
@@ -297,15 +298,15 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	adcHw->CR2 |= ADC_CR2_SWSTART;    /// start conversion
 	evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
 
-	if(evt.status != tchEventMessage)
-		return ADC_READ_FAIL;
-
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
-		return ADC_READ_FAIL;
+	if(evt.status != tchEventMessage){
+		evt.value.v = ADC_READ_FAIL;
+		RETURN_SAFE();
+	}
+	SET_SAFE_EXIT();
+	ins->env->Mtx->lock(ins->mtx,osWaitForever);
 	ADC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
 	ins->env->Mtx->unlock(ins->mtx);
-
 	return evt.value.v;
 }
 
@@ -353,23 +354,22 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk);
 		if(evt.status != tchEventMessage){
-			adcHw->CR2 &= ~ADC_CR2_DMA;
-			adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
-			if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
-				return result;
-			ADC_clrBusy(ins);
-			ins->env->Condv->wakeAll(ins->condv);
-			ins->env->Mtx->unlock(ins->mtx);
+			evt.status = tchErrorIo;
+			RETURN_SAFE();
 		}
 	}
 
+	evt.status = tchOK;
+
+	SET_SAFE_EXIT();
 	adcHw->CR2 &= ~ADC_CR2_DMA;
 	adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
-	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
-		return result;
+	ins->env->Mtx->lock(ins->mtx,osWaitForever);
 	ADC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
-	return ins->env->Mtx->unlock(ins->mtx);
+	ins->env->Mtx->unlock(ins->mtx);
+
+	return evt.status;
 
 }
 

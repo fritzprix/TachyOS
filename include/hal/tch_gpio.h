@@ -73,11 +73,6 @@ typedef BOOL (*tch_IoEventCallback_t) (tch_GpioHandle* self,uint8_t pin);
  * gpio handle interface
  */
 
-typedef struct _tch_gpio_ev_edge{
-	const uint8_t Rise;
-	const uint8_t Fall;
-	const uint8_t Both;
-}tch_gpioEvEdge;
 
 typedef struct _tch_gpio_ports{
 	const gpIo_x   gpio_0;
@@ -94,16 +89,11 @@ typedef struct _tch_gpio_ports{
 	const gpIo_x   gpio_11;
 }tch_gpioPorts;
 
-typedef struct _tch_gpio_ev_Type{
-	const uint8_t Interrupt;
-	const uint8_t Event;
-}tch_gpioEvType;
 
 typedef struct tch_gpio_evcfg_t {
 	uint8_t EvEdge;
 	uint8_t EvType;
 	tch_IoEventCallback_t EvCallback;
-	uint32_t EvTimeout;
 }tch_GpioEvCfg;
 
 

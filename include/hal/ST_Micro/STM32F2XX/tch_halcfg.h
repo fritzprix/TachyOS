@@ -145,7 +145,7 @@
 
 
 #ifndef MFEATURE_GPIO
-#define MFEATURE_GPIO               (5)          ///  define number of gpio port your platform
+#define MFEATURE_GPIO               (6)          ///  define number of gpio port your platform
 #endif
 
 #ifndef MFEATURE_PINCOUNT_pPORT

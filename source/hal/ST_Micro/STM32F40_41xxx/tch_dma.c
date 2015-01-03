@@ -20,6 +20,9 @@
 
 #define DMA_MAX_ERR_CNT           ((uint8_t)  2)
 
+#define SET_SAFE_RETURN();        SAFE_RETURN:
+#define RETURN_SAFE()             goto SAFE_RETURN;
+
 
 #define DMA_Ch_Pos                (uint8_t) 25 ///< DMA Channel bit position
 #define DMA_Ch_Msk                (7)
@@ -290,18 +293,19 @@ static BOOL tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t ti
 		evt = ins->env->MsgQ->get(ins->dma_mq,timeout);
 		*result = evt.status;
 		if(evt.status != tchEventMessage){
-			return FALSE;
+			evt.value.v = FALSE;
+			RETURN_SAFE();
 		}
 	}
+	evt.value.v = TRUE;
 
-	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != tchOK)   // lock mutex for condition variable operation
-		return FALSE;
+	SET_SAFE_RETURN();
+	ins->env->Mtx->lock(ins->mtxId,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
 	ins->env->Condv->wakeAll(ins->condv);
-	if(ins->env->Mtx->unlock(ins->mtxId) != tchOK) // unlock mutex
-		return FALSE;
+	ins->env->Mtx->unlock(ins->mtxId); // unlock mutex
 
-	return TRUE;
+	return (BOOL) evt.value.v;
 }
 
 static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){

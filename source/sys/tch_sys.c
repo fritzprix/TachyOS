@@ -58,6 +58,7 @@ static tch_thread_queue tch_lpEvtWaitQ;
 static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
 const struct tch_bin_descriptor BIN_DESC;
+BOOL lp_handled;
 
 
 /***

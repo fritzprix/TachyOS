@@ -28,6 +28,9 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 #define TCH_SPI_MASTER_FLAG          ((uint32_t) 0x10000)
 #define TCH_SPI_BUSY_FLAG            ((uint32_t) 0x20000)
 
+#define SET_SAFE_RETURN();           SAFE_RETURN:
+#define RETURN_SAFE()                goto SAFE_RETURN
+
 
 
 
@@ -320,10 +323,12 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 			twb += offset;
 		evt = hnd->env->MsgQ->get(hnd->rxCh.mq,timeout);   // get rx data
 		if(evt.status != tchEventMessage){                  // check message has been received successfully
-			return evt.status;
+			RETURN_SAFE();
 		}
-		if(evt.value.v & SPI_ERR_MSK)
-			return tchErrorValue;
+		if(evt.value.v & SPI_ERR_MSK){
+			evt.status = tchErrorIo;
+			RETURN_SAFE();
+		}
 		if(offset == 1){
 			*(uint8_t*) rb = evt.value.v;                    // if message is obtained successfully, save it to rx buffer
 		}else if(offset == 2){
@@ -332,13 +337,15 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 		if(rb)                            // if rb is null, address isn't incremented
 			rb += offset;
 	}
-	if((evt.status = env->Mtx->lock(hnd->mtx,osWaitForever)) != tchOK)
-		return evt.status;
+
+	evt.status = tchOK;
+	SET_SAFE_RETURN();
+	env->Mtx->lock(hnd->mtx,osWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	evt.status = env->Condv->wakeAll(hnd->condv);
 	env->Mtx->unlock(hnd->mtx);
-	return tchOK;
+	return evt.status;
 }
 
 static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
@@ -372,22 +379,28 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	tch_dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result);
+	if(!tch_dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result)){
+		result = tchErrorIo;
+		RETURN_SAFE();
+	}
 
 	dmaReq.MemAddr[0] = (uaddr_t)wb;
 	dmaReq.MemInc = TRUE;
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	result = tch_dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result);
+	if(!tch_dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result)){
+		result = tchErrorIo;
+		RETURN_SAFE();
+	}
+	result = tchOK;
 
-	if((result = env->Mtx->lock(hnd->mtx,osWaitForever)) != tchOK)
-		return result;
+	SET_SAFE_RETURN();
+	env->Mtx->lock(hnd->mtx,osWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	env->Condv->wakeAll(hnd->condv);
-	if((result = env->Mtx->unlock(hnd->mtx)) != tchOK)
-		return result;
+	env->Mtx->unlock(hnd->mtx);
 	return tchOK;
 }
 
