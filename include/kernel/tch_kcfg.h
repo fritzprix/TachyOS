@@ -1,12 +1,12 @@
 /*
- * tch_syscfg.h
+ * tch_kcfg.h
  *
  *  Created on: 2014. 11. 15.
  *      Author: innocentevil
  */
 
-#ifndef TCH_SYSCFG_H_
-#define TCH_SYSCFG_H_
+#ifndef TCH_KCFG_H_
+#define TCH_KCFG_H_
 
 
 
@@ -22,4 +22,4 @@
 #define TCH_CFG_PROC_HEAP_SIZE            ((uint16_t) 0x1800)
 #endif
 
-#endif /* TCH_SYSCFG_H_ */
+#endif /* TCH_KCFG_H_ */

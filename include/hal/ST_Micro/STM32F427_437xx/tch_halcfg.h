@@ -21,18 +21,9 @@
  *      Author: innocentevil
  */
 
-#include "tch_dma.h"
-#include "tch_gpio.h"
-#include "tch_timer.h"
 
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
-
-#define TACHYOS_HAL_VENDOR               HW_VENDOR                      ///< vendor name field
-#define TACHYOS_HAL_PLATFORM_NAME        HW_PLF                          ///< hw platform name (product name of mcu / mpu ic)
-#define TACHYOS_HAL_PLATFORM_SPECIFIER    1                              ///< hw platform specifier (mapped to sub product number ex > stm32f407zg , stm32f417...)
-#define TACHYOS_HAL_MAIN_VERSION          0                              ///< hal version
-#define TACHYOS_HAL_SUB_VERSION           0                              ///< hal sub version
 
 ///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
 /**
@@ -109,13 +100,13 @@
 
 
 #ifndef SYS_MCLK_FREQ
-#define SYS_MCLK_FREQ              25000000    ///default system main clock  : 25MHz
+#define SYS_MCLK_FREQ              8000000    ///default system main clock  : 25MHz
 #endif
 
 
 
 #ifndef SYS_CLK
-#define SYS_CLK                   ((uint32_t) 120000000)
+#define SYS_CLK                   ((uint32_t) 168000000)
 #endif
 
 /****
@@ -151,7 +142,7 @@
 
 
 #ifndef MFEATURE_GPIO
-#define MFEATURE_GPIO               (5)          ///  define number of gpio port your platform
+#define MFEATURE_GPIO               (8)          ///  define number of gpio port your platform
 #endif
 
 #ifndef MFEATURE_PINCOUNT_pPORT
@@ -194,77 +185,7 @@
 
 
 
-
-#define __TCH_STATIC_INIT  __attribute__((section(".data")))
-
-typedef struct _tch_port_t {
-	gpIo_x          port;
-	uint8_t         pin;
-}tch_port;
-
-typedef struct _tch_uart_bs_t {
-	dma_t          txdma;
-	dma_t          rxdma;
-	uint8_t        txch;
-	uint8_t        rxch;
-	gpIo_x         port;
-	int8_t         txp;
-	int8_t         rxp;
-	int8_t         ctsp;
-	int8_t         rtsp;
-	uint8_t        afv;
-}tch_uart_bs;
-
-
-typedef struct _tch_timer_bs_t {
-	gpIo_x         port;
-	int8_t         chp[4];
-	uint8_t        afv;
-}tch_timer_bs;
-
-typedef struct _tch_spi_bs_t {
-	dma_t          txdma;
-	dma_t          rxdma;
-	uint8_t        txch;
-	uint8_t        rxch;
-	gpIo_x         port;
-	int8_t         mosi;
-	int8_t         miso;
-	int8_t         sck;
-	uint8_t        afv;
-}tch_spi_bs;
-
-typedef struct _tch_iic_bs_t {
-	dma_t         txdma;
-	dma_t         rxdma;
-	uint8_t       txch;
-	uint8_t       rxch;
-	gpIo_x        port;
-	uint8_t       scl;
-	uint8_t       sda;
-	uint8_t       afv;
-}tch_iic_bs;
-
-typedef struct _tch_adc_bs_t {
-	dma_t         dma;
-	uint8_t       dmaCh;
-	tch_timer     timer;
-	uint8_t       timerCh;
-	uint8_t       timerExtsel;
-}tch_adc_bs;
-
-typedef struct _tch_adc_port_t {
-	tch_port      port;
-	uint8_t       adc_msk;
-}tch_adc_port;
-
-typedef struct _tch_adc_com_bs_t{
-	tch_adc_port ports[MFEATURE_ADC_Ch];
-	uint32_t occp_status;
-}tch_adc_com_bs;
-
-
-#include "stm32f2xx.h"
-
+#include "stm32f4xx.h"
+#include "tch_haldesc.h"
 
 #endif /* TCH_HALCFG_H_ */

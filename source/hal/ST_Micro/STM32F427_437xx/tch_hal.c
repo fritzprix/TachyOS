@@ -12,7 +12,7 @@
  *      Author: innocentevil
  */
 
-#include "hal/tch_hal.h"
+#include "tch_hal.h"
 #include "tch_kernel.h"
 
 
@@ -65,31 +65,7 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 				&RCC->AHB1LPENR,
 				RCC_AHB1LPENR_GPIOFLPEN,
 				0
-		},
-		{
-				GPIOG,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOGEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOGLPEN,
-				0
-		},
-		{
-				GPIOH,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOHEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOHLPEN,
-				0
-		},
-		{
-				GPIOI,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOIEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOILPEN,
-				0
-		},
+		}
 };
 
 
@@ -973,31 +949,31 @@ __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
 		}
 };
 
-#define ADC1_Bit            ((uint8_t) 1 << 0)
-#define ADC2_Bit            ((uint8_t) 1 << 1)
-#define ADC3_Bit            ((uint8_t) 1 << 2)
-
-__TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs = {
-		{
-				{tch_gpio0,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,4,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,5,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,6,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,7,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio1,0,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio1,1,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio2,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,4,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio2,5,(ADC1_Bit | ADC2_Bit)}
-		},
-		0
+/**
+ *
+ * 	tch_port      port;
+	uint8_t       adc_routemsk;
+	uint8_t       occp;
+ */
+__TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,6},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,7},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio1,0},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio1,1},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio2,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio2,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio2,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0}
 };
+
 
 
 

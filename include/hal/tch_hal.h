@@ -31,39 +31,32 @@ typedef enum {
 	LP_LEVEL2 = ((uint8_t) 2)
 }tch_lplvl;
 
-
-
-extern __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO];
-extern __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[MFEATURE_PINCOUNT_pPORT];
-extern __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[MFEATURE_DMA];
-extern __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART];
-extern __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER];
-extern __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI];
-extern __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC];
-extern __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC];
-
-
-
-extern __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO];
-extern __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER];
-extern __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI];
-extern __TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC];
-extern __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC];
-extern __TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs;
-
+/*-------------------- Private hal member declaration ----------------------------- */
+/*--------------RTC & DMA are not allowed to be exposed to user ------------------- */
+/*---------------1. DMA potentially produces serious security flaws --------------- */
+/*---------------2. RTC provides critical functionality in system low power mode--- */
+/*--------------------------------------------------------------------------------- */
 
 extern tch_lld_rtc* tch_rtc;
 extern tch_lld_dma* tch_dma;
 
 
-
 extern void tch_hal_enableSystick();
 extern void tch_hal_disableSystick();
-
 extern void tch_hal_setSleepMode(tch_lplvl lplvl);
 extern void tch_hal_enterSleepMode();
 extern void tch_hal_suspendSysClock();
 extern void tch_hal_resumeSysClock();
+
+
+extern tch_lld_adc* tch_adcHalInit(const tch* env);
+extern tch_lld_dma* tch_dmaHalInit(const tch* env);
+extern tch_lld_gpio* tch_gpioHalInit(const tch* env);
+extern tch_lld_iic* tch_iicHalInit(const tch* env);
+extern tch_lld_rtc* tch_rtcHalInit(const tch* env);
+extern tch_lld_spi* tch_spiHalInit(const tch* env);
+extern tch_lld_timer* tch_timerHalInit(const tch* env);
+extern tch_lld_usart* tch_usartHalInit(const tch* env);
 
 
 #if defined(__cplusplus)

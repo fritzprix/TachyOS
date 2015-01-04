@@ -11,7 +11,7 @@ ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(PUBLISH_TYPE)
 endif
 
-KERNEL_SRC_DIR=$(ROOT_DIR)/source/sys
+KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
@@ -22,7 +22,7 @@ APP_SRC_DIR=$(USR_SRC_DIR)/app/$(APP_NAME)
 MODULE_BASE_SRC_DIR=$(ROOT_DIR)/source/usr/module
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include
-KERNEL_HDR_DIR=$(ROOT_DIR)/include/sys
+KERNEL_HDR_DIR=$(ROOT_DIR)/include/kernel
 PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 PORT_ARCH_HDR_DIR=$(PORT_COMMON_HDR_DIR)/$(CPU)
 HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
@@ -33,7 +33,6 @@ TEST_HAL_HDR_DIR=$(ROOT_DIR)/include/test/hal
 USR_HDR_DIR=$(ROOT_DIR)/include/usr
 APP_HDR_DIR=$(USR_HDR_DIR)/app/$(APP_NAME)
 MODULE_HDR_DIR=$(USR_HDR_DIR)/module
-
 
 
 LDSCRIPT=$(HAL_VND_HDR_DIR)/ld/flash.ld

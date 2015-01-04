@@ -73,8 +73,6 @@ typedef struct tch_lld_spi {
 	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_spi;
 
-extern tch_lld_spi* tch_spiHalInit(const tch* env);
-
 #if defined(__cplusplus)
 }
 #endif

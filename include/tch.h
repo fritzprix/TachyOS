@@ -245,7 +245,7 @@ struct _tch_event_ix_t {
 
 
 
-#include "sys/tch_nclib.h"
+#include "tch_nclib.h"
 
 
 extern DECLARE_THREADROUTINE(main);

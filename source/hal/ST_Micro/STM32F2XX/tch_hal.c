@@ -949,31 +949,31 @@ __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
 		}
 };
 
-#define ADC1_Bit            ((uint8_t) 1 << 0)
-#define ADC2_Bit            ((uint8_t) 1 << 1)
-#define ADC3_Bit            ((uint8_t) 1 << 2)
-
-__TCH_STATIC_INIT tch_adc_com_bs ADC_COM_BD_CFGs = {
-		{
-				{tch_gpio0,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,3,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio0,4,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,5,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,6,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio0,7,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio1,0,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio1,1,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio2,0,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,1,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,2,(ADC1_Bit | ADC2_Bit | ADC3_Bit)},
-				{tch_gpio2,4,(ADC1_Bit | ADC2_Bit)},
-				{tch_gpio2,5,(ADC1_Bit | ADC2_Bit)}
-		},
-		0
+/**
+ *
+ * 	tch_port      port;
+	uint8_t       adc_routemsk;
+	uint8_t       occp;
+ */
+__TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,6},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,7},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio1,0},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio1,1},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio2,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio2,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio2,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},
+		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0}
 };
+
 
 
 

@@ -15,7 +15,6 @@
 #include "tch_kernel.h"
 #include "tch_thread.h"
 #include "tch_mem.h"
-#include "tch_syscfg.h"
 #include <sys/reent.h>
 
 

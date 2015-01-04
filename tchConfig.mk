@@ -29,7 +29,7 @@ INSTR = thumb\
 FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F40_41xxx\
-APP_NAME = 
+APP_NAME = \
 
 ### Open 427Z ###\
 ARCH = ARM\
@@ -38,8 +38,9 @@ INSTR = thumb\
 FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F427_437xx\
+APP_NAME =\
 
-###
+###\
 ARCH=ARM
 CPU=cortex-m3
 INSTR=thumb

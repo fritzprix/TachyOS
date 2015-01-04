@@ -12,7 +12,6 @@
  *      Author: innocentevil
  */
 
-
 #include "tch_hal.h"
 #include "tch_adc.h"
 #include "tch_kernel.h"
@@ -36,7 +35,6 @@
 }while(0)
 
 #define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_BUSY_FLAG
-
 
 
 
@@ -69,7 +67,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 static tchStatus tch_adcClose(tch_adcHandle* self);
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
 static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
-
+static uint32_t tch_adcChannelOccpStatus;
 
 
 static void tch_adcCfgInit(tch_adcCfg* cfg);
@@ -111,6 +109,7 @@ tch_lld_adc* tch_adcHalInit(const tch* env){
 		return NULL;
 	if(!env)
 		return NULL;
+	tch_adcChannelOccpStatus = 0;
 	ADC_StaticInstance.mtx = env->Mtx->create();
 	ADC_StaticInstance.condv = env->Condv->create();
 	return (tch_lld_adc*) &ADC_StaticInstance;
@@ -130,20 +129,20 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		return NULL;
 
 	tch_adc_descriptor* adcDesc = &ADC_HWs[adc];
-	tch_adc_com_bs* adc_common = &ADC_COM_BD_CFGs;
 	tch_adc_bs* adcBs = &ADC_BD_CFGs[adc];
+	tch_adc_channel_bs* adcChBs = NULL;
 	ADC_TypeDef* adcHw = adcDesc->_hw;
 	uint8_t smphld = 0;
 
 	if(env->Mtx->lock(ADC_StaticInstance.mtx,timeout) != tchOK)
 		return NULL;
-	while(adcDesc->_handle && (cfg->chdef.chselMsk& adc_common->occp_status)){
+	while(adcDesc->_handle && (cfg->chdef.chselMsk& tch_adcChannelOccpStatus)){
 		if(env->Condv->wait(ADC_StaticInstance.condv,ADC_StaticInstance.mtx,timeout) != tchOK)
 			return NULL;
 	}
 	ins = adcDesc->_handle = env->Mem->alloc(sizeof(tch_adc_handle_prototype));
 	env->uStdLib->string->memset(ins,0,sizeof(tch_adc_handle_prototype));
-	adc_common->occp_status |= (ins->ch_occp = cfg->chdef.chselMsk);
+	tch_adcChannelOccpStatus |= (ins->ch_occp = cfg->chdef.chselMsk);
 	if(env->Mtx->unlock(ADC_StaticInstance.mtx) != tchOK)
 		return NULL;
 	ins->io_handle = (tch_GpioHandle**) env->Mem->alloc(sizeof(tch_GpioHandle*) * cfg->chdef.chcnt);
@@ -180,8 +179,9 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 
 	for(ch_idx = 0,ins->chcnt = 0;(cfg->chdef.chselMsk && (cfg->chdef.chcnt));cfg->chdef.chcnt--){
 		if(cfg->chdef.chselMsk & 1){
-			if(adc_common->ports[ch_idx].adc_msk & (1 << adc)){
-				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adc_common->ports[ch_idx].port.port,(1 << adc_common->ports[ch_idx].port.pin),&iocfg,timeout);
+			adcChBs = &ADC_CH_BD_CFGs[ch_idx];
+			if(adcChBs->adc_routemsk & (1 << adc)){
+				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adcChBs->port.port,(1 << adcChBs->port.pin),&iocfg,timeout);
 				tch_adc_setRegSampleHold(adcDesc,ch_idx,smphld);
 				tch_adc_setRegChannel(adcDesc,ch_idx,0);
 			}
@@ -242,7 +242,6 @@ static BOOL tch_adcAvailable(adc_t adc){
 static tchStatus tch_adcClose(tch_adcHandle* self){
 	tch_adc_handle_prototype* ins =(tch_adc_handle_prototype*) self;
 	tch_adc_descriptor* adcDesc = &ADC_HWs[ins->adc];
-	tch_adc_com_bs* adc_common = &ADC_COM_BD_CFGs;
 	tchStatus  result = tchOK;
 	if(!self)
 		return tchErrorParameter;
@@ -268,7 +267,7 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 	if((result = env->Mtx->lock(ADC_StaticInstance.mtx,osWaitForever)) != tchOK)
 		return result;
 	adcDesc->_handle = NULL;
-	adc_common->occp_status &= ins->ch_occp;
+	tch_adcChannelOccpStatus &= ins->ch_occp;
 	env->Condv->wakeAll(ADC_StaticInstance.condv);
 	env->Mtx->unlock(ADC_StaticInstance.mtx);
 

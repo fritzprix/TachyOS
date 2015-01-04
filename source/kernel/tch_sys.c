@@ -28,7 +28,6 @@
 #include "tch_mem.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
-#include "tch_syscfg.h"
 #include "tch_thread.h"
 #include "tch_time.h"
 #include "tch_board.h"

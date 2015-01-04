@@ -21,9 +21,6 @@
  *      Author: innocentevil
  */
 
-#include "tch_dma.h"
-#include "tch_gpio.h"
-#include "tch_timer.h"
 
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
@@ -188,77 +185,7 @@
 
 
 
-
-#define __TCH_STATIC_INIT  __attribute__((section(".data")))
-
-typedef struct _tch_port_t {
-	gpIo_x          port;
-	uint8_t         pin;
-}tch_port;
-
-typedef struct _tch_uart_bs_t {
-	dma_t          txdma;
-	dma_t          rxdma;
-	uint8_t        txch;
-	uint8_t        rxch;
-	gpIo_x         port;
-	int8_t         txp;
-	int8_t         rxp;
-	int8_t         ctsp;
-	int8_t         rtsp;
-	uint8_t        afv;
-}tch_uart_bs;
-
-
-typedef struct _tch_timer_bs_t {
-	gpIo_x         port;
-	int8_t         chp[4];
-	uint8_t        afv;
-}tch_timer_bs;
-
-typedef struct _tch_spi_bs_t {
-	dma_t          txdma;
-	dma_t          rxdma;
-	uint8_t        txch;
-	uint8_t        rxch;
-	gpIo_x         port;
-	int8_t         mosi;
-	int8_t         miso;
-	int8_t         sck;
-	uint8_t        afv;
-}tch_spi_bs;
-
-typedef struct _tch_iic_bs_t {
-	dma_t         txdma;
-	dma_t         rxdma;
-	uint8_t       txch;
-	uint8_t       rxch;
-	gpIo_x        port;
-	uint8_t       scl;
-	uint8_t       sda;
-	uint8_t       afv;
-}tch_iic_bs;
-
-typedef struct _tch_adc_bs_t {
-	dma_t         dma;
-	uint8_t       dmaCh;
-	tch_timer     timer;
-	uint8_t       timerCh;
-	uint8_t       timerExtsel;
-}tch_adc_bs;
-
-typedef struct _tch_adc_port_t {
-	tch_port      port;
-	uint8_t       adc_msk;
-}tch_adc_port;
-
-typedef struct _tch_adc_com_bs_t{
-	tch_adc_port ports[MFEATURE_ADC_Ch];
-	uint32_t occp_status;
-}tch_adc_com_bs;
-
-
 #include "stm32f2xx.h"
-
+#include "tch_haldesc.h"
 
 #endif /* TCH_HALCFG_H_ */

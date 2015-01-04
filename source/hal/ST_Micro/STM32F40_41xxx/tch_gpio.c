@@ -197,7 +197,6 @@ static void tch_gpio_initEvCfg(tch_GpioEvCfg* evcfg){
 	evcfg->EvEdge = GPIO_EvEdge_Fall;
 	evcfg->EvType = GPIO_EvType_Interrupt;
 	evcfg->EvCallback = NULL;
-	evcfg->EvTimeout = osWaitForever;
 }
 
 
@@ -282,7 +281,7 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_GpioHandle* self,pin p,cons
 
 
 	const tch* env = ins->env;
-	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,cfg->EvTimeout) != tchOK){
+	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever) != tchOK){
 		return tchErrorResource;
 	}
 

@@ -106,7 +106,5 @@ typedef struct tch_lld_timer {
 	uint8_t (*getPrecision)(tch_timer timer);
 } tch_lld_timer;
 
-extern tch_lld_timer* tch_timerHalInit(const tch* env);
-
 
 #endif /* TCH_TIMER_H_ */

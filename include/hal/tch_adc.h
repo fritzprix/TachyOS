@@ -87,9 +87,6 @@ typedef struct tch_lld_adc_t {
 	BOOL (*available)(adc_t adc);
 }tch_lld_adc;
 
-extern tch_lld_adc* tch_adcHalInit(const tch* env);
-
-
 #if defined(__cplusplus)
 }
 #endif

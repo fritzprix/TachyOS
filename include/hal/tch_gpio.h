@@ -189,8 +189,6 @@ typedef struct tch_lld_gpio {
 }tch_lld_gpio;
 
 
-extern tch_lld_gpio* tch_gpioHalInit(const tch* env);
-
 #if defined(__cplusplus)
 }
 #endif
