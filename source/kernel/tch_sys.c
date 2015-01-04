@@ -38,13 +38,18 @@
 #define SYSTSK_ID_ERR_HANDLE        ((int) -2)
 #define SYSTSK_ID_RESET             ((int) -1)
 
+struct tch_monitor_t {
+	tch_mtxId mtx;
+	uint32_t mval;
+};
+
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
 static DECLARE_THREADROUTINE(idle);
 static DECLARE_SYSTASK(kernelTaskHandler);
 
 
-
+static struct tch_monitor_t tch_busyMonitor;
 static tch RuntimeInterface;
 const tch* tch_rti = &RuntimeInterface;
 
@@ -53,6 +58,7 @@ static tch_threadId idleThread = NULL;
 
 static tch_thread_queue tch_lpTickWaitQ;
 static tch_thread_queue tch_lpEvtWaitQ;
+
 
 static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
@@ -207,7 +213,23 @@ tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 	return result;
 }
 
+void tch_kernelSetBusyMark(){
+	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,osWaitForever) != tchOK)
+		return;
+	tch_busyMonitor.mval++;
+	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
+}
 
+void tch_kernelClrBusyMark(){
+	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,osWaitForever) != tchOK)
+		return;
+	tch_busyMonitor.mval--;
+	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
+}
+
+BOOL tch_kernelIsBusy(){
+	return !tch_busyMonitor.mval;
+}
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status){
 
@@ -225,6 +247,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tchEvent evt;
 	tch_sysTask* task = NULL;
 
+
 	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);
@@ -237,6 +260,9 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
+
+	tch_busyMonitor.mval = 0;
+	tch_busyMonitor.mtx = env->Mtx->create();
 
 	tch_threadId th = tch_currentThread;
 	tch_currentThread = ROOT_THREAD;      // create thread as root
@@ -287,7 +313,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((tch_currentThread->t_tslot > 10) && tch_schedIsEmpty()  && tch_systimeHasPending())
+		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 10) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode

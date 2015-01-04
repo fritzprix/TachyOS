@@ -28,10 +28,12 @@
 
 #define ADC_setBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status |= ADC_BUSY_FLAG;\
+	tch_kernelSetBusyMark();\
 }while(0)
 
 #define ADC_clrBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status &= ~ADC_BUSY_FLAG;\
+	tch_kernelClrBusyMark();\
 }while(0)
 
 #define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_BUSY_FLAG
@@ -145,6 +147,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	tch_adcChannelOccpStatus |= (ins->ch_occp = cfg->chdef.chselMsk);
 	if(env->Mtx->unlock(ADC_StaticInstance.mtx) != tchOK)
 		return NULL;
+
 	ins->io_handle = (tch_GpioHandle**) env->Mem->alloc(sizeof(tch_GpioHandle*) * cfg->chdef.chcnt);
 	ins->mtx = env->Mtx->create();
 	ins->condv = env->Condv->create();

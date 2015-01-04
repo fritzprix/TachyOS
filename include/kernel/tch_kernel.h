@@ -52,6 +52,7 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 
 
+
 extern const tch_hal* tch_kernel_initHAL(const tch* env);
 extern BOOL tch_kernel_initPort();
 extern tchStatus tch_kernel_initCrt0(tch* env);
@@ -60,6 +61,21 @@ extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((nake
 extern uint32_t tch_kHeapAvail(void);
 extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
 
+
+/**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode
+ *
+ */
+extern void tch_kernelSetBusyMark();
+
+/**\!brief Notify kernel that busy task is finished, so system can be go into sleep mode
+ *
+ */
+extern void tch_kernelClrBusyMark();
+
+/**\!brief check whether system is busy
+ *
+ */
+extern BOOL tch_kernelIsBusy();
 
 
 

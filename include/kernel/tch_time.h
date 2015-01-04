@@ -25,7 +25,7 @@ typedef void (*tch_wkup_handler)(void);
 extern tch_systime_ix* tch_systimeInit(const tch* env,time_t itm,tch_timezone itz,tch_wkup_handler wkup_handler);
 extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout);
 extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
-extern BOOL tch_systimeHasPending();
+extern BOOL tch_systimeIsPendingEmpty();
 
 #if defined(__cplusplus)
 }

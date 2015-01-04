@@ -103,7 +103,7 @@ static uint64_t tch_systime_uptimeMills(){
 
 }
 
-BOOL tch_systimeHasPending(){
+BOOL tch_systimeIsPendingEmpty(){
 	return tch_listIsEmpty(&tch_systimeWaitQ);
 }
 

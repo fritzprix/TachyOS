@@ -160,7 +160,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
 		env->Thread->sleep();
-	//	env->Thread->yield(0);
+		env->Thread->yield(0);
 
 	}
 
@@ -195,7 +195,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		env->Time->getLocaltime(&ltm);
 		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
 		env->Thread->sleep();
-		//env->Thread->yield(0);
+		env->Thread->yield(0);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;

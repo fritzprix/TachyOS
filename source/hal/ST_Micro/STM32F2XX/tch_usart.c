@@ -36,12 +36,14 @@
 
 #define UART_SET_RXBUSY(ins)\
 	do{\
+		tch_kernelSetBusyMark();\
 		((tch_UartHandlePrototype*) ins)->status |= UART_RXBUSY;\
 	}while(0)
 
 #define UART_CLR_RXBUSY(ins)\
 	do{\
 		((tch_UartHandlePrototype*) ins)->status &= ~UART_RXBUSY;\
+		tch_kernelClrBusyMark();\
 	}while(0)
 
 #define UART_IS_RXBUSY(ins)         ((tch_UartHandlePrototype*) ins)->status & UART_RXBUSY
@@ -49,12 +51,14 @@
 
 #define UART_SET_TXBUSY(ins)\
 	do{\
+		tch_kernelSetBusyMark();\
 		((tch_UartHandlePrototype*) ins)->status |= UART_TXBUSY;\
 	}while(0)
 
 #define UART_CLR_TXBUSY(ins)\
 	do{\
 		((tch_UartHandlePrototype*) ins)->status &= ~UART_TXBUSY;\
+		tch_kernelClrBusyMark();\
 	}while(0)
 
 #define UART_IS_TXBUSY(ins)          ((tch_UartHandlePrototype*) ins)->status & UART_TXBUSY
@@ -358,6 +362,8 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 	NVIC_DisableIRQ(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
+	UART_CLR_RXBUSY(ins);
+	UART_CLR_TXBUSY(ins);
 	env->Mem->free(handle);
 	uDesc->_handle = NULL;
 	return env->Mtx->unlock(UART_StaticInstance.mtx);

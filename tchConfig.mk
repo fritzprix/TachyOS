@@ -8,8 +8,8 @@
 
 
 ifeq ($(PUBLISH_TYPE),)
-#	PUBLISH_TYPE=Release
-	PUBLISH_TYPE=Debug
+	PUBLISH_TYPE=Release
+#	PUBLISH_TYPE=Debug
 endif
 
 
@@ -40,7 +40,7 @@ HW_VENDOR = ST_Micro\
 HW_PLF = STM32F427_437xx\
 APP_NAME =\
 
-###\
+###
 ARCH=ARM
 CPU=cortex-m3
 INSTR=thumb

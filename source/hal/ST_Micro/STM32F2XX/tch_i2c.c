@@ -33,11 +33,13 @@
 
 #define IIC_isBusy(ins)                        ((tch_iic_handle_prototype*) ins)->status & TCH_IIC_BUSY_FLAG
 #define IIC_setBusy(ins)                     do {\
+		tch_kernelSetBusyMark();\
 		((tch_iic_handle_prototype*) ins)->status |= TCH_IIC_BUSY_FLAG;\
 }while(0)
 
 #define IIC_clrBusy(ins)                     do {\
 		((tch_iic_handle_prototype*) ins)->status &= ~TCH_IIC_BUSY_FLAG;\
+		tch_kernelClrBusyMark();\
 }while(0)
 
 
@@ -316,6 +318,7 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 
 	env->Mtx->lock(IIC_StaticInstance.mtx,osWaitForever);
 	iicDesc->_handle = NULL;
+	IIC_clrBusy(ins);
 	env->Condv->wake(IIC_StaticInstance.condv);
 	env->Mtx->unlock(IIC_StaticInstance.mtx);
 	env->Mem->free(ins);
@@ -364,7 +367,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	tx_msg.sq_id = IIC_SQ_ID_INIT;
 
 	iicHw->CR1 |= I2C_CR1_PE;   //enable i2c
-	if(ins->txdma)
+	if(ins->txdma && (sz > 1))
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 
 	if(ins->status & TCH_IIC_ADDMOD_FLAG){
@@ -408,7 +411,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		}
 	}
 
-	if(ins->txdma){
+	if(ins->txdma && (sz > 1)){
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
 		txreq.MemInc = TRUE;

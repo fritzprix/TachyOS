@@ -35,11 +35,13 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 
 
 #define SPI_setBusy(ins)             do{\
+	tch_kernelSetBusyMark();\
 	((tch_spi_handle_prototype*) ins)->status |= TCH_SPI_BUSY_FLAG;\
 }while(0)
 
 #define SPI_clrBusy(ins)             do{\
 	((tch_spi_handle_prototype*) ins)->status &= ~TCH_SPI_BUSY_FLAG;\
+	tch_kernelClrBusyMark();\
 }while(0)
 
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
@@ -270,7 +272,6 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	spiHw->CR1 |= SPI_CR1_SPE;
 
 	tch_spiValidate((tch_spi_handle_prototype*) hnd);
-	SPI_clrBusy(hnd);
 	return (tch_spiHandle*) hnd;
 }
 
