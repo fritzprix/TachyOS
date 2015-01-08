@@ -10,7 +10,7 @@
 
 
 #define MASTER_ADDR    ((uint8_t) 0x31)
-#define SLAVE_ADDR     ((uint8_t) 0x32)
+#define SLAVE_ADDR     ((uint8_t) 0x52)
 
 DECLARE_THREADROUTINE(main){
 
@@ -42,9 +42,12 @@ DECLARE_THREADROUTINE(main){
 	uint32_t cnt = 0;
 	while(TRUE){
 		env->uStdLib->stdio->siprintf(buf,"Hello World : %d",cnt++);
+		/*
 		ext_wkup->listen(ext_wkup,12,osWaitForever);
 		env->uStdLib->stdio->iprintf("\r\nGot Interrupt\n");
+		*/
 		iic->write(iic,MASTER_ADDR,buf,env->uStdLib->string->strlen(buf));
-		env->uStdLib->stdio->iprintf("\r\nWrite Value : %s\n",buf);
+		env->Thread->yield(1);
+		/*env->uStdLib->stdio->iprintf("\r\nWrite Value : %s\n",buf);*/
 	}
 }

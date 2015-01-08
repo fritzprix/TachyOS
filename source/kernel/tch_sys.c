@@ -317,7 +317,7 @@ static DECLARE_THREADROUTINE(idle){
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
-	}
+ 	}
 	return 0;
 }
 

@@ -7,9 +7,8 @@
 #### initialize Configuartion into default value ####
 
 
-ifeq ($(PUBLISH_TYPE),)
-	PUBLISH_TYPE=Release
-#	PUBLISH_TYPE=Debug
+ifeq ($(BUILD),)
+	BUILD=Debug
 endif
 
 
@@ -47,7 +46,7 @@ INSTR=thumb
 FPU=SOFT
 HW_VENDOR=ST_Micro
 HW_PLF=STM32F2XX
-APP_NAME=#iic_slaveWriter
+APP_NAME=iic_slaveWriter
 
 
 

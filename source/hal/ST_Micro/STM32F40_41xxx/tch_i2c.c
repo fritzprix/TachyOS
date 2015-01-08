@@ -33,11 +33,13 @@
 
 #define IIC_isBusy(ins)                        ((tch_iic_handle_prototype*) ins)->status & TCH_IIC_BUSY_FLAG
 #define IIC_setBusy(ins)                     do {\
+		tch_kernelSetBusyMark();\
 		((tch_iic_handle_prototype*) ins)->status |= TCH_IIC_BUSY_FLAG;\
 }while(0)
 
 #define IIC_clrBusy(ins)                     do {\
 		((tch_iic_handle_prototype*) ins)->status &= ~TCH_IIC_BUSY_FLAG;\
+		tch_kernelClrBusyMark();\
 }while(0)
 
 
@@ -225,13 +227,14 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	iicHw->CR1 |= I2C_CR1_SWRST;   // reset i2c peripheral
 	iicHw->CR1 &= ~I2C_CR1_SWRST;
 
+
 	iicHw->CR2 |= (I2C_CR2_ITERREN | (TCH_IIC_PCLK_FREQ_MSK & 0));   // set err & event interrupt enable; set pclk to 20MHz *** Not Affect to I2C Clk Frequency : it seems to be 30 MHz default
 	if(cfg->AddrMode == IIC_ADDRMODE_10B){
 		iicHw->OAR1 |= I2C_OAR1_ADDMODE;
-		iicHw->OAR1 |= ((cfg->Addr << 1) & 0xFE);
+		iicHw->OAR1 |= ((cfg->Addr & 0x3FF) | (3 << 14));
 	}else if(cfg->AddrMode == IIC_ADDRMODE_7B){
 		iicHw->OAR1 &= ~I2C_OAR1_ADDMODE;
-		iicHw->OAR1 |= (cfg->Addr & 0x3FF);
+		iicHw->OAR1 |= (((cfg->Addr << 1) & 0xFF) | (1 << 14));
 	}
 
 	iicHw->CCR &= ~0xFFF;
@@ -278,6 +281,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		break;
 	}
 
+	iicHw->CR1 |= I2C_CR1_PE;
 
 	NVIC_SetPriority(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(iicDesc->irq);
@@ -295,6 +299,7 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	if(!tch_IICisValid(ins))
 		return tchErrorParameter;
 	const tch* env = ins->env;
+	I2C_TypeDef* iicHw = (I2C_TypeDef*) iicDesc->_hw;
 
 	if((result = env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
 		return result;
@@ -310,12 +315,19 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	tch_dma->freeDma(ins->rxdma);
 	tch_dma->freeDma(ins->txdma);
 
+	iicHw->CR1 |= I2C_CR1_SWRST;
+	iicHw->CR1 &= ~I2C_CR1_PE;
+
+
 	*iicDesc->_rstr |= iicDesc->rstmsk;
 	*iicDesc->_clkenr &= ~iicDesc->clkmsk;
 	*iicDesc->_lpclkenr &= ~iicDesc->lpclkmsk;
 
+
+
 	env->Mtx->lock(IIC_StaticInstance.mtx,osWaitForever);
 	iicDesc->_handle = NULL;
+	IIC_clrBusy(ins);
 	env->Condv->wake(IIC_StaticInstance.condv);
 	env->Mtx->unlock(IIC_StaticInstance.mtx);
 	env->Mem->free(ins);
@@ -363,8 +375,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	tx_msg.bp = ((uint8_t*) wb);
 	tx_msg.sq_id = IIC_SQ_ID_INIT;
 
-	iicHw->CR1 |= I2C_CR1_PE;   //enable i2c
-	if(ins->txdma)
+	if(ins->txdma && (sz > 1))
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 
 	if(ins->status & TCH_IIC_ADDMOD_FLAG){
@@ -408,7 +419,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		}
 	}
 
-	if(ins->txdma){
+	if(ins->txdma && (sz > 1)){
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
 		txreq.MemInc = TRUE;
@@ -474,7 +485,6 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	rx_msg.bp = (uint8_t*) rb;
 	rx_msg.sq_id = IIC_SQ_ID_INIT;
 
-	iicHw->CR1 |= I2C_CR1_PE;   //enable i2c
 	if(sz > 1)
 		iicHw->CR1 |= I2C_CR1_ACK;
 
@@ -589,7 +599,19 @@ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void
 	if(ins->txdma && sz > 1)
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 
-	if((!ins->txdma) || sz == 1){
+	if(ins->txdma && (sz > 1)){
+		tch_DmaReqDef txreq;
+		txreq.MemAddr[0] = (uaddr_t) wb;
+		txreq.MemInc = TRUE;
+		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
+		txreq.PeriphInc = FALSE;
+		txreq.size = sz;
+		if(!tch_dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL)){
+			evt.status = tchErrorResource;
+			RETURN_SAFE();
+		}
+
+	}else{
 		evt = env->MsgQ->get(ins->mq,osWaitForever);
 		if((evt.status != tchEventMessage) || (evt.value.v != I2C_SR1_ADDR)){
 			evt.status = tchErrorIo;
@@ -599,17 +621,6 @@ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void
 		evt = env->MsgQ->get(ins->mq,osWaitForever);
 		if((evt.status != tchEventMessage) || (evt.value.v != tchOK)){
 			evt.status = tchErrorIo;
-			RETURN_SAFE();
-		}
-	}else{
-		tch_DmaReqDef txreq;
-		txreq.MemAddr[0] = (uaddr_t) wb;
-		txreq.MemInc = TRUE;
-		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
-		txreq.PeriphInc = FALSE;
-		txreq.size = sz;
-		if(!tch_dma->beginXfer(ins->txdma,&txreq,osWaitForever,NULL)){
-			evt.status = tchErrorResource;
 			RETURN_SAFE();
 		}
 	}

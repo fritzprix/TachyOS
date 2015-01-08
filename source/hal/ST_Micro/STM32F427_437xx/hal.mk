@@ -1,8 +1,7 @@
 
-##include $(CURDIR)/COMMON.mk
 .SUFFIXES : .c .o
 HAL_SRCS=\
-system_stm32f4xx.c\
+system_stm32f2xx.c\
 tch_adc.c\
 tch_dma.c\
 tch_gpio.c\
@@ -14,28 +13,32 @@ tch_timer.c\
 tch_usart.c
 	
 HAL_ASM_SRCS=\
-     startup_stm32f40xx.S
+     startup_stm32f2xx.S
      
 ASM_OPT=-x assembler-with-cpp\
         -nostdinc
 
-HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(GEN_DIR)/hal/%.o)
-HAL_OBJS=$(HAL_SRCS:%.c=$(GEN_DIR)/hal/%.o)
+HAL_BUILD_DIR=$(GEN_DIR)/hal
+GEN_SUB_DIR+=$(HAL_BUILD_DIR)
+HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(HAL_BUILD_DIR)/%.o)
+HAL_OBJS=$(HAL_SRCS:%.c=$(HAL_BUILD_DIR)/%.o)
+
 
 OBJS += $(HAL_OBJS) 
 OBJS += $(HAL_ASM_OBJS)
 
 
+$(HAL_BUILD_DIR): 
+	$(MK) $(HAL_BUILD_DIR)
 
-
-$(GEN_DIR)/hal/%.o: $(HAL_SRC_DIR)/%.c
+$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.c $(HAL_BUILD_DIR) 
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
 
-$(GEN_DIR)/hal/%.o: $(HAL_SRC_DIR)/%.S
+$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.S $(HAL_BUILD_DIR)
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM GNU Assembler'
 	$(CC) $< -c $(CFLAG) $(INC) $(ASM_OPT) -o $@

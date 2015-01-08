@@ -20,15 +20,20 @@ KERNEL_SRCS=\
 	    tch_time.c\
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
+KERNEL_BUILD_DIR=$(GEN_DIR)/kernel
+GEN_SUB_DIR+=$(KERNEL_BUILD_DIR) 
+KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(KERNEL_BUILD_DIR)/%.o)
+KERNEL_CPPOBJS=$(KERNEL_CPP_SRCS:%.cpp=$(KERNEL_BUILD_DIR)/%.o)
 
-KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(GEN_DIR)/sys/%.o)
-KERNEL_CPPOBJS=$(KERNEL_CPP_SRCS:%.cpp=$(GEN_DIR)/sys/%.o)
            
 OBJS += $(KERNEL_OBJS)
 OBJS += $(KERNEL_CPPOBJS)
 
+$(KERNEL_BUILD_DIR):
+	$(MK) $(KERNEL_BUILD_DIR)
 
-$(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.c
+
+$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.c $(KERNEL_BUILD_DIR)
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
@@ -36,7 +41,7 @@ $(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.c
 	@echo ' '
 	
 	
-$(GEN_DIR)/sys/%.o:$(KERNEL_SRC_DIR)/%.cpp
+$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.cpp $(KERNEL_BUILD_DIR)
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM g++'
 	$(CPP) $< -c $(CPFLAG) $(LDFLAG) $(INC) -o $@
