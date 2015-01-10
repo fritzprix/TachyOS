@@ -12,6 +12,11 @@
  *      Author: innocentevil
  */
 
+
+/** \addtogroup HAL
+ *  @{
+ */
+
 #ifndef TCH_GPIO_H_
 #define TCH_GPIO_H_
 
@@ -22,18 +27,19 @@ extern "C" {
 #endif
 
 
-#define tch_gpio0              ((gpIo_x) 0)
-#define tch_gpio1              ((gpIo_x) 1)
-#define tch_gpio2              ((gpIo_x) 2)
-#define tch_gpio3              ((gpIo_x) 3)
-#define tch_gpio4              ((gpIo_x) 4)
-#define tch_gpio5              ((gpIo_x) 5)
-#define tch_gpio6              ((gpIo_x) 6)
-#define tch_gpio7              ((gpIo_x) 7)
-#define tch_gpio8              ((gpIo_x) 8)
-#define tch_gpio9              ((gpIo_x) 9)
-#define tch_gpio10             ((gpIo_x) 10)
-#define tch_gpio11             ((gpIo_x) 11)
+
+#define tch_gpio0              ((gpIo_x) 0) /**< gpio 0 */
+#define tch_gpio1              ((gpIo_x) 1) /**< gpio 1*/
+#define tch_gpio2              ((gpIo_x) 2) /** */
+#define tch_gpio3              ((gpIo_x) 3) /** */
+#define tch_gpio4              ((gpIo_x) 4) /** */
+#define tch_gpio5              ((gpIo_x) 5) /** */
+#define tch_gpio6              ((gpIo_x) 6) /** */
+#define tch_gpio7              ((gpIo_x) 7) /** */
+#define tch_gpio8              ((gpIo_x) 8) /** */
+#define tch_gpio9              ((gpIo_x) 9) /** */
+#define tch_gpio10             ((gpIo_x) 10)/** */
+#define tch_gpio11             ((gpIo_x) 11)/** */
 
 #define GPIO_Mode_IN                   (uint8_t) (0)
 #define GPIO_Mode_OUT                  (uint8_t) (1)
@@ -195,3 +201,4 @@ typedef struct tch_lld_gpio {
 
 
 #endif /* TCH_GPIO_H_ */
+/** @}*/

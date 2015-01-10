@@ -12,6 +12,11 @@
  *      Author: innocentevil
  */
 
+
+/** \addtogroup Base_HAL_Interface
+ *  @{
+ */
+
 #ifndef TCH_HAL_H_
 #define TCH_HAL_H_
 
@@ -25,10 +30,14 @@ extern "C"{
 #include "tch_rtc.h"
 #include "tch_dma.h"
 
+
+/**
+ * An enum for defining low power level
+ */
 typedef enum {
-	LP_LEVEL0 = ((uint8_t) 0),
-	LP_LEVEL1 = ((uint8_t) 1),
-	LP_LEVEL2 = ((uint8_t) 2)
+	LP_LEVEL0 = ((uint8_t) 0),   /**< CPU Idle : CPU clock source is gated */
+	LP_LEVEL1 = ((uint8_t) 1),   /**< CPU Sleep : CPU clock is turned off, contents in SRAM are kept */
+	LP_LEVEL2 = ((uint8_t) 2)    /**< CPU Deep Sleep : CPU clock is turned off, contents in SRAM are lost */
 }tch_lplvl;
 
 /*-------------------- Private hal member declaration ----------------------------- */
@@ -37,16 +46,82 @@ typedef enum {
 /*---------------2. RTC provides critical functionality in system low power mode--- */
 /*--------------------------------------------------------------------------------- */
 
-extern tch_lld_rtc* tch_rtc;
-extern tch_lld_dma* tch_dma;
+/**\var tch_rtc
+ *  RTC HAL Object, which is not directly accessible to user program.
+ *  RTC is abstracted to System Timer, which keeps track of real time information of system
+ *  and also deals with timed scheduling of task
+ */
+
+/**\var tch_dma
+ *
+ *  DMA HAL Object, which is not directly accessible to user program.
+ *  it's been recommended that DMA is accessed by another HAL Interface
+ */
+
+extern tch_lld_rtc* tch_rtc; /**<RTC HAL Object  */
+extern tch_lld_dma* tch_dma; /**<DMA HAL Object  */
 
 
+
+
+
+
+/**
+ * \callgraph
+ * \brief Enable system tick timer
+ * \see tch_hal_disableSystick
+ *
+ * this function would be invoked in the initialization stage of system
+ */
 extern void tch_hal_enableSystick();
+
+/**
+ * \brief Disable system tick timer
+ * \see tch_hal_enableSystick
+ *
+ * this function would be invoked from kernel to allow system to enter sleep mode
+ */
 extern void tch_hal_disableSystick();
+
+/**
+ * \brief set current low power mode
+ * \param lplvl new low-power level
+ * \see tch_lplvl
+ *
+ * this function is invoked from kernel to change system low power level
+ *
+ */
 extern void tch_hal_setSleepMode(tch_lplvl lplvl);
+
+
+/**
+ * \brief Allow system to enter sleep mode
+ *
+ * this function is invoked from kernel to allow system to go into low power mode.
+ */
+
 extern void tch_hal_enterSleepMode();
+
+/**
+ * \brief Suspend system core clock
+ *
+ * this function is invoked from kernel when main clock should be turned off
+ * \see tch_hal_resumeSysClock
+ */
+
 extern void tch_hal_suspendSysClock();
+
+/**
+ * \brief Resume system core clock
+ *
+ * this function is invoked from kernel when cpu is waken-up from sleep (low power mode)
+ * \see tch_hal_suspendSysClock
+ */
+
 extern void tch_hal_resumeSysClock();
+
+
+
 
 
 extern tch_lld_adc* tch_adcHalInit(const tch* env);
@@ -63,3 +138,5 @@ extern tch_lld_usart* tch_usartHalInit(const tch* env);
 }
 #endif
 #endif /* TCH_HAL_H_ */
+
+/** @}*/

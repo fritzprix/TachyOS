@@ -375,7 +375,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	tx_msg.bp = ((uint8_t*) wb);
 	tx_msg.sq_id = IIC_SQ_ID_INIT;
 
-	if(ins->txdma && (sz > 1))
+	if(ins->txdma)
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 
 	if(ins->status & TCH_IIC_ADDMOD_FLAG){
@@ -419,7 +419,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 		}
 	}
 
-	if(ins->txdma && (sz > 1)){
+	if(ins->txdma){
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
 		txreq.MemInc = TRUE;
@@ -488,7 +488,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	if(sz > 1)
 		iicHw->CR1 |= I2C_CR1_ACK;
 
-	if(ins->rxdma && sz > 1){
+	if(ins->rxdma){
 		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
 	}
 
@@ -537,7 +537,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	}
 
 
-	if((!ins->rxdma) || (sz == 1)){
+	if((!ins->rxdma)){
 		evt = ins->env->MsgQ->get(ins->mq,timeout);
 		if((evt.status != tchEventMessage) || (evt.value.v != tchOK)){
 			RETURN_SAFE();

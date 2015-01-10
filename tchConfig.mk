@@ -46,7 +46,7 @@ INSTR=thumb
 FPU=SOFT
 HW_VENDOR=ST_Micro
 HW_PLF=STM32F2XX
-APP_NAME=iic_slaveWriter
+APP_NAME=#iic_slaveWriter
 
 
 

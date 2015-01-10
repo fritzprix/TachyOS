@@ -186,7 +186,9 @@ TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
 TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
-all : $(GEN_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE) 
+all : clean $(GEN_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE) 
+
+
 
 $(GEN_DIR):
 	$(MK) $(GEN_DIR)

@@ -1,6 +1,6 @@
 
 /*!
- * \defgroup TCH_DMA tch_dma
+ * \addtogroup DMA_HAL
  * @{
  * tch_dma.h
  *

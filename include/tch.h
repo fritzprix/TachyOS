@@ -14,6 +14,10 @@
  *      This header defines tachyos kernel interface.
  */
 
+/** \addtogroup API
+ *  @{
+ */
+
 #ifndef TCH_H_
 #define TCH_H_
 #ifdef __cplusplus
@@ -38,29 +42,31 @@ struct tch_hal_t{
 	const tch_lld_gpio*  gpio;
 	const tch_lld_timer* timer;
 };
-
-/*!
- * \mainpage
- *  this is main page
- */
-
-/*!
- *  \brief Configuration Macro for CMSIS
+/**
+ * \mainpage Tachyos
+ * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
+ * \section about_sec About Tachyos
+ *  Tachyos is a RTOS based on Microkernel architecture. Its motivation is that provides simplicity to user (even without any programming background)
+ *  so that any idea or concept can be prototyped easily but without any constraints in performance, stability and power efficiency.
+ *  For this motivation, all the base APIs (Kernel & HAL) are thread-safe and I/O operation performed under the HAL is synchronous to
+ *  program context(which means to be blocking).
  *
- *   These are macro for configuration of OS Feature which is compatible
- *   to CMSIS
+ *  Tachyos Kernel is small in its binary size and memory footprint(Kernel 10KB ROM / 2KB RAM) though, it includes all essential kernel components
+ *  like multi-threading, synchronization, communication and also supports some of POSIX api used frequently in development.
  *
- */
+ *
+ *  \section feat_sec Detailed features
+ *  \li <b>Unlimited multi-threading</b> (only limited by memory)
+ *  \li <b>Multi-Level Power Mode and Sleep API for low power application</b>
+ *    \c kernel can make decision whether to sleep in low power or wait in CPU idle by monitoring tasks
+ *  \li <b>POSIX friendly</b> (provides minimal set of POSIX)
+ *  \li <b>Provides Fragmentation-Free Dynamic Allocation /wo MMU</b>
+ *  \li Thread Synchronization (Mutex, Semaphore, Condition Variable)
+ *  \li Thread-Thread,ISR Communication (MessageQ , MailQ)
+ *
+ *   */
 
-#define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
-#define osFeature_Pool         1       ///< Memory Pools:    1=available, 0=not available
-#define osFeature_MailQ        1       ///< Mail Queues:     1=available, 0=not available
-#define osFeature_MessageQ     1       ///< Message Queues:  1=available, 0=not available
-#define osFeature_Signals      8       ///< maximum number of Signal Flags available per thread
-#define osFeature_Semaphore    30      ///< maximum count for \ref osSemaphoreCreate function
-#define osFeature_Wait         1       ///< osWait function: 1=available, 0=not available
-#define osFeature_SysTick      1       ///< osKernelSysTick functions: 1=available, 0=not available
-/// Timeout value.
+
 /// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
 #define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
