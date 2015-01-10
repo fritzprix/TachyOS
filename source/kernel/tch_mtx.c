@@ -144,7 +144,7 @@ tchStatus tch_mtx_destroy(tch_mtxId id){
 		return tchErrorISR;
 	if(!tch_mtxIsValid(mcb))
 		return tchErrorResource;
-	if(tch_mtx_lock(id,osWaitForever) != tchOK)
+	if(tch_mtx_lock(id,tchWaitForever) != tchOK)
 		return tchErrorTimeoutResource;
 	tch_mtxInvalidate(mcb);
 	result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&mcb->que,tchErrorResource);

@@ -47,7 +47,7 @@ tchStatus tch_kernel_initCrt0(tch* env){
 	ucfg.FlowCtrl = FALSE;
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
-	stdio_port = env->Device->usart->allocUart(env,tch_USART0,&ucfg,osWaitForever,ActOnSleep);
+	stdio_port = env->Device->usart->allocUart(env,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
 	return tchOK;
 
 }

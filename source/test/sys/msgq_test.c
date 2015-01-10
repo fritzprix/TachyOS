@@ -52,13 +52,13 @@ tchStatus msgq_performTest(tch* api){
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_PU;
 	iocfg.Speed = GPIO_OSpeed_50M;
-	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,osWaitForever);
+	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,tchWaitForever);
 	out->out(out,1 << 2,bSet);
 
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;;
 	iocfg.Speed = GPIO_OSpeed_50M;
-	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,osWaitForever);
+	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,tchWaitForever);
 
 	tch_GpioEvCfg evcfg;
 	api->Device->gpio->initEvCfg(&evcfg);
@@ -84,8 +84,8 @@ tchStatus msgq_performTest(tch* api){
 	Thread->start(sender_id);
 
 
-	tch_assert(api,Thread->join(receiver_id,osWaitForever) == tchOK,tchErrorOS);
-	tch_assert(api,Thread->join(sender_id,osWaitForever) == tchOK,tchErrorOS);
+	tch_assert(api,Thread->join(receiver_id,tchWaitForever) == tchOK,tchErrorOS);
+	tch_assert(api,Thread->join(sender_id,tchWaitForever) == tchOK,tchErrorOS);
 	api->Barrier->destroy(mBar);
 
 
@@ -102,14 +102,14 @@ tchStatus msgq_performTest(tch* api){
 static DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	while(cnt < 50){
-		env->MsgQ->put(mid,0xFF,osWaitForever);
+		env->MsgQ->put(mid,0xFF,tchWaitForever);
 		out->out(out,1 << 2,bClear);
 		env->Thread->yield(1);
 		out->out(out,1 << 2,bSet);
 		env->Thread->yield(1);
 		cnt++;
 	}
-	env->Barrier->wait(mBar,osWaitForever);
+	env->Barrier->wait(mBar,tchWaitForever);
 	env->Thread->yield(10);
 	env->MsgQ->destroy(mid);
 	return tchOK;
@@ -121,7 +121,7 @@ static DECLARE_THREADROUTINE(receiver){
 	uint32_t mval = 0;
 	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
-		evt = env->MsgQ->get(mid,osWaitForever);
+		evt = env->MsgQ->get(mid,tchWaitForever);
 		totalMsgcnt++;
 		if(evt.status == tchEventMessage){
 			cnt++;
@@ -139,7 +139,7 @@ static DECLARE_THREADROUTINE(receiver){
 	if(evt.status != tchErrorTimeoutResource)
 		return tchErrorOS;
 	env->Barrier->signal(mBar,tchOK);
-	evt = env->MsgQ->get(mid,osWaitForever);
+	evt = env->MsgQ->get(mid,tchWaitForever);
 	if(evt.status != tchErrorResource)
 		return tchErrorResource;
 	return tchOK;

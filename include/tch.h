@@ -56,19 +56,25 @@ struct tch_hal_t{
  *
  *
  *  \section feat_sec Detailed features
- *  \li <b>Unlimited multi-threading</b> (only limited by memory)
- *  \li <b>Multi-Level Power Mode and Sleep API for low power application</b>
- *    \c kernel can make decision whether to sleep in low power or wait in CPU idle by monitoring tasks
- *  \li <b>POSIX friendly</b> (provides minimal set of POSIX)
- *  \li <b>Provides Fragmentation-Free Dynamic Allocation /wo MMU</b>
- *  \li Thread Synchronization (Mutex, Semaphore, Condition Variable)
- *  \li Thread-Thread,ISR Communication (MessageQ , MailQ)
+ *  - <b>Preemtive Scheduler</b>
+ *  	- Support unlimited multi-thread
+ *  	- Support Both Round-Robin & Cooperative scheduling
+ *  - <b>Synchronization & Inter-thread-communication</b>
+*  		- provides pthread-like synchronization API (Mutex, Semaphore, Condition Variable)
+*  		- provides Message Queue & MailBox to communicate with another threads or receive message from hardware interrupt
+ *  - <b>Multi-level power mode</b>
+ *  	- provides low power API so that threads can explicitly control where & when to enter low power mode synchronous to execution context
+ *  	- provides low power hook for application to maximize application power efficiency
+ *  - <b>Support POSIX API scalable manner</b>
+ *  	- POSIX API support can be configured in build time so that many posix compatible application can be easily ported from another platform while maintainng small binary footprint
+ *  - <b>Provides Safe-Dynamic Allocation /wo MMU</b>
+ *  	- prevent Heap Fragmentation which can harm stability of system
+ *  	- prevent unintentional resource(memory, I/O peripheral) leakage in kernel level
  *
  *   */
 
 
-/// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
-#define osWaitForever     0xFFFFFFFF     ///< wait forever timeout value
+#define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
 

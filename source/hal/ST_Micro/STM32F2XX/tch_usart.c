@@ -322,17 +322,17 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 
 
 	// block tx / rx operation by setting busy
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != tchOK)
+	if(env->Mtx->lock(ins->txMtx,tchWaitForever) != tchOK)
 		return FALSE;
 	while(UART_IS_TXBUSY(ins)){
-		env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever);
+		env->Condv->wait(ins->txCondv,ins->txMtx,tchWaitForever);
 	}
 	UART_SET_TXBUSY(ins);
 
-	if(env->Mtx->lock(ins->rxMtx,osWaitForever) != tchOK)
+	if(env->Mtx->lock(ins->rxMtx,tchWaitForever) != tchOK)
 		return FALSE;
 	while(UART_IS_RXBUSY(ins)){
-		env->Condv->wait(ins->rxCondv,ins->rxMtx,osWaitForever);
+		env->Condv->wait(ins->rxCondv,ins->rxMtx,tchWaitForever);
 	}
 	UART_SET_RXBUSY(ins);
 
@@ -351,7 +351,7 @@ static tchStatus tch_uartClose(tch_UartHandle* handle){
 		env->MsgQ->destroy(ins->rxCh.rxQ);
 	}
 	ins->ioHandle->close(ins->ioHandle);
-	if(env->Mtx->lock(UART_StaticInstance.mtx,osWaitForever) != tchOK){
+	if(env->Mtx->lock(UART_StaticInstance.mtx,tchWaitForever) != tchOK){
 		return FALSE;
 	}
 	UART_StaticInstance.occp_state &= ~(1 << ins->pno); // clear Occupation flag
@@ -395,10 +395,10 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 	evt.status = tchOK;
 
 
-	if(env->Mtx->lock(ins->txMtx,osWaitForever) != tchOK)
+	if(env->Mtx->lock(ins->txMtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	while(UART_IS_TXBUSY(ins)){
-		if((evt.status = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != tchOK)
+		if((evt.status = env->Condv->wait(ins->txCondv,ins->txMtx,tchWaitForever)) != tchOK)
 			return evt.status;
 	}
 	UART_SET_TXBUSY(ins);
@@ -408,7 +408,7 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 	for(;idx < sz;idx++){
 		while(!(uhw->SR & USART_SR_TXE)) /*NOP*/;
 		uhw->DR = *((uint8_t*) bp + idx);
-		evt = env->MsgQ->get(ins->txCh.txQ,osWaitForever);
+		evt = env->MsgQ->get(ins->txCh.txQ,tchWaitForever);
 		if(evt.status != tchEventMessage){
 			evt.status = tchErrorIo;
 			RETURN_SAFELY();
@@ -417,7 +417,7 @@ static tchStatus tch_uartWrite(tch_UartHandle* handle,const uint8_t* bp,size_t s
 
 	SET_SAFE_EXIT();
 
-	env->Mtx->lock(ins->txMtx,osWaitForever);
+	env->Mtx->lock(ins->txMtx,tchWaitForever);
 	UART_CLR_TXBUSY(ins);
 	env->Condv->wakeAll(ins->txCondv);
 	env->Mtx->unlock(ins->txMtx);
@@ -486,11 +486,11 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	const tch* env = ins->env;
 
 
-	if((result = env->Mtx->lock(ins->txMtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(ins->txMtx,tchWaitForever)) != tchOK)
 		return result;
 
 	while(UART_IS_TXBUSY(ins)){
-		if((result = env->Condv->wait(ins->txCondv,ins->txMtx,osWaitForever)) != tchOK)
+		if((result = env->Condv->wait(ins->txCondv,ins->txMtx,tchWaitForever)) != tchOK)
 			return result;
 	}
 	UART_SET_TXBUSY(ins);
@@ -505,7 +505,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	req.PeriphInc = FALSE;
 	while(!(uhw->SR & USART_SR_TC)) __NOP();
 	uhw->SR &= ~USART_SR_TC;    // clear tc
-	while(!tch_dma->beginXfer(ins->txCh.txDma,&req,osWaitForever,&result)){  // if dma fails, try again
+	while(!tch_dma->beginXfer(ins->txCh.txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
 		if(result == tchErrorResource){
 			result = tchErrorIo;
 			RETURN_SAFELY();
@@ -513,7 +513,7 @@ static tchStatus tch_uartWriteDma(tch_UartHandle* handle,const uint8_t* bp,size_
 	}
 
 	SET_SAFE_EXIT();
-	env->Mtx->lock(ins->txMtx,osWaitForever);
+	env->Mtx->lock(ins->txMtx,tchWaitForever);
 	UART_CLR_TXBUSY(ins);
 	env->Condv->wakeAll(ins->txCondv);
 	env->Mtx->unlock(ins->txMtx);

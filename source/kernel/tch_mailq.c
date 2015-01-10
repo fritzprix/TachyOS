@@ -130,7 +130,7 @@ static tchStatus tch_mailq_put(tch_mailqId qid,void* mail){
 		return tchErrorResource;
 	if(!mail)
 		return tchErrorParameter;
-	return MsgQ->put(((tch_mailq_cb*) qid)->msgq,(uword_t)mail,osWaitForever);
+	return MsgQ->put(((tch_mailq_cb*) qid)->msgq,(uword_t)mail,tchWaitForever);
 }
 
 

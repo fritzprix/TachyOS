@@ -35,11 +35,13 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 
 
 #define SPI_setBusy(ins)             do{\
+	tch_kernelSetBusyMark();\
 	((tch_spi_handle_prototype*) ins)->status |= TCH_SPI_BUSY_FLAG;\
 }while(0)
 
 #define SPI_clrBusy(ins)             do{\
 	((tch_spi_handle_prototype*) ins)->status &= ~TCH_SPI_BUSY_FLAG;\
+	tch_kernelClrBusyMark();\
 }while(0)
 
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
@@ -191,7 +193,7 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	}
 
 	if(!hnd->txCh.dma || !hnd->rxCh.dma){
-		env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
+		env->Mtx->lock(SPI_StaticInstance.mtx,tchWaitForever);
 		spiDesc->_handle = NULL;
 		env->Condv->wakeAll(SPI_StaticInstance.condv);
 		env->Mtx->unlock(SPI_StaticInstance.mtx);
@@ -270,7 +272,6 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	spiHw->CR1 |= SPI_CR1_SPE;
 
 	tch_spiValidate((tch_spi_handle_prototype*) hnd);
-	SPI_clrBusy(hnd);
 	return (tch_spiHandle*) hnd;
 }
 
@@ -278,7 +279,7 @@ static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spiIsValid(ins))
 		return tchErrorResource;
-	return ins->pix.transceive(self,wb,NULL,sz,osWaitForever);
+	return ins->pix.transceive(self,wb,NULL,sz,tchWaitForever);
 }
 
 static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout){
@@ -340,7 +341,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 
 	evt.status = tchOK;
 	SET_SAFE_RETURN();
-	env->Mtx->lock(hnd->mtx,osWaitForever);
+	env->Mtx->lock(hnd->mtx,tchWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	evt.status = env->Condv->wakeAll(hnd->condv);
@@ -396,7 +397,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	result = tchOK;
 
 	SET_SAFE_RETURN();
-	env->Mtx->lock(hnd->mtx,osWaitForever);
+	env->Mtx->lock(hnd->mtx,tchWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
 	SPI_clrBusy(hnd);
 	env->Condv->wakeAll(hnd->condv);
@@ -420,9 +421,9 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 
 	const tch* env = ins->env;
 	tchStatus result = tchOK;
-	env->Mtx->lock(ins->mtx,osWaitForever);
+	env->Mtx->lock(ins->mtx,tchWaitForever);
 	while(SPI_isBusy(ins)){
-		env->Condv->wait(ins->condv,ins->mtx,osWaitForever);
+		env->Condv->wait(ins->condv,ins->mtx,tchWaitForever);
 	}
 	tch_spiInvalidate(ins);
 	env->Mtx->destroy(ins->mtx);
@@ -435,7 +436,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 
 	ins->iohandle->close(ins->iohandle);
 
-	env->Mtx->lock(SPI_StaticInstance.mtx,osWaitForever);
+	env->Mtx->lock(SPI_StaticInstance.mtx,tchWaitForever);
 
 	*spiDesc->_rstr |= spiDesc->rstmsk;
 	*spiDesc->_clkenr &= ~spiDesc->clkmsk;

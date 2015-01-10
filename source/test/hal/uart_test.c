@@ -39,7 +39,7 @@ tchStatus uart_performTest(tch* env){
 	int size = env->uStdLib->string->strlen(myname);
 
 	while(mcnt--){
-		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,tchWaitForever,ActOnSleep);
 		serial->write(serial,openMsg,env->uStdLib->string->strlen(openMsg));
 		env->Thread->yield(0);
 		serial->write(serial,myname,size);
@@ -47,7 +47,7 @@ tchStatus uart_performTest(tch* env){
 		serial->close(serial);
 	}
 
-	if(env->Thread->join(printer,osWaitForever) != tchOK)
+	if(env->Thread->join(printer,tchWaitForever) != tchOK)
 		return tchErrorOS;
 	serial->close(serial);
 	return tchOK;
@@ -66,7 +66,7 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 	ucfg.StopBit = USART_StopBit_1B;
 	tch_UartHandle* serial = NULL;
 	while(pcnt--){
-		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,osWaitForever,ActOnSleep);
+		serial = env->Device->usart->allocUart(env,tch_USART2,&ucfg,tchWaitForever,ActOnSleep);
 		serial->write(serial,openedMsg,env->uStdLib->string->strlen(openedMsg));
 		env->Thread->yield(0);
 		serial->write(serial,myname,size);

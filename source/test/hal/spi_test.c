@@ -24,13 +24,13 @@ tchStatus spi_performTest(tch* env){
 
 
 	do{
-		spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,osWaitForever,ActOnSleep);
+		spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
 		spihandle->close(spihandle);
 	}while(leakTestcnt--);
 
 
 
-	spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,osWaitForever,ActOnSleep);
+	spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
 	leakTestcnt = 0;
 
 	const char* str = "Hello World!! This is SPI";

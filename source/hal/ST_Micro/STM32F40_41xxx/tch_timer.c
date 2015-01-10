@@ -699,7 +699,7 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 				timerHw->DIER |= TIM_DIER_CC4IE;
 				break;
 			}
-			tchEvent evt = env->MsgQ->get(ins->msgqs[id],osWaitForever);
+			tchEvent evt = env->MsgQ->get(ins->msgqs[id],tchWaitForever);
 			if(evt.status != tchEventMessage)
 				return FALSE;
 			thw->ch_occp &= ~(1 << id);
@@ -725,7 +725,7 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	timerHw->SR = 0;
 	timerHw->CNT = 0;
 	timerHw->DIER = 0;
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
@@ -802,15 +802,15 @@ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size
 		ccr = &TimerHw->CCR4;
 		break;
 	}
-	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((result = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	TimerHw->DIER |= TIM_DIER_UIE;    // enable update
 	uint32_t dutyd = TimerHw->ARR;
 	while(sz--){
 		*ccr = (uint32_t) (*(fduty++) * dutyd);
 		if(sz){
-			result = ins->env->Barrier->wait(ins->uev_bar,osWaitForever);
-	//		result = ins->env->Sem->lock(ins->uev_sem,osWaitForever);
+			result = ins->env->Barrier->wait(ins->uev_bar,tchWaitForever);
+	//		result = ins->env->Sem->lock(ins->uev_sem,tchWaitForever);
 		}
 	}
 	TimerHw->DIER &= ~TIM_DIER_UIE;
@@ -876,7 +876,7 @@ static tchStatus tch_pwm_start(tch_pwmHandle* self){
 		return tchErrorParameter;
 	if(!tch_timer_PWMIsValid(ins))
 		return tchErrorParameter;
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 |= TIM_CR1_CEN;
@@ -891,7 +891,7 @@ static tchStatus tch_pwm_stop(tch_pwmHandle* self){
 		return tchErrorParameter;
 	if(!tch_timer_PWMIsValid(ins))
 		return tchErrorParameter;
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	timHw = (TIM_TypeDef*) TIMER_HWs[ins->timer]._hw;
 	timHw->CR1 &= ~TIM_CR1_CEN;
@@ -906,7 +906,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 		return tchErrorParameter;
 	tchStatus result = tchOK;
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
-	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((result = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	const tch* env = ins->env;
@@ -921,7 +921,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 			ins->iohandle[chcnt]->close(ins->iohandle[chcnt]);
 	}
 	env->Mem->free(ins->iohandle);
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
@@ -980,7 +980,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 		*buf++ = evt.value.v;
 	}
 
-	if((evt.status = env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((evt.status = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return evt.status;
 	timDesc->ch_occp &= ~chMsk;
 	env->Condv->wakeAll(ins->condv);
@@ -1028,7 +1028,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
 	uint8_t chcnt = timDesc->channelCnt / 2;
 
-	if((result = env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	*timDesc->rstr |= timDesc->rstmsk;
 	tch_timer_tCaptInvalidate(ins);
@@ -1045,7 +1045,7 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	}
 	env->Mem->free(ins->iohandle);
 
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
 		return result;
 	timDesc->_handle = NULL;
 

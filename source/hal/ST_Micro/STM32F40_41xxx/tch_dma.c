@@ -338,10 +338,10 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 	const tch* env = ins->env;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) DMA_HWs[ins->dma]._hw;
 	// wait until dma is busy
-	if((result = env->Mtx->lock(ins->mtxId,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(ins->mtxId,tchWaitForever)) != tchOK)
 		return result;
 	while(DMA_IS_BUSY(ins)){
-		if((result = env->Condv->wait(ins->condv,ins->mtxId,osWaitForever)) != tchOK)
+		if((result = env->Condv->wait(ins->condv,ins->mtxId,tchWaitForever)) != tchOK)
 			return result;
 	}
 	tch_dmaInvalidate(ins);
@@ -351,7 +351,7 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 	env->Condv->destroy(ins->condv);
 
 
-	if((result = env->Mtx->lock(DMA_StaticInstance.mtxId,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(DMA_StaticInstance.mtxId,tchWaitForever)) != tchOK)
 		return result;
 	tch_dma_descriptor* dma_desc = &DMA_HWs[ins->dma];
 	DMA_StaticInstance.lpoccp_state &= ~(1 << ins->dma);

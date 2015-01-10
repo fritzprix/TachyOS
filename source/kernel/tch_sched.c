@@ -98,7 +98,7 @@ void tch_schedReadyThread(tch_threadId th){
  */
 void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState){
 	tch_threadId nth = 0;
-	if(timeout == osWaitForever)
+	if(timeout == tchWaitForever)
 		return;
 	tch_systimeSetTimeout(tch_currentThread,timeout);
 	nth = tch_listDequeue((tch_lnode_t*)&tch_readyQue);
@@ -115,7 +115,7 @@ void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState){
 
 void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout){
 	tch_threadId nth = 0;
-	if(timeout != osWaitForever){
+	if(timeout != tchWaitForever){
 		tch_systimeSetTimeout(tch_currentThread,timeout);
 	}
 	tch_listEnqueuePriority((tch_lnode_t*) wq,&getThreadHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);

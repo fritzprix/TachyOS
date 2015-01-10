@@ -32,7 +32,7 @@ tchStatus timer_performTest(tch* env){
 	gptDef.UnitTime = TIMER_UNITTIME_mSEC;
 	gptDef.pwrOpt = ActOnSleep;
 
-	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,tch_TIMER0,&gptDef,osWaitForever);
+	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,tch_TIMER0,&gptDef,tchWaitForever);
 
 	tch_threadId waiterThread1;
 	tch_threadId waiterThread2;
@@ -59,8 +59,8 @@ tchStatus timer_performTest(tch* env){
 	env->Thread->start(waiterThread1);
 	env->Thread->start(waiterThread2);
 
-	result = env->Thread->join(waiterThread1,osWaitForever);
-	result = env->Thread->join(waiterThread2,osWaitForever);
+	result = env->Thread->join(waiterThread1,tchWaitForever);
+	result = env->Thread->join(waiterThread2,tchWaitForever);
 
 	gptimer->close(gptimer);   // gptimer test complete
 
@@ -80,12 +80,12 @@ tchStatus timer_performTest(tch* env){
 	int cnt = 100000;
 	tch_pwmHandle* pwmDrv = NULL;
 	while(cnt--){
-		pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,osWaitForever);
+		pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,tchWaitForever);
 		if(pwmDrv)
 			pwmDrv->close(pwmDrv);
 	}
 
-	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,osWaitForever);
+	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,tchWaitForever);
 	thcfg._t_name = "PulseDrv1";
 	thcfg._t_routine = pulsDrv1Run;
 	thcfg.t_proior = Normal;
@@ -104,8 +104,8 @@ tchStatus timer_performTest(tch* env){
 	env->Thread->start(waiterThread1);
 	env->Thread->start(waiterThread2);
 
-	result = env->Thread->join(waiterThread1,osWaitForever);
-	result = env->Thread->join(waiterThread2,osWaitForever);
+	result = env->Thread->join(waiterThread1,tchWaitForever);
+	result = env->Thread->join(waiterThread2,tchWaitForever);
 
 
 
@@ -119,7 +119,7 @@ tchStatus timer_performTest(tch* env){
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
 
-	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,osWaitForever);
+	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,tchWaitForever);
 	if(!pwmDrv)
 		return tchErrorOS;
 
@@ -129,7 +129,7 @@ tchStatus timer_performTest(tch* env){
 	captDef.periodInUnitTime = 1000;
 	captDef.pwrOpt = ActOnSleep;
 
-	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,tch_TIMER0,&captDef,osWaitForever);
+	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,tch_TIMER0,&captDef,tchWaitForever);
 	if(!capt)
 		return tchErrorOS;
 
@@ -160,9 +160,9 @@ tchStatus timer_performTest(tch* env){
 	env->Thread->start(pcon1Thread);
 	env->Thread->start(pcon2Thread);
 
-	env->Thread->join(pgenThread,osWaitForever);
-	env->Thread->join(pcon1Thread,osWaitForever);
-	env->Thread->join(pcon2Thread,osWaitForever);
+	env->Thread->join(pgenThread,tchWaitForever);
+	env->Thread->join(pcon1Thread,tchWaitForever);
+	env->Thread->join(pcon2Thread,tchWaitForever);
 
 	env->Mem->free(pconStk);
 
@@ -233,13 +233,13 @@ static DECLARE_THREADROUTINE(pulseGenRun){
 
 static DECLARE_THREADROUTINE(pulseCon1Run){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
-	capt->read(capt,0,ffvs,1000,osWaitForever);
+	capt->read(capt,0,ffvs,1000,tchWaitForever);
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulseCon2Run){
 	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
-	capt->read(capt,2,ffvs1,1000,osWaitForever);
+	capt->read(capt,2,ffvs1,1000,tchWaitForever);
 	return tchOK;
 }
 

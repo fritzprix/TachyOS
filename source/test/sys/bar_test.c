@@ -68,14 +68,14 @@ tchStatus barrier_performTest(tch* api){
 
 	api->Thread->yield(10);
 	api->Barrier->signal(bid,tchOK);
-	if(api->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+	if(api->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 
-	if(api->Thread->join(child1Id,osWaitForever) != tchOK)
+	if(api->Thread->join(child1Id,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(api->Thread->join(child2Id,osWaitForever) != tchOK)
+	if(api->Thread->join(child2Id,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(api->Thread->join(child3Id,osWaitForever) != tchOK)
+	if(api->Thread->join(child3Id,tchWaitForever) != tchOK)
 		return tchErrorOS;
 
 
@@ -85,23 +85,23 @@ tchStatus barrier_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(env->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+	if(env->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(env->Barrier->wait(bid,osWaitForever) != tchErrorResource)
+	if(env->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
-	if(env->Barrier->wait(bid,osWaitForever) != tchOK)
+	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
 	env->Thread->yield(20);
 	env->Barrier->destroy(bid);

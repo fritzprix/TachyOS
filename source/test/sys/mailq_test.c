@@ -46,7 +46,7 @@ tchStatus mailq_performTest(tch* api){
 
 	Thread->start(receiver_id);
 	Thread->start(sender_id);
-	tchStatus result = api->Thread->join(receiver_id,osWaitForever);
+	tchStatus result = api->Thread->join(receiver_id,tchWaitForever);
 
 	api->MailQ->destroy(testmailq_id);
 
@@ -57,7 +57,7 @@ DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = env->MailQ->calloc(testmailq_id,osWaitForever,NULL);
+		p = env->MailQ->calloc(testmailq_id,tchWaitForever,NULL);
 		p->age = 0;
 		p->sex = 1;
 		env->MailQ->put(testmailq_id,p);
@@ -70,7 +70,7 @@ DECLARE_THREADROUTINE(receiver){
 	uint32_t cnt = 0;
 	tchEvent evt;
 	while(cnt < 100){
-		evt = env->MailQ->get(testmailq_id,osWaitForever);
+		evt = env->MailQ->get(testmailq_id,tchWaitForever);
 		env->MailQ->free(testmailq_id,(void*)evt.value.v);
 		if(evt.status == tchEventMail)
 			cnt++;

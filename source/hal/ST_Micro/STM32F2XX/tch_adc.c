@@ -251,10 +251,10 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 	if(!tch_adcIsValid(ins))
 		return tchErrorParameter;
 	const tch* env = ins->env;
-	if((result = env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	while(ADC_isBusy(ins)){
-		if((result = env->Condv->wait(ins->condv,ins->mtx,osWaitForever)) != tchOK)
+		if((result = env->Condv->wait(ins->condv,ins->mtx,tchWaitForever)) != tchOK)
 			return result;
 	}
 	tch_adcInvalidata(ins);
@@ -267,7 +267,7 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 	tch_dma->freeDma(ins->dma);
 	ins->timer->close(ins->timer);
 
-	if((result = env->Mtx->lock(ADC_StaticInstance.mtx,osWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(ADC_StaticInstance.mtx,tchWaitForever)) != tchOK)
 		return result;
 	adcDesc->_handle = NULL;
 	tch_adcChannelOccpStatus &= ins->ch_occp;
@@ -287,10 +287,10 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 		return ADC_READ_FAIL;
 	if(!tch_adcIsValid(ins))
 		return ADC_READ_FAIL;
-	if(ins->env->Mtx->lock(ins->mtx,osWaitForever) != tchOK)
+	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return ADC_READ_FAIL;
 	while(ADC_isBusy(ins)){
-		if(ins->env->Condv->wait(ins->condv,ins->mtx,osWaitForever) != tchOK)
+		if(ins->env->Condv->wait(ins->condv,ins->mtx,tchWaitForever) != tchOK)
 			return ADC_READ_FAIL;
 	}
 	ADC_setBusy(ins);
@@ -298,14 +298,14 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 		return ADC_READ_FAIL;
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	adcHw->CR2 |= ADC_CR2_SWSTART;    /// start conversion
-	evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
+	evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 
 	if(evt.status != tchEventMessage){
 		evt.value.v = ADC_READ_FAIL;
 		RETURN_SAFE();
 	}
 	SET_SAFE_EXIT();
-	ins->env->Mtx->lock(ins->mtx,osWaitForever);
+	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	ADC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
 	ins->env->Mtx->unlock(ins->mtx);
@@ -327,10 +327,10 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 	adcBs = &ADC_BD_CFGs[ins->adc];
 	adcDesc = &ADC_HWs[ins->adc];
 	adcHw = (ADC_TypeDef*) adcDesc->_hw;
-	if((result = ins->env->Mtx->lock(ins->mtx,osWaitForever)) != tchOK)
+	if((result = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	while(ADC_isBusy(ins)){
-		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,osWaitForever)) != tchOK)
+		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,tchWaitForever)) != tchOK)
 			return result;
 	}
 	ADC_setBusy(ins);
@@ -348,11 +348,11 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 	tch_DmaReqDef dmaReq;
 	uint16_t* chnk = NULL;
 	while(convCnt--){
-		chnk = (uint16_t*) ins->env->MailQ->alloc(q,osWaitForever,NULL);
+		chnk = (uint16_t*) ins->env->MailQ->alloc(q,tchWaitForever,NULL);
 		tch_dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
 		ins->timer->start(ins->timer);
 		tch_dma->beginXfer(ins->dma,&dmaReq,0,&result);
-		evt = ins->env->MsgQ->get(ins->msgq,osWaitForever);
+		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk);
 		if(evt.status != tchEventMessage){
@@ -366,7 +366,7 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 	SET_SAFE_EXIT();
 	adcHw->CR2 &= ~ADC_CR2_DMA;
 	adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
-	ins->env->Mtx->lock(ins->mtx,osWaitForever);
+	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	ADC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
 	ins->env->Mtx->unlock(ins->mtx);

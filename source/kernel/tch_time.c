@@ -61,7 +61,7 @@ tch_systime_ix* tch_systimeInit(const tch* env,time_t init_tm,tch_timezone init_
 }
 
 tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout){
-	if((timeout == osWaitForever) || !thread)
+	if((timeout == tchWaitForever) || !thread)
 		return tchErrorParameter;
 	getThreadHeader(thread)->t_to = tch_systimeTick + timeout;
 	tch_listEnqueuePriority(&tch_systimeWaitQ,(tch_lnode_t*) thread,tch_systimeWaitQRule);

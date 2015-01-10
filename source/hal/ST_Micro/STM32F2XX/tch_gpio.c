@@ -209,7 +209,7 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	if(!tch_gpioIsValid(ins))
 		return tchErrorResource;
 	const tch* env = ins->env;
-	if(env->Mtx->lock(ins->mtxId,osWaitForever) != tchOK)
+	if(env->Mtx->lock(ins->mtxId,tchWaitForever) != tchOK)
 		return tchErrorTimeoutResource;
 
 	tch_gpio_descriptor* gpio = &GPIO_HWs[ins->idx];
@@ -227,7 +227,7 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	tch_gpioInvalidate(ins);
 	env->Mtx->destroy(ins->mtxId);
 
-	env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever);
+	env->Mtx->lock(GPIO_StaticInstance.mtxId,tchWaitForever);
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
 	tch_gpioInvalidate(ins);
@@ -281,7 +281,7 @@ static tchStatus tch_gpio_handle_registerIoEvent(tch_GpioHandle* self,pin p,cons
 
 
 	const tch* env = ins->env;
-	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever) != tchOK){
+	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,tchWaitForever) != tchOK){
 		return tchErrorResource;
 	}
 
@@ -316,7 +316,7 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,pin p){
 		return tchErrorParameter;
 
 	const tch* api = ins->env;
-	if(api->Mtx->lock(GPIO_StaticInstance.mtxId,osWaitForever) != tchOK)   // lock mtx of singleton
+	if(api->Mtx->lock(GPIO_StaticInstance.mtxId,tchWaitForever) != tchOK)   // lock mtx of singleton
 		return tchErrorResource;
 
 	uint16_t pmsk = (1 << p);

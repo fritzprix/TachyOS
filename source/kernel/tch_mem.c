@@ -100,7 +100,7 @@ static void* tch_usrAlloc(size_t size){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return NULL;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return NULL;
 	tch_memHdr* hdr = tch_memAlloc(tch_currentThread->t_mem,size);
 	if(!hdr)
@@ -122,7 +122,7 @@ static void tch_usrFree(void* chnk){
 		return;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	hdr = chnk;
 	hdr--;
@@ -144,7 +144,7 @@ static void tch_usrPrintFreeList(void){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	tch_listPrint(tch_currentThread->t_mem,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -154,7 +154,7 @@ static void tch_usrPrintAllocList(void){
 	tch_memEntry* m_entry = tch_currentThread->t_mem;
 	if(!m_entry)
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	tch_listPrint(&tch_currentThread->t_ualc,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -165,7 +165,7 @@ void* tch_sharedAlloc(size_t sz){
 	tch_memEntry* _entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return NULL;
-	if(Mtx->lock(&_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&_entry->mtx,tchWaitForever) != tchOK)
 		return NULL;
 
 	tch_memHdr* hdr = tch_memAlloc(sharedMem,sz);
@@ -186,7 +186,7 @@ void tch_sharedFree(void* chnk){
 		return;
 	tch_memHdr* hdr = chnk;
 	hdr--;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	tch_listRemove(&tch_currentThread->t_shalc,(tch_lnode_t*)hdr);
 	tch_memFree(sharedMem,chnk);
@@ -206,7 +206,7 @@ static void tch_sharedPrintFreeList(void){
 	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	tch_listPrint(sharedMem,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);
@@ -217,7 +217,7 @@ static void tch_sharedPrintAllocList(void){
 	tch_memEntry* m_entry = (tch_memEntry*) sharedMem;
 	if(tch_port_isISR())
 		return;
-	if(Mtx->lock(&m_entry->mtx,osWaitForever) != tchOK)
+	if(Mtx->lock(&m_entry->mtx,tchWaitForever) != tchOK)
 		return;
 	tch_listPrint(&tch_currentThread->t_shalc,tch_memPrint);
 	Mtx->unlock(&m_entry->mtx);

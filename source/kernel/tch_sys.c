@@ -146,7 +146,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	case SV_THREAD_SLEEP:
 		cth = tch_currentThread;
-		tch_schedSuspendThread(&tch_lpTickWaitQ,osWaitForever);
+		tch_schedSuspendThread(&tch_lpTickWaitQ,tchWaitForever);
 		cth->t_state = SLEEP;
 		break;
 	case SV_THREAD_JOIN:
@@ -202,7 +202,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 
 tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 	tchStatus result = tchOK;
-	tch_sysTask* task = tch_rti->MailQ->alloc(sysTaskQ,osWaitForever,&result);
+	tch_sysTask* task = tch_rti->MailQ->alloc(sysTaskQ,tchWaitForever,&result);
 	task->arg = arg;
 	task->fn = fn;
 	task->id = id;
@@ -214,14 +214,14 @@ tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 }
 
 void tch_kernelSetBusyMark(){
-	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,osWaitForever) != tchOK)
+	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,tchWaitForever) != tchOK)
 		return;
 	tch_busyMonitor.mval++;
 	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
 }
 
 void tch_kernelClrBusyMark(){
-	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,osWaitForever) != tchOK)
+	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,tchWaitForever) != tchOK)
 		return;
 	tch_busyMonitor.mval--;
 	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
@@ -297,7 +297,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	// loop for handling system tasks (from ISR / from any user thread)
 	while(TRUE){
-		evt = MailQ->get(sysTaskQ,osWaitForever);
+		evt = MailQ->get(sysTaskQ,tchWaitForever);
 		if(evt.status == tchEventMail){
 			task = (tch_sysTask*) evt.value.p;
 			task->fn(task->id,&RuntimeInterface,task->arg);

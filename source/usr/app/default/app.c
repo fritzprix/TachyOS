@@ -48,7 +48,7 @@ const uint8_t MO_CTRL_REG4 = 0x23;
 const uint8_t MO_CTRL_REG5 = 0x24;
 
 const uint8_t MO_OUT_X_L = 0x28;
-uint16_t msAddr = 0x1D2;
+uint16_t msAddr = 0xD2;
 
 static DECLARE_THREADROUTINE(childThreadRoutine);
 static DECLARE_THREADROUTINE(btnHandler);
@@ -66,7 +66,7 @@ int main(const tch* env) {
 	spicfg.FrmFormat = SPI_FRM_FORMAT_8B;
 	spicfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
 
-	tch_spiHandle* spi = env->Device->spi->allocSpi(env,tch_spi0,&spicfg,osWaitForever,ActOnSleep);
+	tch_spiHandle* spi = env->Device->spi->allocSpi(env,tch_spi0,&spicfg,tchWaitForever,ActOnSleep);
 
 	tch_threadCfg thcfg;
 	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
@@ -82,8 +82,8 @@ int main(const tch* env) {
 	thcfg.t_proior = Normal;
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
-	env->Thread->start(childId);
-	env->Thread->start(btnHandleThread);
+//	env->Thread->start(childId);
+//	env->Thread->start(btnHandleThread);
 
 
 	tch_pwmDef pwmDef;
@@ -91,8 +91,8 @@ int main(const tch* env) {
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.PeriodInUnitTime = 1000;
 
-	tch_pwmHandle* pwm = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,osWaitForever);
-	pwm->setOutputEnable(pwm,1,TRUE,osWaitForever);
+	tch_pwmHandle* pwm = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,tchWaitForever);
+	pwm->setOutputEnable(pwm,1,TRUE,tchWaitForever);
 
 	tch_iicCfg iicCfg;
 	env->Device->i2c->initCfg(&iicCfg);
@@ -104,7 +104,7 @@ int main(const tch* env) {
 	iicCfg.OpMode = IIC_OPMODE_FAST;
 
 
-	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc2,&iicCfg,osWaitForever,ActOnSleep);
+	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc2,&iicCfg,tchWaitForever,ActOnSleep);
 
 	uint32_t loopcnt = 0;
 	uint8_t buf[10];
@@ -115,7 +115,7 @@ int main(const tch* env) {
 	iic->write(iic,msAddr,buf,2);
 
 	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
-	iic->read(iic,msAddr,buf,1,osWaitForever);
+	iic->read(iic,msAddr,buf,1,tchWaitForever);
 	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
 
 	buf[0] = MO_CTRL_REG1;
@@ -127,7 +127,7 @@ int main(const tch* env) {
 
 	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
-		iic->read(iic,msAddr,buf,6,osWaitForever);
+		iic->read(iic,msAddr,buf,6,tchWaitForever);
 		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
 
 		pwm->start(pwm);
@@ -144,7 +144,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-		env->Thread->sleep();
+		env->Thread->yield(0);
 	}
 	return tchOK;
 }
@@ -179,12 +179,12 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch1);
 
 
-	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,osWaitForever);
+	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,tchWaitForever);
 
 	while(TRUE){
 		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch1));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
-		evt = env->MailQ->get(adcReadQ,osWaitForever);
+		evt = env->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
