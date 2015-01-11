@@ -82,8 +82,8 @@ int main(const tch* env) {
 	thcfg.t_proior = Normal;
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
-//	env->Thread->start(childId);
-//	env->Thread->start(btnHandleThread);
+	env->Thread->start(childId);
+	env->Thread->start(btnHandleThread);
 
 
 	tch_pwmDef pwmDef;
@@ -144,7 +144,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-		env->Thread->yield(0);
+		env->Thread->sleep();
 	}
 	return tchOK;
 }

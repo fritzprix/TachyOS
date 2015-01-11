@@ -313,7 +313,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 10) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
+		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 20) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
