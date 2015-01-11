@@ -403,7 +403,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
 
-	if(!ins->txdma){
+	if(ins->txdma){
 		// prepare DMA request
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
