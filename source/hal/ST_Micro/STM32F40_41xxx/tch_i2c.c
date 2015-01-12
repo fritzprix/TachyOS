@@ -81,6 +81,9 @@ typedef enum {
 	IIc_SlaveRx     =  ((uint8_t) 7),
 }msgtype;
 
+#define IIc_EVMSK_ITEVT       ((uint16_t) 0xF)
+#define IIc_EVMSK_ITBUF       ((uint16_t) 0xC0)
+#define IIc_EVMSK_ITERR       ((uint16_t) 0xDF00)
 
 typedef struct tch_iic_handle_prototype_t tch_iic_handle_prototype;
 typedef struct tch_iic_op_desc_t {
@@ -89,7 +92,7 @@ typedef struct tch_iic_op_desc_t {
 	BOOL     isDMA;
 	uint8_t* bp;
 	uint32_t sz;
-	uint32_t sq_id;
+	uint32_t ev_msk;
 } tch_iicOpDesc;
 
 
@@ -387,10 +390,11 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	tx_req.bp = ((uint8_t*) wb);
 	tx_req.addr = addr;
 	tx_req.isDMA = FALSE;
-	tx_req.sq_id = IIC_SQ_ID_INIT;
+	tx_req.ev_msk = IIc_EVMSK_ITEVT;
+
 	ins->isr_msg = (uint32_t) &tx_req;
 
-	if(ins->txdma){
+	if(!ins->txdma){
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 		tx_req.isDMA = TRUE;
 	}
@@ -399,7 +403,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
 
-	if(ins->txdma){
+	if(!ins->txdma){
 		// prepare DMA request
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
@@ -415,13 +419,18 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 			evt.status = tchErrorIo;
 			RETURN_SAFE();
 		}
-
 		// start DMA transfer
 		if(!tch_dma->beginXfer(ins->txdma,&txreq,tchWaitForever,&evt.status)){
 			iicHw->CR2 &= ~I2C_CR2_DMAEN;
 			RETURN_SAFE();
 		}
 		// disable DMA
+
+		evt = ins->env->MsgQ->get(ins->mq,tchWaitForever);   // wait btf event before disable dma
+		if((evt.status != tchEventMessage) || (evt.value.v != tchOK)){
+			evt.status = tchErrorIo;
+			RETURN_SAFE();
+		}
 		iicHw->CR2 &= ~I2C_CR2_DMAEN;
 	}else{
 		// wait data transfer complete
@@ -430,7 +439,6 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 			evt.status = tchErrorIo;
 			RETURN_SAFE();
 		}
-
 	}
 
 	evt.status = tchOK;
@@ -472,19 +480,19 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	rx_req.bp = (uint8_t*) rb;
 	rx_req.addr = addr;
 	rx_req.isDMA = FALSE;
-	rx_req.sq_id = IIC_SQ_ID_INIT;
 	ins->isr_msg = (uint32_t) &rx_req;
 
 	iicHw->CR1 |= I2C_CR1_ACK;
-	if(ins->rxdma){
+	if(!ins->rxdma){
 		rx_req.isDMA = TRUE;
 		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
 	}
 
 	iicHw->CR1 |= I2C_CR1_START;
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
+	rx_req.ev_msk = IIc_EVMSK_ITEVT;
 
-	if(ins->rxdma){
+	if(!ins->rxdma){
 		tch_DmaReqDef rxreq;
 		rxreq.MemAddr[0] = rb;
 		rxreq.MemInc = TRUE;
@@ -498,6 +506,8 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 			evt.status = tchErrorIo;
 			RETURN_SAFE();
 		}
+
+		iicHw->CR2 &= ~I2C_CR2_ITEVTEN;
 		if(!tch_dma->beginXfer(ins->rxdma,&rxreq,tchWaitForever,&evt.status)){
 			RETURN_SAFE();
 		}
@@ -553,10 +563,10 @@ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void
 		return evt.status;
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
-	if(ins->txdma && sz > 1)
+	if(ins->txdma)
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 
-	if(ins->txdma && (sz > 1)){
+	if(ins->txdma){
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
 		txreq.MemInc = TRUE;
@@ -647,16 +657,18 @@ static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_desc
 		return FALSE;
 	sr1 = iicHw->SR1;
 	const tch* env = ins->env;
+//dnd	sr1 &= iic_req->ev_msk;
 	if(sr1 & I2C_SR1_RXNE){
 		if(iic_req->mtype == IIc_MasterRx){
 			if(iic_req->sz){
 				iic_req->sz--;
-				if(!iic_req->sz)
+				if(iic_req->sz == 1)
 					iicHw->CR1 &= ~I2C_CR1_ACK;
 				*((uint8_t*) iic_req->bp++) = iicHw->DR;
 				if(!iic_req->sz){
 					iicHw->CR1 |= I2C_CR1_STOP;
 					env->MsgQ->put(ins->mq,tchOK,0);
+					return TRUE;
 				}
 			}
 		}
@@ -686,15 +698,18 @@ static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_desc
 		sr1 &= ~I2C_SR1_SB;                                        // mark SB as handled
 	}
 	if(sr1 & I2C_SR1_ADDR){
-		sr2 = iicHw->SR2;
 		switch(iic_req->mtype){
 		case IIc_MasterTx:
+			sr2 = iicHw->SR2;
 			if(!(sr2 & I2C_SR2_TRA)){   // if communication mode is not transmission
 				env->MsgQ->put(ins->mq,tchErrorIo,0);    // report error and wakeup waiting thread
 				return FALSE;
 			}
 			break;
 		case IIc_MasterRx:
+			if(iic_req->sz == 1)  // if Both DMA Mode & Rx Data byte is 1
+				iicHw->CR1 &= ~I2C_CR1_ACK;
+			sr2 = iicHw->SR2;
 			if((sr2 & I2C_SR2_TRA)){   // if communication mode is not reception
 				env->MsgQ->put(ins->mq,tchErrorIo,0);    // report error and wakeup waiting thread
 				return FALSE;
@@ -706,9 +721,10 @@ static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_desc
 		}
 
 		sr1 &= ~I2C_SR1_ADDR;           // mark as handled
-		if(!iic_req->isDMA)             // if not DMA mode
+		if(!iic_req->isDMA){             // if not DMA mode
 			iicHw->CR2 |= I2C_CR2_ITBUFEN;   // enable buffer event interrrupt to handle
-		else{
+			iic_req->ev_msk |= IIc_EVMSK_ITBUF;
+		}else{
 			env->MsgQ->put(ins->mq,tchOK,0); // otherwise wakeup wating thread and allow it to start DMA
 			return TRUE;
 		}
@@ -716,13 +732,20 @@ static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_desc
 	if(sr1 & I2C_SR1_BTF){
 		switch(iic_req->mtype){
 		case IIc_MasterTx:
-			if(!iic_req->sz){
+			if(iic_req->isDMA){
 				iicHw->CR1 |= I2C_CR1_STOP;
 				env->MsgQ->put(ins->mq,tchOK,0);
 				return TRUE;
+			}else{
+				if(!iic_req->sz){
+					iicHw->CR1 |= I2C_CR1_STOP;
+					env->MsgQ->put(ins->mq,tchOK,0);
+					return TRUE;
+				}
 			}
 			break;
 		case IIc_MasterRx:
+			iicHw->CR1 |= I2C_CR1_STOP;
 			break;
 		default:
 			env->MsgQ->put(ins->mq,tchErrorIo,0);
