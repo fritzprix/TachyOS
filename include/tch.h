@@ -246,19 +246,8 @@ struct _tch_mem_ix_t {
 	void (*printAllocList)(void);
 };
 
-struct _tch_event_ix_t {
-	tch_eventTree* (*createEventTree)();
-	tchStatus (*listen)(tch_eventTree* self,tch_eventHandler ev_handler);
-	tchStatus (*waitEvent)(tch_eventTree* self,int ev_id,uint32_t timeout);
-	tchStatus (*raise)(tch_eventTree* self,int ev_id,int ev_msg);
-	tchStatus (*raiseAll)(int ev_id,int ev_msg);
-	void (*destroy)(tch_eventTree* self);
-};
-
-
 
 #include "tch_nclib.h"
-
 
 extern DECLARE_THREADROUTINE(main);
 

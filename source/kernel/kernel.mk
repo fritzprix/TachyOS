@@ -33,7 +33,7 @@ $(KERNEL_BUILD_DIR):
 	$(MK) $(KERNEL_BUILD_DIR)
 
 
-$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.c $(KERNEL_BUILD_DIR)
+$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.c# $(KERNEL_BUILD_DIR)
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
@@ -41,7 +41,7 @@ $(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.c $(KERNEL_BUILD_DIR)
 	@echo ' '
 	
 	
-$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.cpp $(KERNEL_BUILD_DIR)
+$(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.cpp# $(KERNEL_BUILD_DIR)
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM g++'
 	$(CPP) $< -c $(CPFLAG) $(LDFLAG) $(INC) -o $@

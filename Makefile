@@ -15,6 +15,9 @@ ifeq ($(MK),)
 	MK=mkdir
 endif
 
+ifeq ($(DEPS),)
+	DEPS=
+endif
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(BUILD)
 endif
@@ -82,6 +85,7 @@ ifeq ($(CFLAG),)
 		   -fdata-sections\
 		   -ffreestanding\
 		   -nostartfiles\
+		   --specs=nano.specs\
 		   -Xlinker\
 		   --gc-sections\
 		   -T$(LDSCRIPT)\
@@ -163,10 +167,6 @@ CPFLAG+=\
        -mcpu=$(CPU)\
        -m$(INSTR)
        
-ifneq ($(LIBS),)
-	CFLAG+=--specs=nano.specs
-endif
-
 DBG_FLAG=-D__USE_MALLOC
 CPFLAG+=$(DBG_FLAG)
 CFLAG+=$(DBG_FLAG)
@@ -186,14 +186,14 @@ TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
 TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
-all : $(GEN_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE) 
+all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE) 
 
 
 
-$(GEN_DIR):
+$(GEN_DIR): 
 	$(MK) $(GEN_DIR)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(DEPS)
 	@echo "Generating ELF"
 	$(CPP) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
 	@echo ' '

@@ -1,4 +1,0 @@
-install: "sudo $TRAVIS_BUID_DIR/install_dep.sh > /dev/null"
-language: c
-compilre: gcc
-script: make

@@ -15,7 +15,7 @@ OBJS += $(HAL_TEST_CPPOBJS)
 $(HAL_TEST_BUILD_DIR):$(TEST_BUILD_BASE_DIR)
 	$(MK) $(HAL_TEST_BUILD_DIR)
 
-$(HAL_TEST_BUILD_DIR)/%.o:$(TEST_HAL_SRC_DIR)/%.c $(HAL_TEST_BUILD_DIR)
+$(HAL_TEST_BUILD_DIR)/%.o:$(TEST_HAL_SRC_DIR)/%.c 
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
@@ -23,7 +23,7 @@ $(HAL_TEST_BUILD_DIR)/%.o:$(TEST_HAL_SRC_DIR)/%.c $(HAL_TEST_BUILD_DIR)
 	@echo ' '
 	
 	
-$(HAL_TEST_BUILD_DIR)/%.o:$(TEST_HAL_SRC_DIR)/%.cpp $(HAL_TEST_BUILD_DIR)
+$(HAL_TEST_BUILD_DIR)/%.o:$(TEST_HAL_SRC_DIR)/%.cpp 
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM g++'
 	$(CPP) $< -c $(CPFLAG) $(LDFLAG) $(INC) -o $@
