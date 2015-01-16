@@ -57,6 +57,11 @@ struct tch_uobj_t {
 	tchStatus (*destructor)(tch_uobj* obj);
 };
 
+typedef struct tch_signal_t {
+	int32_t                 sig_comb;
+	int32_t                 signal;
+	tch_lnode_t             sig_wq;
+}tch_signal;
 
 
 struct tch_sys_task_t {
@@ -96,6 +101,7 @@ struct tch_thread_header_t {
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memId                   t_mem;        /// heap handle
+	tch_signal                  t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
 	union {
@@ -110,6 +116,8 @@ struct tch_thread_header_t {
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
+#define SV_SIG_UPDATE                    ((uint32_t) 0x14)
+#define SV_SIG_WAIT                      ((uint32_t) 0x15)
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */

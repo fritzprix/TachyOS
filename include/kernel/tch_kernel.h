@@ -111,6 +111,7 @@ extern const tch_mem_ix* kMem;
 extern const tch_mem_ix* shMem;
 extern const tch_ustdlib_ix* uStdLib;
 extern const tch_event_ix* Event;
+extern const tch_signal_ix* Sig;
 
 extern const tch_hal* Hal;
 

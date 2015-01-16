@@ -394,7 +394,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 
 	ins->isr_msg = (uint32_t) &tx_req;
 
-	if(!ins->txdma){
+	if(ins->txdma){
 		iicHw->CR2 |= I2C_CR2_DMAEN;
 		tx_req.isDMA = TRUE;
 	}
@@ -403,7 +403,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
 
-	if(!ins->txdma){
+	if(ins->txdma){
 		// prepare DMA request
 		tch_DmaReqDef txreq;
 		txreq.MemAddr[0] = (uaddr_t) wb;
@@ -483,7 +483,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	ins->isr_msg = (uint32_t) &rx_req;
 
 	iicHw->CR1 |= I2C_CR1_ACK;
-	if(!ins->rxdma){
+	if(ins->rxdma){
 		rx_req.isDMA = TRUE;
 		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
 	}
@@ -492,7 +492,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 	rx_req.ev_msk = IIc_EVMSK_ITEVT;
 
-	if(!ins->rxdma){
+	if(ins->rxdma){
 		tch_DmaReqDef rxreq;
 		rxreq.MemAddr[0] = rb;
 		rxreq.MemInc = TRUE;

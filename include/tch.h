@@ -172,6 +172,12 @@ struct _tch_mpool_ix_t {
 	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
+struct _tch_signal_ix_t {
+	int32_t (*set)(tch_threadId thread,int32_t signals);
+	int32_t (*clear)(tch_threadId thread,int32_t signals);
+	tchStatus (*wait)(int32_t signals,uint32_t millisec);
+};
+
 
 /**
  *    CMSIS RTOS Compatible message queue

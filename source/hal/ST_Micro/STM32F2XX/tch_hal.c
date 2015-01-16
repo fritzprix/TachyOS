@@ -586,6 +586,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C1,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C1EN,
 				&RCC->APB1LPENR,
@@ -597,6 +598,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C2,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C2EN,
 				&RCC->APB1LPENR,
@@ -608,6 +610,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C3,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C3EN,
 				&RCC->APB1LPENR,

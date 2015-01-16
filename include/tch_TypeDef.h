@@ -36,6 +36,7 @@ typedef void* tch_eventTree;
 
 typedef struct _tch_thread_ix_t tch_thread_ix;
 typedef struct _tch_condvar_ix_t tch_condv_ix;
+typedef struct _tch_signal_ix_t tch_signal_ix;
 typedef struct _tch_mutex_ix_t tch_mtx_ix;
 typedef struct _tch_semaph_ix_t tch_semaph_ix;
 typedef struct _tch_systime_ix_t tch_systime_ix;
@@ -52,6 +53,7 @@ typedef struct _tch_event_ix_t tch_event_ix;
 
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
+	const tch_signal_ix* Sig;
 	const tch_systime_ix* Time;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;

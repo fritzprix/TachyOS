@@ -68,8 +68,12 @@ const tch_thread_ix* Thread = &tch_threadix;
 tch_thread_queue tch_procList;
 
 
+BOOL tch_threadIsValid(tch_threadId thread){
+	return (*getThreadHeader(thread)->t_chks) == tch_noop_destr;
+}
 
-tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
+
+static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t* th_mem = NULL;
 	uint8_t* sptop = NULL;
 	uint16_t allocsz = 0;
@@ -110,6 +114,7 @@ tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
 	tch_listInit(&thread_p->t_childNode);
+	tch_signalInit(&thread_p->t_sig);
 	thread_p->t_chks = (uint32_t*)th_mem;                                                    // keep allocated mem pointer to release it when this thread is destroyed
 	*thread_p->t_chks = (uint32_t) tch_noop_destr;                                           // thread has no-op destructor
 	thread_p->t_flag = 0;
