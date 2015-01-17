@@ -60,7 +60,7 @@ int32_t tch_signal_kupdate(tch_threadId thread,int32_t sig){
 		break;
 	}
 	if((th_p->t_sig.sig_comb == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
-		tch_schedResumeM(&th_p->t_sig.sig_wq,1,th_p->t_sig.signal,TRUE);
+		tch_schedResumeM((tch_thread_queue*) &th_p->t_sig.sig_wq,1,th_p->t_sig.signal,TRUE);
 	}
 	return psig;
 }
@@ -69,7 +69,7 @@ int32_t tch_signal_kwait(tch_threadId thread, int32_t signal,uint32_t timeout){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	th_p->t_sig.sig_comb = signal;
 	if(th_p->t_sig.sig_comb != th_p->t_sig.signal){
-		tch_schedSuspendThread(&th_p->t_sig.sig_wq,timeout);
+		tch_schedSuspendThread((tch_thread_queue*) &th_p->t_sig.sig_wq,timeout);
 	}
 	return th_p->t_sig.signal;
 }
@@ -82,9 +82,9 @@ int32_t tch_signal_set(tch_threadId thread,int32_t signals){
 	arg.sig = signals;
 	arg.type = SIG_UPDATE_SET;
 	if(tch_port_isISR())
-		return tch_signal_kupdate(thread,&arg);
+		return tch_signal_kupdate(thread,(int32_t)&arg);
 	else
-		return tch_port_enterSv(SV_SIG_UPDATE,(uint32_t) thread,&arg);
+		return tch_port_enterSv(SV_SIG_UPDATE,(uint32_t) thread,(uint32_t)&arg);
 }
 
 int32_t tch_signal_clear(tch_threadId thread,int32_t signals){
@@ -94,9 +94,9 @@ int32_t tch_signal_clear(tch_threadId thread,int32_t signals){
 	arg.sig = signals;
 	arg.type = SIG_UPDATE_CLR;
 	if(tch_port_isISR())
-		return tch_signal_kupdate(thread,&arg);
+		return tch_signal_kupdate(thread,(int32_t)&arg);
 	else
-		return tch_port_enterSv(SV_SIG_UPDATE,(uint32_t) thread,&arg);
+		return tch_port_enterSv(SV_SIG_UPDATE,(uint32_t) thread,(uint32_t) &arg);
 }
 
 tchStatus tch_signal_wait(int32_t signals,uint32_t millisec){
