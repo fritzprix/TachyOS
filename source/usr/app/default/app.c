@@ -182,13 +182,13 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	adccfg.Precision = ADC_Precision_10B;
 	adccfg.SampleFreq = 10000;
 	adccfg.SampleHold = ADC_SampleHold_Short;
-	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch1);
+	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch3);
 
 
 	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,tchWaitForever);
 
 	while(TRUE){
-		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch1));
+		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch3));
 		adc->readBurst(adc,tch_ADC_Ch1,adcReadQ,1);
 		evt = env->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){

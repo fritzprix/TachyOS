@@ -20,6 +20,7 @@ ASM_OPT=-x assembler-with-cpp\
 
 HAL_BUILD_DIR=$(GEN_DIR)/hal
 GEN_SUB_DIR+=$(HAL_BUILD_DIR)
+
 HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(HAL_BUILD_DIR)/%.o)
 HAL_OBJS=$(HAL_SRCS:%.c=$(HAL_BUILD_DIR)/%.o)
 

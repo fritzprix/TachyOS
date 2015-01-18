@@ -180,8 +180,9 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		break;
 	}
 
-	for(ch_idx = 0,ins->chcnt = 0;(cfg->chdef.chselMsk && (cfg->chdef.chcnt));cfg->chdef.chcnt--){
+	for(ch_idx = 0,ins->chcnt = 0;(cfg->chdef.chselMsk && (cfg->chdef.chcnt));){
 		if(cfg->chdef.chselMsk & 1){
+			cfg->chdef.chcnt--;
 			adcChBs = &ADC_CH_BD_CFGs[ch_idx];
 			if(adcChBs->adc_routemsk & (1 << adc)){
 				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adcChBs->port.port,(1 << adcChBs->port.pin),&iocfg,timeout);
