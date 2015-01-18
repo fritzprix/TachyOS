@@ -11,8 +11,7 @@ GEN_SUB_DIR+=$(SYS_TEST_BUILD_DIR)
 SYS_TEST_OBJS=$(SYS_TEST_SRC:%.c=$(SYS_TEST_BUILD_DIR)/%.o)
 SYS_TEST_CPPOBJS=
 
-
-
+INC += -I$(TEST_HDR_BASE_DIR)/sys
 OBJS += $(SYS_TEST_OBJS)
 OBJS += $(SYS_TEST_CPPOBJS)
 
@@ -22,7 +21,7 @@ $(SYS_TEST_BUILD_DIR):$(TEST_BUILD_BASE_DIR)
 
 
 
-$(SYS_TEST_BUILD_DIR)/%.o:$(TEST_SYS_SRC_DIR)/%.c 
+$(SYS_TEST_BUILD_DIR)/%.o:$(TEST_SRC_BASE)/sys/%.c 
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
@@ -30,7 +29,7 @@ $(SYS_TEST_BUILD_DIR)/%.o:$(TEST_SYS_SRC_DIR)/%.c
 	@echo ' '
 	
 	
-$(SYS_TEST_BUILD_DIR)/%.o:$(TEST_SYS_SRC_DIR)/%.cpp
+$(SYS_TEST_BUILD_DIR)/%.o:$(TEST_SRC_BASE)/sys/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM g++'
 	$(CPP) $< -c $(CPFLAG) $(LDFLAG) $(INC) -o $@
