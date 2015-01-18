@@ -59,7 +59,7 @@ int32_t tch_signal_kupdate(tch_threadId thread,int32_t sig){
 		th_p->t_sig.signal &= ~sig_arg->sig;
 		break;
 	}
-	if((th_p->t_sig.sig_comb == th_p->t_sig.signal) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
+	if(((th_p->t_sig.sig_comb & th_p->t_sig.signal) == th_p->t_sig.sig_comb) && (!tch_listIsEmpty(&th_p->t_sig.sig_wq))){
 		tch_schedResumeM((tch_thread_queue*) &th_p->t_sig.sig_wq,1,th_p->t_sig.signal,TRUE);
 	}
 	return psig;
@@ -68,7 +68,7 @@ int32_t tch_signal_kupdate(tch_threadId thread,int32_t sig){
 int32_t tch_signal_kwait(tch_threadId thread, int32_t signal,uint32_t timeout){
 	tch_thread_header* th_p = (tch_thread_header*) thread;
 	th_p->t_sig.sig_comb = signal;
-	if(th_p->t_sig.sig_comb != th_p->t_sig.signal){
+	if((th_p->t_sig.sig_comb & th_p->t_sig.signal) != th_p->t_sig.sig_comb){
 		tch_schedSuspendThread((tch_thread_queue*) &th_p->t_sig.sig_wq,timeout);
 	}
 	return th_p->t_sig.signal;

@@ -109,13 +109,14 @@ int main(const tch* env) {
 	uint32_t loopcnt = 0;
 	uint8_t buf[10];
 	env->uStdLib->string->memset(buf,0,sizeof(uint8_t) * 10);
+	tchStatus result = tchOK;
 
 	buf[0] = MO_CTRL_REG4;
 	buf[1] = (1 << 7) | (1 << 4);
-	iic->write(iic,msAddr,buf,2);
+	result = iic->write(iic,msAddr,buf,2);
 
 	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
-	iic->read(iic,msAddr,buf,1,tchWaitForever);
+	result = iic->read(iic,msAddr,buf,1,tchWaitForever);
 	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
 
 	buf[0] = MO_CTRL_REG1;

@@ -30,13 +30,6 @@ OBJS += $(HAL_OBJS)
 OBJS += $(HAL_ASM_OBJS)
 DEPS += $(HAL_DEPS)
 
-$(HAL_BUILD_DIR)/%.d:$(HAL_SRC_DIR)/%.c
-	@echo 'Building file: $<'
-	@echo 'Invoking: Cross ARM C Compiler'
-	$(CC) -MM $(CFLAG) $(LDFLAG) $(INC) $< > $@
-	@echo 'Finished building: $<'
-	@echo ' '
-
 
 $(HAL_BUILD_DIR): 
 	$(MK) $(HAL_BUILD_DIR)
