@@ -101,7 +101,7 @@ int main(const tch* env) {
 	iicCfg.Baudrate = IIC_BAUDRATE_HIGH;
 	iicCfg.Filter = TRUE;
 	iicCfg.Role = IIC_ROLE_MASTER;
-	iicCfg.OpMode = IIC_OPMODE_STANDARD;
+	iicCfg.OpMode = IIC_OPMODE_FAST;
 
 
 	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc2,&iicCfg,tchWaitForever,ActOnSleep);

@@ -1,7 +1,7 @@
 
 .SUFFIXES : .c .o
 HAL_SRCS=\
-system_stm32f2xx.c\
+system_stm32f4xx.c\
 tch_adc.c\
 tch_dma.c\
 tch_gpio.c\
@@ -13,7 +13,7 @@ tch_timer.c\
 tch_usart.c
 	
 HAL_ASM_SRCS=\
-     startup_stm32f2xx.S
+     startup_stm32f40xx.S
      
 ASM_OPT=-x assembler-with-cpp\
         -nostdinc

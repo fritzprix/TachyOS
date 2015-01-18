@@ -107,7 +107,6 @@ struct tch_iic_handle_prototype_t {
 	tch_GpioHandle*                      iohandle;
 	tch_DmaHandle*                       rxdma;
 	tch_DmaHandle*                       txdma;
-	tch_msgqId                           mq;
 	tch_threadId                         sub;
 	const tch*                           env;
 	tch_mtxId                            mtx;
@@ -179,26 +178,28 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	tch_iic_descriptor* iicDesc = &IIC_HWs[i2c];
 	tch_iic_bs* iicbs = &IIC_BD_CFGs[i2c];
 	I2C_TypeDef* iicHw = iicDesc->_hw;
+	tch_iic_handle_prototype* ins = NULL;
 
 	tchStatus result = tchOK;
 	if((result = env->Mtx->lock(IIC_StaticInstance.mtx,timeout)) != tchOK)
 		return NULL;
-	while(iicDesc->_handle){
-		if((result = env->Condv->wait(IIC_StaticInstance.condv,IIC_StaticInstance.mtx,timeout)) != tchOK)
-			return NULL;
+	if(iicDesc->_handle){
+		iicDesc->sh_cnt++;
+		env->Mtx->unlock(IIC_StaticInstance.mtx);
+		return iicDesc->_handle;
 	}
-	iicDesc->_handle = (void*)TCH_IIC_OCCP_MSK;  // mark as occupied
+	iicDesc->_handle = ins = (tch_iic_handle_prototype*) env->Mem->alloc(sizeof(tch_iic_handle_prototype));
+	iicDesc->sh_cnt = 0;
 	if((result = env->Mtx->unlock(IIC_StaticInstance.mtx)) != tchOK)
 		return NULL;
 
-	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) env->Mem->alloc(sizeof(tch_iic_handle_prototype));
+
 	iicDesc->_handle = ins;
 	env->uStdLib->string->memset(ins,0,sizeof(tch_iic_handle_prototype));
 	ins->iic = i2c;
 	ins->env = env;
 	ins->condv = env->Condv->create();
 	ins->mtx = env->Mtx->create();
-	ins->mq = env->MsgQ->create(TCH_IICQ_SIZE);
 	ins->rxdma = NULL;
 	ins->txdma = NULL;
 	if(iicbs->rxdma != DMA_NOT_USED){
@@ -324,6 +325,14 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	const tch* env = ins->env;
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) iicDesc->_hw;
 
+	if((result = env->Mtx->lock(IIC_StaticInstance.mtx,tchWaitForever)) != tchOK)
+		return result;
+	if(iicDesc->sh_cnt){
+		iicDesc->sh_cnt--;
+		env->Mtx->unlock(IIC_StaticInstance.mtx);
+		return tchOK;
+	}
+
 	if((result = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 	while(IIC_isBusy(ins)){
@@ -335,7 +344,6 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	ins->sub = NULL;
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
-	env->MsgQ->destroy(ins->mq);
 	tch_dma->freeDma(ins->rxdma);
 	tch_dma->freeDma(ins->txdma);
 
@@ -348,11 +356,8 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	*iicDesc->_lpclkenr &= ~iicDesc->lpclkmsk;
 
 
-
-	env->Mtx->lock(IIC_StaticInstance.mtx,tchWaitForever);
 	iicDesc->_handle = NULL;
 	IIC_clrBusy(ins);
-	env->Condv->wake(IIC_StaticInstance.condv);
 	env->Mtx->unlock(IIC_StaticInstance.mtx);
 	env->Mem->free(ins);
 	return tchOK;
@@ -570,39 +575,7 @@ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void
 		return evt.status;
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
-	if(ins->txdma)
-		iicHw->CR2 |= I2C_CR2_DMAEN;
 
-	if(ins->txdma){
-		tch_DmaReqDef txreq;
-		txreq.MemAddr[0] = (uaddr_t) wb;
-		txreq.MemInc = TRUE;
-		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
-		txreq.PeriphInc = FALSE;
-		txreq.size = sz;
-		if(!tch_dma->beginXfer(ins->txdma,&txreq,tchWaitForever,NULL)){
-			evt.status = tchErrorResource;
-			RETURN_SAFE();
-		}
-
-	}else{
-		evt = env->MsgQ->get(ins->mq,tchWaitForever);
-		if((evt.status != tchEventMessage) || (evt.value.v != I2C_SR1_ADDR)){
-			evt.status = tchErrorIo;
-			RETURN_SAFE();
-		}
-
-		evt = env->MsgQ->get(ins->mq,tchWaitForever);
-		if((evt.status != tchEventMessage) || (evt.value.v != tchOK)){
-			evt.status = tchErrorIo;
-			RETURN_SAFE();
-		}
-		evt = env->MsgQ->get(ins->mq,IIC_IO_MAX_TIMEOUT);
-		if((evt.status != tchEventMessage) || (evt.value.v != I2C_SR1_BTF)){
-			evt.status = tchErrorIo;
-			RETURN_SAFE();
-		}
-	}
 
 
 	evt.status = tchOK;
