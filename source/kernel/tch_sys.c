@@ -91,6 +91,7 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Sig = Sig;
+	RuntimeInterface.Event = Event;
 
 
 	tch_listInit((tch_lnode_t*) &tch_procList);

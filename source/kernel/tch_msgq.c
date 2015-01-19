@@ -12,7 +12,7 @@
 
 typedef struct _tch_msgq_cb {
 	tch_uobj      __obj;
-	uint32_t      state;
+	uint32_t      status;
 	void*         bp;
 	uint32_t      sz;
 	uint32_t      pidx;
@@ -63,7 +63,7 @@ static tch_msgqId tch_msgq_create(uint32_t len){
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
 	msgqCb->sz = len;
-	msgqCb->state = 0;
+	msgqCb->status = 0;
 	tch_listInit(&msgqCb->cwq);
 	tch_listInit(&msgqCb->pwq);
 
@@ -241,15 +241,15 @@ tchStatus tch_msgq_kdestroy(tch_msgqId mqId){
 }
 
 static void tch_msgqValidate(tch_msgqId mqId){
-	((tch_msgq_cb*) mqId)->state |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
+	((tch_msgq_cb*) mqId)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
 }
 
 static void tch_msgqInvalidate(tch_msgqId mqId){
-	((tch_msgq_cb*) mqId)->state &= ~(0xFFFF);
+	((tch_msgq_cb*) mqId)->status &= ~(0xFFFF);
 }
 
 static BOOL tch_msgqIsValid(tch_msgqId msgq){
-	return (((tch_msgq_cb*)msgq)->state & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
+	return (((tch_msgq_cb*)msgq)->status & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
 
 }
 

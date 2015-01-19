@@ -104,6 +104,7 @@ extern const tch_mtx_ix* Mtx;
 extern const tch_semaph_ix* Sem;
 extern const tch_bar_ix* Barrier;
 extern const tch_msgq_ix* MsgQ;
+extern const tch_event_ix* Event;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* uMem;

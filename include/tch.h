@@ -178,6 +178,13 @@ struct _tch_signal_ix_t {
 	tchStatus (*wait)(int32_t signals,uint32_t millisec);
 };
 
+struct _tch_event_ix_t {
+	tch_eventId (*create)();
+	int32_t (*set)(tch_eventId ev,int32_t signals);
+	int32_t (*clear)(tch_eventId ev,int32_t signals);
+	tchStatus (*wait)(tch_eventId ev,int32_t signals,uint32_t millisec);
+	tchStatus (*destroy)(tch_eventId ev);
+};
 
 /**
  *    CMSIS RTOS Compatible message queue

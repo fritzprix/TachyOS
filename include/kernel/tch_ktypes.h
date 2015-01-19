@@ -119,6 +119,10 @@ struct tch_thread_header_t {
 #define SV_SIG_UPDATE                    ((uint32_t) 0x14)
 #define SV_SIG_WAIT                      ((uint32_t) 0x15)
 
+#define SV_EV_UPDATE                     ((uint32_t) 0x16)
+#define SV_EV_WAIT                       ((uint32_t) 0x17)
+#define SV_EV_DESTROY                    ((uint32_t) 0x18)
+
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
 #define SV_THREAD_YIELD                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time

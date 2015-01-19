@@ -18,6 +18,7 @@ extern "C"{
 
 
 typedef void* tch_threadId;
+typedef void* tch_eventId;
 typedef void* tch_mtxId;
 typedef void* tch_semId;
 typedef void* tch_barId;
@@ -54,6 +55,7 @@ typedef struct _tch_event_ix_t tch_event_ix;
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
 	const tch_signal_ix* Sig;
+	const tch_event_ix* Event;
 	const tch_systime_ix* Time;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
