@@ -139,14 +139,13 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-	//	spi->write(spi,"Hello World,Im the main!!!",16);
+		spi->write(spi,"Hello World,Im the main!!!",16);
 		if((loopcnt % 1000) == 500){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
 		env->Thread->sleep();
-		env->Sig->set(btnHandleThread,2);
 
 	}
 	return tchOK;
@@ -159,12 +158,10 @@ static DECLARE_THREADROUTINE(btnHandler){
 
 
 	while(TRUE){
-//		spi->write(spi,"Press Button",11);
+		spi->write(spi,"Press Button",11);
+		env->Thread->yield(1);
 		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
-//		env->Thread->sleep();
-		env->Sig->wait(2,tchWaitForever);
-		env->Sig->clear(env->Thread->self(),2);
-
+		env->Thread->sleep();
 	}
 
 	return tchOK;
@@ -198,7 +195,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 		env->Time->getLocaltime(&ltm);
 		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
 		env->Thread->sleep();
-	//	spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
+		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;
 }

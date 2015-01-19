@@ -837,8 +837,11 @@ __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 
 __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
+				/*
 				DMA_Str13,    //dma2_stream5
-				DMA_Str10,    //dma2_stream2
+				DMA_Str10,    //dma2_stream2*/
+				DMA_NOT_USED,
+				DMA_NOT_USED,
 				3,            //dma channel 3
 				3,            //dma channel 3
 				0,            // port A (0)

@@ -16,8 +16,9 @@
 #include "tch_spi.h"
 #include "tch_kernel.h"
 
-typedef struct _tch_lld_spi_prototype tch_lld_spi_prototype;
-typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
+typedef struct tch_lld_spi_prototype tch_lld_spi_prototype;
+typedef struct tch_spi_handle_prototype tch_spi_handle_prototype;
+typedef struct tch_spi_request_s tch_spi_request;
 
 #define SPI_ERR_MSK                  ((uint32_t) 0xF0000000)     // SPI Error Msk
 #define SPI_ERR_OVR                  ((uint32_t) 0x10000000)     // SPI Overrun Error
@@ -27,6 +28,12 @@ typedef struct _tch_spi_handle_prototype tch_spi_handle_prototype;
 #define TCH_SPI_CLASS_KEY            ((uint16_t) 0x41F5)
 #define TCH_SPI_MASTER_FLAG          ((uint32_t) 0x10000)
 #define TCH_SPI_BUSY_FLAG            ((uint32_t) 0x20000)
+
+#define TCH_SPI_EVENT_RX_COMPLETE    ((uint32_t) 0x01)
+#define TCH_SPI_EVENT_TX_COMPLETE    ((uint32_t) 0x02)
+#define TCH_SPI_EVENT_OVR_ERR        ((uint32_t) 0x04)
+#define TCH_SPI_EVENT_UDR_ERR        ((uint32_t) 0x08)
+#define TCH_SPI_EVENT_ERR_MSK        (TCH_SPI_EVENT_UDR_ERR | TCH_SPI_EVENT_OVR_ERR)
 
 #define SET_SAFE_RETURN();           SAFE_RETURN:
 #define RETURN_SAFE()                goto SAFE_RETURN
@@ -62,28 +69,35 @@ static BOOL tch_spiIsValid(tch_spi_handle_prototype* ins);
 static void tch_spiInvalidate(tch_spi_handle_prototype* ins);
 
 
-struct _tch_lld_spi_prototype {
+struct tch_spi_request_s {
+	uint32_t       sz;
+	uint8_t*       rxb;
+	uint8_t*       txb;
+	uint32_t       align;
+	tch_threadId   subject;
+};
+
+struct tch_lld_spi_prototype {
 	tch_lld_spi               pix;
 	tch_mtxId                 mtx;
 	tch_condvId               condv;
 };
 
-struct _tch_spi_handle_prototype {
+struct tch_spi_handle_prototype {
 	tch_spiHandle             pix;
 	spi_t                     spi;
 	const tch*                env;
 	union {
 		tch_DmaHandle        dma;
-		tch_msgqId           mq;
 	}txCh;
 	union {
 		tch_DmaHandle        dma;
-		tch_msgqId           mq;
 	}rxCh;
 	uint32_t                  status;
 	tch_GpioHandle*           iohandle;
 	tch_mtxId                 mtx;
 	tch_condvId               condv;
+	tch_spi_request*          req;
 };
 
 /**
@@ -107,7 +121,7 @@ tch_lld_spi* tch_spiHalInit(const tch* env){
 		return NULL;
 	SPI_StaticInstance.mtx = env->Mtx->create();
 	SPI_StaticInstance.condv = env->Condv->create();
-	return &SPI_StaticInstance;
+	return (tch_lld_spi*) &SPI_StaticInstance;
 }
 
 static void tch_spiInitCfg(tch_spiCfg* cfg){
@@ -122,12 +136,10 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 
 	tch_spi_bs* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
-	tch_spi_handle_prototype* hnd = NULL;
+	tch_spi_handle_prototype* ins = NULL;
 	SPI_TypeDef* spiHw = NULL;
 	tch_GpioCfg iocfg;
 	tch_DmaCfg dmaCfg;
-	BOOL rxDma = FALSE;
-	BOOL txDma = FALSE;
 
 	if(!SPI_StaticInstance.mtx)
 		SPI_StaticInstance.mtx = env->Mtx->create();
@@ -142,19 +154,19 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 			return NULL;
 	}
 
-	spiDesc->_handle = hnd = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
+	spiDesc->_handle = ins = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
 	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != tchOK){
 		return NULL;
 	}
 
-	env->uStdLib->string->memset(hnd,0,sizeof(tch_spi_handle_prototype));
+	env->uStdLib->string->memset(ins,0,sizeof(tch_spi_handle_prototype));
 
 	iocfg.Af = spibs->afv;
 	iocfg.Speed = GPIO_OSpeed_25M;
 	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.popt = popt;
 
-	hnd->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout);
+	ins->iohandle = env->Device->gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout);
 
 	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED)){
 		dmaCfg.BufferType = DMA_BufferMode_Normal;
@@ -174,60 +186,32 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		dmaCfg.mInc = TRUE;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		hnd->rxCh.dma = tch_dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
-		if(hnd->rxCh.dma)
-			rxDma = TRUE;
+		ins->rxCh.dma = tch_dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
 
 		dmaCfg.Ch = spibs->txch;
 		dmaCfg.Dir = DMA_Dir_MemToPeriph;
-		hnd->txCh.dma = tch_dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
-		if(hnd->txCh.dma)
-			txDma = TRUE;
+		ins->txCh.dma = tch_dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
 	}
 
-	if(!rxDma || !txDma){
-		tch_dma->freeDma(hnd->rxCh.dma);
-		tch_dma->freeDma(hnd->txCh.dma);
-		hnd->rxCh.mq = env->MsgQ->create(1);
-		hnd->txCh.mq = env->MsgQ->create(1);
-	}
-
-	if(!hnd->txCh.dma || !hnd->rxCh.dma){
-		env->Mtx->lock(SPI_StaticInstance.mtx,tchWaitForever);
-		spiDesc->_handle = NULL;
-		env->Condv->wakeAll(SPI_StaticInstance.condv);
-		env->Mtx->unlock(SPI_StaticInstance.mtx);
-		if(hnd->iohandle)
-			hnd->iohandle->close(hnd->iohandle);
-		if(hnd->rxCh.dma){
-			if(rxDma)
-				tch_dma->freeDma(hnd->rxCh.dma);
-			else
-				env->MsgQ->destroy(hnd->rxCh.mq);
-		}
-		if(hnd->txCh.dma){
-			if(txDma)
-				tch_dma->freeDma(hnd->txCh.dma);
-			else
-				env->MsgQ->destroy(hnd->txCh.mq);
-		}
-		env->Mem->free(hnd);
-		return NULL;
+	if(!ins->rxCh.dma || !ins->txCh.dma){
+		tch_dma->freeDma(ins->rxCh.dma);
+		tch_dma->freeDma(ins->txCh.dma);
 	}
 
 	// all required resources are obtained successfully
 
-	hnd->condv = env->Condv->create();
-	hnd->mtx = env->Mtx->create();
-	hnd->pix.read = tch_spiRead;
-	hnd->pix.write = tch_spiWrite;
-	hnd->pix.close = tch_spiClose;
-	if(rxDma && txDma)
-		hnd->pix.transceive = tch_spiTransceiveDma;
+	ins->condv = env->Condv->create();
+	ins->mtx = env->Mtx->create();
+	ins->pix.read = tch_spiRead;
+	ins->pix.write = tch_spiWrite;
+	ins->pix.close = tch_spiClose;
+	ins->req = NULL;
+	if(ins->rxCh.dma && ins->txCh.dma)
+		ins->pix.transceive = tch_spiTransceiveDma;
 	else
-		hnd->pix.transceive = tch_spiTransceive;
-	hnd->env = env;
-	hnd->spi = spi;
+		ins->pix.transceive = tch_spiTransceive;
+	ins->env = env;
+	ins->spi = spi;
 
 
 	// Initialize SPI registers
@@ -259,20 +243,19 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		spiHw->CR1 &= ~SPI_CR1_SSI;
 		spiHw->CR1 &= ~SPI_CR1_MSTR;
 	}
-	if(txDma && rxDma)
+	if(ins->txCh.dma && ins->rxCh.dma)
 		spiHw->CR2 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	else{
-		spiHw->CR2 |= (SPI_CR2_RXNEIE | SPI_CR2_ERRIE);
+		spiHw->CR2 |= SPI_CR2_ERRIE;
 		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 		NVIC_EnableIRQ(spiDesc->irq);
 		__DMB();
 		__ISB();
 	}
 
-	spiHw->CR1 |= SPI_CR1_SPE;
 
-	tch_spiValidate((tch_spi_handle_prototype*) hnd);
-	return (tch_spiHandle*) hnd;
+	tch_spiValidate((tch_spi_handle_prototype*) ins);
+	return (tch_spiHandle*) ins;
 }
 
 static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz){
@@ -290,85 +273,80 @@ static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t ti
 }
 
 static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
-	tch_spi_handle_prototype* hnd = (tch_spi_handle_prototype*) self;
+	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	void* twb = (void*) wb;
-	if(!hnd)
+	if(!ins)
 		return tchErrorParameter;
-	if(!tch_spiIsValid(hnd))
+	if(!tch_spiIsValid(ins))
 		return tchErrorResource;
-	tchEvent evt;
 
-
-	tch_spi_descriptor* spiDesc = &SPI_HWs[hnd->spi];
+	tchStatus result = tchOK;
+	uint32_t sig = 0;
+	tch_spi_descriptor* spiDesc = &SPI_HWs[ins->spi];
 	SPI_TypeDef* spiHw = spiDesc->_hw;
-	const tch* env = hnd->env;
+	const tch* env = ins->env;
 	uint8_t offset = 1;
 	if(spiHw->CR1 & SPI_CR1_DFF)
 		offset = 2;
 
-	if((evt.status = env->Mtx->lock(hnd->mtx,timeout)) != tchOK)
-		return evt.status;
-	while(SPI_isBusy(hnd)){
-		if((evt.status = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != tchOK)
-			return evt.status;
+	if((result = env->Mtx->lock(ins->mtx,timeout)) != tchOK)
+		return result;
+	while(SPI_isBusy(ins)){
+		if((result = env->Condv->wait(ins->condv,ins->mtx,timeout)) != tchOK)
+			return result;
 	}
-	SPI_setBusy(hnd);
-	if((evt.status = env->Mtx->unlock(hnd->mtx)) != tchOK)
-		return evt.status;
+	SPI_setBusy(ins);
+	if((result = env->Mtx->unlock(ins->mtx)) != tchOK)
+		return result;
+	tch_spi_request req;
+	req.align = offset;
+	req.rxb = (uint8_t*) rb;
+	req.txb = (uint8_t*) wb;
+	req.subject = ins->env->Thread->self();
+	req.sz = sz;
+	ins->req = &req;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
+	spiHw->CR2 |= (SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 
-	while(sz--){
-		spiHw->DR = *((uint8_t*)twb);  // load data to tx buffer
-		if(twb)                           // if wb is null, address isn't incremented
-			twb += offset;
-		evt = hnd->env->MsgQ->get(hnd->rxCh.mq,timeout);   // get rx data
-		if(evt.status != tchEventMessage){                  // check message has been received successfully
-			RETURN_SAFE();
-		}
-		if(evt.value.v & SPI_ERR_MSK){
-			evt.status = tchErrorIo;
-			RETURN_SAFE();
-		}
-		if(offset == 1){
-			*(uint8_t*) rb = evt.value.v;                    // if message is obtained successfully, save it to rx buffer
-		}else if(offset == 2){
-			*(uint16_t*) rb = evt.value.v;
-		}
-		if(rb)                            // if rb is null, address isn't incremented
-			rb += offset;
+	sig = ins->env->Sig->wait((TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever);
+	if(sig & TCH_SPI_EVENT_ERR_MSK){
+		result =  tchErrorIo;
+		RETURN_SAFE();
 	}
 
-	evt.status = tchOK;
+	result = tchOK;
 	SET_SAFE_RETURN();
-	env->Mtx->lock(hnd->mtx,tchWaitForever);
+	ins->env->Sig->clear(req.subject,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
+	env->Mtx->lock(ins->mtx,tchWaitForever);
+	spiHw->CR2 &= ~(SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
-	SPI_clrBusy(hnd);
-	evt.status = env->Condv->wakeAll(hnd->condv);
-	env->Mtx->unlock(hnd->mtx);
-	return evt.status;
+	SPI_clrBusy(ins);
+	env->Condv->wakeAll(ins->condv);
+	env->Mtx->unlock(ins->mtx);
+	return result;
 }
 
 static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
-	tch_spi_handle_prototype* hnd = (tch_spi_handle_prototype*) self;
-	if(!hnd)
+	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
+	if(!ins)
 		return tchErrorParameter;
-	if(!tch_spiIsValid(hnd))
+	if(!tch_spiIsValid(ins))
 		return tchErrorResource;
 	tchStatus result = tchOK;
-	tch_spi_descriptor* spiDesc = &SPI_HWs[hnd->spi];
+	tch_spi_descriptor* spiDesc = &SPI_HWs[ins->spi];
 	SPI_TypeDef* spiHw = (SPI_TypeDef*) spiDesc->_hw;
-	const tch* env = hnd->env;
+	const tch* env = ins->env;
 	tch_DmaReqDef dmaReq;
 
-	if((result = env->Mtx->lock(hnd->mtx,timeout)) != tchOK)
+	if((result = env->Mtx->lock(ins->mtx,timeout)) != tchOK)
 		return result;
-	while(SPI_isBusy(hnd)){
-		if((result = env->Condv->wait(hnd->condv,hnd->mtx,timeout)) != tchOK)
+	while(SPI_isBusy(ins)){
+		if((result = env->Condv->wait(ins->condv,ins->mtx,timeout)) != tchOK)
 			return result;
 	}
-	SPI_setBusy(hnd);
-	if((result = env->Mtx->unlock(hnd->mtx)) != tchOK)
+	SPI_setBusy(ins);
+	if((result = env->Mtx->unlock(ins->mtx)) != tchOK)
 		return result;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
@@ -380,7 +358,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(hnd->rxCh.dma,&dmaReq,0,&result)){
+	if(!tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -390,18 +368,18 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(hnd->txCh.dma,&dmaReq,timeout,&result)){
+	if(!tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
 	result = tchOK;
 
 	SET_SAFE_RETURN();
-	env->Mtx->lock(hnd->mtx,tchWaitForever);
+	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
-	SPI_clrBusy(hnd);
-	env->Condv->wakeAll(hnd->condv);
-	env->Mtx->unlock(hnd->mtx);
+	SPI_clrBusy(ins);
+	env->Condv->wakeAll(ins->condv);
+	env->Mtx->unlock(ins->mtx);
 	return tchOK;
 }
 
@@ -431,8 +409,6 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 
 	tch_dma->freeDma(ins->rxCh.dma);
 	tch_dma->freeDma(ins->txCh.dma);
-	env->MsgQ->destroy(ins->rxCh.mq);
-	env->MsgQ->destroy(ins->txCh.mq);
 
 	ins->iohandle->close(ins->iohandle);
 
@@ -468,18 +444,45 @@ static void tch_spiInvalidate(tch_spi_handle_prototype* ins){
 static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc){
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	const tch* env = ins->env;
+	uint16_t readout = 0;
+	tch_spi_request* req = ins->req;
 	if(!spiDesc->_handle)
 		return FALSE;
 	if(spiHw->SR & SPI_SR_RXNE){
-		env->MsgQ->put(ins->rxCh.mq,spiHw->DR,0);
-		return TRUE;
+		if(req->sz){
+			if(req->rxb){
+				*((uint16_t*)req->rxb) = spiHw->DR;
+				req->rxb += req->align;
+			}else{
+				readout = spiHw->DR;
+			}
+			spiHw->SR &= ~SPI_SR_RXNE;
+		}else{
+			if(spiHw->CR2 & SPI_CR2_RXNEIE){
+				ins->env->Sig->set(req->subject,TCH_SPI_EVENT_RX_COMPLETE);
+				spiHw->CR2 &= ~SPI_CR2_RXNEIE;
+				return TRUE;
+			}
+		}
+	}
+	if(spiHw->SR & SPI_SR_TXE){
+		if(req->txb){
+			if(req->sz--){
+				spiHw->DR = *((uint16_t*) req->txb);
+				req->txb += req->align;
+			}else{
+				ins->env->Sig->set(req->subject,TCH_SPI_EVENT_TX_COMPLETE);
+				spiHw->CR2 &= ~SPI_CR2_TXEIE;
+				return TRUE;
+			}
+		}
 	}
 	if(spiHw->SR & SPI_SR_OVR){
-		env->MsgQ->put(ins->rxCh.mq,spiHw->DR,0);   // read data and ovr flag will be cleared
+		ins->env->Sig->set(req->subject,TCH_SPI_EVENT_OVR_ERR);
 		return TRUE;
 	}
 	if(spiHw->SR & SPI_SR_UDR){
-		env->MsgQ->put(ins->rxCh.mq,SPI_ERR_UDR,0); // send error type as msg
+		ins->env->Sig->set(req->subject,TCH_SPI_EVENT_UDR_ERR);
 		return TRUE;
 	}
 	return FALSE;
