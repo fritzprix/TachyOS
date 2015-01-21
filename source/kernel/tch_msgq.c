@@ -212,19 +212,11 @@ static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 	tch_thread_header* nth = NULL;
 	if(!tch_msgqIsValid(msgqCb))
 		return tchErrorResource;
-	if(tch_port_isISR()){
-		tch_msgqInvalidate(msgqCb);
-		msgqCb->bp = NULL;
-		msgqCb->gidx = 0;
-		msgqCb->pidx = 0;
-		tch_schedResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-		tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
-		msgqCb->updated = 0;
-		shMem->free(msgqCb);
-	}else{
-		tch_port_enterSv(SV_MSGQ_DESTROY,(uword_t)mqId,0);
-		shMem->free(msgqCb);
-	}
+	if(tch_port_isISR())
+		return tchErrorISR;
+	tch_port_enterSv(SV_MSGQ_DESTROY,(uword_t)mqId,0);
+	tch_msgqInvalidate(msgqCb);
+	shMem->free(msgqCb);
 	return tchOK;
 }
 

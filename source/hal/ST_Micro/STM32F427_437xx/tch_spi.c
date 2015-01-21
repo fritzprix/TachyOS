@@ -93,6 +93,7 @@ struct tch_spi_handle_prototype {
 	union {
 		tch_DmaHandle        dma;
 	}rxCh;
+	tch_eventId               evId;
 	uint32_t                  status;
 	tch_GpioHandle*           iohandle;
 	tch_mtxId                 mtx;
@@ -202,6 +203,7 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 
 	ins->condv = env->Condv->create();
 	ins->mtx = env->Mtx->create();
+	ins->evId = env->Event->create();
 	ins->pix.read = tch_spiRead;
 	ins->pix.write = tch_spiWrite;
 	ins->pix.close = tch_spiClose;
@@ -309,7 +311,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	spiHw->CR1 |= SPI_CR1_SPE;
 	spiHw->CR2 |= (SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 
-	sig = ins->env->Sig->wait((TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever);
+	sig = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever);
 	if(sig & TCH_SPI_EVENT_ERR_MSK){
 		result =  tchErrorIo;
 		RETURN_SAFE();
@@ -317,7 +319,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 
 	result = tchOK;
 	SET_SAFE_RETURN();
-	ins->env->Sig->clear(req.subject,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
+	ins->env->Event->clear(req.subject,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
 	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR2 &= ~(SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
@@ -406,6 +408,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	tch_spiInvalidate(ins);
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
+	env->Event->destroy(ins->evId);
 
 	tch_dma->freeDma(ins->rxCh.dma);
 	tch_dma->freeDma(ins->txCh.dma);
@@ -459,7 +462,7 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 			spiHw->SR &= ~SPI_SR_RXNE;
 		}else{
 			if(spiHw->CR2 & SPI_CR2_RXNEIE){
-				ins->env->Sig->set(req->subject,TCH_SPI_EVENT_RX_COMPLETE);
+				ins->env->Event->set(ins->evId,TCH_SPI_EVENT_RX_COMPLETE);
 				spiHw->CR2 &= ~SPI_CR2_RXNEIE;
 				return TRUE;
 			}
@@ -471,18 +474,18 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 				spiHw->DR = *((uint16_t*) req->txb);
 				req->txb += req->align;
 			}else{
-				ins->env->Sig->set(req->subject,TCH_SPI_EVENT_TX_COMPLETE);
+				ins->env->Event->set(ins->evId,TCH_SPI_EVENT_TX_COMPLETE);
 				spiHw->CR2 &= ~SPI_CR2_TXEIE;
 				return TRUE;
 			}
 		}
 	}
 	if(spiHw->SR & SPI_SR_OVR){
-		ins->env->Sig->set(req->subject,TCH_SPI_EVENT_OVR_ERR);
+		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_OVR_ERR);
 		return TRUE;
 	}
 	if(spiHw->SR & SPI_SR_UDR){
-		ins->env->Sig->set(req->subject,TCH_SPI_EVENT_UDR_ERR);
+		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_UDR_ERR);
 		return TRUE;
 	}
 	return FALSE;

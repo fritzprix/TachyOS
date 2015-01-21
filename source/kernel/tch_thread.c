@@ -114,7 +114,6 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
 	tch_listInit(&thread_p->t_childNode);
-	tch_signalInit(&thread_p->t_sig);
 	thread_p->t_chks = (uint32_t*)th_mem;                                                    // keep allocated mem pointer to release it when this thread is destroyed
 	*thread_p->t_chks = (uint32_t) tch_noop_destr;                                           // thread has no-op destructor
 	thread_p->t_flag = 0;

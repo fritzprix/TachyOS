@@ -49,7 +49,7 @@ typedef struct tch_event_wait_arg_s {
 static tch_eventId tch_eventCreate();
 static int32_t tch_eventSet(tch_eventId ev,int32_t signals);
 static int32_t tch_eventClear(tch_eventId ev,int32_t signals);
-static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
+static int32_t tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
 static tchStatus tch_eventDestroy(tch_eventId ev);
 
 
@@ -86,7 +86,7 @@ static int32_t tch_eventSet(tch_eventId ev,int32_t signals){
 	arg.ev_signal = signals;
 	arg.type = SIG_UPDATE_SET;
 	if(tch_port_isISR())
-		return tch_event_kupdate(ev,(int32_t)&arg);
+		return tch_event_kupdate(ev,&arg);
 	else
 		return tch_port_enterSv(SV_EV_UPDATE,(uint32_t) ev,(uint32_t)&arg);
 }
@@ -100,12 +100,12 @@ static int32_t tch_eventClear(tch_eventId ev,int32_t signals){
 	arg.ev_signal= signals;
 	arg.type = SIG_UPDATE_CLR;
 	if(tch_port_isISR())
-		return tch_event_kupdate(ev,(int32_t)&arg);
+		return tch_event_kupdate(ev,&arg);
 	else
 		return tch_port_enterSv(SV_EV_UPDATE,(uint32_t) ev,(uint32_t) &arg);
 }
 
-static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
+static int32_t tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
 	tch_event_warg_t warg;
 	if(tch_port_isISR()){
 		return tchErrorISR;
@@ -119,10 +119,15 @@ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millis
 
 static tchStatus tch_eventDestroy(tch_eventId ev){
 	if(!ev)
-		return 0;
+		return tchErrorParameter;
 	if(!tch_eventIsValid(ev))
-		return 0;
-	return tch_port_enterSv(SV_EV_DESTROY,ev,0);
+		return tchErrorParameter;
+	if(!tch_port_isISR()){
+		return tchErrorISR;
+	}
+	tch_port_enterSv(SV_EV_DESTROY,(uint32_t) ev,0);
+	shMem->free(ev);
+	return tchOK;
 }
 
 tchStatus tch_event_kwait(tch_eventId id,void* arg){
@@ -149,13 +154,16 @@ int32_t tch_event_kupdate(tch_eventId id,void* arg){
 		break;
 	}
 	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!tch_listIsEmpty(&evcb->ev_blockq))){
-		tch_schedResumeM(&evcb->ev_blockq,1,tchOK,TRUE);
+		tch_schedResumeM(&evcb->ev_blockq,1,evcb->ev_signal,TRUE);
 	}
 	return psig;
 }
 
-void tch_event_destroy(tch_eventId id){
-
+void tch_event_kdestroy(tch_eventId id){
+	tch_event_cb* evcb = (tch_event_cb*) id;
+	if(!tch_listIsEmpty(&evcb->ev_blockq)){
+		tch_schedResumeM(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	}
 }
 
 

@@ -101,7 +101,6 @@ struct tch_thread_header_t {
 	void*                       t_ctx;        /// ptr to thread saved context (stack pointer value)
 	tchStatus                   t_kRet;       /// kernel return value
 	tch_memId                   t_mem;        /// heap handle
-	tch_signal                  t_sig;        /// signal handle
 	tch_lnode_t                 t_ualc;       /// allocation list for usr heap
 	tch_lnode_t                 t_shalc;      /// allocation list for shared heap
 	union {

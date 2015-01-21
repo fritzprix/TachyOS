@@ -14,7 +14,7 @@ extern "C" {
 
 extern tchStatus tch_event_kwait(tch_eventId id,void* arg);
 extern int32_t tch_event_kupdate(tch_eventId id,void* arg);
-extern void tch_event_destroy(tch_eventId id);
+extern void tch_event_kdestroy(tch_eventId id);
 
 
 #if defined(__cplusplus)

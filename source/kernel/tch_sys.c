@@ -90,7 +90,6 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.MailQ = MailQ;
 	RuntimeInterface.MsgQ = MsgQ;
 	RuntimeInterface.Mem = uMem;
-	RuntimeInterface.Sig = Sig;
 	RuntimeInterface.Event = Event;
 
 
@@ -175,13 +174,17 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_header*) arg1;
 		tch_schedDestroyThread((tch_threadId) cth,arg2);
 		break;
-	case SV_SIG_WAIT:
+	case SV_EV_WAIT:
 		cth = (tch_thread_header*) tch_currentThread;
-		tch_kernelSetResult(cth,tch_signal_kwait(cth,arg1,arg2));
+		tch_kernelSetResult(cth,tch_event_kwait(arg1,arg2));
 		break;
-	case SV_SIG_UPDATE:
-		cth = (tch_thread_header*) arg1;
-		tch_kernelSetResult(cth,tch_signal_kupdate(cth,arg2));
+	case SV_EV_UPDATE:
+		cth = (tch_thread_header*) tch_currentThread;
+		tch_kernelSetResult(cth,tch_event_kupdate(arg1,arg2));
+		break;
+	case SV_EV_DESTROY:
+		cth = (tch_thread_header*) tch_currentThread;
+		tch_kernelSetResult(cth,tch_event_kdestroy(arg1));
 		break;
 	case SV_MSGQ_PUT:
 		cth = tch_currentThread;
