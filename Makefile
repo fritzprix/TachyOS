@@ -18,17 +18,27 @@ endif
 ifeq ($(DEPS),)
 	DEPS=
 endif
+
+# target directory to put binary file 
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(BUILD)
 endif
 
+# kernel source directory
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
+# port source dircetory
 PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
+# hal source directory
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
+# board source directory
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
-TEST_SRC_BASE=$(ROOT_DIR)/source/test
+# application source directory
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
-APP_SRC_DIR=$(USR_SRC_DIR)/app/$(APP_NAME)
+
+APP_SRC_DIR=$(ROOT_DIR)/source/usr/app/$(APP_NAME)
+# unit test sources base directory
+TEST_SRC_BASE=$(ROOT_DIR)/source/test
+# user module directory
 MODULE_BASE_SRC_DIR=$(ROOT_DIR)/source/usr/module
 
 TCH_API_HDR_DIR=$(ROOT_DIR)/include

@@ -57,8 +57,8 @@ struct tch_usart_cfg_s {
 
 struct tch_usart_handle_s {
 	tchStatus (*close)(tch_usartHandle handle);
-	tchStatus (*putc)(tch_usartHandle handle,uint8_t c);
-	tchStatus (*getc)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
+	tchStatus (*put)(tch_usartHandle handle,uint8_t c);
+	tchStatus (*get)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
 	tchStatus (*write)(tch_usartHandle handle,const uint8_t* bp,uint32_t sz);
 	uint32_t (*read)(tch_usartHandle handle,uint8_t* bp, uint32_t sz,uint32_t timeout);
 };

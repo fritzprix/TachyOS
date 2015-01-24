@@ -116,9 +116,9 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 
 static tchStatus tch_IIC_close(tch_iicHandle* self);
 static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
-static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
+static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
 static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
-static tchStatus tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
+static uint32_t tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
 
 static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_descriptor* iicDesc);
 static BOOL tch_IIC_handleSlaveEvent(tch_iic_handle_prototype* ins,tch_iic_descriptor* iicDesc);
@@ -208,7 +208,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		dmaCfg.pAlign = DMA_DataAlign_Byte;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->rxdma = tch_dma->allocDma(env,iicbs->rxdma,&dmaCfg,timeout,popt);
+		ins->rxdma = tch_dma->allocate(env,iicbs->rxdma,&dmaCfg,timeout,popt);
 	}
 
 	if(iicbs->txdma != DMA_NOT_USED){
@@ -223,7 +223,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		dmaCfg.pAlign = DMA_DataAlign_Byte;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->txdma = tch_dma->allocDma(env,iicbs->txdma,&dmaCfg,timeout,popt);
+		ins->txdma = tch_dma->allocate(env,iicbs->txdma,&dmaCfg,timeout,popt);
 	}
 
 	tch_GpioCfg iocfg;
@@ -368,7 +368,7 @@ static void tch_IIC_initCfg(tch_iicCfg* cfg){
 
 static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
-	tchEvent evt;
+	tchStatus result = tchOK;
 	int32_t sig;
 	size_t idx = 0;
 	if(!ins)
@@ -380,16 +380,15 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	if(tch_port_isISR())
 		return tchErrorISR;
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) IIC_HWs[ins->iic]._hw;
-	if((evt.status = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
-		return evt.status;
+	if((result = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
+		return result;
 	while(IIC_isBusy(ins)){
-		if((evt.status = ins->env->Condv->wait(ins->condv,ins->mtx,tchWaitForever)) != tchOK)
-			return evt.status;
+		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,tchWaitForever)) != tchOK)
+			return result;
 	}
 	IIC_setBusy(ins);
-	if((evt.status = ins->env->Mtx->unlock(ins->mtx)) != tchOK)
-		return evt.status;
-
+	if((result = ins->env->Mtx->unlock(ins->mtx)) != tchOK)
+		return result;
 
 	tch_iicOpDesc tx_req;
 	tx_req.mtype = IIc_MasterTx;
@@ -423,27 +422,39 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 
 
 		// wait for addressing complete
-		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,tchWaitForever) != TCH_IIC_EVENT_ADDR_COMPLETE)
+		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,tchWaitForever) != tchOK){
+			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
+		}
 
 		// start DMA transfer
-		if(!tch_dma->beginXfer(ins->txdma,&txreq,tchWaitForever,&evt.status))
+		if(tch_dma->beginXfer(ins->txdma,&txreq,tchWaitForever,&result)){
+			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
+		}
 
 		iicHw->CR2 &= ~I2C_CR2_DMAEN;
-		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_IDLE,tchWaitForever) != TCH_IIC_EVENT_IDLE)
+		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_IDLE,tchWaitForever) != tchOK){
+			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
+		}
 
 	}else{
 		// wait data transfer complete
-		if(ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_TX_COMPLETE),tchWaitForever) != (TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_TX_COMPLETE))
+		if(ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_TX_COMPLETE),tchWaitForever) != tchOK){
+			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
+		}
 	}
 
-	evt.status = tchOK;
-	SET_SAFE_RETURN();
+	sig = ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
+	if(sig & TCH_IIC_EVENT_IOERROR){
+		result = tchErrorIo;
+		RETURN_SAFE();
+	}
 
-	ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
+	result = tchOK;
+	SET_SAFE_RETURN();
 
 	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
@@ -452,86 +463,86 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	IIC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
 	ins->env->Mtx->unlock(ins->mtx);
-	return evt.status;
+	return result;
 }
 
-static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
+static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
-		tchEvent evt;
-		evt.status = tchOK;
-		if((!self) || (!addr) || (!sz))
-			return tchErrorParameter;
-		if(!tch_IICisValid(ins))
-			return tchErrorParameter;
-		if(!IIC_isMaster(ins))
-			return tchErrorParameter;
-		if(tch_port_isISR())
-			return tchErrorISR;
-		I2C_TypeDef* iicHw = IIC_HWs[ins->iic]._hw;
-		if((evt.status = ins->env->Mtx->lock(ins->mtx,timeout)) != tchOK)
-			return evt.status;
-		while(IIC_isBusy(ins)){
-			if((evt.status = ins->env->Condv->wait(ins->condv,ins->mtx,timeout)) != tchOK)
-				return evt.status;
-		}
-		IIC_setBusy(ins);
-		if((evt.status = ins->env->Mtx->unlock(ins->mtx)) != tchOK)
-			return evt.status;
+	tchStatus result = tchOK;
+	int32_t sig;
+	if((!self) || (!addr) || (!sz))
+		return 0;
+	if(!tch_IICisValid(ins))
+		return 0;
+	if(!IIC_isMaster(ins))
+		return 0;
+	if(tch_port_isISR())
+		return 0;
+	I2C_TypeDef* iicHw = IIC_HWs[ins->iic]._hw;
+	if((result = ins->env->Mtx->lock(ins->mtx,timeout)) != tchOK)
+		return 0;
+	while(IIC_isBusy(ins)){
+		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,timeout)) != tchOK)
+			return 0;
+	}
+	IIC_setBusy(ins);
+	if((result = ins->env->Mtx->unlock(ins->mtx)) != tchOK)
+		return 0;
 
-		tch_iicOpDesc rx_req;
-		rx_req.mtype = IIc_MasterRx;
-		rx_req.sz = sz;
-		rx_req.bp = (uint8_t*) rb;
-		rx_req.addr = addr;
-		rx_req.isDMA = FALSE;
-		ins->isr_msg = (uint32_t) &rx_req;
+	tch_iicOpDesc rx_req;
+	rx_req.mtype = IIc_MasterRx;
+	rx_req.sz = sz;
+	rx_req.bp = (uint8_t*) rb;
+	rx_req.addr = addr;
+	rx_req.isDMA = FALSE;
+	ins->isr_msg = (uint32_t) &rx_req;
 
-		iicHw->CR1 &= ~I2C_CR1_STOP;
-		iicHw->CR1 |= (I2C_CR1_ACK | I2C_CR1_PE);
-		if(ins->rxdma){
-			rx_req.isDMA = TRUE;
-			iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
-		}
+	iicHw->CR1 &= ~I2C_CR1_STOP;
+	iicHw->CR1 |= (I2C_CR1_ACK | I2C_CR1_PE);
+	if(ins->rxdma){
+		rx_req.isDMA = TRUE;
+		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
+	}
 
-		iicHw->CR1 |= I2C_CR1_START;
-		iicHw->CR2 |= I2C_CR2_ITEVTEN;
+	iicHw->CR1 |= I2C_CR1_START;
+	iicHw->CR2 |= I2C_CR2_ITEVTEN;
 
-		if(ins->rxdma){
-			tch_DmaReqDef rxreq;
-			rxreq.MemAddr[0] = rb;
-			rxreq.MemInc = TRUE;
-			rxreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
-			rxreq.PeriphInc = FALSE;
-			rxreq.size = sz;
+	if(ins->rxdma){
+		tch_DmaReqDef rxreq;
+		rxreq.MemAddr[0] = rb;
+		rxreq.MemInc = TRUE;
+		rxreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
+		rxreq.PeriphInc = FALSE;
+		rxreq.size = sz;
 
-			// wait for addressing complete
-			if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,tchWaitForever) != TCH_IIC_EVENT_ADDR_COMPLETE)
-				RETURN_SAFE();
-
-			iicHw->CR2 &= ~I2C_CR2_ITEVTEN;
-			if(!tch_dma->beginXfer(ins->rxdma,&rxreq,tchWaitForever,&evt.status)){
-				RETURN_SAFE();
-			}
-			iicHw->CR1 |= I2C_CR1_STOP;
-			iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
-		}else{
-			// wait data transfer complete
-			if(ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_RX_COMPLETE),tchWaitForever) != (TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_RX_COMPLETE))
-				RETURN_SAFE();
+		// wait for addressing complete
+		if((result = ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,tchWaitForever)) != tchOK){
+			sig = ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
+			RETURN_SAFE();
 		}
 
-		evt.status = tchOK;
-		SET_SAFE_RETURN();
-		ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
+		iicHw->CR2 &= ~I2C_CR2_ITEVTEN;
+		sz -= tch_dma->beginXfer(ins->rxdma,&rxreq,tchWaitForever,&result);
+		iicHw->CR1 |= I2C_CR1_STOP;
+		iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
 
-		iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
-		ins->env->Mtx->lock(ins->mtx,tchWaitForever);
-		while(iicHw->SR2 & 7)__NOP();
-		iicHw->CR1 &= ~I2C_CR1_PE;
-		IIC_clrBusy(ins);
-		ins->env->Condv->wakeAll(ins->condv);
-		ins->env->Mtx->unlock(ins->mtx);
-		return evt.status;
+	}else{
+		// wait data transfer complete
+		ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_RX_COMPLETE),tchWaitForever);
+		sz -= rx_req.sz;
+	}
+
+	ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
+	SET_SAFE_RETURN();
+
+	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
+	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
+	while(iicHw->SR2 & 7)__NOP();
+	iicHw->CR1 &= ~I2C_CR1_PE;
+	IIC_clrBusy(ins);
+	ins->env->Condv->wakeAll(ins->condv);
+	ins->env->Mtx->unlock(ins->mtx);
+	return sz;
 }
 
 
@@ -578,7 +589,7 @@ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void
 
 }
 
-static tchStatus tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
+static uint32_t tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	if((!self) || (!addr) || (!sz))
 		return tchErrorParameter;

@@ -196,7 +196,7 @@ tch_lld_timer* tch_timerHalInit(const tch* env){
 		return NULL;
 	TIMER_StaticInstance.mtx = env->Mtx->create();
 	TIMER_StaticInstance.condv = env->Condv->create();
-	return &TIMER_StaticInstance;
+	return (tch_lld_timer* )&TIMER_StaticInstance;
 }
 
 ///////            Timer Manager Function               ///////

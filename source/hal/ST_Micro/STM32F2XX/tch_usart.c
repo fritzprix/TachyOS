@@ -272,8 +272,8 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	}
 
 
-	uins->pix.putc = tch_usartPutc;
-	uins->pix.getc = tch_usartGetc;
+	uins->pix.put = tch_usartPutc;
+	uins->pix.get = tch_usartGetc;
 	uins->pix.write = tch_usartWrite;
 	uins->pix.read = tch_usartRead;
 	uins->pix.close = tch_usartClose;
@@ -363,7 +363,7 @@ static tchStatus tch_usartPutc(tch_usartHandle handle,uint8_t c){
 }
 
 static tchStatus tch_usartGetc(tch_usartHandle handle,uint8_t* rc,uint32_t timeout){
-	return handle->read(handle,rc,1,timeout);
+	return handle->read(handle,rc,1,timeout) == 1? tchOK : tchErrorIo;
 }
 
 static tchStatus tch_usartWrite(tch_usartHandle handle,const uint8_t* bp,uint32_t sz){
@@ -446,7 +446,6 @@ static tchStatus tch_usartWrite(tch_usartHandle handle,const uint8_t* bp,uint32_
 
 static uint32_t tch_usartRead(tch_usartHandle handle,uint8_t* bp, uint32_t sz,uint32_t timeout){
 	tch_usartHandlePrototype ins;
-	uint32_t readout_sz = 0;
 	uint32_t ev;
 	if(!handle)
 		return 0;
@@ -479,31 +478,18 @@ static uint32_t tch_usartRead(tch_usartHandle handle,uint8_t* bp, uint32_t sz,ui
 		ins->rxreq = &rx_req;
 
 		uhw->CR1 |= USART_CR1_RXNEIE;       // enable usart rx inter
-		if(env->Event->wait(ins->rxEvId,UART_EVENT_RX_COMPLETE,timeout) != tchOK){
-			ev = env->Event->clear(ins->rxEvId,UART_EVENT_RX_COMPLETE);
-			RETURN_SAFELY();
-		}
-		ev = env->Event->clear(ins->rxEvId,UART_EVENT_RX_COMPLETE);
-		if(ev & UART_EVENT_ERR_MSK){
-			env->Event->clear(ins->rxEvId,UART_EVENT_ERR_MSK);
-			readout_sz = 0;
-			RETURN_SAFELY();
-		}
-		readout_sz = (sz - rx_req.sz);
-
+		env->Event->wait(ins->rxEvId,UART_EVENT_RX_COMPLETE,timeout);
+		ev = env->Event->clear(ins->rxEvId,UART_EVENT_ALL);
+		sz -= rx_req.sz;
 	} else {
 		uhw->CR3 |= USART_CR3_DMAR;
 		tch_DmaReqDef req;
 		tch_dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
-		if(!(sz -= tch_dma->beginXfer(ins->rxDma,&req,timeout,NULL))){
-			RETURN_SAFELY();
-		}
-		readout_sz = sz;
+		sz -= tch_dma->beginXfer(ins->rxDma,&req,timeout,NULL);
 	}
 
-	SET_SAFE_EXIT();
 	env->Mtx->lock(ins->rxMtx,timeout);
 	uhw->CR1 &= ~USART_CR1_RXNEIE;
 	uhw->CR3 &= ~USART_CR3_DMAR;
@@ -511,7 +497,7 @@ static uint32_t tch_usartRead(tch_usartHandle handle,uint8_t* bp, uint32_t sz,ui
 	env->Condv->wakeAll(ins->rxCondv);
 	env->Mtx->unlock(ins->rxMtx);
 
-	return readout_sz;
+	return sz;
 }
 
 

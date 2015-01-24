@@ -35,6 +35,12 @@ typedef struct tch_spi_request_s tch_spi_request;
 #define TCH_SPI_EVENT_UDR_ERR        ((uint32_t) 0x08)
 #define TCH_SPI_EVENT_ERR_MSK        (TCH_SPI_EVENT_UDR_ERR | TCH_SPI_EVENT_OVR_ERR)
 
+#define TCH_SPI_EVENT_ALL            (TCH_SPI_EVENT_RX_COMPLETE|\
+									  TCH_SPI_EVENT_TX_COMPLETE|\
+									  TCH_SPI_EVENT_ERR_MSK)
+
+
+
 #define SET_SAFE_RETURN();           SAFE_RETURN:
 #define RETURN_SAFE()                goto SAFE_RETURN
 
@@ -70,7 +76,8 @@ static void tch_spiInvalidate(tch_spi_handle_prototype* ins);
 
 
 struct tch_spi_request_s {
-	uint32_t       sz;
+	int32_t        rsz;
+	int32_t        tsz;
 	uint8_t*       rxb;
 	uint8_t*       txb;
 	uint32_t       align;
@@ -162,7 +169,7 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	env->uStdLib->string->memset(ins,0,sizeof(tch_spi_handle_prototype));
 
 	iocfg.Af = spibs->afv;
-	iocfg.Speed = GPIO_OSpeed_25M;
+	iocfg.Speed = GPIO_OSpeed_100M;
 	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.popt = popt;
 
@@ -186,11 +193,11 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		dmaCfg.mInc = TRUE;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->rxCh.dma = tch_dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
+		ins->rxCh.dma = tch_dma->allocate(env,spibs->rxdma,&dmaCfg,timeout,popt);
 
 		dmaCfg.Ch = spibs->txch;
 		dmaCfg.Dir = DMA_Dir_MemToPeriph;
-		ins->txCh.dma = tch_dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
+		ins->txCh.dma = tch_dma->allocate(env,spibs->txdma,&dmaCfg,timeout,popt);
 	}
 
 	if(!ins->rxCh.dma || !ins->txCh.dma){
@@ -300,27 +307,33 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	if((result = env->Mtx->unlock(ins->mtx)) != tchOK)
 		return result;
 	tch_spi_request req;
+	ins->req = &req;
+
 	req.align = offset;
 	req.rxb = (uint8_t*) rb;
 	req.txb = (uint8_t*) wb;
-	req.sz = sz;
-	ins->req = &req;
+	req.tsz = req.rsz = sz;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
 	spiHw->CR2 |= (SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 
-	sig = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever);
-	if(sig & TCH_SPI_EVENT_ERR_MSK){
-		result =  tchErrorIo;
+	if((result = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever)) != tchOK){
+		ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL);
 		RETURN_SAFE();
 	}
 
+	if((sig = ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL)) & TCH_SPI_EVENT_ERR_MSK){
+		result =  tchErrorIo;
+		RETURN_SAFE();
+	}
 	result = tchOK;
+
 	SET_SAFE_RETURN();
-	ins->env->Event->clear(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
-	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR2 &= ~(SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
+
+	env->Mtx->lock(ins->mtx,tchWaitForever);
+	ins->req = NULL;
 	SPI_clrBusy(ins);
 	env->Condv->wakeAll(ins->condv);
 	env->Mtx->unlock(ins->mtx);
@@ -358,7 +371,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
+	if(tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -368,7 +381,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
+	if(tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -447,42 +460,45 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 	const tch* env = ins->env;
 	uint16_t readout = 0;
 	tch_spi_request* req = ins->req;
+	uint16_t sr = spiHw->SR;
 	if(!spiDesc->_handle)
 		return FALSE;
-	if(spiHw->SR & SPI_SR_RXNE){
-		if(req->sz){
-			if(req->rxb){
-				*((uint16_t*)req->rxb) = spiHw->DR;
-				req->rxb += req->align;
-			}else{
-				readout = spiHw->DR;
-			}
-			spiHw->SR &= ~SPI_SR_RXNE;
-		}else{
-			if(spiHw->CR2 & SPI_CR2_RXNEIE){
-				ins->env->Event->set(ins->evId,TCH_SPI_EVENT_RX_COMPLETE);
-				spiHw->CR2 &= ~SPI_CR2_RXNEIE;
-				return TRUE;
-			}
-		}
-	}
-	if(spiHw->SR & SPI_SR_TXE){
-		if(req->txb){
-			if(req->sz--){
+
+	if(sr & SPI_SR_TXE){
+		if(req){
+			if(req->tsz-- > 0){
 				spiHw->DR = *((uint16_t*) req->txb);
 				req->txb += req->align;
+				if(!req->tsz){
+					ins->env->Event->set(ins->evId,TCH_SPI_EVENT_TX_COMPLETE);
+				}
 			}else{
-				ins->env->Event->set(ins->evId,TCH_SPI_EVENT_TX_COMPLETE);
-				spiHw->CR2 &= ~SPI_CR2_TXEIE;
-				return TRUE;
+				if(req->rsz > 0)
+					spiHw->DR = 0;
 			}
-		}
+		}else
+			return FALSE;
 	}
-	if(spiHw->SR & SPI_SR_OVR){
+	if(sr & SPI_SR_RXNE){
+		if(req){
+			if(req->rsz-- > 0){
+				*((uint16_t*)req->rxb) = spiHw->DR;
+				req->rxb += req->align;
+				if(!req->rsz){
+					ins->env->Event->set(ins->evId,TCH_SPI_EVENT_RX_COMPLETE);
+					spiHw->CR2 &= ~(SPI_CR2_RXNEIE | SPI_CR2_TXEIE);
+		//			return TRUE;
+				}
+			}
+		}else
+			return FALSE;
+	}
+	if(sr & SPI_SR_OVR){
+		readout = spiHw->DR;
 		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_OVR_ERR);
 		return TRUE;
 	}
-	if(spiHw->SR & SPI_SR_UDR){
+	if(sr & SPI_SR_UDR){
 		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_UDR_ERR);
 		return TRUE;
 	}

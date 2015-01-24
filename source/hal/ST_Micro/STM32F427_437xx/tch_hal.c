@@ -586,6 +586,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C1,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C1EN,
 				&RCC->APB1LPENR,
@@ -597,6 +598,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C2,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C2EN,
 				&RCC->APB1LPENR,
@@ -608,6 +610,7 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 		{
 				I2C3,
 				NULL,
+				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C3EN,
 				&RCC->APB1LPENR,
@@ -661,7 +664,8 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
-				DMA_Str15,
+//				DMA_Str15,
+				DMA_NOT_USED,
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
@@ -834,8 +838,11 @@ __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 
 __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
-				DMA_Str13,    //dma2_stream5
-				DMA_Str10,    //dma2_stream2
+
+//				DMA_Str13,    //dma2_stream5
+//				DMA_Str10,    //dma2_stream2
+				DMA_NOT_USED,
+				DMA_NOT_USED,
 				3,            //dma channel 3
 				3,            //dma channel 3
 				0,            // port A (0)

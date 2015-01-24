@@ -60,7 +60,7 @@ int main(const tch* env) {
 
 
 	tch_spiCfg spicfg;
-	spicfg.Baudrate = SPI_BAUDRATE_NORMAL;
+	spicfg.Baudrate = SPI_BAUDRATE_HIGH;
 	spicfg.Role = SPI_ROLE_MASTER;
 	spicfg.ClkMode = SPI_CLKMODE_0;
 	spicfg.FrmFormat = SPI_FRM_FORMAT_8B;
@@ -159,10 +159,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
-		env->Thread->yield(1);
 		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-//		env->uStdLib->stdio->iscanf("%c\n",&c);
-//		env->uStdLib->stdio->iprintf("Given Character : %c\n",c);
 		env->Thread->sleep();
 	}
 

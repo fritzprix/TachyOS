@@ -209,7 +209,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pAlign = DMA_DataAlign_Hword;
 		dmacfg.pBurstSize = DMA_Burst_Single;
 		dmacfg.pInc = TRUE;
-		ins->dma = tch_dma->allocDma(env,adcBs->dma,&dmacfg,timeout,popt);
+		ins->dma = tch_dma->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
 		// handle dma_not_used
 	}

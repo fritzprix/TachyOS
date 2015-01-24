@@ -14,7 +14,6 @@
 
 
 
-
 #include "tch_kernel.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,12 +101,18 @@ off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 	return 0;
 }
 
+/**	tchStatus (*getc)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
+ *
+ */
 _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
+	uint8_t* bbuf = (uint8_t*) buf;
 	switch(fd){
-	case STDIN_FILENO:
 	case STDERR_FILENO:
 	case STDOUT_FILENO:
-		return stdio_port->read(stdio_port,buf,cnt,1000);
+		return -1;
+	case STDIN_FILENO:
+		stdio_port->get(stdio_port,bbuf++,tchWaitForever);
+		return 1;
 	}
 	return -1;
 }
