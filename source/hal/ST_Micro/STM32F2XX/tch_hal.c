@@ -664,7 +664,8 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
-				DMA_Str15,
+//				DMA_Str15,
+				DMA_NOT_USED,
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,

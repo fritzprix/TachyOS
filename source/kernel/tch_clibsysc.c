@@ -37,7 +37,7 @@ __attribute__((section(".data")))static char* heap_end = NULL;
 
 
 
-tch_UartHandle* stdio_port;
+tch_usartHandle stdio_port;
 
 
 tchStatus tch_kernel_initCrt0(tch* env){
@@ -47,7 +47,7 @@ tchStatus tch_kernel_initCrt0(tch* env){
 	ucfg.FlowCtrl = FALSE;
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
-	stdio_port = env->Device->usart->allocUart(env,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
+	stdio_port = env->Device->usart->allocate(env,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
 	return tchOK;
 
 }
@@ -103,7 +103,13 @@ off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 }
 
 _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
-	return cnt;
+	switch(fd){
+	case STDIN_FILENO:
+	case STDERR_FILENO:
+	case STDOUT_FILENO:
+		return stdio_port->read(stdio_port,buf,cnt,1000);
+	}
+	return -1;
 }
 
 int _fork_r(struct _reent* reent){

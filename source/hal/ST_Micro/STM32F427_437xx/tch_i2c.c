@@ -527,7 +527,7 @@ static tchStatus tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,i
 		iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 		ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 		while(iicHw->SR2 & 7)__NOP();
-		iicHw->CR1 |= I2C_CR1_PE;
+		iicHw->CR1 &= ~I2C_CR1_PE;
 		IIC_clrBusy(ins);
 		ins->env->Condv->wakeAll(ins->condv);
 		ins->env->Mtx->unlock(ins->mtx);

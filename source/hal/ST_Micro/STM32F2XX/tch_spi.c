@@ -35,6 +35,12 @@ typedef struct tch_spi_request_s tch_spi_request;
 #define TCH_SPI_EVENT_UDR_ERR        ((uint32_t) 0x08)
 #define TCH_SPI_EVENT_ERR_MSK        (TCH_SPI_EVENT_UDR_ERR | TCH_SPI_EVENT_OVR_ERR)
 
+#define TCH_SPI_EVENT_ALL            (TCH_SPI_EVENT_RX_COMPLETE|\
+									  TCH_SPI_EVENT_TX_COMPLETE|\
+									  TCH_SPI_EVENT_ERR_MSK)
+
+
+
 #define SET_SAFE_RETURN();           SAFE_RETURN:
 #define RETURN_SAFE()                goto SAFE_RETURN
 
@@ -74,7 +80,6 @@ struct tch_spi_request_s {
 	uint8_t*       rxb;
 	uint8_t*       txb;
 	uint32_t       align;
-	tch_threadId   subject;
 };
 
 struct tch_lld_spi_prototype {
@@ -187,11 +192,11 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		dmaCfg.mInc = TRUE;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->rxCh.dma = tch_dma->allocDma(env,spibs->rxdma,&dmaCfg,timeout,popt);
+		ins->rxCh.dma = tch_dma->allocate(env,spibs->rxdma,&dmaCfg,timeout,popt);
 
 		dmaCfg.Ch = spibs->txch;
 		dmaCfg.Dir = DMA_Dir_MemToPeriph;
-		ins->txCh.dma = tch_dma->allocDma(env,spibs->txdma,&dmaCfg,timeout,popt);
+		ins->txCh.dma = tch_dma->allocate(env,spibs->txdma,&dmaCfg,timeout,popt);
 	}
 
 	if(!ins->rxCh.dma || !ins->txCh.dma){
@@ -304,22 +309,24 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	req.align = offset;
 	req.rxb = (uint8_t*) rb;
 	req.txb = (uint8_t*) wb;
-	req.subject = ins->env->Thread->self();
 	req.sz = sz;
 	ins->req = &req;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
 	spiHw->CR2 |= (SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 
-	sig = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever);
-	if(sig & TCH_SPI_EVENT_ERR_MSK){
+	if((result = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever)) != tchOK){
+		ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL);
+		RETURN_SAFE();
+	}
+
+	if((sig = ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL)) & TCH_SPI_EVENT_ERR_MSK){
 		result =  tchErrorIo;
 		RETURN_SAFE();
 	}
 
 	result = tchOK;
 	SET_SAFE_RETURN();
-	ins->env->Event->clear(req.subject,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
 	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR2 &= ~(SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
@@ -360,7 +367,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
+	if(tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -370,7 +377,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(!tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
+	if(tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}

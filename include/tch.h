@@ -46,7 +46,7 @@ struct tch_hal_t{
  * \mainpage Tachyos
  * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
  * \section about_sec About Tachyos
- *  Tachyos is a RTOS based on Microkernel architecture. Its motivation is that provides simplicity to user (even without any programming background)
+ *  Tachyos is a RTOS based on Microkernel architecture.
  *  so that any idea or concept can be prototyped easily but without any constraints in performance, stability and power efficiency.
  *  For this motivation, all the base APIs (Kernel & HAL) are thread-safe and I/O operation performed under the HAL is synchronous to
  *  program context(which means to be blocking).
@@ -182,7 +182,7 @@ struct _tch_event_ix_t {
 	tch_eventId (*create)();
 	int32_t (*set)(tch_eventId ev,int32_t signals);
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
-	int32_t (*wait)(tch_eventId ev,int32_t signals,uint32_t millisec);
+	tchStatus (*wait)(tch_eventId ev,int32_t signals,uint32_t millisec);
 	tchStatus (*destroy)(tch_eventId ev);
 };
 

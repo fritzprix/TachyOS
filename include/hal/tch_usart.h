@@ -43,11 +43,11 @@ extern "C"{
 
 
 typedef uint8_t uart_t;
-typedef struct _tch_lld_uart_handle_t tch_UartHandle;
-typedef struct _tch_lld_uart_cfg_t tch_UartCfg;
+typedef struct tch_usart_handle_s* tch_usartHandle;
+typedef struct tch_usart_cfg_s tch_UartCfg;
 
 
-struct _tch_lld_uart_cfg_t {
+struct tch_usart_cfg_s {
 	uint8_t    StopBit;
 	uint8_t    Parity;
 	uint32_t   Buadrate;
@@ -55,18 +55,18 @@ struct _tch_lld_uart_cfg_t {
 };
 
 
-struct _tch_lld_uart_handle_t{
-	tchStatus (*close)(tch_UartHandle* handle);
-	tchStatus (*putc)(tch_UartHandle* handle,uint8_t c);
-	tchStatus (*getc)(tch_UartHandle* handle,uint8_t* rc,uint32_t timeout);
-	tchStatus (*write)(tch_UartHandle* handle,const uint8_t* bp,size_t sz);
-	tchStatus (*read)(tch_UartHandle* handle,uint8_t* bp, size_t sz,uint32_t timeout);
+struct tch_usart_handle_s {
+	tchStatus (*close)(tch_usartHandle handle);
+	tchStatus (*putc)(tch_usartHandle handle,uint8_t c);
+	tchStatus (*getc)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
+	tchStatus (*write)(tch_usartHandle handle,const uint8_t* bp,uint32_t sz);
+	uint32_t (*read)(tch_usartHandle handle,uint8_t* bp, uint32_t sz,uint32_t timeout);
 };
 
 
 typedef struct tch_lld_usart {
-	const uint8_t PORT_COUNT;
-	tch_UartHandle* (*allocUart)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	const uint8_t count;
+	tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_usart;
 
 #if defined(_cplusplus)

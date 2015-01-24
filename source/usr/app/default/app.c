@@ -155,12 +155,14 @@ int main(const tch* env) {
 static DECLARE_THREADROUTINE(btnHandler){
 
 	tch_spiHandle* spi = (tch_spiHandle*) env->Thread->getArg();
-
+	char c;
 
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->Thread->yield(1);
-		env->uStdLib->stdio->iprintf("\rThis is Button Loop\n");
+		env->uStdLib->stdio->iprintf("\rButton Loop\n");
+//		env->uStdLib->stdio->iscanf("%c\n",&c);
+//		env->uStdLib->stdio->iprintf("Given Character : %c\n",c);
 		env->Thread->sleep();
 	}
 

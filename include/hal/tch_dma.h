@@ -91,96 +91,16 @@ extern "C" {
 #define DMA_TargetAddress_Mem0    (uint8_t) 1
 #define DMA_TargetAddress_Periph  (uint8_t) 2
 #define DMA_TargetAddress_Mem1    (uint8_t) 3
-/*!
- *  \brief DMA Type
- *   DMA Stream Type
- */
+
+
+
 typedef uint8_t dma_t;
-
-
-
-/*!
- *  \brief DMA Handle
- *   DMA Operation handle which can be obtained by \ref tch_dma_ix
- */
 typedef void* tch_DmaHandle;
-
-/*!
- *  \brief dma event listener type
- *   DMA event Listener type. fist arg is \ref dma_handle
- */
 typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle ins,uint16_t evType);
-
-/*!
- * \brief DMA Configuration type
- */
 typedef struct dma_cfg_t tch_DmaCfg;
 
 
-/*!
- * \brief DMA Buffer Type
- * This Structure contains R/O Value which can be used to configure dma buffer option
- */
-typedef struct _tch_dmabuffer_conf_t {
-	const uint8_t Normal;            ///< Single Shot Buffer Mode
-	const uint8_t Double;            ///< Double Buffer Mode, Source Memory is switched at each end of transfer
-	const uint8_t Circular;          ///< Circular Buffer Mode, which means transfer begins from  buffer head at the end of transfer, thus continues loop
-}tch_DmaBufferType;
-
-/*!
- * \brief DMA Direction Type
- * This Structure contains R/O Value which can be used to configure dma direction option
- */
-typedef struct _tch_dmadir_conf_t{
-	const uint8_t PeriphToMem;        ///< Peripheral to Memory
-	const uint8_t MemToMem;           ///< Memory to Memory
-	const uint8_t MemToPeriph;        ///< Memory to Peripheral
-}tch_DmaDir;
-
-
-/*!
- * \brief DMA Burst-Size Type
- * This Structure contains R/O Value which can be used to configure burst size of dma transfer
- */
-typedef struct _tch_dmaburst_size_t{
-	const uint8_t Burst1;             ///<
-	const uint8_t Burst2;
-	const uint8_t Burst4;
-	const uint8_t Burst8;
-	const uint8_t Burst16;
-}tch_DmaBurstSize;
-
-
-/*!
- * \brief DMA Align Type
- * This structure contains R/O Value which can be used to configure Data Alignment of both dma source and target
- */
-typedef struct _tch_dma_align_t{
-	const uint8_t Byte;
-	const uint8_t Hword;
-	const uint8_t word;
-}tch_DmaAlign;
-
-typedef struct _tch_dma_priority_t{
-	const uint8_t VeryHigh;
-	const uint8_t High;
-	const uint8_t Normal;
-	const uint8_t Low;
-}tch_DmaPriority;
-
-typedef struct _tch_dma_flowctrl_t{
-	const uint8_t Periph;
-	const uint8_t DMA;
-}tch_DmaFlowCtrl;
-
-typedef struct _tch_dma_targetAddress_t{
-	const uint8_t MemTarget0;
-	const uint8_t MemTarget1;
-	const uint8_t PeriTarget0;
-	const uint8_t PeriTarget1;
-}tch_DmaTargetAddress;
-
-typedef struct _tch_dma_req_t {
+typedef struct tch_dma_req_s {
 	size_t      size;
 	uaddr_t     MemAddr[2];
 	BOOL        MemInc;
@@ -205,7 +125,7 @@ typedef struct tch_lld_dma {
 	 * \param cfg pointer of \ref tch_dma_cfg
 	 * \see tch_dma_cfg
 	 */
-	uint16_t DMA_COUNT;
+	const uint16_t count;
 	void (*initCfg)(tch_DmaCfg* cfg);
 
 	/*!
@@ -217,8 +137,8 @@ typedef struct tch_lld_dma {
 	 * \return dma handle which allows access dma H/W
 	 */
 	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-	tch_DmaHandle (*allocDma)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-	BOOL (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
+	tch_DmaHandle (*allocate)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	uint32_t (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_DmaHandle handle);
 
 }tch_lld_dma;

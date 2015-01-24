@@ -74,7 +74,6 @@ struct tch_spi_request_s {
 	uint8_t*       rxb;
 	uint8_t*       txb;
 	uint32_t       align;
-	tch_threadId   subject;
 };
 
 struct tch_lld_spi_prototype {
@@ -304,7 +303,6 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	req.align = offset;
 	req.rxb = (uint8_t*) rb;
 	req.txb = (uint8_t*) wb;
-	req.subject = ins->env->Thread->self();
 	req.sz = sz;
 	ins->req = &req;
 
@@ -319,7 +317,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 
 	result = tchOK;
 	SET_SAFE_RETURN();
-	ins->env->Event->clear(req.subject,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
+	ins->env->Event->clear(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE));
 	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR2 &= ~(SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
