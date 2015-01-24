@@ -12,7 +12,7 @@ OBJS += $(PORT_OBJS)
 $(PORT_BUILD_DIR):
 	$(MK) $(PORT_BUILD_DIR)
 
-$(PORT_BUILD_DIR)/%.o:$(PORT_SRC_DIR)/%.c
+$(PORT_BUILD_DIR)/%.o:$(PORT_SRC_DIR)/$(ARCH)/$(CPU)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@

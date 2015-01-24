@@ -20,6 +20,10 @@ ifeq ($(MINOR_VER),)
 	MINOR_VER=1
 endif
 
+ifeq ($(TOOLCHAIN_NAME),)
+	TOOLCHAIN_NAME=ARM_GCC
+endif
+
 
 ### Open 407Z ###\
 ARCH = ARM\

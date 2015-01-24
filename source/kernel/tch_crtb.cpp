@@ -18,18 +18,10 @@
 #include "tch_kernel.h"
 
 void* operator new(size_t size) throw() {
-#ifdef __USE_MALLOC
-	return malloc(size);
-#else
 	return uMem->alloc(size);
-#endif
 }
 void operator delete(void* p){
-#ifdef __USE_MALLOC
-	free(p);
-#else
 	uMem->free(p);
-#endif
 }
 
 extern "C" int __aeabi_atexit(void *object,void (*)(void*),void *dso_handle){

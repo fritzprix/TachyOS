@@ -1,5 +1,5 @@
 
-TEST_PATH=$(ROOT_DIR)/source/test/
+TEST_PATH=$(ROOT_DIR)/source/test
 TEST_BUILD_BASE_DIR=$(GEN_DIR)/test
 
 $(TEST_BUILD_BASE_DIR):

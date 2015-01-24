@@ -10,14 +10,14 @@ OBJS += $(APP_OBJS)
 $(APP_BUILD_DIR):
 	$(MK) $(APP_BUILD_DIR)
 
-$(APP_BUILD_DIR)/%.o:$(APP_SRC_DIR)/%.c #$(APP_BUILD_DIR)
+$(APP_BUILD_DIR)/%.o:$(USR_SRC_DIR)/app/$(APP_NAME)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
            
-$(APP_BUILD_DIR)/%.o:$(APP_SRC_DIR)/%.cpp #$(APP_BUILD_DIR)
+$(APP_BUILD_DIR)/%.o:$(USR_SRC_DIR)/app/$(APP_NAME)/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM g++'
 	$(CPP) $< -c $(CPFLAG) $(LDFLAG) $(INC) -o $@

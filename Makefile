@@ -24,62 +24,66 @@ ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(BUILD)
 endif
 
+ifeq ($(GEN_SUB_DIR),)
+GEN_SUB_DIR=
+endif
+
+#######################################################################################
+###################     TachyOS source tree declaration    ############################
+#######################################################################################
+
 # kernel source directory
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
 # port source dircetory
-PORT_SRC_DIR=$(ROOT_DIR)/source/port/$(ARCH)/$(CPU)
+PORT_SRC_DIR=$(ROOT_DIR)/source/port
 # hal source directory
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
 # board source directory
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
 # application source directory
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
+# unit test source directory
+UTEST_SRC_BASE=$(ROOT_DIR)/source/test
 
-APP_SRC_DIR=$(ROOT_DIR)/source/usr/app/$(APP_NAME)
-# unit test sources base directory
-TEST_SRC_BASE=$(ROOT_DIR)/source/test
-# user module directory
-MODULE_BASE_SRC_DIR=$(ROOT_DIR)/source/usr/module
 
-TCH_API_HDR_DIR=$(ROOT_DIR)/include
-KERNEL_HDR_DIR=$(ROOT_DIR)/include/kernel
-PORT_COMMON_HDR_DIR=$(ROOT_DIR)/include/port/$(ARCH)
-PORT_ARCH_HDR_DIR=$(PORT_COMMON_HDR_DIR)/$(CPU)
-HAL_COMMON_HDR_DIR=$(ROOT_DIR)/include/hal
-HAL_VND_HDR_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
-BOARD_HDR_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
-TEST_HDR_BASE_DIR=$(ROOT_DIR)/include/test
-USR_HDR_DIR=$(ROOT_DIR)/include/usr
-APP_HDR_DIR=$(USR_HDR_DIR)/app/$(APP_NAME)
-MODULE_HDR_DIR=$(USR_HDR_DIR)/module
+BASE_HEADER_DIR=$(ROOT_DIR)/include
+KERNEL_HEADER_DIR=$(ROOT_DIR)/include/kernel
+PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/port/$(ARCH)
+PORT_ARCH_HEADER_DIR=$(PORT_ARCH_COMMON_HEADER_DIR)/$(CPU)
+HAL_COMMON_HEADER_DIR=$(ROOT_DIR)/include/hal
+HAL_VENDOR_HEADER_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
+BOARD_HEADER_DIR=$(ROOT_DIR)/include/board/$(BOARD_NAME)
+UTEST_HEADER_DIR=$(ROOT_DIR)/include/test
+USR_HEADER_DIR=$(ROOT_DIR)/include/usr
 
-ifeq ($(GEN_SUB_DIR),)
-GEN_SUB_DIR=
+#######################################################################################
+##################           default build option        #############################
+#######################################################################################
+
+ifeq ($(LDSCRIPT),)
+LDSCRIPT=$(HAL_VENDOR_HEADER_DIR)/ld/flash.ld
 endif
 
-
-
-LDSCRIPT=$(HAL_VND_HDR_DIR)/ld/flash.ld
-TOOL_CHAIN=arm-none-eabi-
-CC=$(TOOL_CHAIN)gcc
-CPP=$(TOOL_CHAIN)g++
-OBJCP=$(TOOL_CHAIN)objcopy
-SIZEPrt=$(TOOL_CHAIN)size
-
+###################      TachyOS default header inclusion  ############################
 ifeq ($(INC),)
-	INC = -I$(PORT_ARCH_HDR_DIR)\
-	      -I$(PORT_COMMON_HDR_DIR)\
-	      -I$(HAL_VND_HDR_DIR)\
-	      -I$(HAL_COMMON_HDR_DIR)\
-	      -I$(KERNEL_HDR_DIR)\
-	      -I$(TCH_API_HDR_DIR)\
-	      -I$(BOARD_HDR_DIR)\
-	      -I$(USR_HDR_DIR)\
-	      -I$(TEST_SYS_HDR_DIR)\
-	      -I$(TEST_HAL_HDR_DIR)
+	INC = -I$(PORT_ARCH_HEADER_DIR)\
+	      -I$(PORT_ARCH_COMMON_HEADER_DIR)\
+	      -I$(HAL_VENDOR_HEADER_DIR)\
+	      -I$(HAL_COMMON_HEADER_DIR)\
+	      -I$(KERNEL_HEADER_DIR)\
+	      -I$(BASE_HEADER_DIR)\
+	      -I$(BOARD_HEADER_DIR)
 endif
 
+###################      build option initialization       ############################
 
+ifeq ($(BUILD),Release)
+	OPT_FLAG=-O2 -g0
+	DBG_OPTION=
+else
+	OPT_FLAG=-O0 -g3
+	DBG_OPTION=-D__DBG
+endif
 
 
 ifeq ($(LDFLAG),)
@@ -111,42 +115,36 @@ ifeq ($(CPFLAG),)
 	          $(OPT_FLAG)
 endif
 
-ifeq ($(OPT_FLAG),)
-	OPT_FLAG=
+ifeq ($(FLOAT_OPTION),)
+	FLOAT_OPTION= 
 endif
 
-ifeq ($(BUILD),Release)
-	OPT_FLAG=-O2 -g3
-else
-	OPT_FLAG=-O0 -g3
-	CFLAG+= -DDBG
-	CPFLAG+= -DDBG
+ifeq ($(LIBS),)
+	LIBS=
 endif
 
-ifeq ($(FLOAT_FLAG),)
-	FLOAT_FLAG= 
-endif
-
-ifeq ($(CPU),cortex-m4)
-	FLOAT_FLAG += -mfpu=fpv4-sp-d16
-endif
-ifeq ($(FPU),HARD)
-	FLOAT_FLAG += -mfloat-abi=hard\
-	              -DMFEATURE_HFLOAT=1
-endif
-ifeq ($(FPU),HALFSOFT)
-	FLOAT_FLAG += -mfloat-abi=softfp\
-	              -DMFEATURE_HFLOAT=1
-endif
-ifeq ($(FPU),SOFT)
-	FLOAT_FLAG += -mfloat-abi=soft
+ifeq ($(LIB_DIR),)
+	LIB_DIR=
 endif
 
 
-ifneq ($(FLOAT_FLAG),)
-	CPFLAG += $(FLOAT_FLAG)
-	CFLAG += $(FLOAT_FLAG)
+#######################################################################################
+###############          Tool-chain configuration inclusion       #####################
+#######################################################################################
+include $(ROOT_DIR)/source/port/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
+
+
+#######################################################################################
+###############           default tool-chain configuration        #####################
+#######################################################################################
+ifeq ($(TOOL_PREFIX),)
+TOOL_PREFIX=arm-none-eabi-
 endif
+
+CC=$(TOOL_PREFIX)gcc
+CPP=$(TOOL_PREFIX)g++
+OBJCP=$(TOOL_PREFIX)objcopy
+SIZEPRINT=$(TOOL_PREFIX)size
 
 
 
@@ -154,14 +152,7 @@ TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
 TIME_STAMP=$(shell date +%s)
 TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
 
-LIBS=-lc_nano\
-     -lg_nano\
-     -lstdc++_nano\
-    
-LIB_DIR=    
-
-CFLAG+=\
-       -D$(HW_PLF)\
+CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)\
        -D$(TIME_FLAG)\
        -D__NEWLIB__\
        -D_REENT_SMALL\
@@ -169,22 +160,18 @@ CFLAG+=\
        -mcpu=$(CPU)\
        -m$(INSTR)
 
-CPFLAG+=\
-       -D$(HW_PLF)\
+CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)\
        -mcpu=$(CPU)\
        -m$(INSTR)
        
-DBG_FLAG=-D__USE_MALLOC
-CPFLAG+=$(DBG_FLAG)
-CFLAG+=$(DBG_FLAG)
 
 
-include $(PORT_SRC_DIR)/port.mk
+include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
 include $(USR_SRC_DIR)/usr.mk
 include $(BOARD_SRC_DIR)/bd.mk
-include $(TEST_SRC_BASE)/tst.mk
+include $(UTEST_SRC_BASE)/tst.mk
 
 
 MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
@@ -219,7 +206,7 @@ $(TARGET_BINARY): $(TARGET)
 
 $(TARGET_SIZE): $(TARGET)
 	@echo 'Invoking: Cross ARM GNU Print Size'
-	$(SIZEPrt) --format=berkeley $<
+	$(SIZEPRINT) --format=berkeley $<
 	@echo 'Finished building: $@'
 	@echo 
 

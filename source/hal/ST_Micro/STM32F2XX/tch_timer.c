@@ -203,10 +203,6 @@ tch_lld_timer* tch_timerHalInit(const tch* env){
 static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_gptimer_handle_proto* ins = NULL;
-	if(!TIMER_StaticInstance.condv)
-		TIMER_StaticInstance.condv = env->Condv->create();
-	if(!TIMER_StaticInstance.mtx)
-		TIMER_StaticInstance.mtx = env->Mtx->create();
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != tchOK){
@@ -342,11 +338,6 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 
 static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
-	if(!TIMER_StaticInstance.condv)
-		TIMER_StaticInstance.condv = env->Condv->create();
-	if(!TIMER_StaticInstance.mtx)
-		TIMER_StaticInstance.mtx = env->Mtx->create();
-
 	tch_pwm_handle_proto* ins = NULL;
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
 
@@ -515,11 +506,6 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout){
 	tchStatus result = tchOK;
 	uint16_t pmsk = 0;
-	if(!TIMER_StaticInstance.condv)
-		TIMER_StaticInstance.condv = env->Condv->create();
-	if(!TIMER_StaticInstance.mtx)
-		TIMER_StaticInstance.mtx = env->Mtx->create();
-
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) env->Mem->alloc(sizeof(tch_tcapt_handle_proto));
 	env->uStdLib->string->memset(ins,0,sizeof(tch_tcapt_handle_proto));
 
