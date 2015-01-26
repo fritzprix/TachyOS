@@ -100,7 +100,7 @@ tch_lld_rtc* tch_rtcHalInit(const tch* env){
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone tz){
 	tch_rtc_handle_prototype* ins = NULL;
 
-#if DBG
+#ifdef __DBG
 	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
 #endif
 

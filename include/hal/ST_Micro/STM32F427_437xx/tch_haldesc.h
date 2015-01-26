@@ -103,6 +103,7 @@ typedef struct _tch_spi_descriptor {
 typedef struct _tch_iic_descriptor {
 	void*               _hw;
 	void*               _handle;
+	uint8_t              sh_cnt;
 	volatile uint32_t*  _clkenr;
 	const uint32_t       clkmsk;
 	volatile uint32_t*  _lpclkenr;

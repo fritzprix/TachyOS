@@ -457,13 +457,12 @@ static void tch_spiInvalidate(tch_spi_handle_prototype* ins){
 
 static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc){
 	SPI_TypeDef* spiHw = spiDesc->_hw;
+	uint16_t readout;
 	const tch* env = ins->env;
-	uint16_t readout = 0;
 	tch_spi_request* req = ins->req;
 	uint16_t sr = spiHw->SR;
 	if(!spiDesc->_handle)
 		return FALSE;
-
 	if(sr & SPI_SR_TXE){
 		if(req){
 			if(req->tsz-- > 0){
@@ -487,7 +486,6 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 				if(!req->rsz){
 					ins->env->Event->set(ins->evId,TCH_SPI_EVENT_RX_COMPLETE);
 					spiHw->CR2 &= ~(SPI_CR2_RXNEIE | SPI_CR2_TXEIE);
-		//			return TRUE;
 				}
 			}
 		}else

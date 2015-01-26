@@ -28,7 +28,6 @@ endif
 ### Open 407Z ###\
 ARCH = ARM\
 CPU = cortex-m4\
-INSTR = thumb\
 FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F40_41xxx\
@@ -37,7 +36,6 @@ APP_NAME = \
 ### Open 427Z ###\
 ARCH = ARM\
 CPU = cortex-m4\
-INSTR = thumb\
 FPU = HALFSOFT\
 HW_VENDOR = ST_Micro\
 HW_PLF = STM32F427_437xx\
@@ -46,7 +44,6 @@ APP_NAME =\
 ###
 ARCH=ARM
 CPU=cortex-m3
-INSTR=thumb
 FPU=SOFT
 HW_VENDOR=ST_Micro
 HW_PLF=STM32F2XX
@@ -66,10 +63,6 @@ ifeq ($(CPU),)
 	CPU = cortex-m4
 endif
 
-# Instruction Set Option
-ifeq ($(INSTR),)
-	INSTR = thumb
-endif
 
 # FPU Option   HARD | HALFSOFT | SOFT | NO
 ifeq ($(FPU),)

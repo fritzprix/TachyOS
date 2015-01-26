@@ -15,37 +15,28 @@ ifeq ($(MK),)
 	MK=mkdir
 endif
 
-ifeq ($(DEPS),)
-	DEPS=
-endif
-
 # target directory to put binary file 
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(BUILD)
 endif
 
 ifeq ($(GEN_SUB_DIR),)
-GEN_SUB_DIR=
+	GEN_SUB_DIR=
 endif
 
 #######################################################################################
 ###################     TachyOS source tree declaration    ############################
 #######################################################################################
 
-# kernel source directory
+#source code directory 
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
-# port source dircetory
 PORT_SRC_DIR=$(ROOT_DIR)/source/port
-# hal source directory
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
-# board source directory
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
-# application source directory
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
-# unit test source directory
 UTEST_SRC_BASE=$(ROOT_DIR)/source/test
 
-
+#header file directory
 BASE_HEADER_DIR=$(ROOT_DIR)/include
 KERNEL_HEADER_DIR=$(ROOT_DIR)/include/kernel
 PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/port/$(ARCH)
@@ -57,8 +48,25 @@ UTEST_HEADER_DIR=$(ROOT_DIR)/include/test
 USR_HEADER_DIR=$(ROOT_DIR)/include/usr
 
 #######################################################################################
-##################           default build option        #############################
+##################          initialize build option       #############################
 #######################################################################################
+TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
+TIME_STAMP=$(shell date +%s)
+TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
+
+
+FLOAT_OPTION= 
+LIBS=
+LIB_DIR=
+LINKER_OPT =
+CFLAG =
+CPFLAG =  
+
+LDFLAG =
+
+TOOL_PREFIX=
+
+
 
 ifeq ($(LDSCRIPT),)
 LDSCRIPT=$(HAL_VENDOR_HEADER_DIR)/ld/flash.ld
@@ -75,94 +83,23 @@ ifeq ($(INC),)
 	      -I$(BOARD_HEADER_DIR)
 endif
 
-###################      build option initialization       ############################
+###################      toolchain & architecture specific makefile   #################
+include $(PORT_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 
-ifeq ($(BUILD),Release)
-	OPT_FLAG=-O2 -g0
-	DBG_OPTION=
-else
-	OPT_FLAG=-O0 -g3
-	DBG_OPTION=-D__DBG
-endif
+#######################################################################################
+###############           default toolchain configuration         #####################
+#######################################################################################
 
 
-ifeq ($(LDFLAG),)
-	LDFLAG=
-endif
-
-ifeq ($(CFLAG),)
-	CFLAG =-fsigned-char\
-		   -ffunction-sections\
-		   -fdata-sections\
-		   -ffreestanding\
-		   -nostartfiles\
-		   --specs=nano.specs\
-		   -Xlinker\
-		   --gc-sections\
-		   -T$(LDSCRIPT)\
-		   $(OPT_FLAG)
-endif
-
-ifeq ($(CPFLAG),)
-	CPFLAG = -mlong-calls\
-	         -ffunction-sections\
-	         -ffreestanding\
-	         -fno-rtti\
-	         -fno-exceptions\
-	         -Wall\
-	         -fpermissive\
-	         -T$(LDSCRIPT)\
-	          $(OPT_FLAG)
-endif
-
-ifeq ($(FLOAT_OPTION),)
-	FLOAT_OPTION= 
-endif
-
-ifeq ($(LIBS),)
-	LIBS=
-endif
-
-ifeq ($(LIB_DIR),)
-	LIB_DIR=
-endif
 
 
 #######################################################################################
-###############          Tool-chain configuration inclusion       #####################
+####################  Toolchain Independent section of Makefile  ######################
 #######################################################################################
-include $(ROOT_DIR)/source/port/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 
 
-#######################################################################################
-###############           default tool-chain configuration        #####################
-#######################################################################################
-ifeq ($(TOOL_PREFIX),)
-TOOL_PREFIX=arm-none-eabi-
-endif
-
-CC=$(TOOL_PREFIX)gcc
-CPP=$(TOOL_PREFIX)g++
-OBJCP=$(TOOL_PREFIX)objcopy
-SIZEPRINT=$(TOOL_PREFIX)size
-
-
-
-TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
-TIME_STAMP=$(shell date +%s)
-TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
-
-CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)\
-       -D$(TIME_FLAG)\
-       -D__NEWLIB__\
-       -D_REENT_SMALL\
-       -D__DYNAMIC_REENT__\
-       -mcpu=$(CPU)\
-       -m$(INSTR)
-
-CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)\
-       -mcpu=$(CPU)\
-       -m$(INSTR)
+CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
+CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
        
 
 
@@ -173,8 +110,6 @@ include $(USR_SRC_DIR)/usr.mk
 include $(BOARD_SRC_DIR)/bd.mk
 include $(UTEST_SRC_BASE)/tst.mk
 
-
-MMAP_FLAG = -Wl,-Map,$(TARGET:%.elf=%.map)
 
 TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
