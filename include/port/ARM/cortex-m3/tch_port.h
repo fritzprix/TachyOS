@@ -42,7 +42,18 @@
 #define HARDFAULT_RECOVERABLE                      (-2)
 
 
+/*******************************************************************************************/
+/****************   porting functions invoked in kernel mode        ************************/
+/*******************************************************************************************/
+
+/**
+ * \brief enable ISR
+ * \note should be invoked in kernel mode
+ */
 extern void tch_port_enableISR(void);
+/**
+ *
+ */
 extern void tch_port_disableISR(void);
 /***
  *  Kernal lock action
@@ -55,14 +66,19 @@ extern void tch_port_kernel_lock(void);
  */
 extern void tch_port_kernel_unlock(void);
 extern BOOL tch_port_isISR();
-extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
-extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
-extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
-extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
-extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
-extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
+
+extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
+extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
+extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
+
+
+
+extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
+extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
+extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
+
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

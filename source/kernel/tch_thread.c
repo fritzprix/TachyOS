@@ -69,7 +69,7 @@ tch_thread_queue tch_procList;
 
 
 BOOL tch_threadIsValid(tch_threadId thread){
-	return (*getThreadHeader(thread)->t_chks) == tch_noop_destr;
+	return (*getThreadHeader(thread)->t_chks) == ((uint32_t)tch_noop_destr);
 }
 
 

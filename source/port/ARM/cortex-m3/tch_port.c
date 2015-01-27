@@ -20,14 +20,15 @@
 
 
 
-#define IDLE_STACK_SIZE            (uint32_t) (1 << 9)
-#define MAIN_STACK_SIZE            (uint32_t) (1 << 11)
+#define IDLE_STACK_SIZE            ((uint32_t) (1 << 9))
+#define MAIN_STACK_SIZE            ((uint32_t) (1 << 11))
 
-#define SCB_AIRCR_KEY              (uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos)
-#define EPSR_THUMB_MODE            (uint32_t) (1 << 24)
+#define SCB_AIRCR_KEY              ((uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos))
+#define EPSR_THUMB_MODE            ((uint32_t) (1 << 24))
 
-#define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
-#define CTRL_FPCA                  (uint32_t) (1 << 2)
+#define CTRL_PSTACK_ENABLE         ((uint32_t) 0x2)
+#define CTRL_UNPRIV_THREAD_ENABLE  ((uint32_t) 0x1)
+#define CTRL_FPCA                  ((uint32_t) 0x4)
 
 #define FAULT_TYPE_HARD            ((int) -1)
 #define FAULT_TYPE_BUS             ((int) -2)
