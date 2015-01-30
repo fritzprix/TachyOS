@@ -144,10 +144,6 @@ static tch_GpioHandle* tch_gpio_allocIo(const tch* env,const gpIo_x port,uint32_
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	if(!gpio->_clkenr)                   /// given GPIO port is not supported in this H/W
 		return NULL;
-	if(!GPIO_StaticInstance.mtxId)
-		GPIO_StaticInstance.mtxId = Mtx->create();
-	if(!GPIO_StaticInstance.condvId)
-		GPIO_StaticInstance.condvId = Condv->create();
 	if(env->Mtx->lock(GPIO_StaticInstance.mtxId,timeout) != tchOK)
 		return NULL;
 	while(gpio->io_ocpstate & pmsk){           /// if there is pin which is occupied by another instance
