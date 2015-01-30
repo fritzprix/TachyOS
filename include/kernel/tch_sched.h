@@ -27,57 +27,27 @@
 
 
 #define SCHED_THREAD_ALL             ((uint32_t) -1)
-/***
- *   Initialize Scheduler
- *    - typically called from kernel initialize routine
- *    - initialize thread queue
- */
+
+
+
+
 extern void tch_schedInit(void* _systhread);
-
-/**
- *   Return true if new thread has higher priority than current one
- *   @param nth : new thread
- */
 extern BOOL tch_schedIsPreemptable(tch_threadId nth);
-
-/***.
- *  start new thread
- */
-extern void tch_schedStartThread(tch_threadId thr_id);
-/***
- *  return current active thread
- */
 extern tch_threadId tch_schedGetRunningThread();
 
-/***
- *  put thread into ready queue of scheduler rather than starting immediately
- *  this can be ivnoked from ISR
- */
-extern void tch_schedReadyThread(tch_threadId thr_id);
-
-extern BOOL tch_schedIsEmpty();
-
-
-/**
- *  suspend thread for given amount of time
- */
+extern void tch_schedStart(tch_threadId thr_id);
+extern void tch_schedReady(tch_threadId thr_id);
+extern void tch_schedSleep(uint32_t timeout,tch_timeunit tu,tch_thread_state nextState);
+extern void tch_schedTerminate(tch_threadId thread, int result);
+extern void tch_schedDestroy(tch_threadId thread,int result);
+extern void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout);
+extern int tch_schedResume(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt);   // resume specific thread in wait queue
+extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
 extern void tch_schedYieldThread(uint32_t timeout,tch_thread_state nextState);
 
-/**
- *
- */
-extern void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout);
-
-extern int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt);   // resume specific thread in wait queue
-
-extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
-
-
-extern void tch_schedTerminateThread(tch_threadId thread, int result);
-extern void tch_schedDestroyThread(tch_threadId thread,int result);
+extern BOOL tch_schedIsEmpty();
 extern BOOL tch_schedLivenessChk(tch_threadId thread);
-extern void tch_schedTryPreemption(void);
-
+extern void tch_schedReeval(void);
 
 
 #endif /* TCH_SCHED_H_ */

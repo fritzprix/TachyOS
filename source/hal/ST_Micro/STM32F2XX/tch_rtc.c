@@ -100,16 +100,6 @@ tch_lld_rtc* tch_rtcHalInit(const tch* env){
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone tz){
 	tch_rtc_handle_prototype* ins = NULL;
 
-#ifdef __DBG
-	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
-#endif
-
-
-	if(!RTC_StaticInstance.condv)
-		RTC_StaticInstance.condv = env->Condv->create();
-	if(!RTC_StaticInstance.mtx)
-		RTC_StaticInstance.mtx = env->Mtx->create();
-
 	if(env->Mtx->lock(RTC_StaticInstance.mtx,tchWaitForever) != tchOK)
 		return NULL;
 
@@ -183,8 +173,10 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	if(ins->env->Mtx->lock(RTC_StaticInstance.mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 
-	NVIC_DisableIRQ(RTC_WKUP_IRQn);
-	NVIC_DisableIRQ(RTC_Alarm_IRQn);
+//	NVIC_DisableIRQ(RTC_WKUP_IRQn);
+//	NVIC_DisableIRQ(RTC_Alarm_IRQn);
+	tch_kernel_disableInterrupt(RTC_WKUP_IRQn);
+	tch_kernel_disableInterrupt(RTC_Alarm_IRQn);
 
 	RCC->BDCR |= RCC_BDCR_BDRST;
 	RCC->BDCR &= RCC_BDCR_BDRST;
@@ -331,9 +323,10 @@ static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t period
 	RTC->CR |= RTC_CR_WUTE;
 	RTC->ISR &= ~RTC_ISR_WUTF;
 	ins->wkup_handler = wkup_handler;
-
+/*
 	NVIC_SetPriority(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(RTC_WKUP_IRQn);
+	NVIC_EnableIRQ(RTC_WKUP_IRQn);*/
+	tch_kernel_enableInterrupt(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 
@@ -357,7 +350,8 @@ static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self){
 	EXTI->RTSR &= ~(1 << 22);
 	ins->wkup_handler = NULL;
 
-	NVIC_DisableIRQ(RTC_WKUP_IRQn);
+//	NVIC_DisableIRQ(RTC_WKUP_IRQn);
+	tch_kernel_disableInterrupt(RTC_WKUP_IRQn);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 

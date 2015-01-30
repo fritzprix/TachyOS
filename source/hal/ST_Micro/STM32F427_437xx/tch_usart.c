@@ -284,10 +284,11 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 
 
 	tch_usartValidate(uins);
+	/*
 	NVIC_SetPriority(uDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(uDesc->irq);
-	__DMB();
-	__ISB();
+	*/
+	tch_kernel_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	return (tch_usartHandle) uins;
 }
@@ -348,7 +349,8 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	*uDesc->_rstr |= uDesc->rstmsk;
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
-	NVIC_DisableIRQ(uDesc->irq);
+//	NVIC_DisableIRQ(uDesc->irq);
+	tch_kernel_disableInterrupt(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
 	UART_CLR_RXBUSY(ins);
 	UART_CLR_TXBUSY(ins);
@@ -395,13 +397,12 @@ static tchStatus tch_usartWrite(tch_usartHandle handle,const uint8_t* bp,uint32_
 
 	if(!ins->txDma){
 		tch_usartRequest tx_req;
-		uhw->CR1 |= USART_CR1_TCIE;
-
 
 		ins->txreq = &tx_req;
 		tx_req.sz = sz;
 		tx_req.bp = (uint8_t*) bp;
 		tx_req.sz--;
+		uhw->CR1 |= USART_CR1_TCIE;
 		uhw->DR = *(tx_req.bp++);
 
 		if((result = ins->env->Event->wait(ins->txEvId,UART_EVENT_TX_COMPLETE,tchWaitForever)) != tchOK){

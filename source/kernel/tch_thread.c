@@ -38,7 +38,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
 static tchStatus tch_threadStart(tch_threadId thread);
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err);
 static tch_threadId tch_threadSelf();
-static tchStatus tch_threadSleep();
+static tchStatus tch_threadSleep(uint32_t sec);
 static tchStatus tch_threadYield(uint32_t millisec);
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
@@ -137,7 +137,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){                // check current execution mode (Thread or Handler)
-		tch_schedReadyThread(thread);    // if handler mode call, put current thread in ready queue
+		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
 		return tchOK;
 	}else{
 		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);
@@ -161,11 +161,11 @@ static tch_threadId tch_threadSelf(){
 	return (tch_threadId) tch_currentThread;
 }
 
-static tchStatus tch_threadSleep(){
+static tchStatus tch_threadSleep(uint32_t sec){
 	if(tch_port_isISR()){
 		return tchErrorISR;
 	}else{
-		return tch_port_enterSv(SV_THREAD_SLEEP,0,0);
+		return tch_port_enterSv(SV_THREAD_SLEEP,sec,0);
 	}
 }
 

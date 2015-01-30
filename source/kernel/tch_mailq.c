@@ -111,7 +111,7 @@ tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg){
 	arg->chunk = Mempool->alloc(mailqcb->bpool);
 	if(arg->chunk)
 		return tchOK;
-	tch_schedSuspendThread((tch_thread_queue*)&mailqcb->wq,arg->timeout);
+	tch_schedSuspend((tch_thread_queue*)&mailqcb->wq,arg->timeout);
 	return tchErrorNoMemory;
 }
 

@@ -298,8 +298,11 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		break;
 	}
 
+	/*
 	NVIC_SetPriority(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(iicDesc->irq);
+	*/
+	tch_kernel_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_IICValidate(ins);
 	return (tch_iicHandle*) ins;
 }

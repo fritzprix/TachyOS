@@ -56,14 +56,10 @@ const tch* tch_rti = &RuntimeInterface;
 static tch_threadId mainThread = NULL;
 static tch_threadId idleThread = NULL;
 
-static tch_thread_queue tch_lpTickWaitQ;
-static tch_thread_queue tch_lpEvtWaitQ;
-
-
 static tch_mailqId sysTaskQ;
 tch_memId sharedMem;
 const struct tch_bin_descriptor BIN_DESC;
-BOOL lp_handled;
+static tch_threadId sysThread;
 
 
 /***
@@ -75,7 +71,6 @@ BOOL lp_handled;
  */
 void tch_kernelInit(void* arg){
 
-	tch_threadId sysThread = NULL;
 
 	/*Bind API Object*/
 
@@ -94,9 +89,6 @@ void tch_kernelInit(void* arg){
 
 
 	tch_listInit((tch_lnode_t*) &tch_procList);
-	tch_listInit((tch_lnode_t*) &tch_lpTickWaitQ);
-	tch_listInit((tch_lnode_t*) &tch_lpEvtWaitQ);
-
 	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
 	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
 
@@ -138,21 +130,23 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_port_setThreadSP((uint32_t)sp);
 		if(tch_schedLivenessChk(tch_currentThread))
 			tch_port_kernel_unlock();
+		if(tch_currentThread == sysThread)
+			tch_port_enable_privilegedThread();
+		else
+			tch_port_disable_privilegedThread();
 		break;
 	case SV_THREAD_START:              // start thread first time
-		tch_schedStartThread((tch_threadId) arg1);
+		tch_schedStart((tch_threadId) arg1);
 		break;
 	case SV_THREAD_YIELD:
-		tch_schedSleepThread(arg1,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
+		tch_schedSleep(arg1,mSECOND,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
 		break;
 	case SV_THREAD_SLEEP:
-		cth = tch_currentThread;
-		tch_schedSuspendThread(&tch_lpTickWaitQ,tchWaitForever);
-		cth->t_state = SLEEP;
+		tch_schedSleep(arg1,SECOND,SLEEP);
 		break;
 	case SV_THREAD_JOIN:
 		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
-			tch_schedSuspendThread((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
+			tch_schedSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
 			break;
 		}
 		tch_kernelSetResult(tch_currentThread,tchOK);                                           //..otherwise, it returns immediately
@@ -164,15 +158,15 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
 		break;
 	case SV_THREAD_SUSPEND:
-		tch_schedSuspendThread((tch_thread_queue*)arg1,arg2);
+		tch_schedSuspend((tch_thread_queue*)arg1,arg2);
 		break;
 	case SV_THREAD_TERMINATE:
 		cth = (tch_thread_header*) arg1;
-		tch_schedTerminateThread((tch_threadId) cth,arg2);
+		tch_schedTerminate((tch_threadId) cth,arg2);
 		break;
 	case SV_THREAD_DESTROY:
 		cth = (tch_thread_header*) arg1;
-		tch_schedDestroyThread((tch_threadId) cth,arg2);
+		tch_schedDestroy((tch_threadId) cth,arg2);
 		break;
 	case SV_EV_WAIT:
 		cth = (tch_thread_header*) tch_currentThread;
@@ -210,7 +204,31 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = tch_currentThread;
 		tch_kernelSetResult(cth,tch_mailq_kdestroy((tch_mailqId) arg1,0));
 		break;
+	case SV_HAL_ENABLE_ISR:
+		cth = tch_currentThread;
+		NVIC_DisableIRQ(arg1);
+		NVIC_SetPriority(arg1,arg2);
+		NVIC_EnableIRQ(arg1);
+		tch_kernelSetResult(cth,tchOK);
+		break;
+	case SV_HAL_DISABLE_ISR:
+		cth = tch_currentThread;
+		NVIC_DisableIRQ(arg1);
+		tch_kernelSetResult(cth,tchOK);
+		break;
 	}
+}
+
+tchStatus tch_kernel_enableInterrupt(IRQn_Type irq,uint32_t priority){
+	if(tch_port_isISR())
+		return tchErrorISR;
+	return tch_port_enterSv(SV_HAL_ENABLE_ISR,irq,priority);
+}
+
+tchStatus tch_kernel_disableInterrupt(IRQn_Type irq){
+	if(tch_port_isISR())
+		return tchErrorISR;
+	return tch_port_enterSv(SV_HAL_DISABLE_ISR,irq,0);
 }
 
 tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
@@ -225,6 +243,7 @@ tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 		tch_rti->MailQ->put(sysTaskQ,task);
 	return result;
 }
+
 
 void tch_kernelSetBusyMark(){
 	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,tchWaitForever) != tchOK)
@@ -260,12 +279,11 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tchEvent evt;
 	tch_sysTask* task = NULL;
 
-
 	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);
 
-	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9,tch_kernelOnWakeup);
+	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 
 	if(tch_kernel_initCrt0(&RuntimeInterface) != tchOK)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
@@ -300,6 +318,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	tch_boardInit(&RuntimeInterface);
 
+	tch_port_disable_privilegedThread();
+
 
 	Thread->start(idleThread);
 	Thread->start(mainThread);
@@ -332,11 +352,6 @@ static DECLARE_THREADROUTINE(idle){
 		// some function waking up from sleep mode
  	}
 	return 0;
-}
-
-
-void tch_kernelOnWakeup(){
-	tch_schedResumeM(&tch_lpTickWaitQ,SCHED_THREAD_ALL,tchOK,TRUE);
 }
 
 

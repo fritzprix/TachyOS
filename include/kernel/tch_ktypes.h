@@ -25,8 +25,9 @@ struct tch_bin_descriptor {
 	const char*          build_time;
 	uint32_t             major_ver;
 	uint32_t             minor_ver;
-
 };
+
+typedef enum {mSECOND = 0,SECOND = 1} tch_timeunit;
 
 typedef enum tch_thread_state_t {
 	PENDED =  ((int8_t) 1),                              // state in which thread is created but not started yet (waiting in ready queue)
@@ -51,17 +52,9 @@ struct tch_err_descriptor {
 	tch_threadId   subj;
 };
 
-
-
 struct tch_uobj_t {
 	tchStatus (*destructor)(tch_uobj* obj);
 };
-
-typedef struct tch_signal_t {
-	int32_t                 sig_comb;
-	int32_t                 signal;
-	tch_lnode_t             sig_wq;
-}tch_signal;
 
 
 struct tch_sys_task_t {
@@ -73,14 +66,9 @@ struct tch_sys_task_t {
 }__attribute__((packed));
 
 
-
 typedef struct tch_thread_queue{
 	tch_lnode_t             thque;
 } tch_thread_queue;
-
-
-
-
 
 
 struct tch_thread_header_t {
@@ -115,12 +103,9 @@ struct tch_thread_header_t {
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
-#define SV_SIG_UPDATE                    ((uint32_t) 0x14)
-#define SV_SIG_WAIT                      ((uint32_t) 0x15)
-
-#define SV_EV_UPDATE                     ((uint32_t) 0x16)
-#define SV_EV_WAIT                       ((uint32_t) 0x17)
-#define SV_EV_DESTROY                    ((uint32_t) 0x18)
+#define SV_EV_UPDATE                     ((uint32_t) 0x16)              ///< Supervisor call id for setting / clearing event flag
+#define SV_EV_WAIT                       ((uint32_t) 0x17)              ///< Supervisor call id for blocking to wait event
+#define SV_EV_DESTROY                    ((uint32_t) 0x18)              ///< Supervisor call id for destroying event node
 
 #define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
 #define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
@@ -146,6 +131,10 @@ struct tch_thread_header_t {
 #define SV_ASYNC_WAIT                    ((uint32_t) 0x36)               ///< Supervisor call id to post Async Kernel Task
 #define SV_ASYNC_NOTIFY                  ((uint32_t) 0x37)               ///< Supervisor call id to notify completion of async kernel task
 #define SV_ASYNC_DESTROY                 ((uint32_t) 0x38)               ///< Supervisor call id to destroy async
+
+#define SV_HAL_ENABLE_ISR                ((uint32_t) 0xFD)
+#define SV_HAL_DISABLE_ISR               ((uint32_t) 0xFC)
+
 
 
 #define ROOT_THREAD                      ((tch_threadId) 1)

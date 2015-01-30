@@ -1015,7 +1015,6 @@ const tch_hal* tch_kernel_initHAL(const tch* env){
 
 void tch_hal_enableSystick(){
 	SysTick_Config(SYS_CLK / 1000);
-	NVIC_DisableIRQ(SysTick_IRQn);
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_EnableIRQ(SysTick_IRQn);
 }

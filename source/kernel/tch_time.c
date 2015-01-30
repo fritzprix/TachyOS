@@ -20,8 +20,10 @@
 
 static tch_rtcHandle* rtcHandle;
 static tch_lnode_t tch_systimeWaitQ;
+static  tch_lnode_t tch_lpsystimeWaitQ;
+
+volatile uint64_t tch_sysUpTimeSec;
 volatile uint64_t tch_systimeTick;
-static tch_wkup_handler tch_sysWkuphandler;
 
 /*
  *
@@ -46,26 +48,38 @@ __attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
 };
 
 
-tch_systime_ix* tch_systimeInit(const tch* env,time_t init_tm,tch_timezone init_tz,tch_wkup_handler wkup_handler){
+tch_systime_ix* tch_systimeInit(const tch* env,time_t init_tm,tch_timezone init_tz){
 
 	tch_hal_disableSystick();
 	tch_listInit(&tch_systimeWaitQ);
-	rtcHandle = tch_rtc->open(env,init_tm,init_tz);
-	rtcHandle->enablePeriodicWakeup(rtcHandle,1,wkup_handler);
-	tch_sysWkuphandler = wkup_handler;
+	tch_listInit(&tch_lpsystimeWaitQ);
 	tch_systimeTick = 0;
+	tch_sysUpTimeSec = 0;
+
+	rtcHandle = tch_rtc->open(env,init_tm,init_tz);
+	rtcHandle->enablePeriodicWakeup(rtcHandle,1,tch_kernelOnWakeup);
+
 
 	tch_hal_enableSystick();
 
 	return &TIMER_StaticInstance;
 }
 
-tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout){
+tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout,tch_timeunit tu){
 	if((timeout == tchWaitForever) || !thread)
 		return tchErrorParameter;
-	getThreadHeader(thread)->t_to = tch_systimeTick + timeout;
-	tch_listEnqueuePriority(&tch_systimeWaitQ,(tch_lnode_t*) thread,tch_systimeWaitQRule);
-	return tchOK;
+	switch(tu){
+	case mSECOND:
+		getThreadHeader(thread)->t_to = tch_systimeTick + timeout;
+		tch_listEnqueuePriority(&tch_systimeWaitQ,(tch_lnode_t*) thread,tch_systimeWaitQRule);
+		return tchOK;
+	case SECOND:
+		getThreadHeader(thread)->t_to = tch_sysUpTimeSec + timeout;
+		tch_listEnqueuePriority(&tch_lpsystimeWaitQ,(tch_lnode_t*) thread,tch_systimeWaitQRule);
+		return tchOK;
+	}
+	return tchErrorParameter;
+
 }
 
 tchStatus tch_systimeCancelTimeout(tch_threadId thread){
@@ -107,6 +121,22 @@ BOOL tch_systimeIsPendingEmpty(){
 	return tch_listIsEmpty(&tch_systimeWaitQ);
 }
 
+void tch_kernelOnWakeup(){
+	tch_thread_header* nth = NULL;
+	tch_sysUpTimeSec++;
+	while((!tch_listIsEmpty(&tch_lpsystimeWaitQ)) && (getThreadHeader(tch_lpsystimeWaitQ.next)->t_to <= tch_sysUpTimeSec)){
+		nth = (tch_thread_header*) tch_listDequeue(&tch_lpsystimeWaitQ);
+		nth->t_to = 0;
+		tch_schedReady(nth);
+		tch_kernelSetResult(nth,tchEventTimeout);
+		if(nth->t_waitQ){
+			tch_listRemove(nth->t_waitQ,&nth->t_waitNode);
+			nth->t_waitQ = NULL;
+		}
+	}
+	tch_schedReeval();
+}
+
 void tch_KernelOnSystick(){
 	tch_thread_header* nth = NULL;
 	tch_systimeTick++;
@@ -114,14 +144,14 @@ void tch_KernelOnSystick(){
 	while((!tch_listIsEmpty(&tch_systimeWaitQ)) && (getThreadHeader(tch_systimeWaitQ.next)->t_to <= tch_systimeTick)){
 		nth = (tch_thread_header*) tch_listDequeue(&tch_systimeWaitQ);
 		nth->t_to = 0;
-		tch_schedReadyThread(nth);
+		tch_schedReady(nth);
 		tch_kernelSetResult(nth,tchEventTimeout);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&nth->t_waitNode);
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedTryPreemption();
+	tch_schedReeval();
 }
 
 

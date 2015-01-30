@@ -35,13 +35,8 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
-static void __pend_loop(void) __attribute__((naked));
-//static int isr_svc_cnt;
-
-
 BOOL tch_kernel_initPort(){
 	__disable_irq();
-	//isr_svc_cnt = 0;
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
 	                                                                        *   - Handler or thread within same group priority
@@ -63,6 +58,10 @@ BOOL tch_kernel_initPort(){
 	                                                 *
 	                                                 **/
 
+
+#ifdef __DBG
+	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
+#endif
 
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
 #ifdef MFEATURE_HFLOAT
@@ -88,6 +87,19 @@ BOOL tch_kernel_initPort(){
 }
 
 
+void tch_port_enable_privilegedThread(){
+	uint32_t mcu_control = __get_CONTROL();
+	mcu_control &= ~CTRL_UNPRIV_THREAD_ENABLE;
+	__set_CONTROL(mcu_control);
+}
+
+void tch_port_disable_privilegedThread(){
+	uint32_t mcu_control = __get_CONTROL();
+	mcu_control |= CTRL_UNPRIV_THREAD_ENABLE;
+	__set_CONTROL(mcu_control);
+}
+
+
 void tch_port_kernel_lock(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
@@ -101,8 +113,6 @@ BOOL tch_port_isISR(){
 	return __get_IPSR() > 0;
 }
 
-
-
 void tch_port_enableISR(void){
 	__enable_irq();
 }
@@ -110,8 +120,6 @@ void tch_port_enableISR(void){
 void tch_port_disableISR(void){
 	__disable_irq();
 }
-
-
 
 void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 	((tch_thread_header*)nth)->t_kRet = kret;
@@ -233,11 +241,6 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 	return result;
 }
 
-void __pend_loop(void){
-	__ISB();
-	__DMB();
-	__WFI();
-}
 
 
 

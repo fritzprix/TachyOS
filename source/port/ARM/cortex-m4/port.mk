@@ -15,7 +15,7 @@ $(PORT_BUILD_DIR):
 $(PORT_BUILD_DIR)/%.o:$(PORT_SRC_DIR)/$(ARCH)/$(CPU)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
-	$(CC) $< -c $(CFLAG) $(LDFLAG) $(LIB_DIR) $(LIBS) $(INC) -o $@
+	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
            

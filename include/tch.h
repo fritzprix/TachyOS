@@ -101,7 +101,7 @@ struct _tch_thread_ix_t {
 	tchStatus (*terminate)(tch_threadId thread,tchStatus err);
 	tch_threadId (*self)();
 	tchStatus (*yield)(uint32_t millisec);
-	tchStatus (*sleep)();
+	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
 	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)(tch_threadId tid);

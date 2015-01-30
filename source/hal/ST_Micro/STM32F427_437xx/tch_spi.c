@@ -255,10 +255,10 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		spiHw->CR2 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	else{
 		spiHw->CR2 |= SPI_CR2_ERRIE;
+		/*
 		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
-		NVIC_EnableIRQ(spiDesc->irq);
-		__DMB();
-		__ISB();
+		NVIC_EnableIRQ(spiDesc->irq);*/
+		tch_kernel_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
 
 

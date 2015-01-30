@@ -246,9 +246,10 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 	dmaHw->CR |= ((cfg->mInc << DMA_Minc_Pos) | (cfg->pInc << DMA_Pinc_Pos));
 	dmaHw->CR |= cfg->Priority << DMA_Prior_Pos;
 	dmaHw->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
-
+/*
 	NVIC_SetPriority(dma_desc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(dma_desc->irq);
+	NVIC_EnableIRQ(dma_desc->irq);*/
+	tch_kernel_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
 	__DMB();
 	__ISB();
 	tch_dmaValidate(dma_desc->_handle);
