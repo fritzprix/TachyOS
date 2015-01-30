@@ -161,7 +161,6 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	if(tch_port_isISR())
 		return NULL;
 
-
 	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != tchOK)
 		return NULL;
 	while(UART_StaticInstance.occp_state & umskb){

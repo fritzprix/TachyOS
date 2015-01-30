@@ -200,14 +200,6 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 	tch_dma_handle_prototype* ins;
 	if(dma == DMA_NOT_USED)
 		return NULL;
-
-	/// check H/W Occupation
-	if(!DMA_StaticInstance.mtxId && !DMA_StaticInstance.condvId){
-		tch_port_kernel_lock();
-		DMA_StaticInstance.mtxId = Mtx->create();
-		DMA_StaticInstance.condvId = Condv->create();
-		tch_port_kernel_unlock();
-	}
 	if(Mtx->lock(DMA_StaticInstance.mtxId,timeout) != tchOK)
 		return NULL;
 	while(DMA_StaticInstance.occp_state & (1 << dma)){

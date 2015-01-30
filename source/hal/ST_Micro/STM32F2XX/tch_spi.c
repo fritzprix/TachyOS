@@ -148,12 +148,6 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	tch_GpioCfg iocfg;
 	tch_DmaCfg dmaCfg;
 
-	if(!SPI_StaticInstance.mtx)
-		SPI_StaticInstance.mtx = env->Mtx->create();
-	if(!SPI_StaticInstance.condv)
-		SPI_StaticInstance.condv = env->Condv->create();
-
-
 	if(env->Mtx->lock(SPI_StaticInstance.mtx,timeout) != tchOK)
 		return NULL;
 	while(spiDesc->_handle){

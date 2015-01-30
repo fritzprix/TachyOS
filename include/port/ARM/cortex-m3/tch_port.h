@@ -42,43 +42,52 @@
 #define HARDFAULT_RECOVERABLE                      (-2)
 
 
-/*******************************************************************************************/
-/****************   porting functions invoked in kernel mode        ************************/
-/*******************************************************************************************/
-
-/**
- * \brief enable ISR
- * \note should be invoked in kernel mode
+/** \brief enable global interrupts
+ *
  */
 extern void tch_port_enableISR(void);
-/**
+
+/** \brief disable global interrupts
  *
  */
 extern void tch_port_disableISR(void);
-/***
- *  Kernal lock action
- *   - to guarantee kernel operation not interrupted or preempted
+
+/** \brief system lock from kernel to prevent kernel operation from being interrupted or preempted
+ *  \note must be invoked in Kernel mode
  */
 extern void tch_port_kernel_lock(void);
-/***
- *  Kernel Unlock action
- *   - to allow interrupt or thread preemption when it's needed
+
+/** \brief system unlock from kernel to allow any interrupts or thread preemption
+ *  \note must be invoked in kernel mode
  */
 extern void tch_port_kernel_unlock(void);
+
+/** \brief thread has privilege access to hardware
+ */
+extern void tch_port_enable_privilegedThread();
+
+/** \brief thread doesn't have privilege access to hardware
+ */
+extern void tch_port_disable_privilegedThread();
+
+/** \brief check whether current execution context is in handler (or isr) mode
+ */
 extern BOOL tch_port_isISR();
-extern int tch_port_clearFault(int fault);
-extern int tch_port_reset();
 
+/** \brief switch task (or thread) context
+ *
+ */
 extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
-extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
+
+
+
 extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
-
-
-
 extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
+extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
 extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
 extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
-
+extern int tch_port_clearFault(int fault);
+extern int tch_port_reset();
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

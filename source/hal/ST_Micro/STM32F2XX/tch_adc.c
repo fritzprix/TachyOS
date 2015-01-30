@@ -111,6 +111,8 @@ tch_lld_adc* tch_adcHalInit(const tch* env){
 		return NULL;
 	if(!env)
 		return NULL;
+	if(!MFEATURE_ADC)
+		return NULL;
 	tch_adcChannelOccpStatus = 0;
 	ADC_StaticInstance.mtx = env->Mtx->create();
 	ADC_StaticInstance.condv = env->Condv->create();
@@ -121,10 +123,6 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	tch_adc_handle_prototype* ins = NULL;
 	uint8_t ch_idx = 0;
 	tch_DmaCfg dmacfg;
-	if(!ADC_StaticInstance.mtx)
-		ADC_StaticInstance.mtx = env->Mtx->create();
-	if(!ADC_StaticInstance.condv)
-		ADC_StaticInstance.condv = env->Condv->create();
 	if(adc > MFEATURE_ADC)
 		return NULL;
 	if(!(cfg->chdef.chselMsk > 0))
