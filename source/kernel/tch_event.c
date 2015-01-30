@@ -135,7 +135,7 @@ tchStatus tch_event_kwait(tch_eventId id,void* arg){
 	tch_event_cb* evcb = (tch_event_cb*) id;
 	evcb->ev_msk = warg->ev_sigmsk;
 	if((evcb->ev_msk & evcb->ev_signal) != evcb->ev_msk){
-		tch_schedSuspendThread(&evcb->ev_blockq,warg->timeout);
+		tch_schedSuspend(&evcb->ev_blockq,warg->timeout);
 	}
 	return tchOK;
 }

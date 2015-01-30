@@ -73,12 +73,12 @@ int main(const tch* env) {
 	thcfg._t_name = "child1";
 	thcfg._t_routine = childThreadRoutine;
 	thcfg.t_proior = Normal;
-	thcfg.t_stackSize = 512;
+	thcfg.t_stackSize = 720;
 	childId = env->Thread->create(&thcfg,spi);
 
 	thcfg._t_name = "btnHandler";
 	thcfg._t_routine = btnHandler;
-	thcfg.t_stackSize = 512;
+	thcfg.t_stackSize = 720;
 	thcfg.t_proior = Normal;
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
@@ -145,7 +145,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-		env->Thread->sleep();
+		env->Thread->sleep(1);
 
 	}
 	return tchOK;
@@ -160,7 +160,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-		env->Thread->sleep();
+		env->Thread->sleep(1);
 	}
 
 	return tchOK;
@@ -193,7 +193,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 
 		env->Time->getLocaltime(&ltm);
 		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
-		env->Thread->sleep();
+		env->Thread->sleep(1);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;

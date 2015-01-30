@@ -43,8 +43,6 @@ tch_thread_header* tch_currentThread;
 
 
 
-
-
 void tch_schedInit(void* _systhread){
 
 	/**
@@ -67,7 +65,7 @@ void tch_schedInit(void* _systhread){
 /** Note : should not called any other program except kernel mode program
  *  @brief start thread based on its priority (thread can be started in preempted way)
  */
-void tch_schedStartThread(tch_threadId nth){
+void tch_schedStart(tch_threadId nth){
 	tch_thread_header* thr_p = nth;
 	if(tch_schedIsPreemptable(nth)){
 		tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(tch_currentThread),tch_schedReadyQRule);			///< put current thread in ready queue
@@ -87,7 +85,7 @@ void tch_schedStartThread(tch_threadId nth){
 /**
  * put new thread into ready queue
  */
-void tch_schedReadyThread(tch_threadId th){
+void tch_schedReady(tch_threadId th){
        	tch_thread_header* thr_p = th;
 	getThreadHeader(th)->t_state = READY;
 	tch_listEnqueuePriority((tch_lnode_t*)&tch_readyQue,getListNode(thr_p),tch_schedReadyQRule);
@@ -96,11 +94,11 @@ void tch_schedReadyThread(tch_threadId th){
 /** Note : should not called any other program except kernel mode program
  *  make current thread sleep for specified amount of time (yield cpu time)
  */
-void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState){
+void tch_schedSleep(uint32_t timeout,tch_timeunit tu,tch_thread_state nextState){
 	tch_threadId nth = 0;
 	if(timeout == tchWaitForever)
 		return;
-	tch_systimeSetTimeout(tch_currentThread,timeout);
+	tch_systimeSetTimeout(tch_currentThread,timeout,tu);
 	nth = tch_listDequeue((tch_lnode_t*)&tch_readyQue);
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
@@ -113,7 +111,7 @@ void tch_schedSleepThread(uint32_t timeout,tch_thread_state nextState){
 }
 
 
-void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout){
+void tch_schedSuspend(tch_thread_queue* wq,uint32_t timeout){
 	tch_threadId nth = 0;
 	if(timeout != tchWaitForever){
 		tch_systimeSetTimeout(tch_currentThread,timeout);
@@ -131,7 +129,7 @@ void tch_schedSuspendThread(tch_thread_queue* wq,uint32_t timeout){
 }
 
 
-int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt){
+int tch_schedResume(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt){
 	tch_thread_header* nth = (tch_thread_header*)thread;
 	if(tch_listIsEmpty(wq)){
 		return FALSE;
@@ -145,13 +143,13 @@ int tch_schedResumeThread(tch_thread_queue* wq,tch_threadId thread,tchStatus res
 	tch_kernelSetResult(nth,res);                                // <- check really necessary
 	if(tch_schedIsPreemptable(nth) && preemt){
 		nth->t_state = RUNNING;
-		tch_schedReadyThread(tch_currentThread);                       // put current thread in ready queue for preemption
+		tch_schedReady(tch_currentThread);                       // put current thread in ready queue for preemption
 		getListNode(nth)->prev = getListNode(tch_currentThread); // set current thread as previous node of new thread
 		tch_currentThread = nth;                                 // set new thread as current thread
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);    // go to switch context
 		return TRUE;
 	}
-	tch_schedReadyThread(nth);
+	tch_schedReady(nth);
 	return TRUE;
 
 }
@@ -170,12 +168,12 @@ BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 		if(tch_schedIsPreemptable(nth) && preemt){
 			tpreempt = nth;
 		}else{
-			tch_schedReadyThread(nth);
+			tch_schedReady(nth);
 		}
 	}
 	if(tpreempt && preemt){
 		tpreempt->t_state = RUNNING;
-		tch_schedReadyThread(tch_currentThread);
+		tch_schedReady(tch_currentThread);
 		getListNode(tpreempt)->prev = getListNode(tch_currentThread);
 		tch_currentThread = tpreempt;
 		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
@@ -183,7 +181,7 @@ BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 	return TRUE;
 }
 
-void tch_schedTryPreemption(void){
+void tch_schedReeval(void){
 	tch_thread_header* nth = NULL;
 	if(tch_listIsEmpty(&tch_readyQue) || !tch_schedIsPreemptable(tch_readyQue.thque.next))
 		return;
@@ -196,7 +194,6 @@ void tch_schedTryPreemption(void){
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,getThreadHeader(nth)->t_kRet);   // switch context without change
 }
 
-
 BOOL tch_schedIsEmpty(){
 	return tch_listIsEmpty(&tch_readyQue);
 }
@@ -207,7 +204,7 @@ BOOL tch_schedIsPreemptable(tch_threadId nth){
 	return tch_schedReadyQRule(nth,tch_currentThread) || ((tch_currentThread->t_tslot > 10) && (getThreadHeader(nth)->t_prior != Idle));
 }
 
-void tch_schedTerminateThread(tch_threadId thread,int result){
+void tch_schedTerminate(tch_threadId thread,int result){
 	tch_threadId jth = 0;
 	tch_thread_header* cth_p = getThreadHeader(thread);
 	cth_p->t_state = TERMINATED;                                                      ///< change state of thread to terminated
@@ -221,8 +218,7 @@ void tch_schedTerminateThread(tch_threadId thread,int result){
 	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tch_currentThread,(uint32_t)cth_p,tch_currentThread->t_kRet);
 }
 
-
-void tch_schedDestroyThread(tch_threadId thread,int res){
+void tch_schedDestroy(tch_threadId thread,int res){
 	/// manipulated exc stack to return atexit
 	if(thread == tch_currentThread){
 		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,res,0);
@@ -248,8 +244,6 @@ BOOL tch_schedLivenessChk(tch_threadId thread){
 
 }
 
-
-
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
 	tch_port_setThreadSP((uint32_t)thr_p->t_ctx);
@@ -263,14 +257,9 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
 }
 
-
-
-
 static DECLARE_COMPARE_FN(tch_schedReadyQRule){
 	return getThreadHeader(prior)->t_prior > getThreadHeader(post)->t_prior;
 }
-
-
 
 static DECLARE_COMPARE_FN(tch_schedWqRule){
 	return TRUE;

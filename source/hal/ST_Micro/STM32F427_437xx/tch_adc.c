@@ -229,9 +229,10 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ins->pix.read = tch_adcRead;
 	ins->env = env;
 
-	NVIC_SetPriority(adcDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(adcDesc->irq);
+/*	NVIC_SetPriority(adcDesc->irq,HANDLER_NORMAL_PRIOR);
+	NVIC_EnableIRQ(adcDesc->irq);*/
 
+	tch_kernel_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_adcValidate(ins);
 	return (tch_adcHandle*) ins;
 }

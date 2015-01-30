@@ -327,11 +327,11 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
-
+/*
 	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(timDesc->irq);
-	__DMB();
-	__ISB();
+	NVIC_EnableIRQ(timDesc->irq);*/
+
+	tch_kernel_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	return (tch_gptimerHandle*) ins;
 }
@@ -489,9 +489,10 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		timerHw->CCER = tmpccer;
 		timerHw->CCR4 = 0;
 	}
-
+/*
 	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(timDesc->irq);
+	NVIC_EnableIRQ(timDesc->irq);*/
+	tch_kernel_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
@@ -623,10 +624,11 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		timerHw->DIER |= TIM_DIER_CC3IE;
 	}
 
-
+/*
 	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(timDesc->irq);
-
+*/
+	tch_kernel_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	timerHw->CNT = 0;
 	timerHw->CR1 = TIM_CR1_CEN;
@@ -716,7 +718,8 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
 	timDesc->_handle = NULL;
-	NVIC_DisableIRQ(timDesc->irq);
+//	NVIC_DisableIRQ(timDesc->irq);
+	tch_kernel_disableInterrupt(timDesc->irq);
 
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
@@ -911,7 +914,8 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-	NVIC_DisableIRQ(timDesc->irq);
+//	NVIC_DisableIRQ(timDesc->irq);
+	tch_kernel_disableInterrupt(timDesc->irq);
 	timDesc->_handle = NULL;
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);
 	env->Mtx->unlock(TIMER_StaticInstance.mtx);
@@ -1038,7 +1042,8 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	*timDesc->rstr &= ~timDesc->rstmsk;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-	NVIC_DisableIRQ(timDesc->irq);
+//	NVIC_DisableIRQ(timDesc->irq);
+	tch_kernel_disableInterrupt(timDesc->irq);
 
 
 	env->Condv->wakeAll(TIMER_StaticInstance.condv);

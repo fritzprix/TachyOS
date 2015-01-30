@@ -53,10 +53,16 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 
 
-extern const tch_hal* tch_kernel_initHAL(const tch* env);
+extern const tch_hal* tch_kernel_initHAL(const tch* ctx);
 extern BOOL tch_kernel_initPort();
-extern tchStatus tch_kernel_initCrt0(tch* env);
+extern tchStatus tch_kernel_initCrt0(const tch* ctx);
+
+
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
+extern tchStatus tch_kernel_enableInterrupt(IRQn_Type irq,uint32_t priority);
+extern tchStatus tch_kernel_disableInterrupt(IRQn_Type irq);
+
+
 extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((naked));
 extern uint32_t tch_kHeapAvail(void);
 extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
