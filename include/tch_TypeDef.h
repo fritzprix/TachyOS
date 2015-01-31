@@ -85,6 +85,7 @@ typedef enum  {
   tchErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
   tchErrorValue            =  0x86,       ///< value of a parameter is out of range.
   tchErrorIo               =  0x87,       ///< Error occurs in IO operation
+  tchErrorStackOverflow    =  0x88,       ///< stack overflow error
   tchErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
   tch_status_reserved       =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
 } tchStatus;

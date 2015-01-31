@@ -57,7 +57,7 @@ uint32_t tch_kHeapAvail(void){
 
 tchStatus tch_kHeapFreeAll(tch_threadId thread){
 	tch_thread_header* th_hdr = (tch_thread_header*) thread;
-	if(!Thread->isRoot())
+	if(!tch_threadIsRoot(thread))
 		return tchErrorParameter;
 	uMem->forceRelease(thread);
 	shMem->forceRelease(thread);

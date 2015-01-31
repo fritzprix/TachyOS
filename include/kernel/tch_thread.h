@@ -23,11 +23,10 @@ extern "C"{
 #endif
 
 
-#define THREAD_ROOT_BIT    ((uint8_t) 1 << 0)
-#define THREAD_DEATH_BIT     ((uint8_t) 1 << 1)
 
-
-extern BOOL tch_threadIsValid(tch_threadId thread);
+extern tchStatus tch_threadIsValid(tch_threadId thread);
+extern void tch_threadInvalidate(tch_threadId thread,tchStatus reason);
+extern BOOL tch_threadIsRoot(tch_threadId thread);
 
 #if defined(__cplusplus)
 }

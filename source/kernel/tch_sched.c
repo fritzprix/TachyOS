@@ -221,26 +221,10 @@ void tch_schedDestroy(tch_threadId thread,int res){
 	if(thread == tch_currentThread){
 		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,res,0);
 	}else{
-		getThreadHeader(thread)->t_flag |= THREAD_DEATH_BIT;
-		getThreadHeader(thread)->t_reent._errno = res;
+		tch_threadInvalidate(thread,res);
 	}
 }
 
-BOOL tch_schedLivenessChk(tch_threadId thread){
-	if((getThreadHeader(thread)->t_flag & THREAD_DEATH_BIT)){
-		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,getThreadHeader(thread)->t_reent._errno,0);
-		getThreadHeader(thread)->t_flag &= ~THREAD_DEATH_BIT;
-		return FALSE;
-	}
-	if((*getThreadHeader(thread)->t_chks != (uint32_t)tch_noop_destr)){  // stack overflow
-		getThreadHeader(thread)->t_reent._errno = tchErrorNoMemory;
-		tch_port_jmpToKernelModeThread(__tch_kernel_atexit,(uint32_t)thread,getThreadHeader(thread)->t_reent._errno,0);
-		return FALSE;
-	}
-
-	return TRUE;
-
-}
 
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;

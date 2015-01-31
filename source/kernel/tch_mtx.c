@@ -111,7 +111,8 @@ tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 		}
 	}
 	if(result == tchOK){
-		mcb->svdPrior = Thread->getPriorty((tch_threadId) tid);
+		if(!getThreadHeader(tid)->t_lckCnt++)
+			mcb->svdPrior = Thread->getPriorty((tch_threadId) tid);
 		mcb->own = (tch_threadId) tid;
 		return tchOK;
 	}
@@ -129,8 +130,10 @@ tchStatus tch_mtx_unlock(tch_mtxId id){
 		return tchErrorResource;
 	if(!tch_mtxIsValid(mcb))
 		return tchErrorResource;
-	Thread->setPriority(mcb->own,mcb->svdPrior);
-	mcb->svdPrior = Idle;
+	if(!(--getThreadHeader(tid)->t_lckCnt)){
+		Thread->setPriority(mcb->own,mcb->svdPrior);
+		mcb->svdPrior = Idle;
+	}
 	mcb->own = NULL;
 	if(!tch_listIsEmpty(&mcb->que))
 		tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&mcb->que,tchOK);

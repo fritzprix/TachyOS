@@ -19,9 +19,8 @@
 
 
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
-
-
-
+#define THREAD_ROOT_BIT    ((uint8_t) 1 << 0)
+#define THREAD_DEATH_BIT     ((uint8_t) 1 << 1)
 
 /**
  *  public accessible function
@@ -44,7 +43,6 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
 static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
-static BOOL tch_threadIsRoot();
 
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status) __attribute__((naked));
 
@@ -60,7 +58,6 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadSetPriority,
 		tch_threadGetPriorty,
 		tch_threadGetArg,
-		tch_threadIsRoot
 };
 
 
@@ -68,10 +65,25 @@ const tch_thread_ix* Thread = &tch_threadix;
 tch_thread_queue tch_procList;
 
 
-BOOL tch_threadIsValid(tch_threadId thread){
-	return (*getThreadHeader(thread)->t_chks) == ((uint32_t)tch_noop_destr);
+tchStatus tch_threadIsValid(tch_threadId thread){
+	if(*getThreadHeader(thread)->t_chks != ((uint32_t) tch_noop_destr)){
+		getThreadHeader(thread)->t_reent._errno = tchErrorStackOverflow;
+		return tchErrorStackOverflow;
+	}
+	if(getThreadHeader(thread)->t_flag & THREAD_DEATH_BIT)
+		return getThreadHeader(thread)->t_reent._errno;
+	return tchOK;
 }
 
+extern void tch_threadInvalidate(tch_threadId thread,tchStatus reason){
+	getThreadHeader(thread)->t_reent._errno = reason;
+	getThreadHeader(thread)->t_flag |= THREAD_DEATH_BIT;
+}
+
+
+BOOL tch_threadIsRoot(tch_threadId thread){
+	return (getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT);
+}
 
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t* th_mem = NULL;
@@ -201,10 +213,6 @@ static tch_thread_prior tch_threadGetPriorty(tch_threadId id){
 
 static void* tch_threadGetArg(){
 	return getThreadHeader(tch_currentThread)->t_arg;
-}
-
-static BOOL tch_threadIsRoot(){
-	return tch_currentThread->t_state & THREAD_ROOT_BIT;
 }
 
 

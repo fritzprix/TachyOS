@@ -106,7 +106,6 @@ struct _tch_thread_ix_t {
 	void (*setPriority)(tch_threadId id,tch_thread_prior nprior);
 	tch_thread_prior (*getPriorty)(tch_threadId tid);
 	void* (*getArg)();
-	BOOL (*isRoot)();
 };
 
 struct _tch_mutex_ix_t {

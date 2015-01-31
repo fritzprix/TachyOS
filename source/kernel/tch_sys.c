@@ -128,8 +128,11 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_currentThread->t_tslot = 0;
 		_impure_ptr = &tch_currentThread->t_reent;
 		tch_port_setThreadSP((uint32_t)sp);
-		if(tch_schedLivenessChk(tch_currentThread))
+		if((arg1 = tch_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_kernel_unlock();
+		}else{
+			tch_schedDestroy(tch_currentThread,arg1);
+		}
 		if(tch_currentThread == sysThread)
 			tch_port_enable_privilegedThread();
 		else
@@ -346,7 +349,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 20) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
+		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode

@@ -46,7 +46,6 @@ extern BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL pre
 extern void tch_schedYieldThread(uint32_t timeout,tch_thread_state nextState);
 
 extern BOOL tch_schedIsEmpty();
-extern BOOL tch_schedLivenessChk(tch_threadId thread);
 extern void tch_schedUpdate(void);
 
 
