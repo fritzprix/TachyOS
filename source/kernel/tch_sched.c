@@ -43,7 +43,7 @@ tch_thread_header* tch_currentThread;
 
 
 
-void tch_schedInit(void* _systhread){
+void tch_schedInit(void* init_thread){
 
 	/**
 	 *  Initialize ready & pend queue
@@ -52,9 +52,7 @@ void tch_schedInit(void* _systhread){
 	 *
 	 */
 	tch_listInit((tch_lnode_t*)&tch_readyQue);
-
-	tch_currentThread = _systhread;
-	tch_schedInitKernelThread(tch_currentThread);
+	tch_schedInitKernelThread(init_thread);
 
 	while(TRUE){     // Unreachable Code. Ensure to protect from executing when undetected schedulr failure happens
 		__WFI();
@@ -246,6 +244,7 @@ BOOL tch_schedLivenessChk(tch_threadId thread){
 
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_thread_header* thr_p = (tch_thread_header*) init_thr;
+	tch_currentThread = init_thr;
 	tch_port_setThreadSP((uint32_t)thr_p->t_ctx);
 #ifdef MFEATURE_HFLOAT
 		float _force_fctx = 0.1f;
