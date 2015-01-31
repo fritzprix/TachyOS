@@ -181,7 +181,7 @@ BOOL tch_schedResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 	return TRUE;
 }
 
-void tch_schedReeval(void){
+void tch_schedUpdate(void){
 	tch_thread_header* nth = NULL;
 	if(tch_listIsEmpty(&tch_readyQue) || !tch_schedIsPreemptable(tch_readyQue.thque.next))
 		return;

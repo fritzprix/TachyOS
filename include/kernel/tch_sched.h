@@ -47,7 +47,7 @@ extern void tch_schedYieldThread(uint32_t timeout,tch_thread_state nextState);
 
 extern BOOL tch_schedIsEmpty();
 extern BOOL tch_schedLivenessChk(tch_threadId thread);
-extern void tch_schedReeval(void);
+extern void tch_schedUpdate(void);
 
 
 #endif /* TCH_SCHED_H_ */

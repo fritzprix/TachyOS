@@ -86,7 +86,9 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread){
 	if(!thread)
 		return tchErrorParameter;
 	getThreadHeader(thread)->t_to = 0;
-	tch_listRemove(&tch_systimeWaitQ,(tch_lnode_t*) thread);
+	if(!tch_listRemove(&tch_systimeWaitQ,(tch_lnode_t*) thread))
+		if(!tch_listRemove(&tch_lpsystimeWaitQ,(tch_lnode_t*) thread))
+			return tchErrorParameter;
 	return tchOK;
 }
 
@@ -134,7 +136,7 @@ void tch_kernelOnWakeup(){
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedReeval();
+	tch_schedUpdate();
 }
 
 void tch_KernelOnSystick(){
@@ -151,7 +153,7 @@ void tch_KernelOnSystick(){
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedReeval();
+	tch_schedUpdate();
 }
 
 
