@@ -24,6 +24,7 @@ ifeq ($(GEN_SUB_DIR),)
 	GEN_SUB_DIR=
 endif
 
+
 #######################################################################################
 ###################     TachyOS source tree declaration    ############################
 #######################################################################################
@@ -63,7 +64,6 @@ CFLAG =
 CPFLAG =  
 LDFLAG =
 TOOL_PREFIX=
-
 
 
 ifeq ($(LDSCRIPT),)
@@ -107,9 +107,7 @@ TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
 TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
-all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE) 
-
-
+all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
 
 $(GEN_DIR): 
 	$(MK) $(GEN_DIR)
@@ -135,7 +133,7 @@ $(TARGET_SIZE): $(TARGET)
 	@echo 'Invoking: Cross ARM GNU Print Size'
 	$(SIZEPRINT) --format=berkeley $<
 	@echo 'Finished building: $@'
-	@echo 
+	@echo ' '
 
 clean:
 	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY)

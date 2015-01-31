@@ -145,7 +145,7 @@ int main(const tch* env) {
 			env->Mem->printAllocList();
 			env->Mem->printFreeList();
 		}
-		env->Thread->sleep(1);
+		env->Thread->sleep(2);
 
 	}
 	return tchOK;
@@ -160,7 +160,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-		env->Thread->sleep(1);
+		env->Thread->sleep(5);
 	}
 
 	return tchOK;

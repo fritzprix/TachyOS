@@ -43,8 +43,6 @@ TOOL_CPFLAG = -mlong-calls\
 	          -mcpu=$(CPU)\
 	          -mthumb
 
-# Linker option
-
 
 TOOL_SEPCIFIC_CFLAG=--specs=nano.specs
 TOOL_LIBS = c_nano\
