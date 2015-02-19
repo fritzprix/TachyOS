@@ -25,11 +25,6 @@ static  tch_lnode_t tch_lpsystimeWaitQ;
 volatile uint64_t tch_sysUpTimeSec;
 volatile uint64_t tch_systimeTick;
 
-/*
- *
-	tchStatus (*getLocaltime)(struct tm* tm);
-	tchStatus (*setLocaltime)(const struct tm* tm,const tch_timezone tz);
- */
 
 static tchStatus tch_systime_getLocalTime(struct tm* dest_tm);
 static tchStatus tch_systime_setLocalTime(struct tm* time,tch_timezone ltz);
@@ -38,7 +33,6 @@ static uint64_t tch_systime_uptimeMills();
 
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
-static DECLARE_RTC_WKUP_FN(tch_systimeWkupHandler);
 
 __attribute__((section(".data"))) static tch_systime_ix TIMER_StaticInstance = {
 		tch_systime_getLocalTime,
@@ -159,9 +153,5 @@ void tch_KernelOnSystick(){
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule){
 	return getThreadHeader(prior)->t_to < getThreadHeader(post)->t_to;
-}
-
-static DECLARE_RTC_WKUP_FN(tch_systimeWkupHandler){
-	tch_kernelOnWakeup();
 }
 

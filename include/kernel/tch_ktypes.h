@@ -27,6 +27,20 @@ struct tch_bin_descriptor {
 	uint32_t             minor_ver;
 };
 
+typedef struct tch_dynamic_bin_meta_struct{
+	uint16_t b_type;
+	uint32_t b_majorv;
+	uint32_t b_minorv;
+	uint32_t b_vendor;
+	uint64_t b_appId;
+	uint32_t b_key;
+	uint32_t b_chk;
+	uint32_t b_sz;
+	uint32_t b_entry;
+}* tch_loadableInfo;
+
+
+
 typedef enum {mSECOND = 0,SECOND = 1} tch_timeunit;
 
 typedef enum tch_thread_state_t {

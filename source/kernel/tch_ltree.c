@@ -28,7 +28,7 @@ tch_ltree_node* tch_ltreeLookup(tch_ltree_node* root, int key){
 
 tch_ltree_node* tch_ltreeRemove(tch_ltree_node** rtp,int key){
 	tch_ltree_node* root = *rtp;
-	tch_ltree_node* ntr =  tch_btree_delete(rtp,key);
+	tch_ltree_node* ntr =  (tch_ltree_node*) tch_btree_delete((tch_ltree_node**) rtp,key);
 	if(!ntr)
 		return NULL;
 	tch_listRemove(&root->ln,&ntr->ln);
@@ -41,7 +41,7 @@ tch_ltree_node* tch_ltreeRemoveHead(tch_ltree_node** rtp){
 	if(!root)
 		return NULL;
 	root = (tch_ltree_node*)((tch_btree_node*)root - 1);
-	return tch_btree_delete(rtp,root->trn.key);
+	return (tch_ltree_node*) tch_btree_delete((tch_ltree_node**) rtp,root->trn.key);
 }
 
 tch_ltree_node* tch_ltreeRemoveTail(tch_ltree_node** rtp){
@@ -50,7 +50,7 @@ tch_ltree_node* tch_ltreeRemoveTail(tch_ltree_node** rtp){
 	if(!root)
 		return NULL;
 	root = (tch_ltree_node*)((tch_btree_node*)root - 1);
-	return tch_btree_delete(rtp,root->trn.key);
+	return (tch_ltree_node*) tch_btree_delete((tch_ltree_node**) rtp,root->trn.key);
 }
 
 

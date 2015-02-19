@@ -89,19 +89,15 @@ include $(PORT_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 ####################  Toolchain Independent section of Makefile  ######################
 #######################################################################################
 
-
 CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
        
-
-
 include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
 include $(USR_SRC_DIR)/usr.mk
 include $(BOARD_SRC_DIR)/bd.mk
 include $(UTEST_SRC_BASE)/tst.mk
-
 
 TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 

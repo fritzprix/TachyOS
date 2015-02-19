@@ -61,6 +61,7 @@ extern tchStatus tch_kernel_initCrt0(const tch* ctx);
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern tchStatus tch_kernel_enableInterrupt(IRQn_Type irq,uint32_t priority);
 extern tchStatus tch_kernel_disableInterrupt(IRQn_Type irq);
+extern tchStatus tch_kernel_exec(void* loadableBin,tch_threadId* nproc);
 
 
 extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((naked));
