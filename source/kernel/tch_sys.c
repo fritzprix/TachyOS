@@ -151,8 +151,8 @@ void tch_kernelInit(void* arg){
 	thcfg._t_routine = systhreadRoutine;
 	thcfg.t_proior = KThread;
 	thcfg.t_stackSize = 1 << 10;
-	tch_currentThread = ROOT_THREAD;
-	sysThread = Thread->create(&thcfg,(void*)tch_rti);
+	sysThread = tch_threadCreateRootThread(&thcfg,(void*) tch_rti);
+//	sysThread = Thread->create(&thcfg,(void*)tch_rti);
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(sysThread);
@@ -176,10 +176,7 @@ tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc){
 	thcfg._t_routine = entry;
 	thcfg.t_proior = Normal;
 
-	tch_threadId th = tch_currentThread;
-	tch_currentThread = ROOT_THREAD;
-	*nproc = Thread->create(&thcfg,NULL);
-	tch_currentThread = th;
+	*nproc = tch_threadCreateRootThread(&thcfg,NULL);
 	return tchOK;
 }
 
@@ -367,7 +364,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tch_busyMonitor.mtx = env->Mtx->create();
 
 	tch_threadId th = tch_currentThread;
-	tch_currentThread = ROOT_THREAD;      // create thread as root
 
 	tch_threadCfg thcfg;
 	thcfg._t_routine = (tch_thread_routine) main;
@@ -375,14 +371,14 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	thcfg.t_proior = Normal;
 	thcfg._t_name = "main";
 
-	mainThread = Thread->create(&thcfg,&RuntimeInterface);
-	tch_currentThread = th;
+	mainThread = tch_threadCreateRootThread(&thcfg,&RuntimeInterface);
 
 	thcfg._t_routine = (tch_thread_routine) idle;
 	thcfg.t_stackSize = (uint32_t)&Idle_Stack_Top - (uint32_t)&Idle_Stack_Limit;
 	thcfg.t_proior = Idle;
 	thcfg._t_name = "idle";
 	idleThread = Thread->create(&thcfg,NULL);
+
 	tch_threadId id;
 	tch_kernel_exec(testimg,&id);
 

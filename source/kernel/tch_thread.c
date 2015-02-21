@@ -33,7 +33,7 @@
  *     -> LR point Entry Routine of Thread
  *
  */
-static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
+static tch_threadId tch_threadCreateChild(tch_threadCfg* cfg,void* arg);
 static tchStatus tch_threadStart(tch_threadId thread);
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err);
 static tch_threadId tch_threadSelf();
@@ -44,11 +44,14 @@ static void tch_threadSetPriority(tch_threadId id,tch_thread_prior nprior);
 static tch_thread_prior tch_threadGetPriorty(tch_threadId id);
 static void* tch_threadGetArg();
 
+
+static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot);
+
 static void __tch_thread_entry(tch_thread_header* thr_p,tchStatus status) __attribute__((naked));
 
 
 __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
-		tch_threadCreate,
+		tch_threadCreateChild,
 		tch_threadStart,
 		tch_threadTerminate,
 		tch_threadSelf,
@@ -85,14 +88,14 @@ BOOL tch_threadIsRoot(tch_threadId thread){
 	return (getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT);
 }
 
-static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
+static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	uint8_t* th_mem = NULL;
 	uint8_t* sptop = NULL;
 	uint16_t allocsz = 0;
 	if(cfg->t_stackSize < TCH_CFG_THREAD_STACK_MIN_SIZE)
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
-	if(tch_currentThread == ROOT_THREAD){
+	if(isroot){
 		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(tch_thread_header)/* + sizeof(struct _reent)*/;
 		th_mem = kMem->alloc(allocsz);
 	}else{
@@ -131,7 +134,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	thread_p->t_flag = 0;
 
 	_REENT_INIT_PTR(&thread_p->t_reent);
-	if(tch_currentThread != ROOT_THREAD){                   // if new thread is child thread
+	if(!isroot){                   // if new thread is child thread
 		thread_p->t_refNode.root = tch_currentThread;
 		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
 		tch_listPutFirst(tch_currentThread->t_refNode.childs,&thread_p->t_childNode);
@@ -142,10 +145,18 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
 		tch_listPutFirst((tch_lnode_t*)&tch_procList,(tch_lnode_t*)&thread_p->t_childNode);
 	}
-
 	return (tch_threadId) thread_p;
-
 }
+
+
+static tch_threadId tch_threadCreateChild(tch_threadCfg* cfg,void* arg){
+	return tch_threadCreate(cfg,arg,FALSE);
+}
+
+tch_threadId tch_threadCreateRootThread(tch_threadCfg* cfg,void* arg){
+	return tch_threadCreate(cfg,arg,TRUE);
+}
+
 
 static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){                // check current execution mode (Thread or Handler)

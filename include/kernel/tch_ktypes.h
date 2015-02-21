@@ -151,8 +151,6 @@ struct tch_thread_header_t {
 
 
 
-#define ROOT_THREAD                      ((tch_threadId) 1)
-
 #ifdef __cplusplus
 }
 #endif

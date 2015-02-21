@@ -27,6 +27,7 @@ extern "C"{
 extern tchStatus tch_threadIsValid(tch_threadId thread);
 extern void tch_threadInvalidate(tch_threadId thread,tchStatus reason);
 extern BOOL tch_threadIsRoot(tch_threadId thread);
+extern tch_threadId tch_threadCreateRootThread(tch_threadCfg* cfg,void* arg);
 
 #if defined(__cplusplus)
 }
