@@ -46,7 +46,7 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
+//	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience

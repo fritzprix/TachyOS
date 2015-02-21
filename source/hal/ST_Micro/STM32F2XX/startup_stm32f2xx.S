@@ -78,7 +78,7 @@ defined in linker script */
 #ifdef __HEAP_SIZE
 .equ Heap_Size, __HEAP_SIZE
 #else
-.equ Heap_Size, 0x8000
+.equ Heap_Size, 0x10000
 #endif
 
 # Set Main Stack Size (Default Size = 1K)**
