@@ -17,10 +17,10 @@
 #include "tch_mem.h"
 #include <sys/reent.h>
 
-
+#define THREAD_CHK_PATTERN		((uint32_t) 0xF3F3D5D5)
 #define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
-#define THREAD_ROOT_BIT    ((uint8_t) 1 << 0)
-#define THREAD_DEATH_BIT     ((uint8_t) 1 << 1)
+#define THREAD_ROOT_BIT			((uint8_t) 1 << 0)
+#define THREAD_DEATH_BIT		((uint8_t) 1 << 1)
 
 /**
  *  public accessible function
@@ -69,7 +69,7 @@ tch_thread_queue tch_procList;
 
 
 tchStatus tch_threadIsValid(tch_threadId thread){
-	if(*getThreadHeader(thread)->t_chks != ((uint32_t) tch_noop_destr)){
+	if(*getThreadHeader(thread)->t_chks != ((uint32_t) THREAD_CHK_PATTERN)){
 		getThreadHeader(thread)->t_reent._errno = tchErrorStackOverflow;
 		return tchErrorStackOverflow;
 	}
@@ -91,15 +91,16 @@ BOOL tch_threadIsRoot(tch_threadId thread){
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	uint8_t* th_mem = NULL;
 	uint8_t* sptop = NULL;
+	uint8_t* spbot = NULL;
 	uint16_t allocsz = 0;
 	if(cfg->t_stackSize < TCH_CFG_THREAD_STACK_MIN_SIZE)
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
 	if(isroot){
-		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(tch_thread_header)/* + sizeof(struct _reent)*/;
+		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(tch_thread_header) + sizeof(tch_thread_footer);
 		th_mem = kMem->alloc(allocsz);
 	}else{
-		allocsz = cfg->t_stackSize + sizeof(tch_thread_header);
+		allocsz = cfg->t_stackSize + sizeof(tch_thread_header) + sizeof(tch_thread_footer);
 		th_mem = uMem->alloc(allocsz);
 	}
 
@@ -107,7 +108,8 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	/**
 	 * thread initialize from configuration type
 	 */
-	tch_thread_header* thread_p = ((tch_thread_header*) sptop - 1);          /// offset thread header size
+	tch_thread_header* thread_p = sptop =  ((tch_thread_header*) sptop - 1);          /// offset thread header size
+	spbot = sptop - cfg->t_stackSize;  					// stack bottom
 	thread_p->t_arg = arg;
 	thread_p->t_fn = cfg->_t_routine;
 	thread_p->t_name = cfg->_t_name;
@@ -129,21 +131,28 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
 	tch_listInit(&thread_p->t_childNode);
-	thread_p->t_chks = (uint32_t*)th_mem;                                                    // keep allocated mem pointer to release it when this thread is destroyed
-	*thread_p->t_chks = (uint32_t) tch_noop_destr;                                           // thread has no-op destructor
+	thread_p->t_chks = (uint32_t*) spbot;                                                    // keep allocated mem pointer to release it when this thread is destroyed
+	*thread_p->t_chks = (uint32_t) THREAD_CHK_PATTERN;                                       // thread has no-op destructor
 	thread_p->t_flag = 0;
+	tch_thread_footer* footer = (tch_thread_footer*)(th_mem + sizeof(tch_thread_footer));
+	tch_listInit((tch_lnode_t*) &footer->childs);
+	footer->parent = NULL;
+	footer->__destr = tch_noop_destr;     	// insert no-op destructor at mem alloc pointer for unifies object interface
+	thread_p->t_footer = footer;
 
 	_REENT_INIT_PTR(&thread_p->t_reent);
-	if(!isroot){                   // if new thread is child thread
-		thread_p->t_refNode.root = tch_currentThread;
-		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
-		tch_listPutFirst(tch_currentThread->t_refNode.childs,&thread_p->t_childNode);
-	}else{                                                  // if new thread is root thread
-		thread_p->t_refNode.childs = kMem->alloc(sizeof(tch_lnode_t));
-		tch_listInit(thread_p->t_refNode.childs);
-		thread_p->t_mem = tch_memCreate(th_mem + sizeof(uint32_t*),TCH_CFG_PROC_HEAP_SIZE);
+	if(isroot){                                                  // if new thread is root thread
+		thread_p->t_mem = tch_memCreate(&footer->__heap_entry,TCH_CFG_PROC_HEAP_SIZE);   // create heap
 		thread_p->t_flag |= THREAD_ROOT_BIT;                   // mark as root thread
 		tch_listPutFirst((tch_lnode_t*)&tch_procList,(tch_lnode_t*)&thread_p->t_childNode);
+	}else {                   // if new thread is child thread
+		if(tch_currentThread->t_flag & THREAD_ROOT_BIT){
+			thread_p->t_footer->parent = tch_currentThread;
+		}else{
+			thread_p->t_footer->parent = tch_currentThread->t_footer->parent;
+		}
+		thread_p->t_mem = tch_currentThread->t_mem;         // share parent thread heap
+		tch_listPutFirst((tch_lnode_t*) &getThreadHeader(thread_p->t_footer->parent)->t_footer->childs,&thread_p->t_childNode);
 	}
 	return (tch_threadId) thread_p;
 }
@@ -248,8 +257,8 @@ __attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 	uMem->forceRelease(thread);
 	shMem->forceRelease(thread);
 	if(th_p->t_flag & THREAD_ROOT_BIT){
-		while(!tch_listIsEmpty(th_p->t_refNode.childs)){
-			ch_p = (tch_thread_header*)((uint32_t) tch_listDequeue(th_p->t_refNode.childs) - 3 * sizeof(tch_lnode_t));
+		while(!tch_listIsEmpty(&th_p->t_footer->childs)){
+			ch_p = (tch_thread_header*)((uint32_t) tch_listDequeue((tch_lnode_t*) &th_p->t_footer->childs) - 3 * sizeof(tch_lnode_t));
 			if(ch_p){
 				Thread->terminate(ch_p,status);
 				Thread->join(ch_p,tchWaitForever);        // wait child termination
@@ -259,11 +268,11 @@ __attribute__((naked)) void __tch_kernel_atexit(tch_threadId thread,int status){
 		tch_listRemove((tch_lnode_t*)&tch_procList,&th_p->t_childNode);
 		mem = (tch_mem_ix*)kMem;
 	}else{
-		tch_listRemove((tch_lnode_t*)getThreadHeader(th_p->t_refNode.root)->t_refNode.childs,&th_p->t_childNode);
+		tch_listRemove((tch_lnode_t*)&getThreadHeader(th_p->t_footer->parent)->t_footer->childs,&th_p->t_childNode);
 		mem = (tch_mem_ix*)uMem;
-		tch_currentThread = tch_currentThread->t_refNode.root;
+		tch_currentThread = tch_currentThread->t_footer->parent;
 	}
-	mem->free(getThreadHeader(thread)->t_chks);
+	mem->free(&getThreadHeader(thread)->t_footer->__destr);
 	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thread,status);
 }
 

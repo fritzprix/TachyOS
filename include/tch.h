@@ -46,13 +46,8 @@ struct tch_hal_t{
  * \mainpage Tachyos
  * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
  * \section about_sec About Tachyos
- *  Tachyos is a RTOS based on Microkernel architecture.
- *  so that any idea or concept can be prototyped easily but without any constraints in performance, stability and power efficiency.
- *  For this motivation, all the base APIs (Kernel & HAL) are thread-safe and I/O operation performed under the HAL is synchronous to
- *  program context(which means to be blocking).
- *
- *  Tachyos Kernel is small in its binary size and memory footprint(Kernel 10KB ROM / 2KB RAM) though, it includes all essential kernel components
- *  like multi-threading, synchronization, communication and also supports some of POSIX api used frequently in development.
+ *  Tachyos is a RTOS based on Microkernel architecture with consideration of constrained distributed computing node as main target.
+ *  Developing distributed computing application is
  *
  *
  *  \section feat_sec Detailed features
