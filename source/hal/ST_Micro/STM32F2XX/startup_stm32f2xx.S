@@ -59,33 +59,19 @@ defined in linker script */
 
 
 
-.globl main_stack_top
-.globl main_stack_limit
-
-.globl heap_base
-.globl heap_limit
+.globl sys_heap_base
+.globl sys_heap_limit
 
 .globl sys_stack_top
 .globl sys_stack_limit
-
-
-.globl idle_stack_top
-.globl idle_stack_limit
 
 .globl mbarrier_upperLimit
 .globl mbarrier_lowerLimit
 
 #ifdef __HEAP_SIZE
-.equ Heap_Size, __HEAP_SIZE
+.equ Sys_Heap_Size, __HEAP_SIZE
 #else
-.equ Heap_Size, 0x10000
-#endif
-
-# Set Main Stack Size (Default Size = 1K)**
-#ifdef __MAIN_STACK_SIZE
-.equ Main_Stack_Size, __MAIN_STACK_SIZE
-#else
-.equ Main_Stack_Size, 0x800
+.equ Sys_Heap_Size, 0x10000
 #endif
 
 
@@ -97,12 +83,6 @@ defined in linker script */
 #endif
 
 
-#ifdef __IDLE_STACK_SIZE
-.equ Idle_Stack_Size, __IDLE_STACK_SIZE
-#else
-.equ Idle_Stack_Size, 0x400
-#endif
-
 #ifdef __MBARRIER_SIZE
 .equ mBarrier_Size, __MBARRIER_SIZE
 #else
@@ -111,36 +91,22 @@ defined in linker script */
 
 
 .section .heap
-heap_base:
+sys_heap_base:
 	.align 4
-	.space Heap_Size
-heap_limit:
-
-.section .mstack
-.align(4)
-main_stack_limit:
-	.align 8
-	.space Main_Stack_Size
-main_stack_top:
-
-
-.section .sysstack
-sys_stack_limit:
-	.align 8
-	.space Sys_Stack_Size
-sys_stack_top:
-
-.section .istack
-idle_stack_limit:
-	.align 8
-	.space Idle_Stack_Size
-idle_stack_top:
+	.space Sys_Heap_Size
+sys_heap_limit:
 
 .section .mbarrier
 mbarrier_lowerLimit:
 	.align 8
 	.space mBarrier_Size
 mbarrier_upperLimit:
+
+.section .sysstack
+sys_stack_limit:
+	.align 8
+	.space Sys_Stack_Size
+sys_stack_top:
 
 /**
  * @brief  This is the code that gets called when the processor first

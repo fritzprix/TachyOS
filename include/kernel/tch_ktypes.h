@@ -86,29 +86,30 @@ typedef struct tch_thread_queue{
 } tch_thread_queue;
 
 
+
 struct tch_thread_header_t {
 	tch_lnode_t                 t_schedNode;	///<thread queue node to be scheduled
 	tch_lnode_t                 t_waitNode;		///<thread queue node to be blocked
 	tch_lnode_t                 t_joinQ;		///<thread queue to wait for this thread's termination
 	tch_lnode_t                 t_childNode;	///<thread queue node to iterate child thread
 	tch_lnode_t*                t_waitQ;		///<reference to wait queue in which this thread is waiting
-	tch_thread_routine          t_fn;			///<thread function pointer
-	const char*                 t_name;			///<thread name
-	void*                       t_arg;			///<thread arg field
-	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
-	tch_thread_state            t_state;		///<thread state
-	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
-	uint8_t                     t_lckCnt;		///<lock count to know whether  restore original priority
-	uint8_t                     t_prior;		///<priority
-	uint64_t                    t_to;			///<timeout value for pending operation
 	void*                       t_ctx;			///<ptr to thread saved context (stack pointer value)
 	tchStatus                   t_kRet;			///<kernel return value
 	tch_memId                   t_mem;			///<heap handle
 	tch_lnode_t                 t_ualc;			///<allocation list for usr heap
 	tch_lnode_t                 t_shalc;		///<allocation list for shared heap
+	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
+	tch_thread_state            t_state;		///<thread state
+	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
+	uint8_t                     t_lckCnt;		///<lock count to know whether  restore original priority
+	uint8_t                     t_prior;		///<priority
 	tch_thread_footer*			t_footer;		///<reference to data type holds references to parent and child threads
-	struct _reent               t_reent;		///<reentrant struct used by c standard library
 	uint32_t*                   t_chks;			///<checksum for integrity check
+	uint64_t                    t_to;			///<timeout value for pending operation
+	tch_thread_routine          t_fn;			///<thread function pointer
+	const char*                 t_name;			///<thread name
+	void*                       t_arg;			///<thread arg field
+	struct _reent               t_reent;		///<reentrant struct used by c standard library
 } __attribute__((aligned(8)));
 
 

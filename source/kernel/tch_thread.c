@@ -108,7 +108,8 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	/**
 	 * thread initialize from configuration type
 	 */
-	tch_thread_header* thread_p = sptop =  ((tch_thread_header*) sptop - 1);          /// offset thread header size
+	tch_thread_header* thread_p = ((tch_thread_header*) sptop - 1);          /// offset thread header size
+	sptop = (uint8_t*) thread_p;
 	spbot = sptop - cfg->t_stackSize;  					// stack bottom
 	thread_p->t_arg = arg;
 	thread_p->t_fn = cfg->_t_routine;
@@ -130,7 +131,6 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	thread_p->t_waitNode.next = thread_p->t_waitNode.prev = NULL;
 	thread_p->t_waitQ = NULL;
 	tch_listInit(&thread_p->t_joinQ);
-	tch_listInit(&thread_p->t_childNode);
 	thread_p->t_chks = (uint32_t*) spbot;                                                    // keep allocated mem pointer to release it when this thread is destroyed
 	*thread_p->t_chks = (uint32_t) THREAD_CHK_PATTERN;                                       // thread has no-op destructor
 	thread_p->t_flag = 0;

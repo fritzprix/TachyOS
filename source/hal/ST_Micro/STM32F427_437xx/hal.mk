@@ -32,14 +32,14 @@ OBJS += $(HAL_ASM_OBJS)
 $(HAL_BUILD_DIR): 
 	$(MK) $(HAL_BUILD_DIR)
 
-$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.c $(HAL_BUILD_DIR) 
+$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
 
-$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.S $(HAL_BUILD_DIR)
+$(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.S 
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM GNU Assembler'
 	$(CC) $< -c $(CFLAG) $(INC) $(ASM_OPT) -o $@

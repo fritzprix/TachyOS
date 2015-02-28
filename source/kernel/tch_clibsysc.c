@@ -46,7 +46,7 @@ tchStatus tch_kernel_initCrt0(const tch* ctx){
 	ucfg.FlowCtrl = FALSE;
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
-	stdio_port = ctx->Device->usart->allocate(ctx,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
+	stdio_port = ctx->Device->usart->allocate(ctx,tch_USART1,&ucfg,tchWaitForever,ActOnSleep);
 	return tchOK;
 
 }

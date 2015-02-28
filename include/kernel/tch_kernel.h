@@ -89,14 +89,8 @@ extern BOOL tch_kernelIsBusy();
 extern int Sys_Stack_Top asm("sys_stack_top");
 extern int Sys_Stack_Limit asm("sys_stack_limit");
 
-extern int Heap_Base asm("heap_base");
-extern int Heap_Limit asm("heap_limit");
-
-extern int Main_Stack_Top asm("main_stack_top");
-extern int Main_Stack_Limit asm("main_stack_limit");
-
-extern int Idle_Stack_Top asm("idle_stack_top");
-extern int Idle_Stack_Limit asm("idle_stack_limit");
+extern int Heap_Base asm("sys_heap_base");
+extern int Heap_Limit asm("sys_heap_limit");
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
