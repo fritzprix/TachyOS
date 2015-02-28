@@ -398,11 +398,11 @@ static void tch_adcRemoveChannel(tch_adcChDef* chdef,uint8_t ch){
 static void tch_adc_setRegChannel(tch_adc_descriptor* adcDesc,uint8_t ch,uint8_t order){
 	ADC_TypeDef* adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	if(order > 12){
-		adcHw->SQR1 |= (ch << ((order - 13) * 4));
+		adcHw->SQR1 |= (ch << ((order - 13) * 5));
 	}else if(order > 6){
-		adcHw->SQR2 |= (ch << ((order - 7) * 4));
+		adcHw->SQR2 |= (ch << ((order - 7) * 5));
 	}else{
-		adcHw->SQR3 |= (ch << (order * 4));
+		adcHw->SQR3 |= (ch << ((order - 1) * 5));
 	}
 }
 
