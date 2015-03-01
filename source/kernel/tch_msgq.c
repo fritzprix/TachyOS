@@ -87,7 +87,7 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
 
-			tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 		}
 		return tchErrorResource;
@@ -122,10 +122,10 @@ tchStatus tch_msgq_kput(tch_msgqId mqId,tch_msgq_karg* arg){
 			if(msgqCb->pidx >= msgqCb->sz)
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
-			tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 	}
-	tch_schedSuspend((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
+	tch_schedThreadSuspend((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
 	return tchErrorNoMemory;
 }
 
@@ -153,7 +153,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 		if(msgqCb->gidx >= msgqCb->sz)
 			msgqCb->gidx = 0;
 		msgqCb->updated--;
-		tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+		tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 		evt.status = tchOK;
 		return evt;
 	}else{
@@ -190,14 +190,14 @@ tchStatus tch_msgq_kget(tch_msgqId mqId,tch_msgq_karg* arg){
 	if(!tch_msgqIsValid(msgqCb))
 		return tchErrorResource;
 	if(msgqCb->updated == 0){
-		tch_schedSuspend((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
+		tch_schedThreadSuspend((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
 		return tchOK;
 	}
 	arg->msg = *((uword_t*)msgqCb->bp + msgqCb->gidx++);
 	if(msgqCb->gidx >= msgqCb->sz)
 		msgqCb->gidx = 0;
 	msgqCb->updated--;
-	tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 	return tchEventMessage;
 }
 
@@ -227,8 +227,8 @@ tchStatus tch_msgq_kdestroy(tch_msgqId mqId){
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
-	tch_schedResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	tch_schedResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	return tchOK;
 }
 

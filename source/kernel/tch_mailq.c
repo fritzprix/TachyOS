@@ -111,7 +111,7 @@ tchStatus tch_mailq_kalloc(tch_mailqId qid,tch_mailq_karg* arg){
 	arg->chunk = Mempool->alloc(mailqcb->bpool);
 	if(arg->chunk)
 		return tchOK;
-	tch_schedSuspend((tch_thread_queue*)&mailqcb->wq,arg->timeout);
+	tch_schedThreadSuspend((tch_thread_queue*)&mailqcb->wq,arg->timeout);
 	return tchErrorNoMemory;
 }
 
@@ -188,7 +188,7 @@ tchStatus tch_mailq_kfree(tch_mailqId qid,tch_mailq_karg* arg){
 		return tchErrorResource;
 	if(Mempool->free(((tch_mailq_cb*)qid)->bpool,arg->chunk) != tchOK)
 		return tchErrorParameter;
-	tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq),SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tch_schedThreadResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq),SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 	return tchOK;
 }
 
@@ -216,7 +216,7 @@ tchStatus tch_mailq_kdestroy(tch_mailqId qid,tch_mailq_karg* arg){
 	result = Mempool->destroy(((tch_mailq_cb*)qid)->bpool);
 	if(result == tchOK){
 		tch_mailqInvalidate(qid);
-		tch_schedResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq) ,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+		tch_schedThreadResumeM((tch_thread_queue*) (&((tch_mailq_cb*)qid)->wq) ,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 		return tchOK;
 	}
 	return tchErrorParameter;

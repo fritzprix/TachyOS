@@ -135,7 +135,7 @@ tchStatus tch_event_kwait(tch_eventId id,void* arg){
 	tch_event_cb* evcb = (tch_event_cb*) id;
 	evcb->ev_msk = warg->ev_sigmsk;
 	if((evcb->ev_msk & evcb->ev_signal) != evcb->ev_msk){
-		tch_schedSuspend(&evcb->ev_blockq,warg->timeout);
+		tch_schedThreadSuspend(&evcb->ev_blockq,warg->timeout);
 	}
 	return tchOK;
 }
@@ -154,7 +154,7 @@ int32_t tch_event_kupdate(tch_eventId id,void* arg){
 		break;
 	}
 	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!tch_listIsEmpty(&evcb->ev_blockq))){
-		tch_schedResumeM(&evcb->ev_blockq,1,tchOK,TRUE);
+		tch_schedThreadResumeM(&evcb->ev_blockq,1,tchOK,TRUE);
 	}
 	return psig;
 }
@@ -162,7 +162,7 @@ int32_t tch_event_kupdate(tch_eventId id,void* arg){
 void tch_event_kdestroy(tch_eventId id){
 	tch_event_cb* evcb = (tch_event_cb*) id;
 	if(!tch_listIsEmpty(&evcb->ev_blockq)){
-		tch_schedResumeM(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+		tch_schedThreadResumeM(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	}
 }
 

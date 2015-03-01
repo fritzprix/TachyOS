@@ -85,7 +85,7 @@ static tchStatus tch_semaphore_unlock(tch_semId id){
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchOK);
 	}
@@ -101,7 +101,7 @@ static tchStatus tch_semaphore_destroy(tch_semId id){
 	tch_semaphoreInvalidate(id);
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedResumeM((uint32_t) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchErrorResource);
 	}

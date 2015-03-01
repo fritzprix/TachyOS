@@ -96,6 +96,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	if(cfg->t_stackSize < TCH_CFG_THREAD_STACK_MIN_SIZE)
 		cfg->t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
+	// root thread is only created by systhread which runs in privilidged mode
 	if(isroot){
 		allocsz = cfg->t_stackSize + TCH_CFG_PROC_HEAP_SIZE + sizeof(tch_thread_header) + sizeof(tch_thread_footer);
 		th_mem = kMem->alloc(allocsz);
@@ -134,7 +135,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	thread_p->t_chks = (uint32_t*) spbot;                                                    // keep allocated mem pointer to release it when this thread is destroyed
 	*thread_p->t_chks = (uint32_t) THREAD_CHK_PATTERN;                                       // thread has no-op destructor
 	thread_p->t_flag = 0;
-	tch_thread_footer* footer = (tch_thread_footer*)(th_mem + sizeof(tch_thread_footer));
+	tch_thread_footer* footer = (tch_thread_footer*)th_mem;
 	tch_listInit((tch_lnode_t*) &footer->childs);
 	footer->parent = NULL;
 	footer->__destr = tch_noop_destr;     	// insert no-op destructor at mem alloc pointer for unifies object interface
@@ -169,7 +170,7 @@ tch_threadId tch_threadCreateRootThread(tch_threadCfg* cfg,void* arg){
 
 static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){                // check current execution mode (Thread or Handler)
-		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
+		tch_schedThreadReady(thread);    // if handler mode call, put current thread in ready queue
 		return tchOK;
 	}else{
 		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);

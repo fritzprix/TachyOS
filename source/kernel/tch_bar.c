@@ -80,7 +80,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 	if(tch_listIsEmpty(&bar->wq))
 		return tchOK;
 	if(tch_port_isISR()){
-		tch_schedResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tch_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK);

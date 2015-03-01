@@ -115,7 +115,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 	if(tch_port_isISR()){                  // if isr mode, no locked mtx is supplied
 		if(tch_condvIsWait(condv)){    // check condv is not done
 			tch_condvClrWait(condv);   // set condv to done
-			tch_schedResumeM((tch_thread_queue*) &condv->wq,1,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &condv->wq,1,tchOK,TRUE);
 			return tchOK;
 		}else{
 			return tchErrorParameter;
@@ -139,7 +139,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 	if(tch_port_isISR()){
 		if(tch_condvIsWait(condv)){
 			tch_condvClrWait(condv);
-			tch_schedResumeM((tch_thread_queue*) &condv->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tch_schedThreadResumeM((tch_thread_queue*) &condv->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 		}else{
 			return tchErrorParameter;

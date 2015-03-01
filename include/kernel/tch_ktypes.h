@@ -51,12 +51,16 @@ typedef enum tch_thread_state_t {
 	SLEEP =   ((int8_t) 5),                               // state in which thread is yield cpu for given amount of time
 	DESTROYED =  ((int8_t) 6),                           // state in which thread is about to be destroyed (sheduler detected this and route thread to destroy routine)
 	TERMINATED = ((int8_t) -1)                         // state in which thread has finished its task
-} tch_thread_state;
+} tch_threadState;
 
 
 typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_header_t tch_thread_header;
+
+typedef struct tch_thread_kcb_s tch_thread_kcb;		///< protected thread control block which contains scheduling information / thread status & state etc,
+typedef struct tch_thread_ucb_s tch_thread_ucb;		///< public thread control block which contains general data which is not critical for the system
+
 typedef struct tch_thread_footer_t tch_thread_footer;
 typedef struct tch_uobj_t tch_uobj;
 typedef tchStatus (*tch_uobjDestr)(tch_uobj* obj);
@@ -99,7 +103,7 @@ struct tch_thread_header_t {
 	tch_lnode_t                 t_ualc;			///<allocation list for usr heap
 	tch_lnode_t                 t_shalc;		///<allocation list for shared heap
 	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
-	tch_thread_state            t_state;		///<thread state
+	tch_threadState             t_state;		///<thread state
 	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
 	uint8_t                     t_lckCnt;		///<lock count to know whether  restore original priority
 	uint8_t                     t_prior;		///<priority
@@ -113,11 +117,35 @@ struct tch_thread_header_t {
 } __attribute__((aligned(8)));
 
 
+struct tch_thread_kcb_s {
+	tch_lnode_t			t_schedNode;
+	tch_lnode_t			t_waitNode;
+	tch_lnode_t			t_joinQ;
+	tch_lnode_t			t_childNode;
+	tch_lnode_t*		t_waitQ;
+	void*				t_ctx;
+	tchStatus			t_kRet;
+	tch_memId			t_mem;
+	tch_lnode_t			t_ualc;
+	tch_lnode_t			t_shalc;
+	uint32_t			t_tslot;
+	tch_threadState		t_state;
+	uint8_t				t_flag;
+	uint8_t				t_lckCnt;
+	uint8_t				t_prior;
+	tch_thread_footer*	t_footer;
+};
+
+struct tch_thread_ucb_s {
+
+};
+
 struct tch_thread_footer_t{
-	uint8_t*			__heap_entry;
+	tch_uobjDestr		__destr;
 	tch_thread_queue	childs;
 	tch_threadId		parent;
-	tch_uobjDestr		__destr;
+	uint8_t*			__heap_entry;
+
 };
 
 

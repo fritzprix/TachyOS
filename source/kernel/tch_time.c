@@ -123,14 +123,14 @@ void tch_kernelOnWakeup(){
 	while((!tch_listIsEmpty(&tch_lpsystimeWaitQ)) && (getThreadHeader(tch_lpsystimeWaitQ.next)->t_to <= tch_sysUpTimeSec)){
 		nth = (tch_thread_header*) tch_listDequeue(&tch_lpsystimeWaitQ);
 		nth->t_to = 0;
-		tch_schedReady(nth);
+		tch_schedThreadReady(nth);
 		tch_kernelSetResult(nth,tchEventTimeout);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&nth->t_waitNode);
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedUpdate();
+	tch_schedThreadUpdate();
 }
 
 void tch_KernelOnSystick(){
@@ -140,14 +140,14 @@ void tch_KernelOnSystick(){
 	while((!tch_listIsEmpty(&tch_systimeWaitQ)) && (getThreadHeader(tch_systimeWaitQ.next)->t_to <= tch_systimeTick)){
 		nth = (tch_thread_header*) tch_listDequeue(&tch_systimeWaitQ);
 		nth->t_to = 0;
-		tch_schedReady(nth);
+		tch_schedThreadReady(nth);
 		tch_kernelSetResult(nth,tchEventTimeout);
 		if(nth->t_waitQ){
 			tch_listRemove(nth->t_waitQ,&nth->t_waitNode);
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedUpdate();
+	tch_schedThreadUpdate();
 }
 
 
