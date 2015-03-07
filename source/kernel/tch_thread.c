@@ -88,6 +88,11 @@ BOOL tch_threadIsRoot(tch_threadId thread){
 	return (getThreadHeader(thread)->t_flag & THREAD_ROOT_BIT);
 }
 
+// prepare user thread header
+// create and initialize kernel control block
+// - required parameter : usr thread header
+// -
+
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	uint8_t* th_mem = NULL;
 	uint8_t* sptop = NULL;

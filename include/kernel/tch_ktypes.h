@@ -133,11 +133,20 @@ struct tch_thread_kcb_s {
 	uint8_t				t_flag;
 	uint8_t				t_lckCnt;
 	uint8_t				t_prior;
-	tch_thread_footer*	t_footer;
+	uint32_t* 			t_chks;
+	uint64_t			t_to;
+	tch_thread_ucb*		t_ucb;
 };
 
 struct tch_thread_ucb_s {
-
+	tch_uobjDestr		__destr;
+	tch_thread_queue	childs;
+	tch_threadId		parent;
+	uint8_t*			__heap_entry;
+	tch_thread_routine	t_fn;
+	const char*			t_name;
+	void*				t_arg;
+	struct _reent		t_reent;
 };
 
 struct tch_thread_footer_t{
