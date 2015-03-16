@@ -293,7 +293,6 @@ static uint32_t tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_
 
 	SET_SAFE_RETURN();
 	ins->env->Mtx->lock(ins->mtxId,timeout);   // lock mutex for condition variable operation
-	dmaHw->CR &= ~DMA_SxCR_EN;
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
 	ins->env->Condv->wakeAll(ins->condv);
 	ins->env->Mtx->unlock(ins->mtxId); // unlock mutex

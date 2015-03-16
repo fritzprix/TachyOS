@@ -188,9 +188,22 @@ typedef enum {
 	Once,Periodic
 }tch_timer_type;
 
-typedef struct _tch_timer_def_t {
+typedef struct tch_timer_def_s {
 	tch_timer_callback     fn;
 }tch_timer_def;
+
+typedef struct tch_mfile_s* tch_mfile_t;
+
+typedef int (*tch_file_write_t)(const uint8_t* buf,uint32_t sz);
+typedef int (*tch_file_read_t)(uint8_t* buf,uint32_t sz);
+typedef void (*tch_file_close_t)();
+
+struct tch_mfile_s {
+	tch_file_close_t	close;
+	tch_file_write_t	write;
+	tch_file_read_t		read;
+};
+
 
 
 
