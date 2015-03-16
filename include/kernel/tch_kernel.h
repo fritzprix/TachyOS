@@ -21,6 +21,7 @@
  *   - Initialize kernel enviroment (init kernel internal objects,
  */
 #include "tch.h"
+#include "tch_board.h"
 #include "tch_kcfg.h"
 #include "tch_ktypes.h"
 #include "tch_port.h"
@@ -123,6 +124,7 @@ extern tch_thread_header* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue tch_procList;
 extern const tch* tch_rti;
+extern tch_boardHandle tch_board;
 extern tch_memId sharedMem;
 
 

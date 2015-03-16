@@ -87,8 +87,10 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	case STDIN_FILENO:
 	case STDERR_FILENO:
 	case STDOUT_FILENO:
-		stdio_port->write(stdio_port,buf,cnt);
-		return cnt;
+		if(tch_board->bd_stdio->write){
+			tch_board->bd_stdio->write(buf,cnt);
+			return cnt;
+		}
 	}
 	return -1;
 }
@@ -111,8 +113,8 @@ _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	case STDOUT_FILENO:
 		return -1;
 	case STDIN_FILENO:
-		stdio_port->get(stdio_port,bbuf++,tchWaitForever);
-		return 1;
+		if(tch_board->bd_stdio->read)
+			return tch_board->bd_stdio->read(buf,cnt);
 	}
 	return -1;
 }

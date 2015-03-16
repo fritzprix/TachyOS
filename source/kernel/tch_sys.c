@@ -114,15 +114,15 @@ static DECLARE_SYSTASK(kernelTaskHandler);
 
 static struct tch_monitor_t tch_busyMonitor;
 static tch RuntimeInterface;
-const tch* tch_rti = &RuntimeInterface;
-
 static tch_threadId mainThread = NULL;
 static tch_threadId idleThread = NULL;
-
 static tch_mailqId sysTaskQ;
-tch_memId sharedMem;
-const struct tch_bin_descriptor BIN_DESC;
 static tch_threadId sysThread;
+
+const tch* tch_rti = &RuntimeInterface;
+tch_boardHandle tch_board = NULL;
+const struct tch_bin_descriptor BIN_DESC;
+tch_memId sharedMem;
 
 
 /***
@@ -368,11 +368,10 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);
+	tch_board = tch_boardInit(&RuntimeInterface);
+
 
 	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
-
-	if(tch_kernel_initCrt0(&RuntimeInterface) != tchOK)
-		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
@@ -405,8 +404,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	if((!mainThread) || (!idleThread))
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
-
-	tch_boardInit(&RuntimeInterface);
 
 	tch_port_disable_privilegedThread();
 

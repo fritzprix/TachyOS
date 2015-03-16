@@ -31,6 +31,7 @@ CPU = cortex-m4
 FPU = HALFSOFT
 HW_VENDOR = ST_Micro
 HW_PLF = STM32F40_41xxx
+BOARD_NAME=Port_103Z
 APP_NAME = 
 
 ### Open 427Z ###\
