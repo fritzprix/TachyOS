@@ -70,8 +70,8 @@ __attribute__((section(".data")))static tch_mem_ix uMEM_StaticInstance = {
 __attribute__((section(".data")))static tch_mem_ix kMem_StaticInstance = {
 		malloc,
 		free,
-		tch_kHeapAvail,
-		tch_kHeapFreeAll,
+		NULL,
+		NULL,
 		NULL,
 		NULL
 };
@@ -352,10 +352,6 @@ static void tch_memFree(tch_memId mh,void* p){
 	}
 	m_entry->hdr.usz -= nchnk->usz + sizeof(tch_memHdr);
 }
-
-
-tchStatus tch_noop_destr(tch_uobj* obj){return tchOK;}
-
 
 static uint32_t tch_memAvail(tch_memId mh){
 	tch_memHdr* m_entry = (tch_memHdr*) mh;

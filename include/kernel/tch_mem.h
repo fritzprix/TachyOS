@@ -23,7 +23,6 @@ extern "C"{
 #endif
 
 extern tch_memId tch_memCreate(void* mem,uint32_t sz);
-extern tchStatus tch_noop_destr(tch_uobj* obj);
 
 /**
  * @brief This is public API for Dynamic Memory Allocation

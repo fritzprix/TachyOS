@@ -9,7 +9,7 @@ KERNEL_SRCS=\
 	    tch_thread.c\
 	    tch_list.c\
 	    tch_mem.c\
-	    tch_clibsysc.c\
+	    tch_libsysc.c\
 	    tch_nclib.c\
 	    tch_bar.c\
 	    tch_condv.c\

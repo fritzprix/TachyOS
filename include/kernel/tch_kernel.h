@@ -90,8 +90,8 @@ extern BOOL tch_kernelIsBusy();
 extern int Sys_Stack_Top asm("sys_stack_top");
 extern int Sys_Stack_Limit asm("sys_stack_limit");
 
-extern int Heap_Base asm("sys_heap_base");
-extern int Heap_Limit asm("sys_heap_limit");
+extern int Sys_Heap_Base asm("sys_heap_base");
+extern int Sys_Heap_Limit asm("sys_heap_limit");
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
