@@ -23,15 +23,15 @@
 extern "C"{
 #endif
 
-
 typedef struct _tch_condv_cb_t {
 	tch_uobj          __obj;
 	uint32_t          state;
-	tch_mtxId         wakeMtx;
+	tch_mtxId         waitMtx;
 	tch_thread_queue  wq;
 }tch_condvCb;
 
-extern void tch_condvInit(tch_condvCb* condv);
+extern tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static);
+
 
 
 #if defined(__cplusplus)

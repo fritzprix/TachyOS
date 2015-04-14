@@ -34,14 +34,16 @@ char** environ = __env;
 
 __attribute__((section(".data")))static char* heap_end = NULL;
 
+__attribute__((aligned(8))) static char LIBC_HEAP[6000];
 
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	if(heap_end == NULL)
-		heap_end = (char*)&Sys_Heap_Base;
+		//heap_end = (char*)&Sys_Heap_Base;
+		heap_end = (char*) LIBC_HEAP;
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
-	if ((uint32_t)heap_end + incr > (uint32_t) &Sys_Heap_Limit) {
+	if ((uint32_t)heap_end + incr > ((uint32_t) LIBC_HEAP + 6000 * sizeof(char))) {
 		if(!tch_port_isISR()){
 			Thread->terminate(tch_currentThread,tchErrorNoMemory);
 		}
@@ -56,8 +58,8 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	case STDIN_FILENO:
 	case STDERR_FILENO:
 	case STDOUT_FILENO:
-		if(tch_board->bd_stdio->write){
-			tch_board->bd_stdio->write(buf,cnt);
+		if(boardHandle->bd_stdio->write){
+			boardHandle->bd_stdio->write(buf,cnt);
 			return cnt;
 		}
 	}
@@ -82,8 +84,8 @@ _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	case STDOUT_FILENO:
 		return -1;
 	case STDIN_FILENO:
-		if(tch_board->bd_stdio->read)
-			return tch_board->bd_stdio->read(buf,cnt);
+		if(boardHandle->bd_stdio->read)
+			return boardHandle->bd_stdio->read(buf,cnt);
 	}
 	return -1;
 }

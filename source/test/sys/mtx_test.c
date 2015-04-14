@@ -29,16 +29,17 @@ tchStatus mtx_performTest(tch* api){
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg thCfg;
-	thCfg._t_name = "child1_mtx";
-	thCfg._t_routine = child1Routine;
-	thCfg.t_proior = Normal;
-	thCfg.t_stackSize = 512;
+	api->Thread->initCfg(&thCfg);
+	thCfg.t_name = "child1_mtx";
+	thCfg.t_routine = child1Routine;
+	thCfg.t_priority = Normal;
+	thCfg.t_memDef.stk_sz = 512;
 	child1 = Thread->create(&thCfg,api);
 
-	thCfg._t_name = "child2_mtx";
-	thCfg._t_routine = child2Routine;
-	thCfg.t_stackSize = 512;
-	thCfg.t_proior = Normal;
+	thCfg.t_name = "child2_mtx";
+	thCfg.t_routine = child2Routine;
+	thCfg.t_memDef.stk_sz = 512;
+	thCfg.t_priority = Normal;
 	child2 = Thread->create(&thCfg,api);
 
 	mmtx = api->Mtx->create();

@@ -24,10 +24,20 @@ extern "C"{
 
 
 
-extern tchStatus tch_threadIsValid(tch_threadId thread);
-extern void tch_threadInvalidate(tch_threadId thread,tchStatus reason);
-extern BOOL tch_threadIsRoot(tch_threadId thread);
-extern tch_threadId tch_threadCreateRootThread(tch_threadCfg* cfg,void* arg);
+
+/**\brief create new thread
+ * \note this function should be invoked from privilidged mode.
+ * \param[in] cfg thread configuration struct
+ * \param[in] arg thread execution arguement
+ * \param[in] root whether new thread is root or not
+ *
+ */
+extern tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL root);
+extern tchStatus tchk_threadIsValid(tch_threadId thread);
+extern void tchk_threadInvalidate(tch_threadId thread,tchStatus reason);
+extern BOOL tchk_threadIsRoot(tch_threadId thread);
+extern void tchk_threadSetPriority(tch_threadId tid,tch_thread_prior nprior);
+extern tch_thread_prior tchk_threadGetPriority(tch_threadId tid);
 
 #if defined(__cplusplus)
 }

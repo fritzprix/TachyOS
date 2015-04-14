@@ -32,79 +32,14 @@
 #include "tch_time.h"
 #include "tch_board.h"
 
-const uint8_t testimg[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0xa7, 0x0, 0x0, 0x0, 0xaa, 0x0, 0x0, 0x0, 0x15, 0x3, 0x0, 0x0, 0x88,
-		0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0xbc, 0x2, 0x0,
-		0x0, 0x5, 0x0, 0x0, 0x0, 0x8c, 0x2, 0x0, 0x0, 0x6, 0x0, 0x0, 0x0, 0xdc,
-		0x1, 0x0, 0x0, 0xa, 0x0, 0x0, 0x0, 0x2d, 0x0, 0x0, 0x0, 0xb, 0x0, 0x0,
-		0x0, 0x10, 0x0, 0x0, 0x0, 0x11, 0x0, 0x0, 0x0, 0xfc, 0x2, 0x0, 0x0,
-		0x12, 0x0, 0x0, 0x0, 0x10, 0x0, 0x0, 0x0, 0x13, 0x0, 0x0, 0x0, 0x8, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x90, 0xb5, 0x89, 0xb0, 0x0, 0xaf, 0x78, 0x60, 0x2e, 0x4c, 0x7c, 0x44,
-		0x2e, 0x4b, 0xe3, 0x58, 0x1a, 0x46, 0x1, 0x23, 0x13, 0x60, 0x0, 0x23,
-		0xfb, 0x61, 0x2c, 0x4b, 0x7b, 0x44, 0x1b, 0x68, 0x1, 0x33, 0x2b, 0x4a,
-		0x7a, 0x44, 0x13, 0x60, 0x27, 0x4b, 0xe3, 0x58, 0x1a, 0x46, 0x0, 0x23,
-		0x13, 0x60, 0x28, 0x4b, 0xe3, 0x58, 0x1a, 0x46, 0x0, 0x23, 0x13, 0x60,
-		0x25, 0x4b, 0xe3, 0x58, 0x25, 0x4a, 0x7a, 0x44, 0x5a, 0x60, 0x25, 0x4b,
-		0x7b, 0x44, 0x7b, 0x61, 0x24, 0x4b, 0x7b, 0x44, 0xfb, 0x60, 0x0, 0x23,
-		0x7b, 0x81, 0x4f, 0xf4, 0x0, 0x73, 0x3b, 0x81, 0x3, 0x23, 0x3b, 0x74,
-		0x7b, 0x68, 0x1b, 0x68, 0x1b, 0x68, 0x7, 0xf1, 0x8, 0x2, 0x10, 0x46,
-		0x0, 0x21, 0x98, 0x47, 0xb8, 0x61, 0x7b, 0x68, 0x1b, 0x68, 0x5b, 0x68,
-		0xb8, 0x69, 0x98, 0x47, 0xfb, 0x69, 0x1, 0x33, 0xfb, 0x61, 0x11, 0x4b,
-		0xe3, 0x58, 0x1b, 0x68, 0x1, 0x33, 0xf, 0x4a, 0xa2, 0x58, 0x13, 0x60,
-		0x14, 0x4b, 0x7b, 0x44, 0x1b, 0x68, 0x1, 0x33, 0x13, 0x4a, 0x7a, 0x44,
-		0x13, 0x60, 0x7b, 0x68, 0x1b, 0x68, 0x5b, 0x69, 0xa, 0x20, 0x98, 0x47,
-		0x7b, 0x68, 0x1b, 0x6b, 0x1b, 0x68, 0xdb, 0x69, 0x5, 0x4a, 0xa2, 0x58,
-		0x12, 0x68, 0xd, 0x49, 0x79, 0x44, 0x8, 0x46, 0x11, 0x46, 0x98, 0x47,
-		0xdc, 0xe7, 0x0, 0xbf, 0xde, 0xff, 0xff, 0xff, 0x4, 0x0, 0x0, 0x0, 0x58,
-		0xff, 0xff, 0xff, 0x50, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x0, 0xd2, 0x0,
-		0x0, 0x0, 0xd4, 0x0, 0x0, 0x0, 0x9f, 0x0, 0x0, 0x0, 0xe2, 0xfe, 0xff,
-		0xff, 0xda, 0xfe, 0xff, 0xff, 0x6c, 0x0, 0x0, 0x0, 0x80, 0xb5, 0x82,
-		0xb0, 0x0, 0xaf, 0x78, 0x60, 0x7b, 0x68, 0x1b, 0x6b, 0x1b, 0x68, 0xdb,
-		0x69, 0x4, 0x4a, 0x7a, 0x44, 0x10, 0x46, 0x98, 0x47, 0x7b, 0x68, 0x1b,
-		0x68, 0x5b, 0x69, 0x1, 0x20, 0x98, 0x47, 0xf1, 0xe7, 0x36, 0x0, 0x0,
-		0x0, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x0, 0x0, 0x0, 0x63, 0x68, 0x69,
-		0x6c, 0x64, 0x0, 0x0, 0x0, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57,
-		0x6f, 0x72, 0x6c, 0x64, 0x20, 0x3a, 0x20, 0x25, 0x64, 0xa, 0x0, 0x0,
-		0x0, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x54, 0x68, 0x69, 0x73, 0x20,
-		0x69, 0x73, 0x20, 0x43, 0x68, 0x69, 0x6c, 0x64, 0xa, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x3, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x88, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x3, 0x0, 0x5, 0x0, 0x5, 0x0, 0x0, 0x0, 0xc, 0x3, 0x0, 0x0,
-		0x8, 0x0, 0x0, 0x0, 0x11, 0x0, 0xa, 0x0, 0x21, 0x0, 0x0, 0x0, 0xc, 0x3,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x10, 0x0, 0xa, 0x0, 0x1, 0x0, 0x0, 0x0,
-		0x14, 0x3, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x11, 0x0, 0xa, 0x0, 0xc, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x10, 0x0, 0x1, 0x0,
-		0x27, 0x0, 0x0, 0x0, 0x18, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x10, 0x0,
-		0xa, 0x0, 0x7, 0x0, 0x0, 0x0, 0x89, 0x0, 0x0, 0x0, 0xf0, 0x0, 0x0, 0x0,
-		0x12, 0x0, 0x5, 0x0, 0x13, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x10, 0x0, 0x1, 0x0, 0x1a, 0x0, 0x0, 0x0, 0x88, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x10, 0x0, 0x5, 0x0, 0x0, 0x63, 0x6e, 0x74, 0x0,
-		0x70, 0x0, 0x6d, 0x61, 0x69, 0x6e, 0x0, 0x5f, 0x73, 0x64, 0x61, 0x74,
-		0x61, 0x0, 0x5f, 0x65, 0x64, 0x61, 0x74, 0x61, 0x0, 0x5f, 0x73, 0x74,
-		0x65, 0x78, 0x74, 0x0, 0x5f, 0x73, 0x62, 0x73, 0x73, 0x0, 0x5f, 0x65,
-		0x62, 0x73, 0x73, 0x0, 0x0, 0x0, 0x0, 0x3, 0x0, 0x0, 0x0, 0xb, 0x0, 0x0,
-		0x0, 0xa, 0x0, 0x0, 0x0, 0x8, 0x0, 0x0, 0x0, 0x7, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x0, 0x3, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6,
-		0x0, 0x0, 0x0, 0x5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9, 0x0, 0x0,
-		0x0, 0x74, 0x0, 0x0, 0x0, 0x15, 0x3, 0x0, 0x0, 0x78, 0x0, 0x0, 0x0,
-		0x15, 0x5, 0x0, 0x0, 0x71, 0x22, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0, };
-
 #define SYSTSK_ID_SLEEP             ((int) -3)
 #define SYSTSK_ID_ERR_HANDLE        ((int) -2)
 #define SYSTSK_ID_RESET             ((int) -1)
 
-struct tch_monitor_t {
-	tch_mtxId mtx;
-	uint32_t mval;
-};
+typedef struct tch_busy_monitor_t {
+	tch_mtxId 	mtx;
+	uint32_t 	wrk_load;
+}tch_busy_monitor;
 
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
@@ -112,17 +47,18 @@ static DECLARE_THREADROUTINE(idle);
 static DECLARE_SYSTASK(kernelTaskHandler);
 
 
-static struct tch_monitor_t tch_busyMonitor;
+static tch_busy_monitor busyMonitor;
 static tch RuntimeInterface;
 static tch_threadId mainThread = NULL;
 static tch_threadId idleThread = NULL;
 static tch_mailqId sysTaskQ;
 static tch_threadId sysThread;
 
+tch_thread_queue procList;
+tch_boardHandle boardHandle = NULL;
+
+const tch_bin_descriptor BIN_DESC = {0};
 const tch* tch_rti = &RuntimeInterface;
-tch_boardHandle tch_board = NULL;
-const struct tch_bin_descriptor BIN_DESC;
-tch_memId sharedMem;
 
 
 /***
@@ -133,6 +69,12 @@ tch_memId sharedMem;
  *  - initialize Idle thread
  */
 void tch_kernelInit(void* arg){
+
+	/*initialize kernel global variable*/
+	tch_listInit((tch_lnode_t*) &procList);
+	mainThread = NULL;
+	idleThread = NULL;
+	sysThread = NULL;
 
 
 	/*Bind API Object*/
@@ -150,27 +92,26 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
-
-	tch_listInit((tch_lnode_t*) &tch_procList);
-	uint8_t* shMemBlk = kMem->alloc(TCH_CFG_SHARED_MEM_SIZE);
-	sharedMem = tch_memCreate(shMemBlk,TCH_CFG_SHARED_MEM_SIZE);
-
 	/**
-	 *  dynamic binding of dependecy
+	 *  Initialize pageing sub-system for memory managment
 	 */
-
-	if(!tch_kernel_initPort()){
+	if(tchk_pageInit(&Sys_Heap_Base,((uword_t)&Sys_Heap_Limit - (uword_t)&Sys_Heap_Base)) != tchOK)
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
-	}
 
+	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
+	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
+
+	if(!tch_kernel_initPort())				// initialize port layer
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	tch_port_kernel_lock();
 
 	tch_threadCfg thcfg;
-	thcfg._t_name = "sysloop";
-	thcfg._t_routine = systhreadRoutine;
-	thcfg.t_proior = KThread;
-	thcfg.t_stackSize = 1 << 10;
-	sysThread = tch_threadCreateRootThread(&thcfg,(void*) tch_rti);
+	Thread->initCfg(&thcfg);
+	thcfg.t_name = "systhread";
+	thcfg.t_routine = systhreadRoutine;
+	thcfg.t_priority = Kernel;
+	thcfg.t_memDef.stk_sz = 1 << 10;
+	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE);
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(sysThread);
@@ -182,36 +123,42 @@ tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc){
 	if(!loadableBin)
 		return tchErrorParameter;
 
-	tch_loadableInfo header = (tch_loadableInfo) loadableBin;
-	loadableBin += sizeof(struct tch_dynamic_bin_meta_struct);
-	uint8_t* exImg = kMem->alloc(header->b_sz);
+	tch_dynamic_bin_header header = (tch_dynamic_bin_header) loadableBin;
+//	loadableBin += sizeof(struct tch_dynamic_bin_meta_struct);
+	uint8_t* exImg = (uint8_t*) tchk_kernelHeapAlloc(header->b_sz);
 	uStdLib->string->memcpy(exImg,loadableBin,header->b_sz);
 	tch_thread_routine entry = (tch_thread_routine)(((uint32_t)exImg + header->b_entry) | 0x1); // the address value for indirect branch in ARM should be 1 in its '0' bit, otherwise usagefault
 	tch_threadCfg thcfg;
-	thcfg.t_heapSize = 0;
-	thcfg.t_stackSize = (1 << 9);
-	thcfg._t_name = "Test";
-	thcfg._t_routine = entry;
-	thcfg.t_proior = Normal;
+	thcfg.t_memDef.heap_sz = 0;
+	thcfg.t_memDef.stk_sz = (1 << 9);
+	thcfg.t_name = "Test";
+	thcfg.t_routine = entry;
+	thcfg.t_priority = Normal;
 
-	*nproc = tch_threadCreateRootThread(&thcfg,NULL);
+	*nproc = tchk_threadCreateThread(&thcfg,NULL,TRUE);
 	return tchOK;
 }
 
 
-
 void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
-	tch_thread_header* cth = NULL;
-	tch_thread_header* nth = NULL;
+	tch_thread_kheader* cth = NULL;
+	tch_thread_kheader* nth = NULL;
 	tch_exc_stack* sp = NULL;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getThreadSP();
 		sp++;
-		tch_currentThread->t_tslot = 0;
+		cth = (tch_thread_kheader*) tch_currentThread->t_kthread;
+		cth->t_tslot = 0;
+		cth->t_state = RUNNING;
+
+#ifdef __NEWLIB__
 		_impure_ptr = &tch_currentThread->t_reent;
+#endif
+
+		tchk_mapPage(cth->t_pgId);			/// apply page mapping
 		tch_port_setThreadSP((uint32_t)sp);
-		if((arg1 = tch_threadIsValid(tch_currentThread)) == tchOK){
+		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_kernel_unlock();
 		}else{
 			tch_schedThreadDestroy(tch_currentThread,arg1);
@@ -221,86 +168,110 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		else
 			tch_port_disable_privilegedThread();
 		break;
+	case SV_BAR_INIT:
+		tchk_kernelSetResult(tch_currentThread,tch_barrierInit(arg1,arg2));
+		break;
+	case SV_BAR_DEINIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_barrierDeinit(arg1));
+		break;
+	case SV_SHMEM_ALLOC:
+		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemAlloc(arg1,arg2));
+		break;
+	case SV_SHMEM_FREE:
+		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemFree(arg1));
+		break;
+	case SV_SHMEM_AVAILABLE:
+		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemAvail(arg1));
+		break;
+	case SV_THREAD_CREATE:
+		tchk_kernelSetResult(tch_currentThread,tchk_threadCreateThread((tch_threadCfg*) arg1,(void*) arg2,FALSE));
+		break;
 	case SV_THREAD_START:              // start thread first time
-		tch_schedThreadStart((tch_threadId) arg1);
+		tchk_schedThreadStart((tch_threadId) arg1);
 		break;
 	case SV_THREAD_YIELD:
-		tch_schedThreadSleep(arg1,mSECOND,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
+		tchk_schedThreadSleep(arg1,mSECOND,WAIT);    // put current thread in pending queue and will be waken up at given after given time duration is passed
 		break;
 	case SV_THREAD_SLEEP:
-		tch_schedThreadSleep(arg1,SECOND,SLEEP);
+		tchk_schedThreadSleep(arg1,SECOND,SLEEP);
 		break;
 	case SV_THREAD_JOIN:
-		if(((tch_thread_header*)arg1)->t_state != TERMINATED){                                 // check target if thread has terminated
-			tch_schedThreadSuspend((tch_thread_queue*)&((tch_thread_header*)arg1)->t_joinQ,arg2);    //if not, thread wait
+		nth = ((tch_thread_uheader*) arg1)->t_kthread;
+		if(nth->t_state != TERMINATED){                                 // check target if thread has terminated
+			tchk_schedThreadSuspend((tch_thread_queue*) &nth->t_joinQ,arg2);   				 //if not, thread wait
 			break;
 		}
-		tch_kernelSetResult(tch_currentThread,tchOK);                                           //..otherwise, it returns immediately
+		tchk_kernelSetResult(tch_currentThread,tchOK);                                           //..otherwise, it returns immediately
 		break;
 	case SV_THREAD_RESUME:
-		tch_schedThreadResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
+		tchk_schedThreadResumeM((tch_thread_queue*) arg1,1,arg2,TRUE);
 		break;
 	case SV_THREAD_RESUMEALL:
-		tch_schedThreadResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
+		tchk_schedThreadResumeM((tch_thread_queue*) arg1,SCHED_THREAD_ALL,arg2,TRUE);
 		break;
 	case SV_THREAD_SUSPEND:
-		tch_schedThreadSuspend((tch_thread_queue*)arg1,arg2);
+		tchk_schedThreadSuspend((tch_thread_queue*)arg1,arg2);
 		break;
 	case SV_THREAD_TERMINATE:
-		cth = (tch_thread_header*) arg1;
-		tch_schedThreadTerminate((tch_threadId) cth,arg2);
+		tchk_schedThreadTerminate((tch_threadId) arg1,arg2);
 		break;
 	case SV_THREAD_DESTROY:
-		cth = (tch_thread_header*) arg1;
-		tch_schedThreadDestroy((tch_threadId) cth,arg2);
+		tch_schedThreadDestroy((tch_threadId) arg1,arg2);
+		break;
+	case SV_MTX_LOCK:
+		tchk_kernelSetResult(tch_currentThread,tchk_mutex_lock(arg1,arg2));
+		break;
+	case SV_MTX_UNLOCK:
+		tchk_kernelSetResult(tch_currentThread,tchk_mutex_unlock(arg1));
+		break;
+	case SV_MTX_DESTROY:
+		tchk_kernelSetResult(tch_currentThread,tchk_mutex_destroy(arg1));
+		break;
+	case SV_EV_INIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_eventInit(arg1,arg2));
 		break;
 	case SV_EV_WAIT:
-		cth = (tch_thread_header*) tch_currentThread;
-		tch_kernelSetResult(cth,tch_event_kwait(arg1,arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_eventWait(arg1,arg2));
 		break;
 	case SV_EV_UPDATE:
-		cth = (tch_thread_header*) tch_currentThread;
-		tch_kernelSetResult(cth,tch_event_kupdate(arg1,arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_eventUpdate(arg1,arg2));
 		break;
-	case SV_EV_DESTROY:
-		cth = (tch_thread_header*) tch_currentThread;
-		tch_kernelSetResult(cth,tch_event_kdestroy(arg1));
+	case SV_EV_DEINIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_eventDeinit(arg1));
+		break;
+	case SV_MSGQ_INIT:
+		tchk_kernelSetResult(tch_currentThread,(uword_t)tchk_msgqInit((tch_msgqId) arg1,arg2));
 		break;
 	case SV_MSGQ_PUT:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_msgq_kput((tch_msgqId) arg1,(void*) arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_msgqPut((tch_msgqId) arg1,(void*) arg2));
 		break;
 	case SV_MSGQ_GET:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_msgq_kget((tch_msgqId) arg1,(void*) arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_msgqGet((tch_msgqId) arg1,(void*) arg2));
 		break;
-	case SV_MSGQ_DESTROY:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_msgq_kdestroy((tch_msgqId) arg1));
+	case SV_MSGQ_DEINIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_msgqDeinit((tch_msgqId) arg1));
+		break;
+	case SV_MAILQ_INIT:
+		tchk_kernelSetResult(tch_currentThread,(tchStatus )tch_mailqInit((tch_mailqId) arg1,(tch_mailqId) arg2));
 		break;
 	case SV_MAILQ_ALLOC:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_mailq_kalloc((tch_mailqId) arg1,(void*) arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_mailqAlloc((tch_mailqId) arg1,(void*) arg2));
 		break;
 	case SV_MAILQ_FREE:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_mailq_kfree((tch_mailqId) arg1,(void*) arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_mailqFree((tch_mailqId) arg1,(void*) arg2));
 		break;
-	case SV_MAILQ_DESTROY:
-		cth = tch_currentThread;
-		tch_kernelSetResult(cth,tch_mailq_kdestroy((tch_mailqId) arg1,0));
+	case SV_MAILQ_DEINIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_mailqDeinit((tch_mailqId) arg1));
 		break;
 	case SV_HAL_ENABLE_ISR:
-		cth = tch_currentThread;
 		NVIC_DisableIRQ(arg1);
 		NVIC_SetPriority(arg1,arg2);
 		NVIC_EnableIRQ(arg1);
-		tch_kernelSetResult(cth,tchOK);
+		tchk_kernelSetResult(tch_currentThread,tchOK);
 		break;
 	case SV_HAL_DISABLE_ISR:
-		cth = tch_currentThread;
 		NVIC_DisableIRQ(arg1);
-		tch_kernelSetResult(cth,tchOK);
+		tchk_kernelSetResult(tch_currentThread,tchOK);
 		break;
 	}
 }
@@ -323,7 +294,7 @@ tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 	task->arg = arg;
 	task->fn = fn;
 	task->id = id;
-	task->prior = tch_currentThread->t_prior;
+	task->prior = getThreadKHeader(tch_currentThread)->t_prior;
 	task->status = tchOK;
 	if(result == tchOK)
 		tch_rti->MailQ->put(sysTaskQ,task);
@@ -332,21 +303,21 @@ tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
 
 
 void tch_kernelSetBusyMark(){
-	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,tchWaitForever) != tchOK)
+	if(RuntimeInterface.Mtx->lock(busyMonitor.mtx,tchWaitForever) != tchOK)
 		return;
-	tch_busyMonitor.mval++;
-	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
+	busyMonitor.wrk_load++;
+	RuntimeInterface.Mtx->unlock(busyMonitor.mtx);
 }
 
 void tch_kernelClrBusyMark(){
-	if(RuntimeInterface.Mtx->lock(tch_busyMonitor.mtx,tchWaitForever) != tchOK)
+	if(RuntimeInterface.Mtx->lock(busyMonitor.mtx,tchWaitForever) != tchOK)
 		return;
-	tch_busyMonitor.mval--;
-	RuntimeInterface.Mtx->unlock(tch_busyMonitor.mtx);
+	busyMonitor.wrk_load--;
+	RuntimeInterface.Mtx->unlock(busyMonitor.mtx);
 }
 
 BOOL tch_kernelIsBusy(){
-	return !tch_busyMonitor.mval;
+	return !busyMonitor.wrk_load;
 }
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status){
@@ -368,38 +339,35 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);
-	tch_board = tch_boardInit(&RuntimeInterface);
+	boardHandle = tch_boardInit(&RuntimeInterface);
 
 
-	RuntimeInterface.Time = tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
+	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 
 	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
-	tch_busyMonitor.mval = 0;
-	tch_busyMonitor.mtx = env->Mtx->create();
-
-	tch_threadId th = tch_currentThread;
-
-	tch_threadCfg thcfg;
-	thcfg._t_routine = (tch_thread_routine) main;
-	thcfg.t_stackSize = 0x800;
-	thcfg.t_proior = Normal;
-	thcfg._t_name = "main";
-
-	mainThread = tch_threadCreateRootThread(&thcfg,&RuntimeInterface);
-
-	thcfg._t_routine = (tch_thread_routine) idle;
-	thcfg.t_stackSize = TCH_CFG_THREAD_STACK_MIN_SIZE;
-	thcfg.t_proior = Idle;
-	thcfg._t_name = "idle";
-	idleThread = Thread->create(&thcfg,NULL);
-
-	tch_threadId id;
-	tch_kernel_exec(testimg,&id);
+	busyMonitor.wrk_load = 0;
+	busyMonitor.mtx = env->Mtx->create();
 
 
+	tch_threadCfg threadcfg;
+	Thread->initCfg(&threadcfg);
+	threadcfg.t_routine = (tch_thread_routine) main;
+	threadcfg.t_priority = Normal;
+	threadcfg.t_name = "main";
+	threadcfg.t_memDef.heap_sz = 0x800;
+	threadcfg.t_memDef.stk_sz = 0x800;
+
+	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE);
+
+	threadcfg.t_routine = (tch_thread_routine) idle;
+	threadcfg.t_priority = Idle;
+	threadcfg.t_name = "idle";
+	threadcfg.t_memDef.heap_sz = 0x200;
+	threadcfg.t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
+	idleThread = Thread->create(&threadcfg,NULL);
 
 
 	if((!mainThread) || (!idleThread))
@@ -410,10 +378,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	Thread->start(idleThread);
 	Thread->start(mainThread);
-	Thread->start(id);
 
 	uStdLib->string->memset(&evt,0,sizeof(tchEvent));
-
 
 
 	// loop for handling system tasks (from ISR / from any user thread)
@@ -434,7 +400,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!tch_busyMonitor.mval) && (tch_currentThread->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
+		if((!busyMonitor.wrk_load) && (getThreadKHeader(tch_currentThread)->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
 			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
@@ -444,7 +410,7 @@ static DECLARE_THREADROUTINE(idle){
 
 
 static DECLARE_SYSTASK(kernelTaskHandler){
-	struct tch_err_descriptor* err = NULL;
+	tch_errorDescriptor* err = NULL;
 	struct tm lt;
 	switch(id){
 	case SYSTSK_ID_SLEEP:
@@ -460,10 +426,8 @@ static DECLARE_SYSTASK(kernelTaskHandler){
 		// handle err
 		err = arg;
 		env->Time->getLocaltime(&lt);
-		env->uStdLib->stdio->iprintf("\r\n===SYSTEM FAULT (SUBJECT : %s) (ERR TYPE : %d)===\n",getThreadHeader(err->subj)->t_name,err->errtype);
-		env->uStdLib->stdio->iprintf("\r\n===Local Time : %d/%d/%d %d:%d:%d ===============\n",lt.tm_year + 1900,lt.tm_mon + 1,lt.tm_mday,lt.tm_hour,lt.tm_min,lt.tm_sec);
 		env->Thread->terminate(err->subj,err->errno);
-		kMem->free(err);
+		tchk_kernelHeapFree(err);
 		break;
 	case SYSTSK_ID_RESET:
 		tch_boardDeinit(env);
@@ -474,7 +438,7 @@ static DECLARE_SYSTASK(kernelTaskHandler){
 
 
 void tch_kernelOnHardFault(int fault,int type){
-	struct tch_err_descriptor* err = kMem->alloc(sizeof(struct tch_err_descriptor));
+	tch_errorDescriptor* err = (tch_errorDescriptor*) tchk_kernelHeapAlloc(sizeof(tch_errorDescriptor));
 	err->errtype = fault;
 	err->errno = type;
 	err->subj = tch_currentThread;

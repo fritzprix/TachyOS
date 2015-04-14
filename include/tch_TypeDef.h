@@ -147,7 +147,7 @@ typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
  * type definition for thread api
  */
 typedef enum {
-	KThread = 8,
+	Kernel = 7,
 	Unpreemtible = 6,
 	Realtime = 5,
 	High = 4,
@@ -157,12 +157,20 @@ typedef enum {
 } tch_thread_prior;
 
 typedef int (*tch_thread_routine)(const tch* env);
+
+typedef struct tch_user_mem_cfg_s {
+	uint32_t 	stk_sz;				// user stack size
+	uint32_t 	heap_sz;			// user heap size
+	uint32_t 	pimg_sz;			// user process image size
+	uint32_t*	u_mem;				// supplied user memory chunk for build thread context (only needed in child creation)
+	uint32_t	u_memsz;			// size of supplied user memory (only needed in child creation)
+} tch_userMemDef_t;
+
 typedef struct _tch_thread_cfg_t {
-	uint16_t             t_stackSize;
-	uint16_t             t_heapSize;
-	tch_thread_routine  _t_routine;
-	tch_thread_prior     t_proior;
-	const char*         _t_name;
+	tch_userMemDef_t 	 t_memDef;
+	tch_thread_routine   t_routine;
+	tch_thread_prior     t_priority;
+	const char*          t_name;
 }tch_threadCfg;
 
 

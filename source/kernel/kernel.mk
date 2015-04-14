@@ -7,18 +7,15 @@ KERNEL_SRCS=\
 	    tch_sys.c\
 	    tch_sem.c\
 	    tch_thread.c\
-	    tch_list.c\
-	    tch_mem.c\
 	    tch_libsysc.c\
 	    tch_nclib.c\
 	    tch_bar.c\
 	    tch_condv.c\
 	    tch_msgq.c\
 	    tch_mailq.c\
-	    tch_btree.c\
-	    tch_ltree.c\
 	    tch_time.c\
-	    tch_event.c
+	    tch_event.c\
+	    tch_kmm.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 KERNEL_BUILD_DIR=$(GEN_DIR)/kernel

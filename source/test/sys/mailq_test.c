@@ -34,14 +34,14 @@ tchStatus mailq_performTest(tch* api){
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg tcfg;
-	tcfg._t_name = "sender";
-	tcfg._t_routine = sender;
-	tcfg.t_proior = Normal;
-	tcfg.t_stackSize = 1 << 9;
+	tcfg.t_name = "sender";
+	tcfg.t_routine = sender;
+	tcfg.t_priority = Normal;
+	tcfg.t_memDef.stk_sz = 1 << 9;
 	sender_id = Thread->create(&tcfg,api);
 
-	tcfg._t_name = "receiver";
-	tcfg._t_routine = receiver;
+	tcfg.t_name = "receiver";
+	tcfg.t_routine = receiver;
 	receiver_id = Thread->create(&tcfg,api);
 
 	Thread->start(receiver_id);

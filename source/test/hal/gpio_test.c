@@ -19,14 +19,14 @@ tchStatus gpio_performTest(const tch* api){
 
 
 	tch_threadCfg thcfg;
-	thcfg._t_name = "evgen";
-	thcfg._t_routine = evgenRoutine;
-	thcfg.t_proior = Normal;
-	thcfg.t_stackSize = 1 << 9;
+	thcfg.t_name = "evgen";
+	thcfg.t_routine = evgenRoutine;
+	thcfg.t_priority = Normal;
+	thcfg.t_memDef.stk_sz = 1 << 9;
 	tch_threadId evgenThread = api->Thread->create(&thcfg,api);
 
-	thcfg._t_name = "evcons";
-	thcfg._t_routine = evconsRoutine;
+	thcfg.t_name = "evcons";
+	thcfg.t_routine = evconsRoutine;
 	tch_threadId evconsThread = api->Thread->create(&thcfg,api);
 
 	api->Thread->start(evgenThread);

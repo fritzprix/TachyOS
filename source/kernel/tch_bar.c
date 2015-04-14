@@ -42,23 +42,26 @@ __attribute__((section(".data"))) static tch_bar_ix Barrier_StaticInstance = {
 const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
-void tch_initBar(tch_barCb* bar){
-	uStdLib->string->memset(bar,0,sizeof(tch_barCb));
-	tch_barValidate(bar);
-	tch_listInit(&bar->wq);
-	bar->__obj.destructor = (tch_uobjDestr) tch_noop_destr;
+static tch_barId tch_bar_create(){
+	tch_barCb* bar = tch_shMemAlloc(sizeof(tch_barCb),TRUE);
+	if(!bar)
+		return NULL;
+	tch_port_enterSv(SV_BAR_INIT,bar,FALSE);
+	return (tch_barId) bar;
 }
 
 
-static tch_barId tch_bar_create(){
-	tch_barCb* bar = shMem->alloc(sizeof(tch_barCb));
-	if(!bar)
-		return NULL;
-	uStdLib->string->memset(bar,0,sizeof(tch_barCb));
+void tch_barrierInit(tch_barCb* bar,BOOL is_static){
+	uStdLib->string->memset(bar, 0, sizeof(tch_barCb));
 	tch_barValidate(bar);
 	tch_listInit(&bar->wq);
-	bar->__obj.destructor = (tch_uobjDestr) tch_bar_destroy;
-	return (tch_barId) bar;
+	bar->__obj.destructor = (tch_uobjDestr) is_static? __tch_noop_destr : tch_bar_destroy;
+}
+
+tchStatus tchk_barrierDeinit(tch_barCb* bar){
+	tch_barInvalidate(bar);
+	tchk_schedThreadResumeM(&bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	return tchOK;
 }
 
 static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){
@@ -80,7 +83,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 	if(tch_listIsEmpty(&bar->wq))
 		return tchOK;
 	if(tch_port_isISR()){
-		tch_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tchk_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK);
@@ -88,20 +91,16 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 
 static tchStatus tch_bar_destroy(tch_barId barId){
 	tch_barCb* bar = (tch_barCb*) barId;
+	tchStatus result = tchOK;
 	if((!bar) || (!tch_barIsValid(bar)))
 		return tchErrorParameter;
-	tch_barInvalidate(bar);
 	if(tch_port_isISR())
 		return tchErrorISR;
-	else
-		tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchErrorResource);
-	shMem->free(bar);
-	return tchOK;
+	result =  tch_port_enterSv(SV_BAR_DEINIT,(uint32_t)&bar->wq,tchErrorResource);
+	tch_shMemFree(bar);
+	return result;
 }
 
-
-/**
- */
 
 
 static void tch_barValidate(tch_barId bar){

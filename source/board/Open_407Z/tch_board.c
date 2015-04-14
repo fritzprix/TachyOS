@@ -20,7 +20,7 @@ static int tch_bderr_read(uint8_t* buf,uint32_t sz);
 static void tch_bderr_close();
 
 const static struct tch_board_descriptor_s bd_Descriptor = {
-		.b_name = "Port_103Z",
+		.b_name = "Open_407Z",
 		.b_major = 0,
 		.b_minor = 0,
 		.b_feature = 0
@@ -53,7 +53,7 @@ tch_boardHandle tch_boardInit(const tch* ctx){
 	ucfg.FlowCtrl = FALSE;
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
-	stdio_handle = ctx->Device->usart->allocate(ctx,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
+	stdio_handle = ctx->Device->usart->allocate(ctx,tch_USART1,&ucfg,tchWaitForever,ActOnSleep);
 
 	return &BOARD_HANDLE;
 }

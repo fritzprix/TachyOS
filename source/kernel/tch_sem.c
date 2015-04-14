@@ -45,7 +45,7 @@ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
 
 
 static tch_semId tch_semaphore_create(uint32_t count){
-	tch_semaphore_cb* sem = (tch_semaphore_cb*) shMem->alloc(sizeof(tch_semaphore_cb));
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) tch_shMemAlloc(sizeof(tch_semaphore_cb),FALSE);
 	if(!sem)
 		return NULL;
 	sem->count = count;
@@ -85,7 +85,7 @@ static tchStatus tch_semaphore_unlock(tch_semId id){
 	sem->count++;
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchOK);
 	}
@@ -101,11 +101,11 @@ static tchStatus tch_semaphore_destroy(tch_semId id){
 	tch_semaphoreInvalidate(id);
 	if(!tch_listIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
-			tch_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchErrorResource);
 	}
-	shMem->free(sem);
+	tch_shMemFree(sem);
 	return  tchOK;
 }
 
