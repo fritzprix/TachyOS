@@ -9,6 +9,10 @@
 #include "tch_msgq.h"
 
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
+#define MSGQ_VALIDATE(msgq)		do{\
+	((tch_msgq_cb*) msgq)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF);\
+}
+
 
 typedef struct _tch_msgq_cb {
 	tch_uobj      __obj;
@@ -24,9 +28,6 @@ typedef struct _tch_msgq_cb {
 
 
 
-tchStatus tch_msgq_kput(tch_msgqId,tch_msgq_karg* arg);
-tchStatus tch_msgq_kget(tch_msgqId,tch_msgq_karg* arg);
-tchStatus tch_msgq_kdestroy(tch_msgqId);
 
 static tch_msgqId tch_msgq_create(uint32_t len);
 static tchStatus tch_msgq_put(tch_msgqId,uint32_t msg,uint32_t millisec);
@@ -53,8 +54,18 @@ const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 
 static tch_msgqId tch_msgq_create(uint32_t len){
+	if(!len)
+		return NULL;
 	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) shMem->alloc(sz);
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) tch_shMemAlloc(sz,TRUE);
+	if(!msgqCb)
+		return NULL;
+	return tch_port_enterSv(SV_MSGQ_INIT,msgqCb,len);
+}
+
+tch_msgqId tchk_msgqInit(tch_msgqId id,uint32_t len){
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) id;
+	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
 	uStdLib->string->memset(msgqCb,0,sz);
 
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
@@ -76,7 +87,7 @@ static tch_msgqId tch_msgq_create(uint32_t len){
 static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tchStatus result = tchOK;
-	if(!tch_msgqIsValid(msgqCb))
+	if(!mqId || !tch_msgqIsValid(msgqCb))
 		return tchErrorResource;
 	if(tch_port_isISR()){
 		if(millisec)
@@ -87,7 +98,7 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
 
-			tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 		}
 		return tchErrorResource;
@@ -112,9 +123,9 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 	return tchErrorOS;
 }
 
-tchStatus tch_msgq_kput(tch_msgqId mqId,tch_msgq_karg* arg){
+tchStatus tchk_msgqPut(tch_msgqId mqId,tch_msgq_karg* arg){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
-	tch_thread_header* cth = tch_currentThread;
+	tch_thread_uheader* cth = tch_currentThread;
 	if(!tch_msgqIsValid(msgqCb))
 		return tchErrorResource;
 	if(msgqCb->updated < msgqCb->sz){
@@ -122,13 +133,12 @@ tchStatus tch_msgq_kput(tch_msgqId mqId,tch_msgq_karg* arg){
 			if(msgqCb->pidx >= msgqCb->sz)
 				msgqCb->pidx = 0;
 			msgqCb->updated++;
-			tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 	}
-	tch_schedThreadSuspend((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
+	tchk_schedThreadSuspend((tch_thread_queue*) &msgqCb->pwq,arg->timeout);
 	return tchErrorNoMemory;
 }
-
 
 static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
@@ -136,7 +146,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 	evt.def = mqId;
 	evt.status = tchOK;
 	evt.value.v = 0;
-	if(!tch_msgqIsValid(msgqCb)){
+	if(!mqId || !tch_msgqIsValid(msgqCb)){
 		evt.status = tchErrorResource;
 		return evt;
 	}
@@ -153,7 +163,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 		if(msgqCb->gidx >= msgqCb->sz)
 			msgqCb->gidx = 0;
 		msgqCb->updated--;
-		tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+		tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 		evt.status = tchOK;
 		return evt;
 	}else{
@@ -184,20 +194,18 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 	return evt;
 }
 
-tchStatus tch_msgq_kget(tch_msgqId mqId,tch_msgq_karg* arg){
+tchStatus tchk_msgqGet(tch_msgqId mqId,tch_msgq_karg* arg){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
-	tch_thread_header* cth = tch_currentThread;
-	if(!tch_msgqIsValid(msgqCb))
-		return tchErrorResource;
+	tch_thread_uheader* cth = tch_currentThread;
 	if(msgqCb->updated == 0){
-		tch_schedThreadSuspend((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
+		tchk_schedThreadSuspend((tch_thread_queue*) &msgqCb->cwq,arg->timeout);
 		return tchOK;
 	}
 	arg->msg = *((uword_t*)msgqCb->bp + msgqCb->gidx++);
 	if(msgqCb->gidx >= msgqCb->sz)
 		msgqCb->gidx = 0;
 	msgqCb->updated--;
-	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 	return tchEventMessage;
 }
 
@@ -208,27 +216,26 @@ static uint32_t tch_msgq_getLength(tch_msgqId mqId){
 
 
 static tchStatus tch_msgq_destroy(tch_msgqId mqId){
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
-	tch_thread_header* nth = NULL;
-	if(!tch_msgqIsValid(msgqCb))
+	tch_thread_uheader* nth = NULL;
+	if(!mqId || !tch_msgqIsValid(mqId))
 		return tchErrorResource;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	tch_port_enterSv(SV_MSGQ_DESTROY,(uword_t)mqId,0);
-	tch_msgqInvalidate(msgqCb);
-	shMem->free(msgqCb);
+	tch_port_enterSv(SV_MSGQ_DEINIT,(uword_t)mqId,0);
+	tch_shMemFree(mqId);
 	return tchOK;
 }
 
 
-tchStatus tch_msgq_kdestroy(tch_msgqId mqId){
+tchStatus tchk_msgqDeinit(tch_msgqId mqId){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
-	tch_thread_header* nth = NULL;
+	tch_thread_uheader* nth = NULL;
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
-	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	tch_schedThreadResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tch_msgqInvalidate(msgqCb);
+	tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	return tchOK;
 }
 

@@ -34,45 +34,16 @@ char** environ = __env;
 
 __attribute__((section(".data")))static char* heap_end = NULL;
 
-
-
-tch_usartHandle stdio_port;
-
-
-tchStatus tch_kernel_initCrt0(const tch* ctx){
-	// initialize standard i/o stream device
-	tch_UartCfg ucfg;
-	ucfg.Buadrate = 115200;
-	ucfg.FlowCtrl = FALSE;
-	ucfg.Parity = USART_Parity_NON;
-	ucfg.StopBit = USART_StopBit_1B;
-	stdio_port = ctx->Device->usart->allocate(ctx,tch_USART1,&ucfg,tchWaitForever,ActOnSleep);
-	return tchOK;
-
-}
-
-uint32_t tch_kHeapAvail(void){
-	return ((uint32_t) &Heap_Limit) - (uint32_t) heap_end;
-}
-
-tchStatus tch_kHeapFreeAll(tch_threadId thread){
-	tch_thread_header* th_hdr = (tch_thread_header*) thread;
-	if(!tch_threadIsRoot(thread))
-		return tchErrorParameter;
-	uMem->forceRelease(thread);
-	shMem->forceRelease(thread);
-	free(th_hdr->t_chks);
-	return tchOK;
-}
-
+__attribute__((aligned(8))) static char LIBC_HEAP[6000];
 
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	if(heap_end == NULL)
-		heap_end = (char*)&Heap_Base;
+		//heap_end = (char*)&Sys_Heap_Base;
+		heap_end = (char*) LIBC_HEAP;
 	char *prev_heap_end;
 	prev_heap_end = heap_end;
-	if ((uint32_t)heap_end + incr > (uint32_t) &Heap_Limit) {
+	if ((uint32_t)heap_end + incr > ((uint32_t) LIBC_HEAP + 6000 * sizeof(char))) {
 		if(!tch_port_isISR()){
 			Thread->terminate(tch_currentThread,tchErrorNoMemory);
 		}
@@ -87,8 +58,8 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	case STDIN_FILENO:
 	case STDERR_FILENO:
 	case STDOUT_FILENO:
-		if(tch_board->bd_stdio->write){
-			tch_board->bd_stdio->write(buf,cnt);
+		if(boardHandle->bd_stdio->write){
+			boardHandle->bd_stdio->write(buf,cnt);
 			return cnt;
 		}
 	}
@@ -113,8 +84,8 @@ _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	case STDOUT_FILENO:
 		return -1;
 	case STDIN_FILENO:
-		if(tch_board->bd_stdio->read)
-			return tch_board->bd_stdio->read(buf,cnt);
+		if(boardHandle->bd_stdio->read)
+			return boardHandle->bd_stdio->read(buf,cnt);
 	}
 	return -1;
 }

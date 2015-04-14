@@ -34,12 +34,7 @@ struct tch_uobj_prototype {
 	tch_uobj           __obj;
 };
 
-tch_memId tch_memCreate(void* mem,uint32_t sz);
-static void* tch_memAlloc(tch_memId mh,size_t size);
 static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next);
-static void tch_memFree(tch_memId mh,void* p);
-static uint32_t tch_memAvail(tch_memId mh);
-static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list);
 static void tch_memPrint(void*);
 
 
@@ -70,8 +65,8 @@ __attribute__((section(".data")))static tch_mem_ix uMEM_StaticInstance = {
 __attribute__((section(".data")))static tch_mem_ix kMem_StaticInstance = {
 		malloc,
 		free,
-		tch_kHeapAvail,
-		tch_kHeapFreeAll,
+		NULL,
+		NULL,
 		NULL,
 		NULL
 };
@@ -244,7 +239,7 @@ tch_memId tch_memCreate(void* mem,uint32_t sz){
 
 }
 
-static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
+tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
 	tch_uobjProto* uobj = NULL;
 	while(!tch_listIsEmpty(alloc_list)){
 		uobj = tch_listDequeue(alloc_list);
@@ -256,58 +251,7 @@ static tchStatus tch_memForceRelease(tch_memId mh,tch_lnode_t* alloc_list){
 	return tchOK;
 }
 
-static void tch_memPrint(void* m){
-	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %x\n",((tch_memHdr*)m)->usz,m);
-}
-
-
-static void* tch_memAlloc(tch_memId mh,size_t size){
-	tch_memEntry* m_entry = (tch_memEntry*) mh;
-	tch_memHdr* nchnk = NULL;
-	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
-	int rsz = size + sizeof(tch_memHdr);
-	while(cnode->next){
-		cnode = cnode->next;
-		if(((tch_memHdr*) cnode)->usz > rsz){
-			nchnk = (tch_memHdr*)((uint32_t) cnode + rsz);
-			tch_listInit((tch_lnode_t*) nchnk);
-			((tch_lnode_t*)nchnk)->next = cnode->next;
-			((tch_lnode_t*)nchnk)->prev = cnode->prev;
-			if(cnode->next)
-				cnode->next->prev = (tch_lnode_t*)nchnk;
-			if(cnode->prev)
-				cnode->prev->next = (tch_lnode_t*)nchnk;
-			nchnk->usz = ((tch_memHdr*) cnode)->usz - rsz;
-			((tch_memHdr*) cnode)->usz = size;
-			nchnk = (tch_memHdr*) cnode;
-			m_entry->hdr.usz -= rsz;
-			return nchnk + 1;
-		}else if(((tch_memHdr*) cnode)->usz == size){
-			nchnk = (tch_memHdr*) cnode;
-			if(cnode->next)
-				cnode->next->prev = cnode->prev;
-			if(cnode->prev)
-				cnode->prev->next = cnode->next;
-			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
-			return nchnk + 1;
-		}
-	}
-	return NULL;
-}
-
-static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
-	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_memHdr))){
-		cur->usz += next->usz + sizeof(tch_memHdr);
-		((tch_lnode_t*) cur)->next = ((tch_lnode_t*) next)->next;
-		if(((tch_lnode_t*) cur)->next)
-			((tch_lnode_t*) cur)->next->prev = (tch_lnode_t*)cur;
-		return (tch_memHdr*)((tch_lnode_t*) cur)->next;
-	}
-	return next;
-}
-
-
-static void tch_memFree(tch_memId mh,void* p){
+void tch_memFree(tch_memId mh,void* p){
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
 	tch_memHdr* nchnk = p;
 	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
@@ -353,11 +297,61 @@ static void tch_memFree(tch_memId mh,void* p){
 	m_entry->hdr.usz -= nchnk->usz + sizeof(tch_memHdr);
 }
 
-
-tchStatus tch_noop_destr(tch_uobj* obj){return tchOK;}
-
-
-static uint32_t tch_memAvail(tch_memId mh){
+uint32_t tch_memAvail(tch_memId mh){
 	tch_memHdr* m_entry = (tch_memHdr*) mh;
 	return m_entry->usz;
 }
+
+
+void* tch_memAlloc(tch_memId mh,size_t size){
+	tch_memEntry* m_entry = (tch_memEntry*) mh;
+	tch_memHdr* nchnk = NULL;
+	tch_lnode_t* cnode = (tch_lnode_t*)m_entry;
+	int rsz = size + sizeof(tch_memHdr);
+	while(cnode->next){
+		cnode = cnode->next;
+		if(((tch_memHdr*) cnode)->usz > rsz){
+			nchnk = (tch_memHdr*)((uint32_t) cnode + rsz);
+			tch_listInit((tch_lnode_t*) nchnk);
+			((tch_lnode_t*)nchnk)->next = cnode->next;
+			((tch_lnode_t*)nchnk)->prev = cnode->prev;
+			if(cnode->next)
+				cnode->next->prev = (tch_lnode_t*)nchnk;
+			if(cnode->prev)
+				cnode->prev->next = (tch_lnode_t*)nchnk;
+			nchnk->usz = ((tch_memHdr*) cnode)->usz - rsz;
+			((tch_memHdr*) cnode)->usz = size;
+			nchnk = (tch_memHdr*) cnode;
+			m_entry->hdr.usz -= rsz;
+			return nchnk + 1;
+		}else if(((tch_memHdr*) cnode)->usz == size){
+			nchnk = (tch_memHdr*) cnode;
+			if(cnode->next)
+				cnode->next->prev = cnode->prev;
+			if(cnode->prev)
+				cnode->prev->next = cnode->next;
+			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
+			return nchnk + 1;
+		}
+	}
+	return NULL;
+}
+
+static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
+	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_memHdr))){
+		cur->usz += next->usz + sizeof(tch_memHdr);
+		((tch_lnode_t*) cur)->next = ((tch_lnode_t*) next)->next;
+		if(((tch_lnode_t*) cur)->next)
+			((tch_lnode_t*) cur)->next->prev = (tch_lnode_t*)cur;
+		return (tch_memHdr*)((tch_lnode_t*) cur)->next;
+	}
+	return next;
+}
+
+
+
+static void tch_memPrint(void* m){
+	uStdLib->stdio->iprintf("\rChunk : sizeof %d / addr %x\n",((tch_memHdr*)m)->usz,m);
+}
+
+

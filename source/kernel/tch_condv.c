@@ -49,20 +49,20 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 
 
-void tch_condvInit(tch_condvCb* condv){
+tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
 	tch_listInit((tch_lnode_t*)&condv->wq);
-	condv->wakeMtx = NULL;
+	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
-	condv->__obj.destructor = (tch_uobjDestr) tch_noop_destr;
+	condv->__obj.destructor =  is_static? (tch_uobjDestr)__tch_noop_destr : (tch_uobjDestr)tch_condv_destroy;
 }
 
 
 static tch_condvId tch_condv_create(){
-	tch_condvCb* condv = (tch_condvCb*)shMem->alloc(sizeof(tch_condvCb));
+	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
 	tch_listInit((tch_lnode_t*)&condv->wq);
-	condv->wakeMtx = NULL;
+	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
 	condv->__obj.destructor = (tch_uobjDestr) tch_condv_destroy;
 	return condv;
@@ -76,7 +76,7 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!tch_condvIsValid(condv))
 		return tchErrorResource;
-	condv->wakeMtx = lock;
+	condv->waitMtx = lock;
 	if(tch_port_isISR()){
 		tch_kernel_errorHandler(FALSE,tchErrorISR);
 		return tchErrorISR;
@@ -115,7 +115,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 	if(tch_port_isISR()){                  // if isr mode, no locked mtx is supplied
 		if(tch_condvIsWait(condv)){    // check condv is not done
 			tch_condvClrWait(condv);   // set condv to done
-			tch_schedThreadResumeM((tch_thread_queue*) &condv->wq,1,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &condv->wq,1,tchOK,TRUE);
 			return tchOK;
 		}else{
 			return tchErrorParameter;
@@ -123,10 +123,10 @@ static tchStatus tch_condv_wake(tch_condvId id){
 	}else{
 		if(tch_condvIsWait(condv)){
 			tch_condvClrWait(condv);
-			if(Mtx->unlock(condv->wakeMtx) != tchOK)          // if mtx is not locked by this thread
+			if(Mtx->unlock(condv->waitMtx) != tchOK)          // if mtx is not locked by this thread
 				return tchErrorResource;
 			tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&condv->wq,tchOK);   // wake single thread from wait queue
-			return Mtx->lock(condv->wakeMtx,tchWaitForever);                        // lock mtx and return
+			return Mtx->lock(condv->waitMtx,tchWaitForever);                        // lock mtx and return
 		}
 		return tchErrorParameter;
 	}
@@ -139,7 +139,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 	if(tch_port_isISR()){
 		if(tch_condvIsWait(condv)){
 			tch_condvClrWait(condv);
-			tch_schedThreadResumeM((tch_thread_queue*) &condv->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+			tchk_schedThreadResumeM((tch_thread_queue*) &condv->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 			return tchOK;
 		}else{
 			return tchErrorParameter;
@@ -147,10 +147,10 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 	}else {
 		if(tch_condvIsWait(condv)){
 			tch_condvClrWait(condv);
-			if(Mtx->unlock(condv->wakeMtx) != tchOK)
+			if(Mtx->unlock(condv->waitMtx) != tchOK)
 				return tchErrorParameter;
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchOK);
-			return Mtx->lock(condv->wakeMtx,tchWaitForever);
+			return Mtx->lock(condv->waitMtx,tchWaitForever);
 		}
 		return tchErrorResource;
 	}
@@ -164,11 +164,11 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 	if(tch_port_isISR()){
 		return tchErrorISR;
 	}else{
-		Mtx->lock(condv->wakeMtx,tchWaitForever);
+		Mtx->lock(condv->waitMtx,tchWaitForever);
 		tch_condvInvalidate(condv);
 		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource);
-		Mtx->unlock(condv->wakeMtx);
-		shMem->free(condv);
+		Mtx->unlock(condv->waitMtx);
+		tch_shMemFree(condv);
 		return result;
 	}
 }
@@ -184,3 +184,4 @@ static inline void tch_condvInvalidate(tch_condvId condId){
 static inline BOOL tch_condvIsValid(tch_condvId condv){
 	return ((((tch_condvCb*) condv)->state  >> 2) & 0xFFFF) ==  ((((uint32_t) condv) & 0xFFFF) ^ TCH_CONDV_CLASS_KEY);
 }
+

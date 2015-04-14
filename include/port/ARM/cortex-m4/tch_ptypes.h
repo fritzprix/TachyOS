@@ -30,6 +30,12 @@ typedef void* uaddr_t;
 
 
 
+typedef struct tch_threadInitialArgs {
+	void* 		stack_top;
+	uword_t* 	uthread;
+}tch_threadInitialArgs;
+
+
 /**
  * follows arm v7m arch. ref.
  * exception push & pop registers below in the stack at the entry and exit
@@ -95,6 +101,7 @@ struct _tch_thread_context {
 	float S31;
 #endif
 }__attribute__((aligned(8)));
+
 
 
 #if defined(__cplusplus)

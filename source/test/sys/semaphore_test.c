@@ -33,18 +33,18 @@ tchStatus semaphore_performTest(tch* api){
 
 
 	tch_threadCfg thcfg;
-	thcfg._t_name = "child1";
-	thcfg._t_routine = child1Routine;
-	thcfg.t_stackSize = 512;
-	thcfg.t_proior = Normal;
+	thcfg.t_name = "child1";
+	thcfg.t_routine = child1Routine;
+	thcfg.t_memDef.stk_sz = 512;
+	thcfg.t_priority = Normal;
 	ch1Id = api->Thread->create(&thcfg,api);
 
-	thcfg._t_name = "child2";
-	thcfg._t_routine = child2Routine;
+	thcfg.t_name = "child2";
+	thcfg.t_routine = child2Routine;
 	ch2Id = api->Thread->create(&thcfg,api);
 
-	thcfg._t_name = "child3";
-	thcfg._t_routine = child3Routine;
+	thcfg.t_name = "child3";
+	thcfg.t_routine = child3Routine;
 	ch3Id = api->Thread->create(&thcfg,api);
 
 	ts = api->Sem->create(1);

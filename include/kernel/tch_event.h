@@ -12,9 +12,13 @@
 extern "C" {
 #endif
 
-extern tchStatus tch_event_kwait(tch_eventId id,void* arg);
-extern int32_t tch_event_kupdate(tch_eventId id,void* arg);
-extern void tch_event_kdestroy(tch_eventId id);
+
+typedef struct tch_eventCb tch_eventCb;
+
+extern tch_eventId tchk_eventInit(tch_eventCb* evcb,tch_eventCb* initcb);
+extern tchStatus tchk_eventWait(tch_eventId id,void* arg);
+extern int32_t tchk_eventUpdate(tch_eventId id,void* arg);
+extern void tchk_eventDeinit(tch_eventId id);
 
 
 #if defined(__cplusplus)

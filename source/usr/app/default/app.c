@@ -70,16 +70,18 @@ int main(const tch* env) {
 
 	tch_threadCfg thcfg;
 	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
-	thcfg._t_name = "child1";
-	thcfg._t_routine = childThreadRoutine;
-	thcfg.t_proior = Normal;
-	thcfg.t_stackSize = 720;
+	env->Thread->initCfg(&thcfg);
+	thcfg.t_name = "child1";
+	thcfg.t_routine = childThreadRoutine;
+	thcfg.t_priority = Normal;
+	thcfg.t_memDef.stk_sz = 720;
 	childId = env->Thread->create(&thcfg,spi);
 
-	thcfg._t_name = "btnHandler";
-	thcfg._t_routine = btnHandler;
-	thcfg.t_stackSize = 720;
-	thcfg.t_proior = Normal;
+	env->Thread->initCfg(&thcfg);
+	thcfg.t_name = "btnHandler";
+	thcfg.t_routine = btnHandler;
+	thcfg.t_memDef.stk_sz = 720;
+	thcfg.t_priority = Normal;
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
 	env->Thread->start(childId);
@@ -124,7 +126,7 @@ int main(const tch* env) {
 	iic->write(iic,msAddr,buf,2);
 
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
-
+	int cnt = 0;
 
 	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
@@ -135,17 +137,13 @@ int main(const tch* env) {
 		pwm->write(pwm,1,dutyArr,10);
 		pwm->stop(pwm);
 		if((loopcnt++ % 1000) == 0){
-			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
-			env->Mem->printAllocList();
-			env->Mem->printFreeList();
+			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
 		}
 		spi->write(spi,"Hello World,Im the main!!!",16);
 		if((loopcnt % 1000) == 500){
-			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->avail());
-			env->Mem->printAllocList();
-			env->Mem->printFreeList();
+			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
 		}
-		env->Thread->sleep(2);
+		env->Thread->yield(1000);
 
 	}
 	return tchOK;
@@ -160,7 +158,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-		env->Thread->sleep(5);
+		env->Thread->yield(500);
 	}
 
 	return tchOK;
@@ -193,7 +191,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 
 		env->Time->getLocaltime(&ltm);
 		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
-		env->Thread->sleep(1);
+		env->Thread->yield(100);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;

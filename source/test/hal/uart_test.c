@@ -25,10 +25,10 @@ tchStatus uart_performTest(tch* env){
 
 
 	tch_threadCfg thcfg;
-	thcfg._t_name = "Printer";
-	thcfg._t_routine = printerThreadRoutine;
-	thcfg.t_stackSize = (1 << 10);
-	thcfg.t_proior = Normal;
+	thcfg.t_name = "Printer";
+	thcfg.t_routine = printerThreadRoutine;
+	thcfg.t_memDef.stk_sz = (1 << 10);
+	thcfg.t_priority = Normal;
 
 	tch_threadId printer = env->Thread->create(&thcfg,serial);
 	env->Thread->start(printer);

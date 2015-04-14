@@ -30,6 +30,7 @@ endif
 #######################################################################################
 
 #source code directory 
+KERNEL_UTIL_SRC_DIR=$(ROOT_DIR)/source/kernel/util
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
 PORT_SRC_DIR=$(ROOT_DIR)/source/port
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
@@ -39,6 +40,7 @@ UTEST_SRC_BASE=$(ROOT_DIR)/source/test
 
 #header file directory
 BASE_HEADER_DIR=$(ROOT_DIR)/include
+KERNEL_UTIL_HEADER_DIR=$(ROOT_DIR)/include/kernel/util
 KERNEL_HEADER_DIR=$(ROOT_DIR)/include/kernel
 PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/port/$(ARCH)
 PORT_ARCH_HEADER_DIR=$(PORT_ARCH_COMMON_HEADER_DIR)/$(CPU)
@@ -78,7 +80,8 @@ ifeq ($(INC),)
 	      -I$(HAL_COMMON_HEADER_DIR)\
 	      -I$(KERNEL_HEADER_DIR)\
 	      -I$(BASE_HEADER_DIR)\
-	      -I$(BOARD_HEADER_DIR)
+	      -I$(BOARD_HEADER_DIR)\
+	      -I$(KERNEL_UTIL_HEADER_DIR)
 endif
 
 ###################      toolchain & architecture specific makefile   #################
@@ -93,6 +96,7 @@ CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
        
 include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
+include $(KERNEL_UTIL_SRC_DIR)/kutil.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
 include $(USR_SRC_DIR)/usr.mk

@@ -35,11 +35,11 @@
 #define __BUILD_TIME_EPOCH 0UL
 #endif
 
-#define TCH_SYS_TASKQ_SZ                     (16)
+#define TCH_SYS_TASKQ_SZ                    (16)
 #define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
-#define tch_kernelSetResult(th,result) ((tch_thread_header*) th)->t_kRet = result
-#define getThreadHeader(th_id)  ((tch_thread_header*) th_id)
-
+#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->t_kRet = result
+#define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
+#define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->t_kthread)
 
 /*!
  * \brief
@@ -56,7 +56,6 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 extern const tch_hal* tch_kernel_initHAL(const tch* ctx);
 extern BOOL tch_kernel_initPort();
-extern tchStatus tch_kernel_initCrt0(const tch* ctx);
 
 
 extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
@@ -65,9 +64,9 @@ extern tchStatus tch_kernel_disableInterrupt(IRQn_Type irq);
 extern tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc);
 
 
-extern void __tch_kernel_atexit(tch_threadId thread,int res) __attribute__((naked));
-extern uint32_t tch_kHeapAvail(void);
-extern tchStatus tch_kHeapFreeAll(tch_threadId thread);
+
+extern tchStatus __tch_noop_destr(tch_uobj* obj);
+extern void __tchk_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
 
 
 /**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode
@@ -90,8 +89,8 @@ extern BOOL tch_kernelIsBusy();
 extern int Sys_Stack_Top asm("sys_stack_top");
 extern int Sys_Stack_Limit asm("sys_stack_limit");
 
-extern int Heap_Base asm("sys_heap_base");
-extern int Heap_Limit asm("sys_heap_limit");
+extern int Sys_Heap_Base asm("sys_heap_base");
+extern int Sys_Heap_Limit asm("sys_heap_limit");
 
 void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
@@ -110,8 +109,6 @@ extern const tch_event_ix* Event;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* uMem;
-extern const tch_mem_ix* kMem;
-extern const tch_mem_ix* shMem;
 extern const tch_ustdlib_ix* uStdLib;
 extern const tch_event_ix* Event;
 extern const tch_signal_ix* Sig;
@@ -119,12 +116,11 @@ extern const tch_signal_ix* Sig;
 extern const tch_hal* Hal;
 
 
-
-extern tch_thread_header* tch_currentThread;
+extern tch_thread_uheader* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
-extern tch_thread_queue tch_procList;
+extern tch_thread_queue procList;
 extern const tch* tch_rti;
-extern tch_boardHandle tch_board;
+extern tch_boardHandle boardHandle;
 extern tch_memId sharedMem;
 
 

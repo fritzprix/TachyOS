@@ -122,7 +122,7 @@ void tch_port_disableISR(void){
 }
 
 void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
-	((tch_thread_header*)nth)->t_kRet = kret;
+	((tch_thread_kheader*)nth)->t_uthread->t_kRet = kret;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"

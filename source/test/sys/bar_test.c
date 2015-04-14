@@ -37,24 +37,24 @@ tchStatus barrier_performTest(tch* api){
 
 
 	tch_threadCfg tcfg;
-	tcfg._t_name = "child1";
-	tcfg._t_routine = child1Routine;
-	tcfg.t_proior = Normal;
-	tcfg.t_stackSize = 512;
+	tcfg.t_name = "child1";
+	tcfg.t_routine = child1Routine;
+	tcfg.t_priority = Normal;
+	tcfg.t_memDef.stk_sz = 512;
 
 	child1Id = api->Thread->create(&tcfg,api);
 
-	tcfg._t_name = "child2";
-	tcfg._t_routine = child2Routine;
-	tcfg.t_proior = Normal;
-	tcfg.t_stackSize = 512;
+	tcfg.t_name = "child2";
+	tcfg.t_routine = child2Routine;
+	tcfg.t_priority = Normal;
+	tcfg.t_memDef.stk_sz = 512;
 	child2Id = api->Thread->create(&tcfg,api);
 
 
-	tcfg._t_name = "child3";
-	tcfg._t_routine = child3Routine;
-	tcfg.t_proior = Normal;
-	tcfg.t_stackSize = 512;
+	tcfg.t_name = "child3";
+	tcfg.t_routine = child3Routine;
+	tcfg.t_priority = Normal;
+	tcfg.t_memDef.stk_sz = 512;
 	child3Id = api->Thread->create(&tcfg,api);
 
 	tch_assert(api,child1Id && child2Id && child3Id,tchErrorOS);

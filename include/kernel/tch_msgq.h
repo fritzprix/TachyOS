@@ -18,11 +18,10 @@ typedef struct _tch_msgq_karg_t{
 	uint32_t    timeout;
 }tch_msgq_karg;
 
-extern tchStatus tch_msgq_kput(tch_msgqId,tch_msgq_karg* arg);
-extern tchStatus tch_msgq_kget(tch_msgqId,tch_msgq_karg* arg);
-extern tchStatus tch_msgq_kdestroy(tch_msgqId);
-
-
+extern tch_msgqId tchk_msgqInit(tch_msgqId,uint32_t );
+extern tchStatus tchk_msgqPut(tch_msgqId,tch_msgq_karg* arg);
+extern tchStatus tchk_msgqGet(tch_msgqId,tch_msgq_karg* arg);
+extern tchStatus tchk_msgqDeinit(tch_msgqId);
 
 #if defined(__cplusplus)
 }
