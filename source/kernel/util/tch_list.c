@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "tch_list.h"
+#include "util/tch_list.h"
 
 
 
@@ -39,7 +39,7 @@ void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(vo
 		lentry->prev = item;
 }
 
-void* tch_listDequeue(tch_lnode_t* lentry){
+tch_lnode_t* tch_listDequeue(tch_lnode_t* lentry){
 	tch_lnode_t* cnode = lentry->next;
 	if(tch_listIsEmpty(lentry))
 		return NULL;
@@ -48,10 +48,10 @@ void* tch_listDequeue(tch_lnode_t* lentry){
 		((tch_lnode_t*)cnode->next)->prev = lentry;
 	else
 		lentry->prev = NULL;
-	return (void*) cnode;
+	return cnode;
 }
 
-void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
+void tch_listPutHead(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(!lentry)
 			return;
 	item->next = lentry->next;
@@ -64,32 +64,13 @@ void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 
-// has some bug
-void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item){
+void tch_listPutTail(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(!lentry || !item)
-		return;
-	if(lentry->prev){
-		lentry->prev->next = item;
-		item->prev = lentry->prev;
-		item->next = NULL;
-	}else{
-		lentry->next = item;
-		item->prev = lentry;
-		item->next = NULL;
-	}
-	lentry->prev = item;
-}
-
-
-
-void tch_listPush(tch_lnode_t* lentry,tch_lnode_t* item){
-	if(!lentry)
 		return;
 	if(lentry->next){
 		((tch_lnode_t*)lentry->prev)->next = item;
 		item->prev = lentry->prev;
-	}
-	else{
+	} else{
 		lentry->next = item;
 		lentry->prev = item;
 		item->prev = lentry;
@@ -98,7 +79,14 @@ void tch_listPush(tch_lnode_t* lentry,tch_lnode_t* item){
 	lentry->prev = item;
 }
 
-void* tch_listPop(tch_lnode_t* lentry){
+
+tch_lnode_t* tch_listGetHead(tch_lnode_t* lentry){
+	if(!lentry)
+		return NULL;
+	return lentry->next;
+}
+
+tch_lnode_t* tch_listGetTail(tch_lnode_t* lentry){
 	tch_lnode_t* last = NULL;
 	if(!lentry)
 		return NULL;
@@ -110,7 +98,6 @@ void* tch_listPop(tch_lnode_t* lentry){
 	return last;
 }
 
-
 int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	if(tch_listIsEmpty(lentry))
 		return (1 < 0);
@@ -120,45 +107,21 @@ int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		if(cnode == item){
-			if(cnode->next)
+			if(cnode->next){
 				cnode->next->prev = cnode->prev;
-			if(cnode->prev)
+			}
+			if(cnode->prev){
 				cnode->prev->next = cnode->next;
+				if(!lentry->next){
+					lentry->prev = NULL;
+				}
+			}
 			return (1 > 0);
 		}
-	}
-	if(lentry->next){
-		lentry->next = NULL;
-		lentry->prev = NULL;
-		return (1 > 0);
 	}
 	return (1 < 0);
 }
 
-/*
-int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
-	if(tch_listIsEmpty(lentry))
-		return (1 < 0);
-	if(!item)
-		return (1 < 0);
-	tch_lnode_t* cnode = lentry->next;
-	while(cnode->next != NULL){
-		if(cnode == item){
-			((tch_lnode_t*)cnode->prev)->next = cnode->next;
-			((tch_lnode_t*)cnode->next)->prev = cnode->prev;
-			return (1 > 0);
-		}
-		cnode = cnode->next;
-	}
-	if(lentry->next){
-		lentry->next = NULL;
-		lentry->prev = NULL;
-		return (1 > 0);
-	}
-
-	return (1 < 0);
-}
-*/
 int tch_listSize(tch_lnode_t* lentry){
 	int cnt = 0;
 	tch_lnode_t* cnode = lentry;
@@ -181,7 +144,6 @@ int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item)){
-	printf("\r\n----------List Print---------------\n");
 	tch_lnode_t* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;

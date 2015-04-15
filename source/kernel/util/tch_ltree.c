@@ -7,10 +7,10 @@
 
 #include <stddef.h>
 
-#include "tch_ltree.h"
+#include "util/tch_ltree.h"
 
-#include "tch_btree.h"
-#include "tch_list.h"
+#include "util/tch_btree.h"
+#include "util/tch_list.h"
 
 void tch_ltreeInit(tch_ltree_node* root,int key){
 	tch_listInit(&root->ln);
@@ -18,7 +18,7 @@ void tch_ltreeInit(tch_ltree_node* root,int key){
 }
 
 tch_ltree_node* tch_ltreeInsert(tch_ltree_node* root, tch_ltree_node* item){
-	tch_listPush(&root->ln,&item->ln);
+	tch_listPutTail(&root->ln,&item->ln);
 	return (tch_ltree_node*)tch_btree_insert(&root->trn,&item->trn);
 }
 

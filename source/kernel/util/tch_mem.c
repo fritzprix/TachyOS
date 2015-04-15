@@ -9,10 +9,13 @@
  *
  *  Created on: 2014. 7. 13.
  *      Author: innocentevil
+ *
+ *
+ * \ brief memory allocator library used in tachyos kernel
+ *
  */
 #include "tch_kernel.h"
 #include "tch_mtx.h"
-#include <stdlib.h>
 
 
 #define MEM_CLASS_KEY			((uint16_t) 0xF5E2)
@@ -58,7 +61,7 @@ static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next);
 tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded){
 	tch_memEntry* m_entry = (tch_memEntry*) mem;
 	if(isMultiThreaded){
-		tch_mtxCb* mtxCb = (uint32_t) mem + sizeof(tch_memEntry);
+		tch_mtxCb* mtxCb = (uint32_t) mem + sizeof(tch_memEntry);		//
 		m_entry->mtx = mtxCb;
 		tch_mtxInit(mtxCb);
 		m_entry = (uint32_t) mtxCb + sizeof(tch_mtxCb);
@@ -68,6 +71,7 @@ tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded){
 
 	tch_memHdr* m_head = (tch_memHdr*)((((uint32_t)((tch_memEntry*) m_entry + 1)) + 7) & ~7);
 	tch_memHdr* m_tail = (tch_memHdr*) (((uint32_t) mem + sz) & ~7);
+
 	m_entry = (tch_memHdr*) mem;
 	m_tail--;
 	m_tail->usz = 0;
@@ -77,8 +81,8 @@ tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded){
 	tch_listInit((tch_lnode_t*)m_head);
 	tch_listInit((tch_lnode_t*)m_tail);
 
-	tch_listPutFirst((tch_lnode_t*) m_entry,(tch_lnode_t*) m_head);
-	tch_listPutLast((tch_lnode_t*) m_entry,(tch_lnode_t*) m_tail);
+	tch_listPutHead((tch_lnode_t*) m_entry,(tch_lnode_t*) m_head);
+	tch_listPutTail((tch_lnode_t*) m_entry,(tch_lnode_t*) m_tail);
 	MEM_VALIDATE(m_entry);
 
 	return (tch_memId) m_entry;
@@ -187,7 +191,7 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode_t* alc_list){
 			nchnk = (tch_memHdr*) cnode;
 			m_entry->hdr.usz -= rsz;
 			if(alc_list != NULL)
-				tch_listPutLast(alc_list,&nchnk->allocLn);
+				tch_listPutTail(alc_list,&nchnk->allocLn);
 			nchnk ++;
 			result = (uint8_t*)nchnk;
 			RETURN_SAFELY();
@@ -199,7 +203,7 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode_t* alc_list){
 				cnode->prev->next = cnode->next;
 			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
 			if(alc_list != NULL)
-				tch_listPutLast(alc_list,&nchnk->allocLn);
+				tch_listPutTail(alc_list,&nchnk->allocLn);
 			nchnk ++;
 			result = (uint8_t*)nchnk;
 			RETURN_SAFELY();
@@ -214,6 +218,13 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode_t* alc_list){
 	return result;
 }
 
+/**
+ * \brief merge two adjacent memory chunk, if they are not occupied
+ * \param[in] cur memory header of memory chunk to be merged
+ * \param[in] next possibly mergable candidate memory chunk with larger address
+ * \return if merged successfully return next chunk of the memory header of 'next' parameter
+ *
+ */
 static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
 	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_memHdr))){
 		cur->usz += next->usz + sizeof(tch_memHdr);

@@ -31,12 +31,12 @@ typedef struct _tch_lnode_t tch_lnode_t;
 
 extern void tch_listInit(tch_lnode_t* lentry);
 extern void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(void* prior,void* post));
-extern void* tch_listDequeue(tch_lnode_t* lentry);
-extern void tch_listPutFirst(tch_lnode_t* lentry,tch_lnode_t* item);
-extern void tch_listPutLast(tch_lnode_t* lentry,tch_lnode_t* item);
-extern void tch_listPush(tch_lnode_t* lentry,tch_lnode_t* item);
+extern tch_lnode_t* tch_listDequeue(tch_lnode_t* lentry);
+extern void tch_listPutHead(tch_lnode_t* lentry,tch_lnode_t* item);
+extern void tch_listPutTail(tch_lnode_t* lentry,tch_lnode_t* item);
+extern tch_lnode_t* tch_listGetHead(tch_lnode_t* lentry);
+extern tch_lnode_t* tch_listGetTail(tch_lnode_t* lentry);
 extern int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item);
-extern void* tch_listPop(tch_lnode_t* lentry);
 extern int tch_listSize(tch_lnode_t* lentry);
 extern int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item);
 extern void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item));
