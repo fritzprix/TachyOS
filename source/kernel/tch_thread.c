@@ -112,13 +112,13 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	kthread->t_waitQ = NULL;
 	if(isroot){														// if new thread will be the root thread of a process, parent will be self
 		kthread->t_parent = kthread;
-		tch_listPutLast((tch_lnode_t*) &procList,(tch_lnode_t*) &kthread->t_siblingLn);		// added in process list
+		tch_listPutTail((tch_lnode_t*) &procList,(tch_lnode_t*) &kthread->t_siblingLn);		// added in process list
 		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
 			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
 	}else if(tch_currentThread){									// new thread will be child of caller thread
 		kthread->t_parent = tch_currentThread->t_kthread->t_parent;
 		cfg->t_memDef.heap_sz = 0;
-		tch_listPutLast(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
+		tch_listPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
 	}else {
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	}

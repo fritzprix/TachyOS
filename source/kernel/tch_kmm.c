@@ -241,7 +241,7 @@ tch_pageId tchk_pageRequest(tch_thread_kheader* thread,uint32_t psz,tch_pageAcce
 			tch_memFree(pheader);
 			return NULL;
 		}
-		tch_listPutLast(&thread->t_palc,(tch_lnode_t*) pheader);
+		tch_listPutTail(&thread->t_palc,(tch_lnode_t*) pheader);
 		pheader->p_status |= (MEM_PRIV_READ_PERMISSION | MEM_PRIV_WRITE_PERMISSION | MEM_UNPRIV_READ_PERMISSION | MEM_UNPRIV_WRITE_PERMISSION);
 		pheader->p_owner = thread->t_uthread;
 		break;

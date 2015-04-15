@@ -143,7 +143,7 @@ int main(const tch* env) {
 		if((loopcnt % 1000) == 500){
 			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
 		}
-		env->Thread->yield(1000);
+		env->Thread->sleep(1);
 
 	}
 	return tchOK;
@@ -158,7 +158,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
 		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-		env->Thread->yield(500);
+		env->Thread->sleep(2);
 	}
 
 	return tchOK;
@@ -191,7 +191,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 
 		env->Time->getLocaltime(&ltm);
 		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
-		env->Thread->yield(100);
+		env->Thread->sleep(1);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;
