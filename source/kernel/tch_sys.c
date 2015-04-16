@@ -71,7 +71,7 @@ const tch* tch_rti = &RuntimeInterface;
 void tch_kernelInit(void* arg){
 
 	/*initialize kernel global variable*/
-	tch_listInit((tch_lnode_t*) &procList);
+	tch_listInit((tch_lnode*) &procList);
 	mainThread = NULL;
 	idleThread = NULL;
 	sysThread = NULL;
@@ -169,7 +169,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			tch_port_disable_privilegedThread();
 		break;
 	case SV_BAR_INIT:
-		tchk_kernelSetResult(tch_currentThread,tch_barrierInit(arg1,arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_barrierInit(arg1,arg2));
 		break;
 	case SV_BAR_DEINIT:
 		tchk_kernelSetResult(tch_currentThread,tchk_barrierDeinit(arg1));

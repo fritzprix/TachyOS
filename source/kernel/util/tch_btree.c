@@ -6,8 +6,8 @@
  */
 
 
-#include "tch_btree.h"
-#include <stddef.h>
+#include "util/tch_btree.h"
+#include "tch_ktypes.h"
 
 void tch_btreeInit(tch_btree_node* node,int key){
 	node->key = key;

@@ -20,7 +20,7 @@ extern "C"{
 #define tch_ltreeIsEmpty(ltree)    (((tch_ltree_node*)ltree)->ln.next == NULL)
 typedef struct tch_ltree_node_t {
 	tch_btree_node trn;
-	tch_lnode_t    ln;
+	tch_lnode    ln;
 }tch_ltree_node;
 
 extern void tch_ltreeInit(tch_ltree_node* root,int key);

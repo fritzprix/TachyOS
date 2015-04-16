@@ -33,6 +33,7 @@ extern "C"{
  *
  */
 extern tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL root);
+extern tchStatus tchk_threadLoadProgram(tch_threadId root,uint8_t* pgm_img,size_t img_sz,uint32_t pgm_entry_offset);
 extern tchStatus tchk_threadIsValid(tch_threadId thread);
 extern void tchk_threadInvalidate(tch_threadId thread,tchStatus reason);
 extern BOOL tchk_threadIsRoot(tch_threadId thread);

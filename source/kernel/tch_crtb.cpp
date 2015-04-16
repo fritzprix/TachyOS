@@ -20,6 +20,7 @@
 void* operator new(size_t size) throw() {
 	return uMem->alloc(size);
 }
+
 void operator delete(void* p){
 	uMem->free(p);
 }

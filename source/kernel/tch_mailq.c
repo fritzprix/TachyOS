@@ -19,7 +19,7 @@ typedef struct tch_mailqCb {
 	uint32_t      bsz;
 	tch_mpoolId   bpool;
 	tch_msgqId    msgq;
-	tch_lnode_t   wq;
+	tch_lnode   wq;
 }tch_mailqCb;
 
 

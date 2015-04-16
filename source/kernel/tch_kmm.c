@@ -64,28 +64,28 @@
 #define PAGE_GET_SR_CNT(pheader) 	((((tch_page_header*) pheader)->p_status >> 16) ^ 0xF)
 
 typedef struct tch_uheap_handle_t tch_uheap_handle;
-/*
+
 struct tch_uheap_handle_t {
 	tch_memId		u_mem;
-	tch_lnode_t		u_alc;
+	tch_lnode		u_alc;
 }__attribute__((packed));
-*/
+
 struct tch_page_mgr_handle {
 	tch_memId 		p_mem;
-	tch_lnode_t		p_alc;
-	tch_lnode_t		p_phle;
+	tch_lnode		p_alc;
+	tch_lnode		p_phle;
 	uint32_t 		p_status;
 	int 			p_base_mpermId;
 }__attribute__((packed));
 
 typedef struct tch_pageSubRegion {
 	uint8_t* 		addr;
-	size_t 			sz;
+	size_t 			sz_shoffset;
 	int 			permId;
 }tch_pageSubRegion;
 
 struct tch_page_header {
-	tch_lnode_t				p_le;
+	tch_lnode				p_le;
 	tch_pageAccessibility 	p_acc;
 	tch_threadId 			p_owner;
 	uint8_t					p_regCnt;
@@ -107,22 +107,14 @@ struct tch_kmem_mgr_handle {
 	tch_pageId				k_pgId;
 	tch_memId				k_memId;
 	uint32_t				k_status;
-	tch_lnode_t				k_alc_le;
+	tch_lnode				k_alc_le;
 }__attribute__((packed));
 
 struct tch_shmem_header {
 	BOOL 					sh_prot;
 }__attribute__((aligned(8)));
 
-/**
- * 	void* (*alloc)(size_t size);
-	void (*free)(void*);
-	uint32_t (*avail)(void);
-	tchStatus (*forceRelease)(tch_threadId thread);
-	void (*printFreeList)(void);
-	void (*printAllocList)(void);
-};
- */
+
 static struct tch_page_mgr_handle PageManagerHandle = {0};
 static struct tch_shmem_mgr_handle ShareableMemHandle = {0};
 static struct tch_kmem_mgr_handle KernelHeapHandle = {0};
@@ -221,7 +213,7 @@ tch_pageId tchk_pageRequest(tch_thread_kheader* thread,uint32_t psz,tch_pageAcce
 	pheader->p_regCnt = bcnt;
 	mem = (uint8_t*)(pheader + 1);
 	while(bcnt--){
-		pheader->p_reg[bcnt].sz = (1 << sh[bcnt]);
+		pheader->p_reg[bcnt].sz_shoffset = sh[bcnt];
 		pheader->p_reg[bcnt].addr = mem;
 		pheader->p_reg[bcnt].permId = 0;
 		mem = (uint8_t*) ((uint32_t) mem + (1 << sh[bcnt]));
@@ -241,7 +233,7 @@ tch_pageId tchk_pageRequest(tch_thread_kheader* thread,uint32_t psz,tch_pageAcce
 			tch_memFree(pheader);
 			return NULL;
 		}
-		tch_listPutTail(&thread->t_palc,(tch_lnode_t*) pheader);
+		tch_listPutTail(&thread->t_palc,(tch_lnode*) pheader);
 		pheader->p_status |= (MEM_PRIV_READ_PERMISSION | MEM_PRIV_WRITE_PERMISSION | MEM_UNPRIV_READ_PERMISSION | MEM_UNPRIV_WRITE_PERMISSION);
 		pheader->p_owner = thread->t_uthread;
 		break;
@@ -276,7 +268,7 @@ tchStatus tchk_mapPage(tch_pageId pgId){
 	uint8_t* mem = (uint8_t*) ((uword_t)pheader + sizeof(struct tch_page_header));
 	while(idx++ < pheader->p_regCnt){
 		subreg = &pheader->p_reg[idx];
-		subreg->permId = tch_port_setMemPermission(subreg->addr,subreg->sz,(pheader->p_status & MEM_PERMISSION_MSK));
+		subreg->permId = tch_port_setMemPermission(subreg->addr,subreg->sz_shoffset,(pheader->p_status & MEM_PERMISSION_MSK));
 		if(subreg->permId == 0)
 			return tchErrorOS;
 	}
@@ -321,7 +313,7 @@ size_t tchk_getPageSize(tch_pageId pgId){
 void* tchk_kernelHeapAlloc(size_t sz){
 	if(!sz || !KHEAP_ISVALID(&KernelHeapHandle))
 		return NULL;
-	return tch_memAlloc(KernelHeapHandle.k_memId,sz,&KernelHeapHandle.k_alc_le);
+	return (void*) tch_memAlloc(KernelHeapHandle.k_memId,sz,&KernelHeapHandle.k_alc_le);
 }
 
 void tchk_kernelHeapFree(void* km_chnk){
@@ -346,7 +338,7 @@ tchStatus tchk_kernelHeapFreeAll(){
 
 void* tchk_shareableMemAlloc(size_t sz,BOOL protection){
 	tch_memId mem = NULL;
-	tch_lnode_t* al_le = NULL;
+	tch_lnode* al_le = NULL;
 	tch_thread_kheader* kheader = tch_currentThread->t_kthread;
 	if(protection){
 		mem = ShareableMemHandle.sh_pmId;
@@ -365,7 +357,7 @@ void tchk_shareableMemFree(void* m){
 	tch_thread_kheader* kheader = tch_currentThread->t_kthread;
 
 	tch_memId mem = header->sh_prot? ShareableMemHandle.sh_pmId : ShareableMemHandle.sh_upmId;
-	tch_lnode_t* alc_le = header->sh_prot? &kheader->t_pshalc : &kheader->t_upshalc;
+	tch_lnode* alc_le = header->sh_prot? &kheader->t_pshalc : &kheader->t_upshalc;
 	tch_memFree(mem,m,alc_le);
 }
 
@@ -411,7 +403,7 @@ tchStatus tchk_userMemInit(tch_thread_kheader* owner,tch_userMemDef_t* mem_def,B
 		owner->t_pgId = owner->t_parent->t_pgId;
 		if(!mem_def->u_mem || !mem_def->u_memsz)
 			return tchErrorParameter;
-		mem = mem_def->u_mem;
+		mem =(uint8_t*)  mem_def->u_mem;
 		msz = mem_def->u_memsz;
 	}
 
@@ -423,14 +415,14 @@ tchStatus tchk_userMemInit(tch_thread_kheader* owner,tch_userMemDef_t* mem_def,B
 	owner->t_uthread->t_destr = __tch_noop_destr;
 
 	mem = (uint8_t*)((uint32_t) mem + msz);			// move to top address of page
-	heap_handle = mem;
+	heap_handle = (tch_uheap_handle*) mem;
 	heap_handle--;									// push and make heap handle, and construct heap handle
 	if(isroot){
 		tch_listInit(&heap_handle->u_alc);
 		mem = (uint8_t*) ((uint32_t) heap_handle - mem_def->heap_sz);			// offset heap size
-		heap_handle->u_mem = tch_memInit(mem,mem_def->heap_sz,TRUE);			// initialize heap
+		heap_handle->u_mem = (uint8_t*) tch_memInit(mem,mem_def->heap_sz,TRUE);			// initialize heap
 	}else{
-		mem = heap_handle;
+		mem = (uint8_t*) heap_handle;
 		tch_listInit(&heap_handle->u_alc);															// initailize allocation list
 		heap_handle->u_mem = ((tch_uheap_handle*) owner->t_parent->t_uthread->t_heap)->u_mem;		// inherit heap handle from parent
 	}
@@ -454,8 +446,7 @@ static void* tch_userAlloc(size_t sz){
 		return NULL;
 	tch_thread_uheader* uheader = tch_currentThread;
 	tch_uheap_handle* heap_handle = (tch_uheap_handle*) uheader->t_heap;
-	uint8_t* mem = NULL;
-	mem = tch_memAlloc(heap_handle->u_mem,sz,&heap_handle->u_alc);
+	uint8_t* mem = (uint8_t*) tch_memAlloc(heap_handle->u_mem,sz,&heap_handle->u_alc);
 	return mem;
 }
 
@@ -480,7 +471,7 @@ void* tch_shMemAlloc(size_t sz,BOOL prot){
 		return NULL;
 	if(tch_port_isISR())
 		return tchk_shareableMemAlloc(sz,prot);
-	return tch_port_enterSv(SV_SHMEM_ALLOC,sz,prot);
+	return tch_port_enterSv(SV_SHMEM_ALLOC,(uword_t) sz,(uword_t) prot);
 }
 
 void tch_shMemFree(void* mchunk){
@@ -488,7 +479,7 @@ void tch_shMemFree(void* mchunk){
 		return;
 	if(tch_port_isISR())
 		return tchk_shareableMemFree(mchunk);
-	tch_port_enterSv(SV_SHMEM_FREE,mchunk,0);
+	tch_port_enterSv(SV_SHMEM_FREE,(uword_t) mchunk,0);
 }
 
 uint32_t tch_shMemAvali(BOOL prot){

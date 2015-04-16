@@ -13,33 +13,26 @@
 extern "C" {
 #endif
 
-// Static Initializer for List Node
 #define INIT_LIST   {NULL,NULL}
-// Decl for Compare Function for priority queue operation
 #define DECLARE_COMPARE_FN(fn) int fn(void* prior,void* post)
-#define tch_listIsEmpty(lhead)   (((tch_lnode_t*)lhead)->next == NULL)
-
-typedef struct _tch_lnode_t tch_lnode_t;
-
+#define tch_listIsEmpty(lhead)   (((tch_lnode*)lhead)->next == NULL)
+typedef struct _tch_lnode_t tch_lnode;
  struct _tch_lnode_t {
-	tch_lnode_t* prev;
-	tch_lnode_t* next;
+	tch_lnode* prev;
+	tch_lnode* next;
 };
 
-
-
-
-extern void tch_listInit(tch_lnode_t* lentry);
-extern void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(void* prior,void* post));
-extern tch_lnode_t* tch_listDequeue(tch_lnode_t* lentry);
-extern void tch_listPutHead(tch_lnode_t* lentry,tch_lnode_t* item);
-extern void tch_listPutTail(tch_lnode_t* lentry,tch_lnode_t* item);
-extern tch_lnode_t* tch_listGetHead(tch_lnode_t* lentry);
-extern tch_lnode_t* tch_listGetTail(tch_lnode_t* lentry);
-extern int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item);
-extern int tch_listSize(tch_lnode_t* lentry);
-extern int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item);
-extern void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item));
+extern void tch_listInit(tch_lnode* lentry);
+extern void tch_listEnqueuePriority(tch_lnode* lentry,tch_lnode* item,int (*cmp)(void* prior,void* post));
+extern tch_lnode* tch_listDequeue(tch_lnode* lentry);
+extern void tch_listPutHead(tch_lnode* lentry,tch_lnode* item);
+extern void tch_listPutTail(tch_lnode* lentry,tch_lnode* item);
+extern tch_lnode* tch_listGetHead(tch_lnode* lentry);
+extern tch_lnode* tch_listGetTail(tch_lnode* lentry);
+extern int tch_listRemove(tch_lnode* lentry,tch_lnode* item);
+extern int tch_listSize(tch_lnode* lentry);
+extern int tch_listContain(tch_lnode* lentry,tch_lnode* item);
+extern void tch_listPrint(tch_lnode* lentry,void (*printitem)(void* item));
 
 #if defined(__cplusplus)
 }

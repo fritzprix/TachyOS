@@ -17,8 +17,8 @@
 #include "tch_list.h"
 
 static tch_rtcHandle* rtcHandle;
-static tch_lnode_t tch_systimeWaitQ;
-static tch_lnode_t tch_lpsystimeWaitQ;
+static tch_lnode tch_systimeWaitQ;
+static tch_lnode tch_lpsystimeWaitQ;
 
 volatile uint64_t tch_sysUpTimeSec;
 volatile uint64_t tch_systimeTick;
@@ -61,12 +61,12 @@ tchStatus tchk_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 	switch (tu) {
 	case mSECOND:
 		getThreadKHeader(thread)->t_to = tch_systimeTick + timeout;
-		tch_listEnqueuePriority(&tch_systimeWaitQ, (tch_lnode_t*) getThreadKHeader(thread),
+		tch_listEnqueuePriority(&tch_systimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
 	case SECOND:
 		getThreadKHeader(thread)->t_to = tch_sysUpTimeSec + timeout;
-		tch_listEnqueuePriority(&tch_lpsystimeWaitQ, (tch_lnode_t*) getThreadKHeader(thread),
+		tch_listEnqueuePriority(&tch_lpsystimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
 	}
@@ -78,8 +78,8 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread) {
 	if (!thread)
 		return tchErrorParameter;
 	getThreadKHeader(thread)->t_to = 0;
-	if (!tch_listRemove(&tch_systimeWaitQ, (tch_lnode_t*) getThreadKHeader(thread)))
-		if (!tch_listRemove(&tch_lpsystimeWaitQ, (tch_lnode_t*) getThreadKHeader(thread)))
+	if (!tch_listRemove(&tch_systimeWaitQ, (tch_lnode*) getThreadKHeader(thread)))
+		if (!tch_listRemove(&tch_lpsystimeWaitQ, (tch_lnode*) getThreadKHeader(thread)))
 			return tchErrorParameter;
 	return tchOK;
 }

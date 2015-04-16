@@ -15,15 +15,15 @@
 
 #define EVENT_CLASS_KEY                        ((uint16_t )0xDABC)
 
-#define tch_eventValidate(ins)                 do {\
+#define EVENT_VALIDATE(ins)                 do {\
 	((tch_eventCb*) ins)->status = (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF);\
 }while(0)
 
-#define tch_eventInvalidate(ins)               do {\
+#define EVENT_INVALIDATE(ins)               do {\
 	((tch_eventCb*) ins)->status &= ~0xFFFF;\
 }while(0)
 
-#define tch_eventIsValid(ins)    ((((tch_eventCb*) ins)->status & 0xFFFF) == (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF))
+#define EVENT_ISVALID(ins)    ((((tch_eventCb*) ins)->status & 0xFFFF) == (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF))
 
 typedef uint8_t     sig_update_t;
 
@@ -71,20 +71,20 @@ static tch_eventId tch_eventCreate(){
 	tch_eventCb initcb;
 	uStdLib->string->memset(&initcb,0,sizeof(tch_eventCb));
 	initcb.__obj.destructor = (tch_uobjDestr) tch_eventDestroy;
-	tch_listInit((tch_lnode_t*)&initcb.ev_blockq);
+	tch_listInit((tch_lnode*)&initcb.ev_blockq);
 	return (tch_eventId) tch_port_enterSv(SV_EV_INIT,(uword_t) evcb,(uword_t) &initcb);
 }
 
 tch_eventId tchk_eventInit(tch_eventCb* evcb,tch_eventCb* initcb){
 	uStdLib->string->memcpy(evcb,initcb,sizeof(tch_eventCb));
-	tch_eventValidate(evcb);
+	EVENT_VALIDATE(evcb);
 	return (tch_eventId) evcb;
 }
 
 
 static int32_t tch_eventSet(tch_eventId ev,int32_t signals){
 	tch_event_sarg_t arg;
-	if(!ev || !tch_eventIsValid(ev))
+	if(!ev || !EVENT_ISVALID(ev))
 		return 0;
 	arg.ev_signal = signals;
 	arg.type = SIG_UPDATE_SET;
@@ -96,7 +96,7 @@ static int32_t tch_eventSet(tch_eventId ev,int32_t signals){
 
 static int32_t tch_eventClear(tch_eventId ev,int32_t signals){
 	tch_event_sarg_t arg;
-	if(!ev || !tch_eventIsValid(ev))
+	if(!ev || !EVENT_ISVALID(ev))
 		return 0;
 	arg.ev_signal= signals;
 	arg.type = SIG_UPDATE_CLR;
@@ -108,7 +108,7 @@ static int32_t tch_eventClear(tch_eventId ev,int32_t signals){
 
 static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
 	tch_event_warg_t warg;
-	if(!ev || !tch_eventIsValid(ev))
+	if(!ev || !EVENT_ISVALID(ev))
 		return tchErrorParameter;
 	if(tch_port_isISR()){
 		return tchErrorISR;
@@ -116,14 +116,12 @@ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millis
 	warg.timeout = millisec;
 	warg.ev_sigmsk = signal_msk;
 	return tch_port_enterSv(SV_EV_WAIT,(uint32_t) ev,(uint32_t)&warg);
-
 }
-
 
 static tchStatus tch_eventDestroy(tch_eventId ev){
 	if(!ev)
 		return tchErrorParameter;
-	if(!tch_eventIsValid(ev))
+	if(!EVENT_ISVALID(ev))
 		return tchErrorParameter;
 	if(!tch_port_isISR()){
 		return tchErrorISR;

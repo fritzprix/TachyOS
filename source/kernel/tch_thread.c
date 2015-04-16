@@ -112,7 +112,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	kthread->t_waitQ = NULL;
 	if(isroot){														// if new thread will be the root thread of a process, parent will be self
 		kthread->t_parent = kthread;
-		tch_listPutTail((tch_lnode_t*) &procList,(tch_lnode_t*) &kthread->t_siblingLn);		// added in process list
+		tch_listPutTail((tch_lnode*) &procList,(tch_lnode*) &kthread->t_siblingLn);		// added in process list
 		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
 			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
 	}else if(tch_currentThread){									// new thread will be child of caller thread
@@ -156,6 +156,15 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot){
 }
 
 
+extern tchStatus tchk_threadLoadProgram(tch_threadId root,uint8_t* pgm_img,size_t img_sz,uint32_t pgm_entry_offset){
+	if(!root || !tchk_threadIsValid(root))
+		return tchErrorParameter;
+	tch_thread_kheader* root_kheader = ((tch_thread_uheader*) root)->t_kthread;
+	uStdLib->string->memcpy(root_kheader->t_proc,pgm_img,img_sz);
+	return tchOK;
+}
+
+
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t tm = 0;
 	if(tch_port_isISR())
@@ -165,7 +174,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 	cfg->t_memDef.heap_sz = 0;
 	cfg->t_memDef.pimg_sz = 0;
-	uint32_t msz = ((cfg->t_memDef.heap_sz + cfg->t_memDef.pimg_sz + cfg->t_memDef.stk_sz + sizeof(tch_thread_uheader)) | 0xF) + 1;
+	uint32_t msz = ((cfg->t_memDef.stk_sz + sizeof(tch_thread_uheader)) | 0xF) + 1;
 	if(!cfg->t_memDef.u_mem){
 		cfg->t_memDef.u_mem = tch_rti->Mem->alloc(msz);
 		cfg->t_memDef.u_memsz = msz;
@@ -176,7 +185,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 		 */
 		tm = *cfg->t_memDef.u_mem;
 	}
-	return tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg);
+	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg);
 }
 
 
@@ -272,7 +281,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 
 	if(th_p->t_flag & THREAD_ROOT_BIT){
 		while(!tch_listIsEmpty(&th_p->t_childLn)){
-			ch_p = (tch_thread_kheader*) ((uint32_t) tch_listDequeue((tch_lnode_t*) &th_p->t_childLn) - 3 * sizeof(tch_lnode_t));
+			ch_p = (tch_thread_kheader*) ((uint32_t) tch_listDequeue((tch_lnode*) &th_p->t_childLn) - 3 * sizeof(tch_lnode));
 			if(ch_p){
 				Thread->terminate(ch_p,status);
 				Thread->join(ch_p,tchWaitForever);
@@ -281,7 +290,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 		tchk_pageRelease(th_p->t_pgId);
 		tchk_kernelHeapFree(th_p);
 	}else{
-		tch_listRemove((tch_lnode_t*) &th_p->t_parent->t_childLn,&th_p->t_siblingLn);
+		tch_listRemove((tch_lnode*) &th_p->t_parent->t_childLn,&th_p->t_siblingLn);
 		tch_currentThread = th_p->t_parent->t_uthread;
 		uMem->free(&th_p->t_uthread->t_destr);
 	}

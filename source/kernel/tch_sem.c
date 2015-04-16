@@ -19,7 +19,7 @@ typedef struct _tch_sem_t {
 	tch_uobj          __obj;
 	uint32_t          state;
 	uint32_t          count;
-	tch_lnode_t       wq;
+	tch_lnode       wq;
 } tch_semaphore_cb;
 
 static tch_semId tch_semaphore_create(uint32_t count);
