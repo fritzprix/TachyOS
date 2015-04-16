@@ -82,8 +82,6 @@ extern tchStatus tchk_shareableMemFreeAll(tch_thread_kheader* owner);
 extern tchStatus tchk_userMemInit(tch_thread_kheader* owner,tch_userMemDef_t* mem_def,BOOL isroot);
 extern tchStatus tchk_userMemFreeAll(tch_thread_kheader* owner);
 
-
-
 extern void* tch_shMemAlloc(size_t sz,BOOL prot);
 extern void tch_shMemFree(void* mchunk);
 extern uint32_t tch_shMemAvali(BOOL prot);

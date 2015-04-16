@@ -21,8 +21,8 @@ typedef struct _tch_msgq_cb {
 	uint32_t      sz;
 	uint32_t      pidx;
 	uint32_t      gidx;
-	tch_lnode_t   cwq;
-	tch_lnode_t   pwq;
+	tch_lnode   cwq;
+	tch_lnode   pwq;
 	uint32_t      updated;
 }tch_msgq_cb;
 

@@ -20,7 +20,12 @@
 #define tch_condvClrWait(condv)       ((tch_condvCb*) condv)->state &= ~CONDV_WAIT
 #define tch_condvIsWait(condv)        ((tch_condvCb*) condv)->state & CONDV_WAIT
 
-
+struct _tch_condv_cb_t {
+	tch_uobj          __obj;
+	uint32_t          state;
+	tch_mtxId         waitMtx;
+	tch_thread_queue  wq;
+};
 
 
 static inline void tch_condvValidate(tch_condvId condv);
@@ -51,17 +56,18 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
-	tch_listInit((tch_lnode_t*)&condv->wq);
+	tch_listInit((tch_lnode*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
 	condv->__obj.destructor =  is_static? (tch_uobjDestr)__tch_noop_destr : (tch_uobjDestr)tch_condv_destroy;
+	return (tch_condvId) condv;
 }
 
 
 static tch_condvId tch_condv_create(){
 	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
-	tch_listInit((tch_lnode_t*)&condv->wq);
+	tch_listInit((tch_lnode*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
 	condv->__obj.destructor = (tch_uobjDestr) tch_condv_destroy;

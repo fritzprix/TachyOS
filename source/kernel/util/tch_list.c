@@ -13,19 +13,19 @@
 
 
 
-void tch_listInit(tch_lnode_t* lentry){
+void tch_listInit(tch_lnode* lentry){
 	lentry->next = NULL;
 	lentry->prev = NULL;
 }
 
-void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(void* prior,void* post)){
-	tch_lnode_t* cnode = lentry;
+void tch_listEnqueuePriority(tch_lnode* lentry,tch_lnode* item,int (*cmp)(void* prior,void* post)){
+	tch_lnode* cnode = lentry;
 	if(!item)
 		return;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		if(!cmp(cnode,item)){
-			((tch_lnode_t*)cnode->prev)->next = item;
+			((tch_lnode*)cnode->prev)->next = item;
 			item->prev = cnode->prev;
 			item->next = cnode;
 			cnode->prev = item;
@@ -39,24 +39,24 @@ void tch_listEnqueuePriority(tch_lnode_t* lentry,tch_lnode_t* item,int (*cmp)(vo
 		lentry->prev = item;
 }
 
-tch_lnode_t* tch_listDequeue(tch_lnode_t* lentry){
-	tch_lnode_t* cnode = lentry->next;
+tch_lnode* tch_listDequeue(tch_lnode* lentry){
+	tch_lnode* cnode = lentry->next;
 	if(tch_listIsEmpty(lentry))
 		return NULL;
 	lentry->next = cnode->next;
 	if(cnode->next)
-		((tch_lnode_t*)cnode->next)->prev = lentry;
+		((tch_lnode*)cnode->next)->prev = lentry;
 	else
 		lentry->prev = NULL;
 	return cnode;
 }
 
-void tch_listPutHead(tch_lnode_t* lentry,tch_lnode_t* item){
+void tch_listPutHead(tch_lnode* lentry,tch_lnode* item){
 	if(!lentry)
 			return;
 	item->next = lentry->next;
 	if(lentry->next)
-		((tch_lnode_t*)lentry->next)->prev = item;
+		((tch_lnode*)lentry->next)->prev = item;
 	else
 		lentry->prev = item;
 	item->prev = lentry;
@@ -64,11 +64,11 @@ void tch_listPutHead(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 
-void tch_listPutTail(tch_lnode_t* lentry,tch_lnode_t* item){
+void tch_listPutTail(tch_lnode* lentry,tch_lnode* item){
 	if(!lentry || !item)
 		return;
 	if(lentry->next){
-		((tch_lnode_t*)lentry->prev)->next = item;
+		((tch_lnode*)lentry->prev)->next = item;
 		item->prev = lentry->prev;
 	} else{
 		lentry->next = item;
@@ -80,30 +80,30 @@ void tch_listPutTail(tch_lnode_t* lentry,tch_lnode_t* item){
 }
 
 
-tch_lnode_t* tch_listGetHead(tch_lnode_t* lentry){
+tch_lnode* tch_listGetHead(tch_lnode* lentry){
 	if(!lentry)
 		return NULL;
 	return lentry->next;
 }
 
-tch_lnode_t* tch_listGetTail(tch_lnode_t* lentry){
-	tch_lnode_t* last = NULL;
+tch_lnode* tch_listGetTail(tch_lnode* lentry){
+	tch_lnode* last = NULL;
 	if(!lentry)
 		return NULL;
 	if(!lentry->prev)
 		return NULL;
 	last = lentry->prev;
 	lentry->prev = last->prev;
-	((tch_lnode_t*)lentry->prev)->next = NULL;
+	((tch_lnode*)lentry->prev)->next = NULL;
 	return last;
 }
 
-int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
+int tch_listRemove(tch_lnode* lentry,tch_lnode* item){
 	if(tch_listIsEmpty(lentry))
 		return (1 < 0);
 	if(!item)
 		return (1 < 0);
-	tch_lnode_t* cnode = lentry;
+	tch_lnode* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		if(cnode == item){
@@ -122,9 +122,9 @@ int tch_listRemove(tch_lnode_t* lentry,tch_lnode_t* item){
 	return (1 < 0);
 }
 
-int tch_listSize(tch_lnode_t* lentry){
+int tch_listSize(tch_lnode* lentry){
 	int cnt = 0;
-	tch_lnode_t* cnode = lentry;
+	tch_lnode* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		cnt++;
@@ -132,8 +132,8 @@ int tch_listSize(tch_lnode_t* lentry){
 	return cnt;
 }
 
-int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item){
-	tch_lnode_t* cnode = lentry;
+int tch_listContain(tch_lnode* lentry,tch_lnode* item){
+	tch_lnode* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		if(cnode == item){
@@ -143,8 +143,8 @@ int tch_listContain(tch_lnode_t* lentry,tch_lnode_t* item){
 	return (1 < 0);
 }
 
-void tch_listPrint(tch_lnode_t* lentry,void (*printitem)(void* item)){
-	tch_lnode_t* cnode = lentry;
+void tch_listPrint(tch_lnode* lentry,void (*printitem)(void* item)){
+	tch_lnode* cnode = lentry;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
 		printitem(cnode);

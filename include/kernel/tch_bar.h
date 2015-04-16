@@ -14,13 +14,9 @@
 extern "C" {
 #endif
 
-typedef struct tch_bar_cb_t{
-	tch_uobj                 __obj;
-	uint32_t                 state;
-	tch_lnode_t              wq;
-} tch_barCb;
+typedef struct tch_bar_cb_t tch_barCb;
 
-extern void tch_barrierInit(tch_barCb* bar,BOOL is_static);
+extern void tchk_barrierInit(tch_barCb* bar,BOOL is_static);
 extern tchStatus tchk_barrierDeinit(tch_barCb* bar);
 
 #if defined(__cplusplus)
