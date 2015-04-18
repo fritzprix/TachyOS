@@ -56,6 +56,7 @@ static tch_threadId sysThread;
 
 tch_thread_queue procList;
 tch_boardHandle boardHandle = NULL;
+BOOL __VALID_SYSCALL;
 
 const tch_bin_descriptor BIN_DESC = {0};
 const tch* tch_rti = &RuntimeInterface;
@@ -75,6 +76,8 @@ void tch_kernelInit(void* arg){
 	mainThread = NULL;
 	idleThread = NULL;
 	sysThread = NULL;
+
+	__VALID_SYSCALL = FALSE;
 
 
 	/*Bind API Object*/
@@ -111,7 +114,7 @@ void tch_kernelInit(void* arg){
 	thcfg.t_routine = systhreadRoutine;
 	thcfg.t_priority = Kernel;
 	thcfg.t_memDef.stk_sz = 1 << 10;
-	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE);
+	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE);
 
 	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(sysThread);
@@ -135,12 +138,17 @@ tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc){
 	thcfg.t_routine = entry;
 	thcfg.t_priority = Normal;
 
-	*nproc = tchk_threadCreateThread(&thcfg,NULL,TRUE);
+	*nproc = tchk_threadCreateThread(&thcfg,NULL,TRUE,FALSE);
 	return tchOK;
 }
 
 
 void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
+	if(__VALID_SYSCALL)
+		__VALID_SYSCALL = FALSE;
+	else
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
+
 	tch_thread_kheader* cth = NULL;
 	tch_thread_kheader* nth = NULL;
 	tch_exc_stack* sp = NULL;
@@ -163,7 +171,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		}else{
 			tch_schedThreadDestroy(tch_currentThread,arg1);
 		}
-		if(tch_currentThread == sysThread)
+		if(tchk_threadIsPrivilidged(tch_currentThread))
 			tch_port_enable_privilegedThread();
 		else
 			tch_port_disable_privilegedThread();
@@ -184,7 +192,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemAvail(arg1));
 		break;
 	case SV_THREAD_CREATE:
-		tchk_kernelSetResult(tch_currentThread,tchk_threadCreateThread((tch_threadCfg*) arg1,(void*) arg2,FALSE));
+		tchk_kernelSetResult(tch_currentThread,(uword_t) tchk_threadCreateThread((tch_threadCfg*) arg1,(void*) arg2,FALSE,FALSE));
 		break;
 	case SV_THREAD_START:              // start thread first time
 		tchk_schedThreadStart((tch_threadId) arg1);
@@ -360,7 +368,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	threadcfg.t_memDef.heap_sz = 0x800;
 	threadcfg.t_memDef.stk_sz = 0x800;
 
-	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE);
+	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,FALSE);
 
 	threadcfg.t_routine = (tch_thread_routine) idle;
 	threadcfg.t_priority = Idle;

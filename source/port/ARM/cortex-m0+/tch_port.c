@@ -20,27 +20,23 @@
 
 
 
-#define IDLE_STACK_SIZE            (uint32_t) (1 << 9)
-#define MAIN_STACK_SIZE            (uint32_t) (1 << 11)
+#define IDLE_STACK_SIZE            ((uint32_t) (1 << 9))
+#define MAIN_STACK_SIZE            ((uint32_t) (1 << 11))
 
-#define SCB_AIRCR_KEY              (uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos)
-#define EPSR_THUMB_MODE            (uint32_t) (1 << 24)
+#define SCB_AIRCR_KEY              ((uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos))
+#define EPSR_THUMB_MODE            ((uint32_t) (1 << 24))
 
-#define CTRL_PSTACK_ENABLE         (uint32_t) (1 << 1)
-#define CTRL_FPCA                  (uint32_t) (1 << 2)
+#define CTRL_PSTACK_ENABLE         ((uint32_t) 0x2)
+#define CTRL_UNPRIV_THREAD_ENABLE  ((uint32_t) 0x1)
+#define CTRL_FPCA                  ((uint32_t) 0x4)
 
 #define FAULT_TYPE_HARD            ((int) -1)
 #define FAULT_TYPE_BUS             ((int) -2)
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
-static void __pend_loop(void) __attribute__((naked));
-//static int isr_svc_cnt;
-
-
 BOOL tch_kernel_initPort(){
 	__disable_irq();
-	//isr_svc_cnt = 0;
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
 	                                                                        *   - Handler or thread within same group priority
@@ -50,7 +46,6 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
@@ -62,7 +57,9 @@ BOOL tch_kernel_initPort(){
 	                                                 *
 	                                                 **/
 
-
+#ifdef __DBG
+	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
+#endif
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
 #ifdef MFEATURE_HFLOAT
 	/***
@@ -82,8 +79,20 @@ BOOL tch_kernel_initPort(){
 	NVIC_EnableIRQ(SVCall_IRQn);
 	NVIC_EnableIRQ(PendSV_IRQn);
 
-
 	return TRUE;
+}
+
+
+void tch_port_enable_privilegedThread(){
+	uint32_t mcu_control = __get_CONTROL();
+	mcu_control &= ~CTRL_UNPRIV_THREAD_ENABLE;
+	__set_CONTROL(mcu_control);
+}
+
+void tch_port_disable_privilegedThread(){
+	uint32_t mcu_control = __get_CONTROL();
+	mcu_control |= CTRL_UNPRIV_THREAD_ENABLE;
+	__set_CONTROL(mcu_control);
 }
 
 
@@ -100,8 +109,6 @@ BOOL tch_port_isISR(){
 	return __get_IPSR() > 0;
 }
 
-
-
 void tch_port_enableISR(void){
 	__enable_irq();
 }
@@ -110,10 +117,8 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
-
-
 void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
-	((tch_thread_header*)nth)->t_kRet = kret;
+	((tch_thread_kheader*)nth)->t_uthread->t_kRet = kret;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
@@ -127,10 +132,8 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_header*) cth)->t_ctx),"r"(&((tch_thread_header*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","r11","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->t_ctx),"r"(&((tch_thread_kheader*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","r11","lr");
 }
-
-
 
 
 /***
@@ -157,6 +160,7 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	__DMB();
 	__ISB();
+	tch_port_enable_privilegedThread();
 	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
 }
 
@@ -166,22 +170,21 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
 			"dmb\n"
 			"isb\n"
-			"svc #0"   : : : );        // return from sv interrupt and get result from register #0
-	return ((tch_thread_header*)tch_currentThread)->t_kRet;
+			"svc #0"  :  :  : "r0","r1","r2" );        // return from sv interrupt and get result from register #0
+	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
 }
-
 
 
 /**
  *  prepare initial context for start thread
  */
-void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
-	tch_exc_stack* exc_sp = (tch_exc_stack*) th_header - 1;                // offset exc_stack size (size depends on floating point option)
+void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn){
+	tch_exc_stack* exc_sp = (tch_exc_stack*) sp - 1;                // offset exc_stack size (size depends on floating point option)
 	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
-	exc_sp->R0 = (uint32_t)th_header;
+	exc_sp->R0 = (uint32_t) uthread_header;
 	exc_sp->R1 = tchOK;
 #if MFEATURE_HFLOAT
 	exc_sp->S0 = (float)0.2f;
@@ -193,7 +196,9 @@ void* tch_port_makeInitialContext(uaddr_t th_header,uaddr_t initfn){
 	return (uint32_t*) th_ctx;
 
 }
-
+/**
+ * read
+ */
 int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 	int result = 0;
 	asm volatile(
@@ -201,11 +206,11 @@ int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 			"__exCmpUpdate:\n"
 			"LDREX r4,[r0]\n"       // read dest exclusively
 			"CMP r4,r1\n"           // compare read val to comp
-			"ITTEE EQ\n"            // if not equal
+			"ITTEE EQ\n"            // if equal
 			"STREXEQ r6,r2,[r0]\n"  // update dest with new one
-			"LDREQ r5,=#0\n"        // return 1
+			"LDREQ r5,=#0\n"        // return 0
 			"STREXNE r6,r4,[r0]\n"  // else update previous value
-			"LDRNE r5,=#1\n"        // return 0
+			"LDRNE r5,=#1\n"        // return 1
 			"CMP r6,#0\n"
 			"BNE __exCmpUpdate\n"
 			"STR r5,[%0]\n"
@@ -232,12 +237,19 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 	return result;
 }
 
-void __pend_loop(void){
-	__ISB();
-	__DMB();
-	__WFI();
+/**
+ *
+ */
+int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission){
+	return TRUE;
 }
 
+/**
+ *
+ */
+int tch_port_clrMemPermission(int id){
+	return TRUE;
+}
 
 
 void SVC_Handler(void){

@@ -46,7 +46,6 @@ BOOL tch_kernel_initPort(){
 	                                                                        *   - highest priorty isr has group priority 1
 	                                                                        *   -> Kernel thread isn't preempted by other isr
 	                                                                        **/
-//	SCB->CCR |= SCB_CCR_NONBASETHRDENA_Msk;
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
@@ -58,11 +57,9 @@ BOOL tch_kernel_initPort(){
 	                                                 *
 	                                                 **/
 
-
 #ifdef __DBG
 	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
 #endif
-
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
 #ifdef MFEATURE_HFLOAT
 	/***
@@ -81,7 +78,6 @@ BOOL tch_kernel_initPort(){
 	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
 	NVIC_EnableIRQ(SVCall_IRQn);
 	NVIC_EnableIRQ(PendSV_IRQn);
-
 
 	return TRUE;
 }
@@ -140,8 +136,6 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 }
 
 
-
-
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
@@ -176,10 +170,9 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
 			"dmb\n"
 			"isb\n"
-			"svc #0"   : : : );        // return from sv interrupt and get result from register #0
+			"svc #0"  :  :  : "r0","r1","r2" );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
 }
-
 
 
 /**
