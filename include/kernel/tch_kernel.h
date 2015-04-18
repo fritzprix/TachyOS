@@ -122,6 +122,7 @@ extern tch_thread_queue procList;
 extern const tch* tch_rti;
 extern tch_boardHandle boardHandle;
 extern tch_memId sharedMem;
+extern BOOL __VALID_SYSCALL;
 
 
 

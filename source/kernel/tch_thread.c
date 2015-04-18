@@ -22,6 +22,7 @@
 
 #define THREAD_ROOT_BIT			((uint8_t) 1 << 0)
 #define THREAD_DEATH_BIT		((uint8_t) 1 << 1)
+#define THREAD_PRIV_BIT			((uint8_t) 1 << 2)
 
 
 /**
@@ -77,6 +78,12 @@ tchStatus tchk_threadIsValid(tch_threadId thread){
 	return tchOK;
 }
 
+BOOL tchk_threadIsPrivilidged(tch_threadId thread){
+	return ((getThreadKHeader(thread)->t_flag & THREAD_PRIV_BIT) > 0);
+}
+
+
+
 void tchk_threadInvalidate(tch_threadId thread,tchStatus reason){
 	getThreadHeader(thread)->t_reent._errno = reason;
 	getThreadHeader(thread)->t_kthread->t_flag |= THREAD_DEATH_BIT;
@@ -100,16 +107,10 @@ tch_thread_prior tchk_threadGetPriority(tch_threadId tid){
 /**
  * create new thread
  */
-tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot){
+tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv){
 	// allocate kernel thread header from kernel heap
 	tch_thread_kheader* kthread = (tch_thread_kheader*) tchk_kernelHeapAlloc(sizeof(tch_thread_kheader));
-	tch_listInit(&kthread->t_schedNode);						// initialize kernel level thread header
-	tch_listInit(&kthread->t_waitNode);
-	tch_listInit(&kthread->t_joinQ);
-	tch_listInit(&kthread->t_childLn);
-	tch_listInit(&kthread->t_siblingLn);
-
-	kthread->t_waitQ = NULL;
+	uStdLib->string->memset(kthread,0,sizeof(tch_thread_kheader));
 	if(isroot){														// if new thread will be the root thread of a process, parent will be self
 		kthread->t_parent = kthread;
 		tch_listPutTail((tch_lnode*) &procList,(tch_lnode*) &kthread->t_siblingLn);		// added in process list
@@ -125,12 +126,12 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot){
 	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)		// guarantee minimum stack size
 		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
-
 	if(tchk_userMemInit(kthread,&cfg->t_memDef,isroot) != tchOK)	// prepare memory space of new thread
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
 
 	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_proc,__tch_thread_entry);
-	kthread->t_flag = isroot? THREAD_ROOT_BIT : 0;
+	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
+	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
 
 	tch_listInit(&kthread->t_palc);
 	tch_listInit(&kthread->t_pshalc);
