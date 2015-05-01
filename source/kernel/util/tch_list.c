@@ -18,13 +18,13 @@ void tch_listInit(tch_lnode* lentry){
 	lentry->prev = NULL;
 }
 
-void tch_listEnqueuePriority(tch_lnode* lentry,tch_lnode* item,int (*cmp)(void* prior,void* post)){
+void tch_listEnqueueWithPriority(tch_lnode* lentry,tch_lnode* item,tch_listPriorityRule rule){
 	tch_lnode* cnode = lentry;
 	if(!item)
 		return;
 	while(cnode->next != NULL){
 		cnode = cnode->next;
-		if(!cmp(cnode,item)){
+		if(rule(cnode,item) == item){
 			((tch_lnode*)cnode->prev)->next = item;
 			item->prev = cnode->prev;
 			item->next = cnode;
@@ -38,6 +38,7 @@ void tch_listEnqueuePriority(tch_lnode* lentry,tch_lnode* item,int (*cmp)(void* 
 	if(cnode != lentry)
 		lentry->prev = item;
 }
+
 
 tch_lnode* tch_listDequeue(tch_lnode* lentry){
 	tch_lnode* cnode = lentry->next;

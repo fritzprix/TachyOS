@@ -66,7 +66,7 @@ void tch_schedInit(void* init_thread){
 extern void tchk_schedThreadStart(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	if(tch_schedIsPreemptable(thr->t_kthread)){
-		tch_listEnqueuePriority((tch_lnode*)&tch_readyQue,getListNode(tch_currentThread->t_kthread),tch_schedReadyQRule);			///< put current thread in ready queue
+		tch_listEnqueueWithPriority((tch_lnode*)&tch_readyQue,getListNode(tch_currentThread->t_kthread),tch_schedReadyQRule);			///< put current thread in ready queue
 		getListNode(thr->t_kthread)->prev = (tch_lnode*) tch_currentThread->t_kthread; 	                                                            ///< set new thread as current thread
 		tch_currentThread = thr;
 		((tch_thread_kheader*)getListNode(tch_currentThread->t_kthread)->prev)->t_state = READY;
@@ -74,7 +74,7 @@ extern void tchk_schedThreadStart(tch_threadId thread){
 	}else{
 		thr->t_kthread->t_state = READY;
 		tchk_kernelSetResult(tch_currentThread,tchOK);
-		tch_listEnqueuePriority((tch_lnode*)&tch_readyQue,getListNode(thr->t_kthread),tch_schedReadyQRule);
+		tch_listEnqueueWithPriority((tch_lnode*)&tch_readyQue,getListNode(thr->t_kthread),tch_schedReadyQRule);
 	}
 }
 
@@ -85,7 +85,7 @@ extern void tchk_schedThreadStart(tch_threadId thread){
 void tchk_schedThreadReady(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	thr->t_kthread->t_state = READY;
-	tch_listEnqueuePriority((tch_lnode*)&tch_readyQue,getListNode(thr->t_kthread),tch_schedReadyQRule);
+	tch_listEnqueueWithPriority((tch_lnode*)&tch_readyQue,getListNode(thr->t_kthread),tch_schedReadyQRule);
 }
 
 /** Note : should not called any other program except kernel mode program
@@ -112,7 +112,7 @@ void tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
 	if(timeout != tchWaitForever){
 		tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
 	}
-	tch_listEnqueuePriority((tch_lnode*) wq,&getThreadKHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
+	tch_listEnqueueWithPriority((tch_lnode*) wq,&getThreadKHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
 	nth = (tch_thread_kheader*) tch_listDequeue((tch_lnode*) &tch_readyQue);
 	if(!nth)
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
@@ -181,7 +181,7 @@ void tch_schedThreadUpdate(void){
 	if(tch_listIsEmpty(&tch_readyQue) || !tch_schedIsPreemptable((tch_thread_kheader*) tch_readyQue.thque.next))
 		return;
 	nth = (tch_thread_kheader*)tch_listDequeue((tch_lnode*)&tch_readyQue);
-	tch_listEnqueuePriority((tch_lnode*) &tch_readyQue,getListNode(cth),tch_schedReadyQRule);
+	tch_listEnqueueWithPriority((tch_lnode*) &tch_readyQue,getListNode(cth),tch_schedReadyQRule);
 	getListNode(nth)->prev = (tch_lnode*) cth;
 	tch_currentThread = nth->t_uthread;
 	getThreadKHeader(getListNode(nth)->prev)->t_state = SLEEP;
@@ -205,7 +205,7 @@ void tchk_schedThreadTerminate(tch_threadId thread, int result){
 	while(!tch_listIsEmpty(&thr->t_joinQ)){
 		jth = (tch_thread_kheader*)((tch_lnode*) tch_listDequeue(&thr->t_joinQ) - 1);	/// dequeue thread(s) waiting for termination of this thread
 		jth->t_waitQ = NULL;
-		tch_listEnqueuePriority((tch_lnode*)&tch_readyQue,(tch_lnode*) jth,tch_schedReadyQRule);
+		tch_listEnqueueWithPriority((tch_lnode*)&tch_readyQue,(tch_lnode*) jth,tch_schedReadyQRule);
 		tchk_kernelSetResult(jth,result);
 	}
 	jth = (tch_thread_kheader*) tch_listDequeue((tch_lnode*) &tch_readyQue);									/// get new thread from readyque
@@ -237,10 +237,10 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 }
 
 static DECLARE_COMPARE_FN(tch_schedReadyQRule){
-	return ((tch_thread_kheader*) prior)->t_prior > ((tch_thread_kheader*) post)->t_prior;
+	return ((tch_thread_kheader*) prior)->t_prior > ((tch_thread_kheader*) post)->t_prior?  prior : post;
 }
 
 static DECLARE_COMPARE_FN(tch_schedWqRule){
-	return TRUE;
+	return NULL;
 }
 
