@@ -61,12 +61,12 @@ tchStatus tchk_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 	switch (tu) {
 	case mSECOND:
 		getThreadKHeader(thread)->t_to = tch_systimeTick + timeout;
-		tch_listEnqueuePriority(&tch_systimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
+		tch_listEnqueueWithPriority(&tch_systimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
 	case SECOND:
 		getThreadKHeader(thread)->t_to = tch_sysUpTimeSec + timeout;
-		tch_listEnqueuePriority(&tch_lpsystimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
+		tch_listEnqueueWithPriority(&tch_lpsystimeWaitQ, (tch_lnode*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
 	}
@@ -148,6 +148,6 @@ void tch_KernelOnSystick() {
 }
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule) {
-	return ((tch_thread_kheader*)prior)->t_to < ((tch_thread_kheader*) post)->t_to;
+	return ((tch_thread_kheader*)prior)->t_to < ((tch_thread_kheader*) post)->t_to? prior : post;
 }
 

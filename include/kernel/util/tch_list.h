@@ -14,8 +14,12 @@ extern "C" {
 #endif
 
 #define INIT_LIST   {NULL,NULL}
-#define DECLARE_COMPARE_FN(fn) int fn(void* prior,void* post)
+
+
+#define DECLARE_COMPARE_FN(fn) void* fn(void* prior,void* post)
 #define tch_listIsEmpty(lhead)   (((tch_lnode*)lhead)->next == NULL)
+
+typedef void* (tch_listPriorityRule)(void*,void*);
 typedef struct _tch_lnode_t tch_lnode;
  struct _tch_lnode_t {
 	tch_lnode* prev;
@@ -23,7 +27,7 @@ typedef struct _tch_lnode_t tch_lnode;
 };
 
 extern void tch_listInit(tch_lnode* lentry);
-extern void tch_listEnqueuePriority(tch_lnode* lentry,tch_lnode* item,int (*cmp)(void* prior,void* post));
+extern void tch_listEnqueueWithPriority(tch_lnode* lentry,tch_lnode* item,tch_listPriorityRule rule);
 extern tch_lnode* tch_listDequeue(tch_lnode* lentry);
 extern void tch_listPutHead(tch_lnode* lentry,tch_lnode* item);
 extern void tch_listPutTail(tch_lnode* lentry,tch_lnode* item);

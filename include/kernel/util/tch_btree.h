@@ -25,11 +25,10 @@ struct _tch_btree_node_t{
 
 
 extern void tch_btreeInit(tch_btree_node* node,int key);
-extern tch_btree_node* tch_btree_insert(tch_btree_node* root,tch_btree_node* item);
+extern tch_btree_node* tch_btree_insert(tch_btree_node** root,tch_btree_node* item);
 extern tch_btree_node* tch_btree_lookup(tch_btree_node* root,int key);
 extern tch_btree_node* tch_btree_delete(tch_btree_node** root,int key);
-extern int tch_btree_update(tch_btree_node** root,tch_btree_node* item); //
-extern tch_btree_node* tch_btree_split(tch_btree_node** rbr,int key);
+extern int tch_btree_size(tch_btree_node* root);
 
 
 #if defined(__cplusplus)

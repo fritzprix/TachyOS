@@ -150,6 +150,8 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R2 = arg3;
+
+	__VALID_SYSCALL = TRUE;
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -168,9 +170,11 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 
 int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
+			"ldr r3,=#1\n"
+			"str r3,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"  :  :  : "r0","r1","r2" );        // return from sv interrupt and get result from register #0
+			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
 }
 

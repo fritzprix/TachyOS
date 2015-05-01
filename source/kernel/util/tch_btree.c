@@ -6,8 +6,9 @@
  */
 
 
-#include "util/tch_btree.h"
-#include "tch_ktypes.h"
+#include "tch_btree.h"
+#include <stddef.h>
+
 
 void tch_btreeInit(tch_btree_node* node,int key){
 	node->key = key;
@@ -15,22 +16,48 @@ void tch_btreeInit(tch_btree_node* node,int key){
 	node->right = NULL;
 }
 
-tch_btree_node* tch_btree_insert(tch_btree_node* root,tch_btree_node* item){
-	if(!item)
+static tch_btree_node* tch_btree_get_rightmost(tch_btree_node* node){
+	if(!node) return NULL;
+	if(!node->right) return node;
+	tch_btree_node* rightmost = tch_btree_get_rightmost(node->right);
+	node->right = rightmost->left;
+	rightmost->left = node;
+	return rightmost;
+}
+
+static tch_btree_node* tch_btree_get_leftmost(tch_btree_node* node){
+	if(!node) return NULL;
+	if(!node->left) return node;
+	tch_btree_node* leftmost = tch_btree_get_leftmost(node->left);
+	node->left = leftmost->right;
+	leftmost->right = node;
+	return leftmost;
+}
+
+
+tch_btree_node* tch_btree_insert(tch_btree_node** root,tch_btree_node* item){
+	if(!root || !item)
 		return NULL;
-	while(root){
-		if(root->key < item->key){
-			if(!root->right){
-				root->right = item;
+	if(!*root){
+		*root = item;
+		return item;
+	}
+	item->left = NULL;
+	item->right = NULL;
+	tch_btree_node* current = *root;
+	while(current){
+		if(current->key < item->key){
+			if(!current->right){
+				current->right = item;
 				return item;
 			}
-			root = root->right;
+			current = current->right;
 		}else{
-			if(!root->left){
-				root->left = item;
+			if(!current->left){
+				current->left = item;
 				return item;
 			}
-			root = root->left;
+			current = current->left;
 		}
 	}
 	return NULL;
@@ -49,69 +76,43 @@ tch_btree_node* tch_btree_lookup(tch_btree_node* root,int key){
 }
 
 tch_btree_node* tch_btree_delete(tch_btree_node** root,int key){
-	tch_btree_node* ltr = tch_btree_split(root,key);
-	if(!ltr)
+
+	tch_btree_node* todelete = NULL;
+	if(!root || !*root)
 		return NULL;
-	tch_btree_insert(*root,ltr->left);
-	ltr->left = NULL;
-	return ltr;
-}
-
-int tch_btree_update(tch_btree_node** rbr,tch_btree_node* item){
-	tch_btree_node* prev = NULL;
-		tch_btree_node* root = *rbr;
-		while(root){
-			if(root->key == item->key){
-				item->right = root->right;
-				item->left = root->left;
-				if(!prev)
-					*rbr = item;
-				else{
-					if(prev->key < item->key)
-						prev->right = item;
-					else
-						prev->left = item;
-				}
-				return (1 > 0);
-			}
-			if(root->key < item->key){
-				prev = root;
-				root = root->right;
-			}else{
-				prev = root;
-				root = root->left;
-			}
+	tch_btree_node** current = root;
+	while((*current) && ((*current)->key != key)){
+		if((*current)->key < key){
+			current = &(*current)->right;
+		}else{
+			current = &(*current)->left;
 		}
-		return (1 < 0);
-}
-
-
-tch_btree_node* tch_btree_split(tch_btree_node** rbr,int key){
-	tch_btree_node* root = *rbr;
-	tch_btree_node* p = NULL;
-	while(root){
-		if(root->key == key){
-			if(!p){
-				if(!root->right)
-					return NULL;
-				*rbr = root->right;
-				root->right = NULL;
-				return root;
-			}else{
-				if(p->right == root){
-					p->right = root->right;
-				}else{
-					p->left = root->right;
-				}
-				root->right = NULL;
-				return root;
-			}
-		}
-		p = root;
-		if(root->key < key)
-			root = root->right;
-		else
-			root = root->left;
 	}
-	return NULL;
+	todelete = *current;
+	if (todelete->left) {
+		*current = tch_btree_get_rightmost(todelete->left);
+		if (*current) {
+			(*current)->right = todelete->right;
+		}
+	}else if(todelete->right){
+		*current = tch_btree_get_leftmost(todelete->right);
+		(*current)->left = todelete->left;
+	}else{
+		*current = NULL;
+	}
+	return todelete;
 }
+
+int tch_btree_size(tch_btree_node* root){
+	int cnt = 0;
+	if(root)
+		cnt = 1;
+	if(!root->left && !root->right) return cnt;
+	if(root->left)
+		cnt += tch_btree_size(root->left);
+	if(root->right)
+		cnt += tch_btree_size(root->right);
+	return cnt;
+}
+
+
