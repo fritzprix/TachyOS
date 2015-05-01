@@ -14,6 +14,8 @@
  * \ brief memory allocator library used in tachyos kernel
  *
  */
+
+#include "tch_mem.h"
 #include "tch_kernel.h"
 #include "tch_mtx.h"
 

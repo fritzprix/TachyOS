@@ -15,18 +15,19 @@
 #ifndef TCH_MEM_H_
 #define TCH_MEM_H_
 
-
 #include "tch_TypeDef.h"
+#include "tch_list.h"
 
 #if defined(__cplusplus)
 extern "C"{
 #endif
 
 
+
 /**
  * base heap implementation of tachyos
  */
-extern tch_memId tch_memInit(void* mem,uint32_t sz);
+extern tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded);
 
 /**\brief Memory Allocation function
  * \param[in] mh memory allocator id
