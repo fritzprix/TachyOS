@@ -69,7 +69,7 @@ TOOL_PREFIX=
 
 
 ifeq ($(LDSCRIPT),)
-LDSCRIPT=$(HAL_VENDOR_HEADER_DIR)/ld/flash.ld
+LDSCRIPT=$(HAL_SRC_DIR)/ld/flash.ld
 endif
 
 ###################      TachyOS default header inclusion  ############################

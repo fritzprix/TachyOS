@@ -100,27 +100,14 @@ tch_lnode* tch_listGetTail(tch_lnode* lentry){
 }
 
 int tch_listRemove(tch_lnode* lentry,tch_lnode* item){
-	if(tch_listIsEmpty(lentry))
-		return (1 < 0);
 	if(!item)
 		return (1 < 0);
-	tch_lnode* cnode = lentry;
-	while(cnode->next != NULL){
-		cnode = cnode->next;
-		if(cnode == item){
-			if(cnode->next){
-				cnode->next->prev = cnode->prev;
-			}
-			if(cnode->prev){
-				cnode->prev->next = cnode->next;
-				if(!lentry->next){
-					lentry->prev = NULL;
-				}
-			}
-			return (1 > 0);
-		}
-	}
-	return (1 < 0);
+	tch_lnode* prev = item->prev;
+	if(prev)
+		prev->next = item->next;
+	if(item->next)
+		item->next->prev = prev;
+	return (1 > 0);
 }
 
 int tch_listSize(tch_lnode* lentry){

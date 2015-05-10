@@ -195,7 +195,7 @@ BOOL tch_schedIsEmpty(){
 static BOOL tch_schedIsPreemptable(tch_thread_kheader* nth){
 	if(!nth)
 		return FALSE;
-	return tch_schedReadyQRule(nth,getThreadKHeader(tch_currentThread)) || ((getThreadKHeader(tch_currentThread)->t_tslot > 10) && (nth->t_prior != Idle));
+	return (tch_schedReadyQRule(nth,getThreadKHeader(tch_currentThread)) == nth) || ((getThreadKHeader(tch_currentThread)->t_tslot > 10) && (nth->t_prior != Idle));
 }
 
 void tchk_schedThreadTerminate(tch_threadId thread, int result){
