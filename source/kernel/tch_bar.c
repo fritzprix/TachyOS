@@ -10,6 +10,7 @@
 
 /*!\brief Barrier Implementation
  *
+ *
  */
 #include "tch.h"
 #include "tch_kernel.h"
