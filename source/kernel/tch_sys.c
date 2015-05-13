@@ -381,8 +381,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	if((!mainThread) || (!idleThread))
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
-	tch_port_disable_privilegedThread();
-
 
 	Thread->start(idleThread);
 	Thread->start(mainThread);
