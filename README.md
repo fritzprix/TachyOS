@@ -2,9 +2,9 @@
 ##About
  >This project is started by personal interest in real-time operating system. I have built this from the scratch, enjoying various topics in operating system. although this project is still its infant stage and required to be tested extensively. it functions normally for a few ported target.
 ###Motivation   
- + Light weight & simple design for ease of use (minimize learning curve)
- + Support dynamic loading of an application program
- + Support remote debugging and profiling of system performance (distributed node device in mind)
+ + Light weight & simple design for ease of use (minimize learning curve)   
+ + Support dynamic loading of an application program   
+ + Support remote debugging and profiling of system performance (distributed node device in mind)   
 ###Features
  + Microkernel Architecture   
  + Preemtive scheduler with 6 execution priority    
