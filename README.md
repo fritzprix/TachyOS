@@ -4,7 +4,8 @@
 ###Motivation   
  + Light weight & simple design for ease of use (minimize learning curve)   
  + Support dynamic loading of an application program   
- + Support remote debugging and profiling of system performance (distributed node device in mind)   
+ + Support remote debugging and profiling of system performance (distributed node device in mind)    
+
 ###Features
  + Microkernel Architecture   
  + Preemtive scheduler with 6 execution priority    
