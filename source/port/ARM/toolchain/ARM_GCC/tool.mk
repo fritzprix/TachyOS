@@ -16,6 +16,8 @@ endif
 # Linker Option
 TOOL_LINKER_OPT=-Map,$(TARGET:%.elf=%.map)
 
+
+
 # C build option
 TOOL_CFLAG =-fsigned-char\
 		   -ffunction-sections\

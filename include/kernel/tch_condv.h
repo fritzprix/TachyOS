@@ -16,7 +16,7 @@
 #ifndef TCH_CONDV_H_
 #define TCH_CONDV_H_
 
-#include "tch_Typedef.h"
+#include "tch_TypeDef.h"
 
 
 #if defined(__cplusplus)
