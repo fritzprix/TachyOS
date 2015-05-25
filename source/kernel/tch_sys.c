@@ -58,6 +58,7 @@ tch_thread_queue procList;
 tch_boardHandle boardHandle = NULL;
 BOOL __VALID_SYSCALL;
 
+
 const tch_bin_descriptor BIN_DESC = {0};
 const tch* tch_rti = &RuntimeInterface;
 
@@ -149,6 +150,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	else
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
 
+
 	tch_thread_kheader* cth = NULL;
 	tch_thread_kheader* nth = NULL;
 	tch_exc_stack* sp = NULL;
@@ -175,6 +177,14 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 			tch_port_enable_privilegedThread();
 		else
 			tch_port_disable_privilegedThread();
+		break;
+	case SV_CONDV_INIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_condvInit(arg1,arg2));
+		break;
+	case SV_CONDV_WAIT:
+
+	case SV_CONDV_WAKE:
+	case SV_CONDV_DEINIT:
 		break;
 	case SV_BAR_INIT:
 		tchk_kernelSetResult(tch_currentThread,tchk_barrierInit(arg1,arg2));

@@ -28,7 +28,7 @@
 typedef uint8_t     sig_update_t;
 
 struct tch_eventCb {
-	tch_uobj            __obj;
+	tch_kobj            __obj;
 	uint32_t              status;
 	int32_t               ev_msk;
 	int32_t               ev_signal;
@@ -70,7 +70,7 @@ static tch_eventId tch_eventCreate(){
 	tch_eventCb* evcb = (tch_eventCb*) tch_shMemAlloc(sizeof(tch_eventCb),TRUE);
 	tch_eventCb initcb;
 	uStdLib->string->memset(&initcb,0,sizeof(tch_eventCb));
-	initcb.__obj.destructor = (tch_uobjDestr) tch_eventDestroy;
+	initcb.__obj.__destr_fn = (tch_kobjDestr) tch_eventDestroy;
 	tch_listInit((tch_lnode*)&initcb.ev_blockq);
 	return (tch_eventId) tch_port_enterSv(SV_EV_INIT,(uword_t) evcb,(uword_t) &initcb);
 }

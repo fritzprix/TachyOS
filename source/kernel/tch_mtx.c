@@ -56,7 +56,7 @@ void tch_mtxInit(tch_mtxCb* mcb){
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
 	tch_listInit((tch_lnode*)&mcb->que);
 	mcb->own = NULL;
-	mcb->__obj.destructor = (tch_uobjDestr) __tch_noop_destr;
+	mcb->__obj.__destr_fn = (tch_kobjDestr) __tch_noop_destr;
 	mcb->status = 0;
 	MTX_VALIDATE(mcb);
 }
@@ -113,7 +113,7 @@ static tch_mtxId tch_mtx_create(){
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
 	tch_listInit((tch_lnode*)&mcb->que);
 	mcb->own = NULL;
-	mcb->__obj.destructor = (tch_uobjDestr) tch_mtx_destroy;
+	mcb->__obj.__destr_fn = (tch_kobjDestr) tch_mtx_destroy;
 	mcb->status = 0;
 	MTX_VALIDATE(mcb);
 	return  mcb;

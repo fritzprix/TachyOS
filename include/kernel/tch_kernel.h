@@ -30,7 +30,6 @@
 
 
 
-
 #if !defined(__BUILD_TIME_EPOCH)
 #define __BUILD_TIME_EPOCH 0UL
 #endif
@@ -65,7 +64,7 @@ extern tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc);
 
 
 
-extern tchStatus __tch_noop_destr(tch_uobj* obj);
+extern tchStatus __tch_noop_destr(tch_kobj* obj);
 extern void __tchk_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
 
 

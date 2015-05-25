@@ -24,7 +24,7 @@ extern "C"{
 #endif
 
 typedef struct _tch_condv_cb_t tch_condvCb;
-extern tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static);
+extern tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static);
 
 
 
