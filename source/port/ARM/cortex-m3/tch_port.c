@@ -255,9 +255,6 @@ int tch_port_clrMemPermission(int id){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_exc_stack* pexsp = exsp + 1;
-	uint16_t* thumb_svc_entry = (uint16_t*)pexsp->Return - 1;
-	uint8_t svc_arg = (*thumb_svc_entry) & 0xff;
 	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 

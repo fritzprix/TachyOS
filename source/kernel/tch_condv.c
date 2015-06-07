@@ -64,7 +64,7 @@ tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static){
 
 
 static tch_condvId tch_condv_create(){
-	if(!tch_port_isISR()){
+	if(tch_port_isISR()){
 		return NULL;
 	}
 	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
