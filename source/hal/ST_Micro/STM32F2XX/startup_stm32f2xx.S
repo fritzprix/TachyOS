@@ -59,6 +59,7 @@ defined in linker script */
 
 
 
+
 .globl sys_heap_base
 .globl sys_heap_limit
 
@@ -75,14 +76,6 @@ defined in linker script */
 #endif
 
 
-# set System Stack (ISR / Sv Mode / Sys Init) size
-#ifdef __SYS_STACK_SIZE
-.equ Sys_Stack_Size, __SYS_STACK_SIZE
-#else
-.equ Sys_Stack_Size, 0x800
-#endif
-
-
 #ifdef __MBARRIER_SIZE
 .equ mBarrier_Size, __MBARRIER_SIZE
 #else
@@ -96,17 +89,6 @@ sys_heap_base:
 	.space Sys_Heap_Size
 sys_heap_limit:
 
-.section .mbarrier
-mbarrier_lowerLimit:
-	.align 8
-	.space mBarrier_Size
-mbarrier_upperLimit:
-
-.section .sysstack
-sys_stack_limit:
-	.align 8
-	.space Sys_Stack_Size
-sys_stack_top:
 
 /**
  * @brief  This is the code that gets called when the processor first

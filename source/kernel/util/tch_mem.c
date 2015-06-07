@@ -42,7 +42,7 @@ typedef struct tch_mem_chunk_hdr_t tch_memHdr;
 
 
 struct tch_mem_chunk_hdr_t {
-	tch_lnode           allocLn;
+	cdsl_dlistNode_t           allocLn;
 	uint32_t              usz;
 }__attribute__((aligned(8)));
 
@@ -78,20 +78,20 @@ tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded){
 	m_tail--;
 	m_tail->usz = 0;
 	m_entry->hdr.usz = m_head->usz = (uint32_t) m_tail - (uint32_t) m_head - sizeof(tch_memHdr);
-	tch_listInit(&m_entry->hdr.allocLn);
+	cdsl_dlistInit(&m_entry->hdr.allocLn);
 
-	tch_listInit((tch_lnode*)m_head);
-	tch_listInit((tch_lnode*)m_tail);
+	cdsl_dlistInit((cdsl_dlistNode_t*)m_head);
+	cdsl_dlistInit((cdsl_dlistNode_t*)m_tail);
 
-	tch_listPutHead((tch_lnode*) m_entry,(tch_lnode*) m_head);
-	tch_listPutTail((tch_lnode*) m_entry,(tch_lnode*) m_tail);
+	cdsl_dlistPutHead((cdsl_dlistNode_t*) m_entry,(cdsl_dlistNode_t*) m_head);
+	cdsl_dlistPutTail((cdsl_dlistNode_t*) m_entry,(cdsl_dlistNode_t*) m_tail);
 	MEM_VALIDATE(m_entry);
 
 	return (tch_memId) m_entry;
 
 }
 
-tchStatus tch_memFree(tch_memId mh,void* p,tch_lnode* alc_le){
+tchStatus tch_memFree(tch_memId mh,void* p,cdsl_dlistNode_t* alc_le){
 	if(!mh || !MEM_ISVALID(mh) || !p)
 		return tchErrorParameter;
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
@@ -101,48 +101,48 @@ tchStatus tch_memFree(tch_memId mh,void* p,tch_lnode* alc_le){
 			return result;
 	}
 	tch_memHdr* nchnk = p;
-	tch_lnode* cnode = (tch_lnode*)m_entry;
+	cdsl_dlistNode_t* cnode = (cdsl_dlistNode_t*)m_entry;
 	nchnk--;
 	m_entry->hdr.usz += nchnk->usz + sizeof(tch_memHdr);
 	while(cnode->next){
 		cnode = cnode->next;
-		if(cnode == (tch_lnode*)nchnk){  // if same node is encountered, return immediately
+		if(cnode == (cdsl_dlistNode_t*)nchnk){  // if same node is encountered, return immediately
 			result = tchErrorParameter;
 			RETURN_SAFELY();
 		}
 		if(((uint32_t) cnode < (uint32_t) nchnk) && ((uint32_t) nchnk < (uint32_t)cnode->next)){
-			((tch_lnode*) nchnk)->next = cnode->next;
-			((tch_lnode*) nchnk)->prev = cnode;
+			((cdsl_dlistNode_t*) nchnk)->next = cnode->next;
+			((cdsl_dlistNode_t*) nchnk)->prev = cnode;
 			if(cnode->next)
-				cnode->next->prev = (tch_lnode*) nchnk;
-			cnode->next = (tch_lnode*) nchnk;
+				cnode->next->prev = (cdsl_dlistNode_t*) nchnk;
+			cnode->next = (cdsl_dlistNode_t*) nchnk;
 
 			do{
-				cnode = ((tch_lnode*)nchnk)->next;
+				cnode = ((cdsl_dlistNode_t*)nchnk)->next;
 				if(!cnode){
 					result = tchOK;
 					RETURN_SAFELY();
 				}
-			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode*)nchnk)->next) != (tch_memHdr*)cnode);
+			}while(tch_memMerge(nchnk,(tch_memHdr*)((cdsl_dlistNode_t*)nchnk)->next) != (tch_memHdr*)cnode);
 			result = tchOK;
 			RETURN_SAFELY();
-		}else if(cnode > (tch_lnode*) nchnk){
-			((tch_lnode*)nchnk)->next = ((tch_lnode*)m_entry)->next;
-			((tch_lnode*)nchnk)->prev = (tch_lnode*)m_entry;
-			((tch_lnode*)m_entry)->next = (tch_lnode*)nchnk;
-			if(!((tch_lnode*) nchnk)->next){
+		}else if(cnode > (cdsl_dlistNode_t*) nchnk){
+			((cdsl_dlistNode_t*)nchnk)->next = ((cdsl_dlistNode_t*)m_entry)->next;
+			((cdsl_dlistNode_t*)nchnk)->prev = (cdsl_dlistNode_t*)m_entry;
+			((cdsl_dlistNode_t*)m_entry)->next = (cdsl_dlistNode_t*)nchnk;
+			if(!((cdsl_dlistNode_t*) nchnk)->next){
 				result = tchOK;
 				RETURN_SAFELY();
 			}else{
-				((tch_lnode*) nchnk)->next->prev = (tch_lnode*) nchnk;
+				((cdsl_dlistNode_t*) nchnk)->next->prev = (cdsl_dlistNode_t*) nchnk;
 			}
 			do{
-				cnode = ((tch_lnode*)nchnk)->next;
+				cnode = ((cdsl_dlistNode_t*)nchnk)->next;
 				if(!cnode){
 					result = tchOK;
 					RETURN_SAFELY();
 				}
-			}while(tch_memMerge(nchnk,(tch_memHdr*)((tch_lnode*)nchnk)->next) != (tch_memHdr*)cnode);
+			}while(tch_memMerge(nchnk,(tch_memHdr*)((cdsl_dlistNode_t*)nchnk)->next) != (tch_memHdr*)cnode);
 			result = tchOK;
 			RETURN_SAFELY();
 		}
@@ -165,7 +165,7 @@ uint32_t tch_memAvail(tch_memId mh){
 }
 
 
-void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode* alc_list){
+void* tch_memAlloc(tch_memId mh,size_t size,cdsl_dlistNode_t* alc_list){
 	if(!mh || !MEM_ISVALID(mh) || !size)
 		return NULL;
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
@@ -175,25 +175,25 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode* alc_list){
 			return NULL;
 	}
 	tch_memHdr* nchnk = NULL;
-	tch_lnode* cnode = (tch_lnode*)m_entry;
+	cdsl_dlistNode_t* cnode = (cdsl_dlistNode_t*)m_entry;
 	int rsz = size + sizeof(tch_memHdr);
 	while(cnode->next){
 		cnode = cnode->next;
 		if(((tch_memHdr*) cnode)->usz > rsz){
 			nchnk = (tch_memHdr*)((uint32_t) cnode + rsz);
-			tch_listInit((tch_lnode*) nchnk);
-			((tch_lnode*)nchnk)->next = cnode->next;
-			((tch_lnode*)nchnk)->prev = cnode->prev;
+			cdsl_dlistInit((cdsl_dlistNode_t*) nchnk);
+			((cdsl_dlistNode_t*)nchnk)->next = cnode->next;
+			((cdsl_dlistNode_t*)nchnk)->prev = cnode->prev;
 			if(cnode->next)
-				cnode->next->prev = (tch_lnode*)nchnk;
+				cnode->next->prev = (cdsl_dlistNode_t*)nchnk;
 			if(cnode->prev)
-				cnode->prev->next = (tch_lnode*)nchnk;
+				cnode->prev->next = (cdsl_dlistNode_t*)nchnk;
 			nchnk->usz = ((tch_memHdr*) cnode)->usz - rsz;
 			((tch_memHdr*) cnode)->usz = size;
 			nchnk = (tch_memHdr*) cnode;
 			m_entry->hdr.usz -= rsz;
 			if(alc_list != NULL)
-				tch_listPutTail(alc_list,&nchnk->allocLn);
+				cdsl_dlistPutTail(alc_list,&nchnk->allocLn);
 			nchnk ++;
 			result = (uint8_t*)nchnk;
 			RETURN_SAFELY();
@@ -205,7 +205,7 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode* alc_list){
 				cnode->prev->next = cnode->next;
 			m_entry->hdr.usz -= size + sizeof(tch_memHdr);
 			if(alc_list != NULL)
-				tch_listPutTail(alc_list,&nchnk->allocLn);
+				cdsl_dlistPutTail(alc_list,&nchnk->allocLn);
 			nchnk ++;
 			result = (uint8_t*)nchnk;
 			RETURN_SAFELY();
@@ -230,17 +230,17 @@ void* tch_memAlloc(tch_memId mh,size_t size,tch_lnode* alc_list){
 static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next){
 	if(cur->usz == ((uint32_t) next - ((uint32_t) cur) - sizeof(tch_memHdr))){
 		cur->usz += next->usz + sizeof(tch_memHdr);
-		((tch_lnode*) cur)->next = ((tch_lnode*) next)->next;
-		if(((tch_lnode*) cur)->next)
-			((tch_lnode*) cur)->next->prev = (tch_lnode*)cur;
-		return (tch_memHdr*)((tch_lnode*) cur)->next;
+		((cdsl_dlistNode_t*) cur)->next = ((cdsl_dlistNode_t*) next)->next;
+		if(((cdsl_dlistNode_t*) cur)->next)
+			((cdsl_dlistNode_t*) cur)->next->prev = (cdsl_dlistNode_t*)cur;
+		return (tch_memHdr*)((cdsl_dlistNode_t*) cur)->next;
 	}
 	return next;
 }
 
 
 
-tchStatus tch_memFreeAll(tch_memId mh,tch_lnode* alloc_list,BOOL exec_destr){
+tchStatus tch_memFreeAll(tch_memId mh,cdsl_dlistNode_t* alloc_list,BOOL exec_destr){
 	tch_uobjProto* uobj = NULL;
 	tch_memEntry* m_entry = (tch_memEntry*) mh;
 	tchStatus result = tchOK;
@@ -249,8 +249,8 @@ tchStatus tch_memFreeAll(tch_memId mh,tch_lnode* alloc_list,BOOL exec_destr){
 			return result;
 	}
 
-	while(!tch_listIsEmpty(alloc_list)){
-		uobj = tch_listDequeue(alloc_list);
+	while(!cdsl_dlistIsEmpty(alloc_list)){
+		uobj = cdsl_dlistDequeue(alloc_list);
 		if(uobj && uobj->__obj.destructor && exec_destr){
 			if(uobj->__obj.destructor(&uobj->__obj) == tchOK){
 #ifdef __DBG

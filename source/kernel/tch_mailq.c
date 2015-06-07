@@ -19,7 +19,7 @@ typedef struct tch_mailqCb {
 	uint32_t      bsz;
 	tch_mpoolId   bpool;
 	tch_msgqId    msgq;
-	tch_lnode   wq;
+	cdsl_dlistNode_t   wq;
 }tch_mailqCb;
 
 
@@ -65,7 +65,7 @@ static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 
 	umailq.__obj.destructor = (tch_uobjDestr) tch_mailq_destroy;
 	umailq.bsz = sz;
-	tch_listInit(&umailq.wq);
+	cdsl_dlistInit(&umailq.wq);
 	return tch_port_enterSv(SV_MAILQ_INIT,mailqcb,&umailq);
 }
 

@@ -151,6 +151,27 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
+    .kernel.syscall :
+    {
+    	*(.sysc.entry)
+    	*(.sysc.table)    
+    } > FLASH
+    
+    .kernel.stack :
+    {
+    	*(.kernel.stack)
+    } >RAM
+     
+    .kernel.dynamic :
+    {	_estack = .;
+    	. = ALIGN(PAGE_SIZE);
+    	*(.kernel.dynamic)
+    	. = ALIGN(PAGE_SIZE);
+    } >RAM
+    
+
+    
+    
     /* 
       Heap Section start at the end of bss      
     */
@@ -172,29 +193,9 @@ SECTIONS
     	_emb = .;
     } >RAM
     
-    .istack :
-    {
-     	. = _emb;
-     	. = ALIGN(8);
-    	_sistk = .;
-    	*(.istack)
-    	. = ALIGN(8);
-    	_eistk = .;
-    } >RAM
-    
-    .mstack :
-    {
-    	. = _eistk;
-   		. = ALIGN(8);
-    	_smstk = .;
-    	*(.mstack)
-    	. = ALIGN(8);
-    	_emstk = .;
-    } >RAM
-    
     .sysstack :
     {
-    	. = _emstk;
+    	. = _emb;
     	. = ALIGN(8);
     	_ssstk = .;
     	*(.sysstack)
@@ -202,14 +203,6 @@ SECTIONS
     	_esstk = .;
     } > RAM
 
-    sys_stack_top = _estack;
-    sys_stack_limit = sys_stack_top - SIZEOF(.sysstack);
-    main_stack_top = sys_stack_limit;
-    main_stack_limit = main_stack_top - SIZEOF(.mstack);    
-    idle_stack_top = main_stack_limit;
-    idle_stack_limit = idle_stack_top - SIZEOF(.istack);
-    mbarrier_upperLimit = idle_stack_limit;
-    mbarrier_lowerLimit = mbarrier_upperLimit - SIZEOF(.mbarrier);
     
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there

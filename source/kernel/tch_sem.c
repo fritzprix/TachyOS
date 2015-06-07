@@ -9,17 +9,17 @@
 #include "tch_ktypes.h"
 #include "tch_kernel.h"
 #include "tch_sem.h"
-#include "tch_list.h"
+#include "cdsl_dlist.h"
 
 
 #define TCH_SEMAPHORE_CLASS_KEY                      ((uint16_t) 0x1A0A)
 
 
 typedef struct _tch_sem_t {
-	tch_uobj          __obj;
-	uint32_t          state;
-	uint32_t          count;
-	tch_lnode       wq;
+	tch_uobj          	__obj;
+	uint32_t        	state;
+	uint32_t     	    count;
+	cdsl_dlistNode_t    wq;
 } tch_semaphore_cb;
 
 static tch_semId tch_semaphore_create(uint32_t count);
@@ -30,6 +30,13 @@ static tchStatus tch_semaphore_destroy(tch_semId sid);
 static void tch_semaphoreValidate(tch_semId sid);
 static void tch_semaphoreInvalidate(tch_semId sid);
 static BOOL tch_semaphoreIsValid(tch_semId sid);
+
+
+
+tchStatus semaphore_create(uint32_t  count){
+
+}
+
 
 
 
@@ -50,7 +57,7 @@ static tch_semId tch_semaphore_create(uint32_t count){
 		return NULL;
 	sem->count = count;
 	sem->__obj.destructor = (tch_uobjDestr) tch_semaphore_destroy;
-	tch_listInit(&sem->wq);
+	cdsl_dlistInit(&sem->wq);
 	tch_semaphoreValidate(sem);
 	return (tch_semId) sem;
 }
@@ -83,7 +90,7 @@ static tchStatus tch_semaphore_unlock(tch_semId id){
 		return tchErrorResource;
 	tch_semaphore_cb* sem = (tch_semaphore_cb*) id;
 	sem->count++;
-	if(!tch_listIsEmpty(&sem->wq)){
+	if(!cdsl_dlistIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
 			tchk_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else
@@ -99,7 +106,7 @@ static tchStatus tch_semaphore_destroy(tch_semId id){
 	sem->state = 0;
 	sem->count = 0;
 	tch_semaphoreInvalidate(id);
-	if(!tch_listIsEmpty(&sem->wq)){
+	if(!cdsl_dlistIsEmpty(&sem->wq)){
 		if(tch_port_isISR())
 			tchk_schedThreadResumeM((tch_thread_queue*) &sem->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		else

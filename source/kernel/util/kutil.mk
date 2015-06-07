@@ -1,8 +1,11 @@
 
 KERNEL_UTIL_SRCS=\
-	    tch_btree.c\
-	    tch_list.c\
-	    tch_ltree.c\
+	    cdsl_bstree.c\
+	    cdsl_dlist.c\
+	    cdsl_heap.c\
+	    cdsl_rbtree.c\
+	    cdsl_slist.c\
+	    cdsl_spltree.c\
 	    tch_mem.c
 	    
 KERNEL_UTIL_CPP_SRCS=

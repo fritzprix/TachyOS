@@ -54,7 +54,7 @@ const tch_mtx_ix* Mtx = &MTX_Instance;
 
 void tch_mtxInit(tch_mtxCb* mcb){
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
-	tch_listInit((tch_lnode*)&mcb->que);
+	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
 	mcb->__obj.destructor = (tch_uobjDestr) __tch_noop_destr;
 	mcb->status = 0;
@@ -92,7 +92,7 @@ tchStatus tchk_mutex_unlock(tch_mtxId mtx){
 	}
 	if(tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) tch_currentThread,(uword_t)NULL))
 		return tchErrorResource;
-	if(!tch_listIsEmpty(&mcb->que))
+	if(!cdsl_dlistIsEmpty(&mcb->que))
 		tchk_schedThreadResumeM(&mcb->que,1,tchOK,TRUE);
 	return tchOK;
 }
@@ -111,7 +111,7 @@ tchStatus tchk_mutex_destroy(tch_mtxId mtx){
 static tch_mtxId tch_mtx_create(){
 	tch_mtxCb* mcb = (tch_mtxCb*) tch_shMemAlloc(sizeof(tch_mtxCb),FALSE);
 	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
-	tch_listInit((tch_lnode*)&mcb->que);
+	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
 	mcb->__obj.destructor = (tch_uobjDestr) tch_mtx_destroy;
 	mcb->status = 0;

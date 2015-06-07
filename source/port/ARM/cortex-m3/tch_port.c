@@ -20,9 +20,6 @@
 
 
 
-#define IDLE_STACK_SIZE            ((uint32_t) (1 << 9))
-#define MAIN_STACK_SIZE            ((uint32_t) (1 << 11))
-
 #define SCB_AIRCR_KEY              ((uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos))
 #define EPSR_THUMB_MODE            ((uint32_t) (1 << 24))
 
@@ -35,7 +32,7 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
-BOOL tch_kernel_initPort(){
+extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -51,7 +48,7 @@ BOOL tch_kernel_initPort(){
 	                                                                                                       *  - for debugging convinience
 	                                                                                                       **/
 
-	__set_PSP(__get_MSP());                         // Init Stack inherited to thread mode stack pointer
+	__set_PSP((uint32_t)kernel_desc->k_stacktop);                         // Init Stack inherited to thread mode stack pointer
 	uint32_t mcu_ctrl = __get_CONTROL();            /** Modify Control register
 	                                                 *  - dedicated Thread Stack Pointer enabled
 	                                                 *

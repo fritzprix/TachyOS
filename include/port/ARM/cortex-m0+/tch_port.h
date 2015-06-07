@@ -33,13 +33,28 @@
 #define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
 #define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
 
-#define tch_port_setThreadSP(sp)           __set_PSP(sp)
-#define tch_port_getThreadSP()             __get_PSP()
-#define tch_port_setHandlerSP(sp)          __set_MSP(sp)
-#define tch_port_getHandlerSP()            __get_MSP()
+#define tch_port_setThreadSP           __set_PSP
+#define tch_port_getThreadSP           __get_PSP
+#define tch_port_setHandlerSP          __set_MSP
+#define tch_port_getHandlerSP          __get_MSP
 
 #define HARDFAULT_UNRECOVERABLE                    (-1)
 #define HARDFAULT_RECOVERABLE                      (-2)
+
+
+#define MEM_UNPRIV_READ_PERMISSION					((uint32_t) 0x10000)
+#define MEM_UNPRIV_WRITE_PERMISSION					((uint32_t) 0x20000)
+
+#define MEM_PRIV_READ_PERMISSION					((uint32_t) 0x40000)
+#define MEM_PRIV_WRITE_PERMISSION					((uint32_t) 0x80000)
+#define MEM_PERMISSION_MSK							(MEM_UNPRIV_READ_PERMISSION |\
+													MEM_UNPRIV_WRITE_PERMISSION |\
+													MEM_PRIV_READ_PERMISSION |\
+													MEM_PRIV_WRITE_PERMISSION)
+
+
+
+
 
 
 /** \brief enable global interrupts
@@ -83,11 +98,22 @@ extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribu
 
 extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
 extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
-extern void* tch_port_makeInitialContext(uaddr_t sp,uaddr_t initfn);
+extern void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn);
 extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
 extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
+
+
+/**
+ *
+ */
+extern int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission);
+
+/**
+ *
+ */
+extern int tch_port_clrMemPermission(int id);
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

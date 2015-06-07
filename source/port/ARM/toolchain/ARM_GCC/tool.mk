@@ -14,7 +14,9 @@ else
 endif
 
 # Linker Option
-TOOL_LINKER_OPT=-Map,$(TARGET:%.elf=%.map)
+TOOL_LINKER_OPT=-Map,$(TARGET:%.elf=%.map)\
+				--gc-sections\
+				--defsym,PAGE_SIZE=$(CONFIG_PAGE_SIZE)
 
 # C build option
 TOOL_CFLAG =-fsigned-char\
@@ -23,8 +25,6 @@ TOOL_CFLAG =-fsigned-char\
 		   -ffreestanding\
 		   -nostartfiles\
 		   --specs=nano.specs\
-		   -Xlinker\
-		   --gc-sections\
 		   -T$(LDSCRIPT)\
 		   $(OPT_FLAG)\
 		   -mcpu=$(CPU)\

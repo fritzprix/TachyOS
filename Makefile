@@ -5,6 +5,15 @@
 #        Author : Doowoong,Lee                        #
 #######################################################
 
+
+FLOAT_OPTION= 
+LIBS=
+LIB_DIR=
+CFLAG =
+CPFLAG =  
+LDFLAG =
+TOOL_PREFIX=
+
 # C Compiler preprocessor option
 include tchConfig.mk
 
@@ -31,6 +40,7 @@ endif
 
 #source code directory 
 KERNEL_UTIL_SRC_DIR=$(ROOT_DIR)/source/kernel/util
+KERNEL_MM_SRC_DIR=$(ROOT_DIR)/source/kernel/mm
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
 PORT_SRC_DIR=$(ROOT_DIR)/source/port
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
@@ -57,15 +67,6 @@ TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
 TIME_STAMP=$(shell date +%s)
 TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
 
-
-FLOAT_OPTION= 
-LIBS=
-LIB_DIR=
-LINKER_OPT =
-CFLAG =
-CPFLAG =  
-LDFLAG =
-TOOL_PREFIX=
 
 
 ifeq ($(LDSCRIPT),)
@@ -94,9 +95,10 @@ include $(PORT_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 
 CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
-       
+
 include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
 include $(KERNEL_UTIL_SRC_DIR)/kutil.mk
+include $(KERNEL_MM_SRC_DIR)/mm.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
 include $(USR_SRC_DIR)/usr.mk

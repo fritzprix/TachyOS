@@ -33,10 +33,10 @@
 #define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
 #define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
 
-#define tch_port_setThreadSP(sp)           __set_PSP(sp)
-#define tch_port_getThreadSP()             __get_PSP()
-#define tch_port_setHandlerSP(sp)          __set_MSP(sp)
-#define tch_port_getHandlerSP()            __get_MSP()
+#define tch_port_setThreadSP           __set_PSP
+#define tch_port_getThreadSP           __get_PSP
+#define tch_port_setHandlerSP          __set_MSP
+#define tch_port_getHandlerSP          __get_MSP
 
 #define HARDFAULT_UNRECOVERABLE                    (-1)
 #define HARDFAULT_RECOVERABLE                      (-2)

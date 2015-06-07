@@ -15,7 +15,8 @@ KERNEL_SRCS=\
 	    tch_mailq.c\
 	    tch_time.c\
 	    tch_event.c\
-	    tch_kmm.c
+	    tch_kmm.c\
+	    tch_kdesc.c
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
 KERNEL_BUILD_DIR=$(GEN_DIR)/kernel

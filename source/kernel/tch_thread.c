@@ -113,13 +113,13 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	uStdLib->string->memset(kthread,0,sizeof(tch_thread_kheader));
 	if(isroot){														// if new thread will be the root thread of a process, parent will be self
 		kthread->t_parent = kthread;
-		tch_listPutTail((tch_lnode*) &procList,(tch_lnode*) &kthread->t_siblingLn);		// added in process list
+		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
 		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
 			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
 	}else if(tch_currentThread){									// new thread will be child of caller thread
 		kthread->t_parent = tch_currentThread->t_kthread->t_parent;
 		cfg->t_memDef.heap_sz = 0;
-		tch_listPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
+		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
 	}else {
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	}
@@ -133,9 +133,9 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
 
-	tch_listInit(&kthread->t_palc);
-	tch_listInit(&kthread->t_pshalc);
-	tch_listInit(&kthread->t_upshalc);
+	cdsl_dlistInit(&kthread->t_palc);
+	cdsl_dlistInit(&kthread->t_pshalc);
+	cdsl_dlistInit(&kthread->t_upshalc);
 
 	kthread->t_tslot = TCH_ROUNDROBIN_TIMESLOT;
 	kthread->t_state = PENDED;
@@ -281,8 +281,8 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 	tchk_shareableMemFreeAll(th_p);
 
 	if(th_p->t_flag & THREAD_ROOT_BIT){
-		while(!tch_listIsEmpty(&th_p->t_childLn)){
-			ch_p = (tch_thread_kheader*) ((uint32_t) tch_listDequeue((tch_lnode*) &th_p->t_childLn) - 3 * sizeof(tch_lnode));
+		while(!cdsl_dlistIsEmpty(&th_p->t_childLn)){
+			ch_p = (tch_thread_kheader*) ((uint32_t) cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->t_childLn) - 3 * sizeof(cdsl_dlistNode_t));
 			if(ch_p){
 				Thread->terminate(ch_p,status);
 				Thread->join(ch_p,tchWaitForever);
@@ -291,7 +291,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 		tchk_pageRelease(th_p->t_pgId);
 		tchk_kernelHeapFree(th_p);
 	}else{
-		tch_listRemove((tch_lnode*) &th_p->t_parent->t_childLn,&th_p->t_siblingLn);
+		cdsl_dlistRemove(&th_p->t_siblingLn);
 		tch_currentThread = th_p->t_parent->t_uthread;
 		uMem->free(&th_p->t_uthread->t_destr);
 	}

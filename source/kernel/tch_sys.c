@@ -58,7 +58,6 @@ tch_thread_queue procList;
 tch_boardHandle boardHandle = NULL;
 BOOL __VALID_SYSCALL;
 
-const tch_bin_descriptor BIN_DESC = {0};
 const tch* tch_rti = &RuntimeInterface;
 
 
@@ -71,16 +70,19 @@ const tch* tch_rti = &RuntimeInterface;
  */
 void tch_kernelInit(void* arg){
 
+	kernel_descriptor.k_stacktop = tch_kernelMemInit();
+
+	if(!tch_kernelInitPort(&kernel_descriptor))										// initialize port layer
+		tch_kernel_errorHandler(FALSE,tchErrorOS);
+
+
 	/*initialize kernel global variable*/
-	tch_listInit((tch_lnode*) &procList);
-	mainThread = NULL;
-	idleThread = NULL;
-	sysThread = NULL;
+	cdsl_dlistInit((cdsl_dlistNode_t*) &procList);
+
 
 	__VALID_SYSCALL = FALSE;
-
-
 	/*Bind API Object*/
+
 
 	RuntimeInterface.uStdLib = tch_initStdLib();
 
@@ -95,6 +97,10 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
+	mainThread = NULL;
+	idleThread = NULL;
+	sysThread = NULL;
+
 	/**
 	 *  Initialize pageing sub-system for memory managment
 	 */
@@ -104,8 +110,6 @@ void tch_kernelInit(void* arg){
 	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
 	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
 
-	if(!tch_kernel_initPort())				// initialize port layer
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
 	tch_port_kernel_lock();
 
 	tch_threadCfg thcfg;
@@ -344,7 +348,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tchEvent evt;
 	tch_sysTask* task = NULL;
 
-	RuntimeInterface.Device = tch_kernel_initHAL(&RuntimeInterface);
+	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);
 	boardHandle = tch_boardInit(&RuntimeInterface);

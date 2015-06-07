@@ -151,6 +151,27 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
+    .kernel.syscall :
+    {
+    	*(.sysc.entry)
+    	*(.sysc.table)    
+    } > FLASH
+    
+    .kernel.stack :
+    {
+    	*(.kernel.stack)
+    } >RAM
+     
+    .kernel.dynamic :
+    {	_estack = .;
+    	. = ALIGN(PAGE_SIZE);
+    	*(.kernel.dynamic)
+    	. = ALIGN(PAGE_SIZE);
+    } >RAM
+    
+
+    
+    
     /* 
       Heap Section start at the end of bss      
     */
@@ -182,10 +203,6 @@ SECTIONS
     	_esstk = .;
     } > RAM
 
-    sys_stack_top = _estack;
-    sys_stack_limit = sys_stack_top - SIZEOF(.sysstack);
-    mbarrier_upperLimit = sys_stack_limit;
-    mbarrier_lowerLimit = mbarrier_upperLimit - SIZEOF(.mbarrier);
     
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there

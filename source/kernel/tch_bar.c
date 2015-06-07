@@ -36,7 +36,7 @@
 struct tch_bar_cb_t{
 	tch_uobj                 __obj;
 	uint32_t                 status;
-	tch_lnode         	     wq;
+	cdsl_dlistNode_t         	     wq;
 };
 
 static tch_barId tch_bar_create();
@@ -69,7 +69,7 @@ static tch_barId tch_bar_create(){
 void tchk_barrierInit(tch_barCb* bar,BOOL is_static){
 	uStdLib->string->memset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
-	tch_listInit(&bar->wq);
+	cdsl_dlistInit(&bar->wq);
 	bar->__obj.destructor =  is_static? (tch_uobjDestr) __tch_noop_destr : (tch_uobjDestr) tch_bar_destroy;
 }
 
@@ -91,7 +91,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 	tch_barCb* bar = (tch_barCb*) barId;
 	if(!bar || !BAR_ISVALID(bar))
 		return tchErrorParameter;
-	if(tch_listIsEmpty(&bar->wq))
+	if(cdsl_dlistIsEmpty(&bar->wq))
 		return tchOK;
 	if(tch_port_isISR()){
 		tchk_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);

@@ -71,7 +71,7 @@ static tch_eventId tch_eventCreate(){
 	tch_eventCb initcb;
 	uStdLib->string->memset(&initcb,0,sizeof(tch_eventCb));
 	initcb.__obj.destructor = (tch_uobjDestr) tch_eventDestroy;
-	tch_listInit((tch_lnode*)&initcb.ev_blockq);
+	cdsl_dlistInit((cdsl_dlistNode_t*)&initcb.ev_blockq);
 	return (tch_eventId) tch_port_enterSv(SV_EV_INIT,(uword_t) evcb,(uword_t) &initcb);
 }
 
@@ -154,7 +154,7 @@ int32_t tchk_eventUpdate(tch_eventId id,void* arg){
 		evcb->ev_signal &= ~sarg->ev_signal;
 		break;
 	}
-	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!tch_listIsEmpty(&evcb->ev_blockq))){
+	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
 		tchk_schedThreadResumeM(&evcb->ev_blockq,1,tchOK,TRUE);
 	}
 	return psig;
@@ -162,7 +162,7 @@ int32_t tchk_eventUpdate(tch_eventId id,void* arg){
 
 void tchk_eventDeinit(tch_eventId id){
 	tch_eventCb* evcb = (tch_eventCb*) id;
-	if(!tch_listIsEmpty(&evcb->ev_blockq)){
+	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq)){
 		tchk_schedThreadResumeM(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	}
 }

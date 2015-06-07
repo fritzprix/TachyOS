@@ -21,8 +21,8 @@ typedef struct _tch_msgq_cb {
 	uint32_t      sz;
 	uint32_t      pidx;
 	uint32_t      gidx;
-	tch_lnode   cwq;
-	tch_lnode   pwq;
+	cdsl_dlistNode_t   cwq;
+	cdsl_dlistNode_t   pwq;
 	uint32_t      updated;
 }tch_msgq_cb;
 
@@ -75,8 +75,8 @@ tch_msgqId tchk_msgqInit(tch_msgqId id,uint32_t len){
 	msgqCb->updated = 0;
 	msgqCb->sz = len;
 	msgqCb->status = 0;
-	tch_listInit(&msgqCb->cwq);
-	tch_listInit(&msgqCb->pwq);
+	cdsl_dlistInit(&msgqCb->cwq);
+	cdsl_dlistInit(&msgqCb->pwq);
 
 	tch_msgqValidate(msgqCb);
 	return (tch_msgqId) msgqCb;

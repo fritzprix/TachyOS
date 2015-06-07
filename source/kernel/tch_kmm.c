@@ -67,13 +67,13 @@ typedef struct tch_uheap_handle_t tch_uheap_handle;
 
 struct tch_uheap_handle_t {
 	tch_memId		u_mem;
-	tch_lnode		u_alc;
+	cdsl_dlistNode_t		u_alc;
 }__attribute__((packed));
 
 struct tch_page_mgr_handle {
 	tch_memId 		p_mem;
-	tch_lnode		p_alc;
-	tch_lnode		p_phle;
+	cdsl_dlistNode_t		p_alc;
+	cdsl_dlistNode_t		p_phle;
 	uint32_t 		p_status;
 	int 			p_base_mpermId;
 }__attribute__((packed));
@@ -85,7 +85,7 @@ typedef struct tch_pageSubRegion {
 }tch_pageSubRegion;
 
 struct tch_page_header {
-	tch_lnode				p_le;
+	cdsl_dlistNode_t				p_le;
 	tch_pageAccessibility 	p_acc;
 	tch_threadId 			p_owner;
 	uint8_t					p_regCnt;
@@ -107,7 +107,7 @@ struct tch_kmem_mgr_handle {
 	tch_pageId				k_pgId;
 	tch_memId				k_memId;
 	uint32_t				k_status;
-	tch_lnode				k_alc_le;
+	cdsl_dlistNode_t				k_alc_le;
 }__attribute__((packed));
 
 struct tch_shmem_header {
@@ -137,7 +137,7 @@ tchStatus tchk_pageInit(void* kmem_base,uint32_t msz){
 	PageManagerHandle.p_mem = (tch_memId) tch_memInit(kmem_base,msz,FALSE);
 	if(PageManagerHandle.p_mem == NULL)
 		return tchErrorParameter;
-	tch_listInit(&PageManagerHandle.p_alc);	// initialize page allocation list
+	cdsl_dlistInit(&PageManagerHandle.p_alc);	// initialize page allocation list
 	PageManagerHandle.p_base_mpermId = tch_port_setMemPermission(kmem_base,msz,MEM_PRIV_READ_PERMISSION | MEM_PRIV_WRITE_PERMISSION);  // kernel heap is protected from unprivilidged access by default
 	PAGE_MGR_VALIDATE(&PageManagerHandle);
 	return tchOK;
@@ -175,7 +175,7 @@ tchStatus tchk_kernelHeapInit(uint32_t msz){
 	mem = tchk_getPageAddress(KernelHeapHandle.k_pgId);
 	psz = tchk_getPageSize(KernelHeapHandle.k_pgId);
 	KernelHeapHandle.k_memId = (tch_memId) tch_memInit(mem,psz,FALSE);
-	tch_listInit(&KernelHeapHandle.k_alc_le);
+	cdsl_dlistInit(&KernelHeapHandle.k_alc_le);
 	KHEAP_VALIDATE(&KernelHeapHandle);
 	return tchOK;
 }
@@ -233,7 +233,7 @@ tch_pageId tchk_pageRequest(tch_thread_kheader* thread,uint32_t psz,tch_pageAcce
 			tch_memFree(pheader);
 			return NULL;
 		}
-		tch_listPutTail(&thread->t_palc,(tch_lnode*) pheader);
+		cdsl_dlistPutTail(&thread->t_palc,(cdsl_dlistNode_t*) pheader);
 		pheader->p_status |= (MEM_PRIV_READ_PERMISSION | MEM_PRIV_WRITE_PERMISSION | MEM_UNPRIV_READ_PERMISSION | MEM_UNPRIV_WRITE_PERMISSION);
 		pheader->p_owner = thread->t_uthread;
 		break;
@@ -338,7 +338,7 @@ tchStatus tchk_kernelHeapFreeAll(){
 
 void* tchk_shareableMemAlloc(size_t sz,BOOL protection){
 	tch_memId mem = NULL;
-	tch_lnode* al_le = NULL;
+	cdsl_dlistNode_t* al_le = NULL;
 	tch_thread_kheader* kheader = tch_currentThread->t_kthread;
 	if(protection){
 		mem = ShareableMemHandle.sh_pmId;
@@ -357,7 +357,7 @@ void tchk_shareableMemFree(void* m){
 	tch_thread_kheader* kheader = tch_currentThread->t_kthread;
 
 	tch_memId mem = header->sh_prot? ShareableMemHandle.sh_pmId : ShareableMemHandle.sh_upmId;
-	tch_lnode* alc_le = header->sh_prot? &kheader->t_pshalc : &kheader->t_upshalc;
+	cdsl_dlistNode_t* alc_le = header->sh_prot? &kheader->t_pshalc : &kheader->t_upshalc;
 	tch_memFree(mem,m,alc_le);
 }
 
@@ -418,12 +418,12 @@ tchStatus tchk_userMemInit(tch_thread_kheader* owner,tch_userMemDef_t* mem_def,B
 	heap_handle = (tch_uheap_handle*) mem;
 	heap_handle--;									// push and make heap handle, and construct heap handle
 	if(isroot){
-		tch_listInit(&heap_handle->u_alc);
+		cdsl_dlistInit(&heap_handle->u_alc);
 		mem = (uint8_t*) ((uint32_t) heap_handle - mem_def->heap_sz);			// offset heap size
 		heap_handle->u_mem = (uint8_t*) tch_memInit(mem,mem_def->heap_sz,TRUE);			// initialize heap
 	}else{
 		mem = (uint8_t*) heap_handle;
-		tch_listInit(&heap_handle->u_alc);															// initailize allocation list
+		cdsl_dlistInit(&heap_handle->u_alc);															// initailize allocation list
 		heap_handle->u_mem = ((tch_uheap_handle*) owner->t_parent->t_uthread->t_heap)->u_mem;		// inherit heap handle from parent
 	}
 

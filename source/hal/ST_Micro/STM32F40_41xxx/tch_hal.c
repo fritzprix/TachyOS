@@ -988,7 +988,7 @@ tch_hal tch_hal_instance;
 tch_lld_rtc* tch_rtc;
 tch_lld_dma* tch_dma;
 
-const tch_hal* tch_kernel_initHAL(const tch* env){
+const tch_hal* tch_kernelInitHAL(const tch* env){
 	/***
 	 *  initialize clock subsystem
 	 */

@@ -11,13 +11,25 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
-#include "tch_list.h"
+#include "cdsl_dlist.h"
 
 
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+
+typedef struct {
+	int 			version_major;		// kernel version number
+	int		 		version_minor;
+	const char*		arch_name;
+	const char*		pltf_name;
+	size_t		 	target_memsz;
+	size_t			k_stacksz;
+	size_t			k_dynamicsz;
+	uint32_t*		k_stacktop;
+} tch_kernel_descriptor;
 
 typedef struct {
 	const char*          hw_vendor;
@@ -87,7 +99,7 @@ struct tch_sys_task_t {
 
 
 typedef struct tch_thread_queue{
-	tch_lnode             thque;
+	cdsl_dlistNode_t             thque;
 } tch_thread_queue;
 
 
@@ -107,17 +119,17 @@ struct tch_thread_uheader_s {
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
-	tch_lnode                 t_schedNode;	///<thread queue node to be scheduled
-	tch_lnode                 t_waitNode;		///<thread queue node to be blocked
-	tch_lnode                 t_joinQ;		///<thread queue to wait for this thread's termination
-	tch_lnode                 t_childLn;		///<thread queue node to iterate child thread
-	tch_lnode					t_siblingLn;	///<linked list entry for added into child list
-	tch_lnode*                t_waitQ;		///<reference to wait queue in which this thread is waiting
+	cdsl_dlistNode_t                 t_schedNode;	///<thread queue node to be scheduled
+	cdsl_dlistNode_t                 t_waitNode;		///<thread queue node to be blocked
+	cdsl_dlistNode_t                 t_joinQ;		///<thread queue to wait for this thread's termination
+	cdsl_dlistNode_t                 t_childLn;		///<thread queue node to iterate child thread
+	cdsl_dlistNode_t					t_siblingLn;	///<linked list entry for added into child list
+	cdsl_dlistNode_t*                t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*                       t_ctx;			///<ptr to thread saved context (stack pointer value)
 	void*						t_proc;			///<ptr to base address of process image
-	tch_lnode					t_palc;			///<allocation list for page
-	tch_lnode                 t_pshalc;		///<allocation list for shared heap
-	tch_lnode					t_upshalc;
+	cdsl_dlistNode_t					t_palc;			///<allocation list for page
+	cdsl_dlistNode_t                 t_pshalc;		///<allocation list for shared heap
+	cdsl_dlistNode_t					t_upshalc;
 	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
 	tch_threadState             t_state;		///<thread state
 	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
@@ -131,16 +143,16 @@ struct tch_thread_kheader_s {
 
 
 struct tch_thread_kcb_s {
-	tch_lnode			t_schedNode;
-	tch_lnode			t_waitNode;
-	tch_lnode			t_joinQ;
-	tch_lnode			t_childNode;
-	tch_lnode*		t_waitQ;
+	cdsl_dlistNode_t			t_schedNode;
+	cdsl_dlistNode_t			t_waitNode;
+	cdsl_dlistNode_t			t_joinQ;
+	cdsl_dlistNode_t			t_childNode;
+	cdsl_dlistNode_t*		t_waitQ;
 	void*				t_ctx;
 	tchStatus			t_kRet;
 	tch_memId			t_mem;
-	tch_lnode			t_ualc;
-	tch_lnode			t_shalc;
+	cdsl_dlistNode_t			t_ualc;
+	cdsl_dlistNode_t			t_shalc;
 	uint32_t			t_tslot;
 	tch_threadState		t_state;
 	uint8_t				t_flag;

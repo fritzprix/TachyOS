@@ -56,7 +56,7 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
-	tch_listInit((tch_lnode*)&condv->wq);
+	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
 	condv->__obj.destructor =  is_static? (tch_uobjDestr)__tch_noop_destr : (tch_uobjDestr)tch_condv_destroy;
@@ -67,7 +67,7 @@ tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
 static tch_condvId tch_condv_create(){
 	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
-	tch_listInit((tch_lnode*)&condv->wq);
+	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
 	condv->__obj.destructor = (tch_uobjDestr) tch_condv_destroy;

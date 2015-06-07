@@ -31,6 +31,7 @@
 
 
 
+
 #if !defined(__BUILD_TIME_EPOCH)
 #define __BUILD_TIME_EPOCH 0UL
 #endif
@@ -54,13 +55,18 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 
 
-extern const tch_hal* tch_kernel_initHAL(const tch* ctx);
-extern BOOL tch_kernel_initPort();
+extern const tch_hal* tch_kernelInitHAL(const tch* ctx);
+extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc);
 
 
-extern tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg);
-extern tchStatus tch_kernel_enableInterrupt(IRQn_Type irq,uint32_t priority);
-extern tchStatus tch_kernel_disableInterrupt(IRQn_Type irq);
+extern tchStatus tch_kernelPostSysTask(int id,tch_sysTaskFn fn,void* arg);
+extern tchStatus tch_kernelEnableInterrupt(IRQn_Type irq,uint32_t priority);
+extern tchStatus tch_kernelDisableInterrupt(IRQn_Type irq);
+
+
+/*
+ * @ will be deprecated
+ */
 extern tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc);
 
 
@@ -116,6 +122,7 @@ extern const tch_signal_ix* Sig;
 extern const tch_hal* Hal;
 
 
+extern tch_kernel_descriptor kernel_descriptor;
 extern tch_thread_uheader* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue procList;

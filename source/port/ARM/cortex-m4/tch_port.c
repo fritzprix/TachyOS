@@ -20,9 +20,6 @@
 
 
 
-#define IDLE_STACK_SIZE            ((uint32_t) (1 << 9))
-#define MAIN_STACK_SIZE            ((uint32_t) (1 << 11))
-
 #define SCB_AIRCR_KEY              ((uint32_t) (0x5FA << SCB_AIRCR_VECTKEY_Pos))
 #define EPSR_THUMB_MODE            ((uint32_t) (1 << 24))
 
@@ -35,7 +32,7 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
-BOOL tch_kernel_initPort(){
+extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -51,7 +48,7 @@ BOOL tch_kernel_initPort(){
 	                                                                                                       *  - for debugging convinience
 	                                                                                                       **/
 
-	__set_PSP(__get_MSP());                         // Init Stack inherited to thread mode stack pointer
+	__set_PSP((uint32_t)kernel_desc->k_stacktop);                         // Init Stack inherited to thread mode stack pointer
 	uint32_t mcu_ctrl = __get_CONTROL();            /** Modify Control register
 	                                                 *  - dedicated Thread Stack Pointer enabled
 	                                                 *
@@ -150,6 +147,8 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R2 = arg3;
+
+	__VALID_SYSCALL = TRUE;
 	                                                              //
 	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
@@ -168,9 +167,11 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 
 int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 	asm volatile(
+			"ldr r3,=#1\n"
+			"str r3,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"  :  :  : "r0","r1","r2" );        // return from sv interrupt and get result from register #0
+			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
 }
 
