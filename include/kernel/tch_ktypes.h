@@ -71,12 +71,13 @@ typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_kheader_s tch_thread_kheader;
 typedef struct tch_thread_uheader_s tch_thread_uheader;
 
-typedef struct tch_thread_kcb_s tch_thread_kcb;		///< protected thread control block which contains scheduling information / thread status & state etc,
-typedef struct tch_thread_ucb_s tch_thread_ucb;		///< public thread control block which contains general data which is not critical for the system
+typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
+/**	 Kernel Object
+ *   used to critical object which should not be corrupted and released when it's not used
+ *   such as : device driver object / synchronization / thread control block, etc.
+ */
 
-typedef struct tch_thread_footer_t tch_thread_footer;
-typedef struct tch_uobj_t tch_uobj;
-typedef tchStatus (*tch_uobjDestr)(tch_uobj* obj);
+typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
 typedef struct tch_errorDescriptor {
 	int            errtype;
@@ -84,8 +85,8 @@ typedef struct tch_errorDescriptor {
 	tch_threadId   subj;
 }tch_errorDescriptor;
 
-struct tch_uobj_t {
-	tchStatus (*destructor)(tch_uobj* obj);
+struct tch_kobject_t {
+	tch_kobjDestr		__destr_fn;
 };
 
 
@@ -105,7 +106,7 @@ typedef struct tch_thread_queue{
 
 
 struct tch_thread_uheader_s {
-	tch_uobjDestr				t_destr;
+	tch_kobjDestr				t_destr;
 	tch_thread_routine          t_fn;			///<thread function pointer
 	void* 	 					t_heap;
 	uword_t                     t_kRet;			///<kernel return value
@@ -141,47 +142,6 @@ struct tch_thread_kheader_s {
 	tch_thread_kheader*			t_parent;
 } __attribute__((aligned(8)));
 
-
-struct tch_thread_kcb_s {
-	cdsl_dlistNode_t			t_schedNode;
-	cdsl_dlistNode_t			t_waitNode;
-	cdsl_dlistNode_t			t_joinQ;
-	cdsl_dlistNode_t			t_childNode;
-	cdsl_dlistNode_t*		t_waitQ;
-	void*				t_ctx;
-	tchStatus			t_kRet;
-	tch_memId			t_mem;
-	cdsl_dlistNode_t			t_ualc;
-	cdsl_dlistNode_t			t_shalc;
-	uint32_t			t_tslot;
-	tch_threadState		t_state;
-	uint8_t				t_flag;
-	uint8_t				t_lckCnt;
-	uint8_t				t_prior;
-	uint32_t* 			t_chks;
-	uint64_t			t_to;
-	tch_thread_ucb*		t_ucb;
-};
-
-struct tch_thread_ucb_s {
-	tch_uobjDestr		__destr;
-	tch_thread_queue	childs;
-	tch_threadId		parent;
-	uint8_t*			__heap_entry;
-	tch_thread_routine	t_fn;
-	const char*			t_name;
-	void*				t_arg;
-	struct _reent		t_reent;
-};
-
-struct tch_thread_footer_t{
-	tch_uobjDestr		__destr;
-	tch_thread_queue	childs;
-	tch_threadId		parent;
-};
-
-
-
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
 
 #define SV_EV_INIT						 ((uint32_t) 0x15)
@@ -204,12 +164,10 @@ struct tch_thread_footer_t{
 #define SV_MTX_UNLOCK					 ((uint32_t) 0x2A)
 #define SV_MTX_DESTROY					 ((uint32_t) 0x2B)
 
-/*
 #define SV_CONDV_INIT					 ((uint32_t) 0x2C)
 #define SV_CONDV_WAIT					 ((uint32_t) 0x2D)
 #define SV_CONDV_WAKE					 ((uint32_t) 0x2E)
 #define SV_CONDV_DEINIT					 ((uint32_t) 0x2F)
-*/
 
 #define SV_MSGQ_INIT					 ((uint32_t) 0x30)
 #define SV_MSGQ_PUT                      ((uint32_t) 0x31)               ///< Supervisor call id to put msg to msgq

@@ -114,7 +114,7 @@ typedef struct tch_dma_manager_t {
 
 
 typedef struct tch_dma_handle_prototype_t{
-	tch_uobjDestr               destr;
+	tch_kobjDestr               destr;
 	const tch*                  env;
 	dma_t                       dma;
 	uint8_t                     ch;
@@ -219,7 +219,7 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 		*dma_desc->_lpclkenr |= dma_desc->lpcklmsk;  // if dma should be awaken during sleep, lp clk is enabled
 	}
 
-	ins->destr = (tch_uobjDestr) tch_dma_close;
+	ins->destr = (tch_kobjDestr) tch_dma_close;
 	ins->env = env;
 	ins->ch = cfg->Ch;
 	ins->dma = dma;

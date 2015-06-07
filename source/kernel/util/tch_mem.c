@@ -55,7 +55,7 @@ struct tch_mem_entry_t {
 
 struct tch_uobj_prototype {
 	tch_memHdr         hdr;
-	tch_uobj           __obj;
+	tch_kobj           __obj;
 };
 
 static tch_memHdr* tch_memMerge(tch_memHdr* cur,tch_memHdr* next);
@@ -249,12 +249,12 @@ tchStatus tch_memFreeAll(tch_memId mh,cdsl_dlistNode_t* alloc_list,BOOL exec_des
 			return result;
 	}
 
-	while(!cdsl_dlistIsEmpty(alloc_list)){
+	while (!cdsl_dlistIsEmpty(alloc_list)) {
 		uobj = cdsl_dlistDequeue(alloc_list);
-		if(uobj && uobj->__obj.destructor && exec_destr){
-			if(uobj->__obj.destructor(&uobj->__obj) == tchOK){
+		if (uobj && uobj->__obj.__destr_fn && exec_destr) {
+			if (uobj->__obj.__destr_fn(&uobj->__obj) == tchOK) {
 #ifdef __DBG
-				;// print some message
+				;  // print some message
 #endif
 			}
 		}

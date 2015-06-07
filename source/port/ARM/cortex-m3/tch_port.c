@@ -129,7 +129,7 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->t_ctx),"r"(&((tch_thread_kheader*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","r11","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->t_ctx),"r"(&((tch_thread_kheader*) nth)->t_ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
 }
 
 
@@ -171,7 +171,7 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 			"str r3,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
+			"svc #3"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
 }
 
@@ -255,6 +255,9 @@ int tch_port_clrMemPermission(int id){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
+	tch_exc_stack* pexsp = exsp + 1;
+	uint16_t* thumb_svc_entry = (uint16_t*)pexsp->Return - 1;
+	uint8_t svc_arg = (*thumb_svc_entry) & 0xff;
 	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2);
 }
 

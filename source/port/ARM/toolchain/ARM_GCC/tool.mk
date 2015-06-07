@@ -18,6 +18,8 @@ TOOL_LINKER_OPT=-Map,$(TARGET:%.elf=%.map)\
 				--gc-sections\
 				--defsym,PAGE_SIZE=$(CONFIG_PAGE_SIZE)
 
+
+
 # C build option
 TOOL_CFLAG =-fsigned-char\
 		   -ffunction-sections\

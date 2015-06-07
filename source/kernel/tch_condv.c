@@ -21,7 +21,7 @@
 #define tch_condvIsWait(condv)        ((tch_condvCb*) condv)->state & CONDV_WAIT
 
 struct _tch_condv_cb_t {
-	tch_uobj          __obj;
+	tch_kobj          __obj;
 	uint32_t          state;
 	tch_mtxId         waitMtx;
 	tch_thread_queue  wq;
@@ -41,37 +41,34 @@ static tchStatus tch_condv_destroy(tch_condvId condv);
 
 
 __attribute__((section(".data"))) static tch_condv_ix CondVar_StaticInstance = {
-		tch_condv_create,
-		tch_condv_wait,
-		tch_condv_wake,
-		tch_condv_wakeAll,
-		tch_condv_destroy
+		.create = tch_condv_create,
+		.wait = tch_condv_wait,
+		.wake = tch_condv_wake,
+		.wakeAll = tch_condv_wakeAll,
+		.destroy = tch_condv_destroy
 };
-
 
 
 const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 
 
-tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
+tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static){
 	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);
-	condv->__obj.destructor =  is_static? (tch_uobjDestr)__tch_noop_destr : (tch_uobjDestr)tch_condv_destroy;
+	condv->__obj.__destr_fn =  is_static? (tch_kobjDestr)__tch_noop_destr : (tch_kobjDestr)tch_condv_destroy;
 	return (tch_condvId) condv;
 }
 
 
 static tch_condvId tch_condv_create(){
+	if(!tch_port_isISR()){
+		return NULL;
+	}
 	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
-	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
-	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
-	condv->waitMtx = NULL;
-	tch_condvValidate(condv);
-	condv->__obj.destructor = (tch_uobjDestr) tch_condv_destroy;
-	return condv;
+	return tch_port_enterSv(SV_CONDV_INIT,condv,FALSE);
 }
 
 /*! \brief thread wait until given condition is met

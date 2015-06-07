@@ -34,7 +34,7 @@
 
 
 struct tch_bar_cb_t{
-	tch_uobj                 __obj;
+	tch_kobj                 __obj;
 	uint32_t                 status;
 	cdsl_dlistNode_t         	     wq;
 };
@@ -70,7 +70,7 @@ void tchk_barrierInit(tch_barCb* bar,BOOL is_static){
 	uStdLib->string->memset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
 	cdsl_dlistInit(&bar->wq);
-	bar->__obj.destructor =  is_static? (tch_uobjDestr) __tch_noop_destr : (tch_uobjDestr) tch_bar_destroy;
+	bar->__obj.__destr_fn =  is_static? (tch_kobjDestr) __tch_noop_destr : (tch_kobjDestr) tch_bar_destroy;
 }
 
 tchStatus tchk_barrierDeinit(tch_barCb* bar){

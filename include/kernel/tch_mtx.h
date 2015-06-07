@@ -23,7 +23,7 @@ extern "C" {
 
 
 typedef struct _tch_mtx_cb_t  {
-	tch_uobj            __obj;
+	tch_kobj            __obj;
 	uint32_t            status;
 	tch_thread_queue    que;
 	tch_threadId        own;

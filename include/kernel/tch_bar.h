@@ -8,7 +8,7 @@
 #ifndef TCH_BAR_H_
 #define TCH_BAR_H_
 
-#include "tch_Typedef.h"
+#include "tch_TypeDef.h"
 
 #if defined(__cplusplus)
 extern "C" {

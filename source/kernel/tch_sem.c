@@ -16,7 +16,7 @@
 
 
 typedef struct _tch_sem_t {
-	tch_uobj          	__obj;
+	tch_kobj          	__obj;
 	uint32_t        	state;
 	uint32_t     	    count;
 	cdsl_dlistNode_t    wq;
@@ -56,7 +56,7 @@ static tch_semId tch_semaphore_create(uint32_t count){
 	if(!sem)
 		return NULL;
 	sem->count = count;
-	sem->__obj.destructor = (tch_uobjDestr) tch_semaphore_destroy;
+	sem->__obj.__destr_fn = (tch_kobjDestr) tch_semaphore_destroy;
 	cdsl_dlistInit(&sem->wq);
 	tch_semaphoreValidate(sem);
 	return (tch_semId) sem;

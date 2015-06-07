@@ -490,4 +490,4 @@ uint32_t tch_shMemAvali(BOOL prot){
 	return tch_port_enterSv(SV_SHMEM_AVAILABLE,prot,0);
 }
 
-tchStatus __tch_noop_destr(tch_uobj* obj){return tchOK; }
+tchStatus __tch_noop_destr(tch_kobj* obj){return tchOK; }

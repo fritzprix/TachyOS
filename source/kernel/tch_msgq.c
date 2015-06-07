@@ -15,7 +15,7 @@
 
 
 typedef struct _tch_msgq_cb {
-	tch_uobj      __obj;
+	tch_kobj      __obj;
 	uint32_t      status;
 	void*         bp;
 	uint32_t      sz;
@@ -69,7 +69,7 @@ tch_msgqId tchk_msgqInit(tch_msgqId id,uint32_t len){
 	uStdLib->string->memset(msgqCb,0,sz);
 
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
-	msgqCb->__obj.destructor = (tch_uobjDestr) tch_msgq_destroy;
+	msgqCb->__obj.__destr_fn = (tch_kobjDestr) tch_msgq_destroy;
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
 	msgqCb->updated = 0;
