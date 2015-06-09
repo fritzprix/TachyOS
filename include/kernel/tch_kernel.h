@@ -34,6 +34,11 @@
 #define __BUILD_TIME_EPOCH 0UL
 #endif
 
+
+#define offsetof(type,member)		((type*) 0)->member
+
+#define container_of(ptr,type,member) 		 (((size_t) ptr - (size_t) offsetof(type,member)))
+
 #define TCH_SYS_TASKQ_SZ                    (16)
 #define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
 #define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->t_kRet = result

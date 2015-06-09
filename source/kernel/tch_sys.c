@@ -62,11 +62,9 @@ const tch* tch_rti = &RuntimeInterface;
 
 
 /***
- *  Initialize Kernel including...
- *  - initailize device driver and bind HAL interface
- *  - initialize architecture dependent part and bind port interface
- *  - bind User APIs to API type
- *  - initialize Idle thread
+ *  Kernel initailization is followed sequence below
+ *  1. initialize kernel stack and dyanmic memory region @ tch_kernelMemInit()
+ *  2. perform cpu specific initialization
  */
 void tch_kernelInit(void* arg){
 

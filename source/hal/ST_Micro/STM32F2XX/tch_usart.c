@@ -89,8 +89,8 @@ typedef struct tch_usart_request_s {
 typedef struct tch_usart_handle_prototype_s {
 	struct tch_usart_handle_s         pix;
 	uart_t                            pno;
-	tch_DmaHandle txDma;
-	tch_DmaHandle rxDma;
+	tch_DmaHandle					 txDma;
+	tch_DmaHandle					 rxDma;
 	tch_eventId                       txEvId;
 	tch_eventId                       rxEvId;
 	tch_GpioHandle*                   ioHandle;
