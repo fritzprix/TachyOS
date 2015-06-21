@@ -34,8 +34,10 @@
 #define __BUILD_TIME_EPOCH 0UL
 #endif
 
+#ifndef offsetof
+#define offsetof(type,member)					(size_t)(&((type*) 0)->member)
+#endif
 
-#define offsetof(type,member)		((type*) 0)->member
 
 #define container_of(ptr,type,member) 		 (((size_t) ptr - (size_t) offsetof(type,member)))
 

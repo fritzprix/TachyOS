@@ -24,6 +24,8 @@
 #define CONFIG_PAGE_SIZE (1 << 10)
 #endif
 
+
+
 #ifdef __GNUC__
 #define __kstack	__attribute__((section(".kernel.stack")))
 #elif __IAR__
@@ -35,12 +37,35 @@
 #elif __IAR__
 #endif
 
+
+typedef struct page_frame page_frame_t;
+
+
+struct memory_descriptor {
+	void*			start_addr;
+	size_t			size;
+};
+/**
+ * represent dynamic memory pool
+ */
+struct mem_node {
+	cdsl_dlistNode_t		lhead;
+	cdsl_dlistNode_t 		page_freelist;
+	struct page_frame_t* 	pages;
+};
+
+/**
+ * represent allocated memory chunk from mem_node
+ */
 struct mem_region {
-	cdsl_dlistNode_t	lnode;
-	tch_threadId 		owner;
-	uint32_t			p_offset;
-	uint16_t			p_cnt;
-#define MAX_PAGECOUNT 		((uint16_t) 4)
+	rb_treeNode_t			rb_node;
+	uint32_t				poffset;
+	uint32_t				pcnt;
+};
+
+
+struct mm_struct {
+
 };
 
 

@@ -63,9 +63,6 @@ defined in linker script */
 .globl sys_heap_base
 .globl sys_heap_limit
 
-.globl sys_stack_top
-.globl sys_stack_limit
-
 .globl mbarrier_upperLimit
 .globl mbarrier_lowerLimit
 
@@ -74,7 +71,6 @@ defined in linker script */
 #else
 .equ Sys_Heap_Size, 0x10000
 #endif
-
 
 #ifdef __MBARRIER_SIZE
 .equ mBarrier_Size, __MBARRIER_SIZE

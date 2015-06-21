@@ -25,7 +25,6 @@ struct page_free_header {
 	cdsl_dlistNode_t 	lhead;
 	uint32_t 			contig_pcount;
 	uint32_t 			offset;
-	uint32_t			magic;
 };
 
 struct page_frame {
@@ -34,7 +33,6 @@ struct page_frame {
 		struct page_free_header __pf_hdr;
 	};
 };
-
 
 
 static struct page_free_header __dummy_page_header;
@@ -88,8 +86,8 @@ uint32_t tch_memAllocRegion(struct mem_region* mreg,size_t sz){
 	while(phead !=  (cdsl_dlistNode_t*) &__dummy_page_header){
 		cframe = (struct page_frame*) phead;
 		if(cframe->__pf_hdr.contig_pcount >= pcount){ // find contiguos page region
-			mreg->p_offset = cframe->__pf_hdr.offset;
-			mreg->p_cnt = pcount;
+			mreg->poffset = cframe->__pf_hdr.offset;
+			mreg->pcnt = pcount;
 			nframe = &cframe[pcount];
 			nframe->__pf_hdr.contig_pcount = cframe->__pf_hdr.contig_pcount - pcount;	// set new contiguos free region
 			cdsl_dlistReplace(&cframe->__pf_hdr.lhead,&nframe->__pf_hdr.lhead);
@@ -103,14 +101,14 @@ uint32_t tch_memAllocRegion(struct mem_region* mreg,size_t sz){
 void tch_memFreeRegion(const struct mem_region* mreg){
 	if(!mreg)
 		return;
-	if((mreg->p_offset >= PAGE_COUNT) && (mreg->p_cnt > (PAGE_COUNT - mreg->p_offset)))			// may mregion is not valid
+	if((mreg->poffset >= PAGE_COUNT) && (mreg->pcnt > (PAGE_COUNT - mreg->poffset)))			// may mregion is not valid
 		return;
 
 	cdsl_dlistNode_t* phead = free_page_list.next;
 	struct page_frame* rframe,* cframe;
-	rframe = &kernel_dynamic[mreg->p_offset];
-	rframe->__pf_hdr.offset = mreg->p_offset;
-	rframe->__pf_hdr.contig_pcount = mreg->p_cnt;
+	rframe = &kernel_dynamic[mreg->poffset];
+	rframe->__pf_hdr.offset = mreg->poffset;
+	rframe->__pf_hdr.contig_pcount = mreg->pcnt;
 	if(((struct page_frame*) container_of(free_page_list.next,struct page_free_header,lhead))->__pf_hdr.offset > rframe->__pf_hdr.offset){
 		cdsl_dlistPutHead(&free_page_list,rframe);
 		cframe = (struct page_frame*) container_of(rframe->__pf_hdr.lhead.next,struct page_free_header,lhead);
