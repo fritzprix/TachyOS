@@ -8,7 +8,6 @@
 
 
 #include "tch_kernel.h"
-#include "tch_ktypes.h"
 #include "tch_mm.h"
 
 #define KERNEL_STACK_OVFCHECK_MAGIC			((uint32_t)0xFF00FF0)
@@ -45,7 +44,7 @@ static struct page_frame* kernel_dynamic;
 
 
 
-uint32_t* tch_kernelMemInit(){
+uint32_t* tch_kernelMemInit(struct segment_desciptor* desc_tbl){
 
 	*((uint32_t*)&__kernel_stack[0]) = KERNEL_STACK_OVFCHECK_MAGIC;
 	kernel_dynamic = (struct page_frame*) __kernel_dynamic;

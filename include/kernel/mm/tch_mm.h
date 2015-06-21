@@ -41,17 +41,25 @@
 typedef struct page_frame page_frame_t;
 
 
-struct memory_descriptor {
-	void*			start_addr;
-	size_t			size;
+
+struct segment_desciptor {
+	void* 		p_addr;
+	size_t		p_size;
+	uint16_t	type;
+#define SECTION_KIMAGE		// text / bss / data
+#define SECTION_KSTACK		// stack for kernel
+#define SECTION_DYNAMIC		// dynamic memory segment
+#define SECTION_PERIMEM		// io memory segment
 };
+
+
 /**
  * represent dynamic memory pool
  */
 struct mem_node {
 	cdsl_dlistNode_t		lhead;
 	cdsl_dlistNode_t 		page_freelist;
-	struct page_frame_t* 	pages;
+	page_frame_t* 			pages;
 };
 
 /**
@@ -68,10 +76,6 @@ struct mm_struct {
 
 };
 
-
-
-extern uint32_t* tch_kernelMemInit();
-extern int tch_kernelStackSanity();
 extern uint32_t tch_memAllocRegion(struct mem_region* mreg,size_t sz);
 extern void tch_memFreeRegion(const struct mem_region* mreg);
 

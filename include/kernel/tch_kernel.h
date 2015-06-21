@@ -27,6 +27,7 @@
 #include "tch_port.h"
 #include "tch_sched.h"
 #include "tch_hal.h"
+#include "tch_mm.h"
 
 
 
@@ -51,6 +52,7 @@
  * \brief
  */
 extern void tch_kernelInit(void* arg);
+extern uint32_t* tch_kernelMemInit(struct segment_desciptor* desc_tbl);
 extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern void tch_KernelOnSystick();
 extern void tch_kernelOnWakeup();

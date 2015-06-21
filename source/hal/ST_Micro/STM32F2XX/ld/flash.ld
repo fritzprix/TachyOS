@@ -21,7 +21,6 @@ __Stack_Init = _estack  - __Stack_Size ;
 /*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
 PROVIDE ( _Stack_Init = __Stack_Init ) ;
 
-
 /*
 There will be a link error if there is not this amount of RAM free at the end.
 */
@@ -160,10 +159,12 @@ SECTIONS
     .kernel.stack :
     {
     	*(.kernel.stack)
+    	. = ALIGN(PAGE_SIZE);
+    	_estack = .;
     } >RAM
      
     .kernel.dynamic :
-    {	_estack = .;
+    {
     	. = ALIGN(PAGE_SIZE);
     	*(.kernel.dynamic)
     	. = ALIGN(PAGE_SIZE);
