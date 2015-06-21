@@ -40,7 +40,9 @@
 #endif
 
 
+#ifndef container_of
 #define container_of(ptr,type,member) 		 (((size_t) ptr - (size_t) offsetof(type,member)))
+#endif
 
 #define TCH_SYS_TASKQ_SZ                    (16)
 #define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
