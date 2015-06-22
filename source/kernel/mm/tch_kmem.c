@@ -55,6 +55,7 @@ static uint8_t __kdynamic __kernel_dynamic[CONFIG_KERNEL_DYNAMICSIZE];
 
 
 static struct mem_node kernel_mnode = {
+		.free_list = {NULL,NULL},
 		.pages = (struct page_frame*)__kernel_dynamic,
 		.alloc_fcnt = PAGE_COUNT
 };
