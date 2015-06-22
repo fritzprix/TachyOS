@@ -8,7 +8,6 @@
 
 
 #include "tch_kernel.h"
-#include "tch_ktypes.h"
 #include "tch_mm.h"
 
 #define KERNEL_STACK_OVFCHECK_MAGIC			((uint32_t)0xFF00FF0)
@@ -25,7 +24,6 @@ struct page_free_header {
 	cdsl_dlistNode_t 	lhead;
 	uint32_t 			contig_pcount;
 	uint32_t 			offset;
-	uint32_t			magic;
 };
 
 struct page_frame {
@@ -34,7 +32,6 @@ struct page_frame {
 		struct page_free_header fhdr;
 	};
 };
-
 
 
 static struct page_free_header __dummy_page_header;
@@ -63,7 +60,7 @@ static struct mem_node kernel_mnode = {
 struct page_frame 	pages;
 
 
-uint32_t* tch_kernelMemInit(){
+uint32_t* tch_kernelMemInit(struct segment_desciptor* desc_tbl){
 
 	*((uint32_t*)&__kernel_stack[0]) = KERNEL_STACK_OVFCHECK_MAGIC;
 	uint32_t* kernel_init_stack = (uint32_t*) __kernel_dynamic;

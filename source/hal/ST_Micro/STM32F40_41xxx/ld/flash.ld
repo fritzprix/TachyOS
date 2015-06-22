@@ -169,8 +169,6 @@ SECTIONS
     	. = ALIGN(PAGE_SIZE);
     } >RAM
     
-
-    
     
     /* 
       Heap Section start at the end of bss      
@@ -193,16 +191,6 @@ SECTIONS
     	_emb = .;
     } >RAM
     
-    .sysstack :
-    {
-    	. = _emb;
-    	. = ALIGN(8);
-    	_ssstk = .;
-    	*(.sysstack)
-    	. = ALIGN(8);
-    	_esstk = .;
-    } > RAM
-
     
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there

@@ -68,7 +68,7 @@ const tch* tch_rti = &RuntimeInterface;
  */
 void tch_kernelInit(void* arg){
 
-	kernel_descriptor.k_stacktop = tch_kernelMemInit();
+	kernel_descriptor.k_stacktop = tch_kernelMemInit(NULL);
 
 	if(!tch_kernelInitPort(&kernel_descriptor))										// initialize port layer
 		tch_kernel_errorHandler(FALSE,tchErrorOS);

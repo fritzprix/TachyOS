@@ -24,6 +24,8 @@
 #define CONFIG_PAGE_SIZE (1 << 10)
 #endif
 
+
+
 #ifdef __GNUC__
 #define __kstack	__attribute__((section(".kernel.stack")))
 #elif __IAR__
@@ -35,18 +37,45 @@
 #elif __IAR__
 #endif
 
-struct mem_region {
-	cdsl_dlistNode_t	lnode;
-	tch_threadId 		owner;
-	uint32_t			p_offset;
-	uint16_t			p_cnt;
-#define MAX_PAGECOUNT 		((uint16_t) 4)
+
+typedef struct page_frame page_frame_t;
+
+
+
+struct segment_desciptor {
+	void* 		p_addr;
+	size_t		p_size;
+	uint16_t	type;
+#define SECTION_KIMAGE		// text / bss / data
+#define SECTION_KSTACK		// stack for kernel
+#define SECTION_DYNAMIC		// dynamic memory segment
+#define SECTION_PERIMEM		// io memory segment
 };
 
 
+/**
+ * represent dynamic memory pool
+ */
+struct mem_node {
+	cdsl_dlistNode_t		lhead;
+	cdsl_dlistNode_t 		page_freelist;
+	page_frame_t* 			pages;
+};
 
-extern uint32_t* tch_kernelMemInit();
-extern int tch_kernelStackSanity();
+/**
+ * represent allocated memory chunk from mem_node
+ */
+struct mem_region {
+	rb_treeNode_t			rb_node;
+	uint32_t				poffset;
+	uint32_t				pcnt;
+};
+
+
+struct mm_struct {
+
+};
+
 extern uint32_t tch_memAllocRegion(struct mem_region* mreg,size_t sz);
 extern void tch_memFreeRegion(const struct mem_region* mreg);
 

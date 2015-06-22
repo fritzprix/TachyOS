@@ -193,15 +193,6 @@ SECTIONS
     	_emb = .;
     } >RAM
     
-    .sysstack :
-    {
-    	. = _emb;
-    	. = ALIGN(8);
-    	_ssstk = .;
-    	*(.sysstack)
-    	. = ALIGN(8);
-    	_esstk = .;
-    } > RAM
 
     
     /* this is the FLASH Bank1 */
