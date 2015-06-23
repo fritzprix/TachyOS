@@ -27,6 +27,7 @@ struct rb_treeNode {
 extern void cdsl_rbtreeNodeInit(rb_treeNode_t* item,int key);
 extern BOOL cdsl_rbtreeInsert(rb_treeNode_t** root,rb_treeNode_t* item);
 extern rb_treeNode_t* cdsl_rbtreeDelete(rb_treeNode_t** root,int key);
+extern rb_treeNode_t* cdsl_rbtreeLookup(rb_treeNode_t** root,int key);
 extern int cdsl_rbtreeSize(rb_treeNode_t** root);
 extern void cdsl_rbtreePrint(rb_treeNode_t** root);
 extern int cdsl_rbtreeMaxDepth(rb_treeNode_t** root);

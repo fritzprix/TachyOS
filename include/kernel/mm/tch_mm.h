@@ -42,41 +42,35 @@ typedef struct page_frame page_frame_t;
 
 
 
-struct segment_desciptor {
-	void* 		p_addr;
-	size_t		p_size;
-	uint16_t	type;
-#define SECTION_KIMAGE		// text / bss / data
-#define SECTION_KSTACK		// stack for kernel
-#define SECTION_DYNAMIC		// dynamic memory segment
-#define SECTION_PERIMEM		// io memory segment
-};
-
-
 /**
  * represent dynamic memory pool
  */
-struct mem_node {
-	cdsl_dlistNode_t		lhead;
-	cdsl_dlistNode_t 		page_freelist;
-	page_frame_t* 			pages;
+struct dynamic_segment {
+	cdsl_dlistNode_t		reg_lhead;
+	rb_treeNode_t			rbnode;
+	page_frame_t* 			pages;			// physical page frames
+	uint32_t				psize;			// total segment size in page
+	cdsl_dlistNode_t 		pfree_list;		// free page list
+	uint32_t 				pfree_cnt;		// the total number of free pages in this segment
 };
 
 /**
  * represent allocated memory chunk from mem_node
  */
 struct mem_region {
+	cdsl_dlistNode_t		reg_lnode;
 	rb_treeNode_t			rb_node;
-	uint32_t				poffset;
-	uint32_t				pcnt;
+	int 					seg_id;
+	uint32_t				p_offset;
+	uint32_t				p_cnt;
 };
 
+extern int tch_registerDynamicSegment(struct dynamic_segment* segment);
+extern struct dynamic_segment* tch_unregisterDynamicSegment(int seg_id);
 
-struct mm_struct {
+extern int tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz);
+extern void tch_freeRegion(const struct mem_region* mreg);
 
-};
 
-extern uint32_t tch_memAllocRegion(struct mem_region* mreg,size_t sz);
-extern void tch_memFreeRegion(const struct mem_region* mreg);
 
 #endif /* TCH_MM_H_ */
