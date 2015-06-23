@@ -1,7 +1,7 @@
 
 KERNEL_MM_SRCS=\
 	    tch_kmem.c\
-	    tch_palloc.c
+	    tch_phym.c
 	    
 KERNEL_MM_CPP_SRCS=
 KERNEL_MM_INC_DIR = $(ROOT_DIR)/include/kernel/mm

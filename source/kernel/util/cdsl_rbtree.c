@@ -76,6 +76,22 @@ rb_treeNode_t* cdsl_rbtreeDelete(rb_treeNode_t** root,int key){
 	return del_node;
 }
 
+rb_treeNode_t* cdsl_rbtreeLookup(rb_treeNode_t** root,int key){
+	if(!root || !(*root))
+		return NULL;
+	rb_treeNode_t* current = *root;
+	while(current != RB_NIL){
+		if(key >= current->key)
+			current = current->right;
+		else if(key < current->key)
+			current = current->left;
+		else
+			return current;
+	}
+	return NULL;
+}
+
+
 static rb_treeNode_t* deleteLeft_r(rb_treeNode_t* root,rb_treeNode_t** l_most,uint8_t* context){
 	if(!root)
 		return NULL;
