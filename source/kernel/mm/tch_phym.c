@@ -67,16 +67,20 @@ struct dynamic_segment* tch_unregisterDynamicSegment(int seg_id){
 	if(seg_id < 0)
 		return  NULL;
 	struct dynamic_segment* segment = container_of(cdsl_rbtreeDelete(&segment_root.root,seg_id),struct dynamic_segment,rbnode);
-	struct mem_region* reg = NULL;
+	struct mem_region* reg;
+	cdsl_dlistNode_t* node;
 	while(!segment->reg_lhead.next){
-		reg = cdsl_dlistDequeue(&segment->reg_lhead);
-		if(!reg & (reg->seg_id == seg_id))
-			tch_memFreeRegion(reg);
+		node = cdsl_dlistDequeue(&segment->reg_lhead);
+		if(node){
+			reg = container_of(node,struct mem_region,reg_lnode);
+			if(!reg & (reg->seg_id == seg_id))
+				tch_memFreeRegion(reg);
+		}
 	}
 	return segment;
 }
 
-uint32_t tch_memAllocRegion(int seg_id,struct mem_region* mreg,size_t sz){
+uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 	if(seg_id < 0)
 		return 0;
 	if((mreg == NULL) || (sz == 0)){
@@ -84,7 +88,11 @@ uint32_t tch_memAllocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 		mreg->p_cnt = 0;
 		return 0;
 	}
-	struct dynamic_segment* segment = cdsl_rbtreeLookup(&segment_root.root,seg_id);
+	rb_treeNode_t* rbnode;
+	rbnode = cdsl_rbtreeLookup(&segment_root.root,seg_id);
+	if(!rbnode)
+		return 0;
+	struct dynamic_segment* segment = container_of(rbnode,struct dynamic_segment,rbnode);
 	uint32_t pcount = sz / CONFIG_PAGE_SIZE;
 	if(sz % CONFIG_PAGE_SIZE)
 		pcount++;
@@ -113,7 +121,7 @@ uint32_t tch_memAllocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 	return 0;
 }
 
-void tch_memFreeRegion(const struct mem_region* mreg){
+void tch_freeRegion(const struct mem_region* mreg){
 	if(mreg == NULL)
 		return;
 	if((mreg->p_offset >= PAGE_COUNT) && (mreg->p_cnt > (PAGE_COUNT - mreg->p_offset)))			// may mregion is not valid
@@ -121,7 +129,7 @@ void tch_memFreeRegion(const struct mem_region* mreg){
 	if(mreg->p_cnt == 0 ||(mreg->seg_id < 0))
 		return;
 
-	struct dynamic_segment* segment = cdsl_rbtreeLookup(&segment_root.root,mreg->seg_id);
+	struct dynamic_segment* segment = container_of(cdsl_rbtreeLookup(&segment_root.root,mreg->seg_id),struct dynamic_segment,rbnode);
 	if(!segment)
 		return;
 

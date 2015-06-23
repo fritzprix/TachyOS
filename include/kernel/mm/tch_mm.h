@@ -68,7 +68,7 @@ struct mem_region {
 extern int tch_registerDynamicSegment(struct dynamic_segment* segment);
 extern struct dynamic_segment* tch_unregisterDynamicSegment(int seg_id);
 
-extern int tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz);
+extern uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz);
 extern void tch_freeRegion(const struct mem_region* mreg);
 
 

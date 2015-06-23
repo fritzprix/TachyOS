@@ -41,7 +41,7 @@
 
 
 #ifndef container_of
-#define container_of(ptr,type,member) 		 (((size_t) ptr - (size_t) offsetof(type,member)))
+#define container_of(ptr,type,member) 		(type*) (((size_t) ptr - (size_t) offsetof(type,member)))
 #endif
 
 #define TCH_SYS_TASKQ_SZ                    (16)
