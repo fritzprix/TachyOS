@@ -18,7 +18,10 @@
 
 
 #include "tch_kernel.h"
-#include "tch_mm.h"
+#include "tch_phymm.h"
+
+
+
 
 #define KERNEL_STACK_OVFCHECK_MAGIC			((uint32_t)0xFF00FF0)
 
