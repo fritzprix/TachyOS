@@ -82,7 +82,7 @@ void tch_kernelInit(void* arg){
 	/*Bind API Object*/
 
 
-	RuntimeInterface.uStdLib = tch_initStdLib();
+	RuntimeInterface.uStdLib = tch_initCrt0();
 
 	RuntimeInterface.Thread = Thread;
 	RuntimeInterface.Mtx = Mtx;

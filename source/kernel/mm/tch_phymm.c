@@ -21,15 +21,6 @@
 #include "tch_phymm.h"
 
 
-
-
-#define KERNEL_STACK_OVFCHECK_MAGIC			((uint32_t)0xFF00FF0)
-
-
-#define DUMMY_OFFSET						((uint32_t) -1)
-#define PAGE_COUNT							(CONFIG_KERNEL_DYNAMICSIZE / CONFIG_PAGE_SIZE)
-
-
 /**
  * when region is freed first page of region has header for region information
  */
@@ -110,7 +101,7 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 			mreg->p_offset = cframe->fhdr.offset;
 			mreg->p_cnt = pcount;
 			segment->pfree_cnt -= mreg->p_cnt;
-			if((mreg->p_offset + mreg->p_cnt) == PAGE_COUNT){
+			if((mreg->p_offset + mreg->p_cnt) == segment->psize){
 				cdsl_dlistRemove(&cframe->fhdr.lhead);
 				return pcount;
 			}
@@ -127,14 +118,14 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 void tch_freeRegion(const struct mem_region* mreg){
 	if(mreg == NULL)
 		return;
-	if((mreg->p_offset >= PAGE_COUNT) && (mreg->p_cnt > (PAGE_COUNT - mreg->p_offset)))			// may mregion is not valid
-		return;
 	if(mreg->p_cnt == 0 ||(mreg->seg_id < 0))
 		return;
-
 	struct dynamic_segment* segment = container_of(cdsl_rbtreeLookup(&segment_root.root,mreg->seg_id),struct dynamic_segment,rbnode);
 	if(!segment)
 		return;
+	if((mreg->p_offset >= segment->psize) && (mreg->p_cnt > (segment->psize - mreg->p_offset)))			// may mregion is not valid
+		return;
+
 
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
 	struct page_frame* rframe,* cframe;

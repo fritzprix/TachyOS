@@ -1,7 +1,7 @@
 
 KERNEL_MM_SRCS=\
 	    tch_kmem.c\
-	    tch_phym.c\
+	    tch_phymm.c\
 	    wtree.c\
 	    wtmalloc.c
 	    
