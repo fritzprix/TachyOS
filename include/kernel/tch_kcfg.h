@@ -9,6 +9,13 @@
 #define TCH_KCFG_H_
 
 
+#if !defined(CONFIG_KERNEL_DYNAMICSIZE) || \
+	!defined(CONFIG_PAGE_SIZE) || \
+	!defined(CONFIG_KERNEL_STACKSIZE)
+#warning "Kernel is not configured properly"
+#endif
+
+
 #ifndef TCH_ROUNDROBIN_TIMESLOT
 #define TCH_ROUNDROBIN_TIMESLOT				((uint16_t) 10)
 #endif
