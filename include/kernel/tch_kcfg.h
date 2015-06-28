@@ -40,4 +40,13 @@
 #define TCH_KMEM_PAGE_SIZE					((uint32_t) 0x400)  // default page size : 1024 byte
 #endif
 
+/**
+ *  if boot loader is used. boot loader prepare this parameter for kernel initialization
+ */
+
+/**
+ * test configuration will be moved boot loader
+ */
+
+
 #endif /* TCH_KCFG_H_ */

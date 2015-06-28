@@ -31,7 +31,7 @@
 
 #undef errno
 #undef __getreent
-extern int errno;
+int errno;
 
 
 const tch_stdio_ix STDIO_StaticObj =  {
@@ -55,8 +55,6 @@ const tch_stdlib_ix STDLIB_StaticObj = {
 		.calloc = calloc,
 		.free = free,
 		.malloc = malloc,
-		.realloc = realloc,
-		.labs = labs,
 		.rand = rand,
 		.srand = srand
 };
@@ -94,14 +92,9 @@ const tch_string_ix STRING_StaticObj = {
 const tch_time_ix TIME_StaticObj = {
 		.asctime = asctime,
 		.clock = clock,
-		.ctime = ctime,
 		.difftime = difftime,
 		.gmtime = gmtime,
-		.localtime = localtime,
 		.mktime = mktime,
-		.strftime = strftime,
-		.time = time,
-		.tzset = tzset,
 };
 
 
@@ -128,17 +121,24 @@ __attribute__((aligned(8))) static char LIBC_HEAP[6000];
 
 
 
-tch_ustdlib_ix* tch_initCrt0(void){
+static __FILE default_stdin;
+static __FILE default_stdout;
+static __FILE default_stderr;
+
+tch_ustdlib_ix* tch_initCrt0(struct crt_param* param){
 	return &NLIB_Instance;
 }
+
+
 
 void crt0(){
 
 }
 
 
-
-
+/**
+ * libc system call stub
+ */
 
 void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	if(heap_end == NULL)
@@ -157,40 +157,70 @@ void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 }
 
 _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
-	switch(fd){
-	case STDIN_FILENO:
-	case STDERR_FILENO:
-	case STDOUT_FILENO:
-		if(boardHandle->bd_stdio->write){
-			boardHandle->bd_stdio->write(buf,cnt);
-			return cnt;
-		}
+	__FILE* fp = NULL;
+	switch(fd) {
+		case STDERR_FILENO:
+		fp = tch_currentThread->t_reent._stderr;
+		break;
+		case STDOUT_FILENO:
+		fp = tch_currentThread->t_reent._stdout;
+		break;
+		case STDIN_FILENO:
+		fp = tch_currentThread->t_reent._stdin;
+		break;
 	}
-	return -1;
+	return fp->_write(reent,fp->_cookie,buf,cnt);
 }
 
 int _close_r(struct _reent* reent, int fd){
-	return -1;
+	__FILE* fp = NULL;
+	switch(fd){
+	case STDERR_FILENO:
+		fp = tch_currentThread->t_reent._stderr;
+		break;
+	case STDOUT_FILENO:
+		fp = tch_currentThread->t_reent._stdout;
+		break;
+	case STDIN_FILENO:
+		fp = tch_currentThread->t_reent._stdin;
+		break;
+	}
+	return fp->_close(reent,fp->_cookie);
 }
 
 off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
-	return 0;
+	__FILE* fp = NULL;
+	switch(fd){
+	case STDERR_FILENO:
+		fp = tch_currentThread->t_reent._stderr;
+		break;
+	case STDOUT_FILENO:
+		fp = tch_currentThread->t_reent._stdout;
+		break;
+	case STDIN_FILENO:
+		fp = tch_currentThread->t_reent._stdin;
+		break;
+	}
+	return fp->_seek(reent,fp->_cookie,pos,whence);
 }
 
 /**	tchStatus (*getc)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
  *
  */
 _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
-	uint8_t* bbuf = (uint8_t*) buf;
+	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
+		fp = tch_currentThread->t_reent._stderr;
+		break;
 	case STDOUT_FILENO:
-		return -1;
+		fp = tch_currentThread->t_reent._stdout;
+		break;
 	case STDIN_FILENO:
-		if(boardHandle->bd_stdio->read)
-			return boardHandle->bd_stdio->read(buf,cnt);
+		fp = tch_currentThread->t_reent._stdin;
+		break;
 	}
-	return -1;
+	return fp->_read(reent,fp->_cookie,buf,cnt);
 }
 
 int _fork_r(struct _reent* reent){
@@ -206,12 +236,12 @@ int _stat_r(struct _reent* reent,const char* file, struct stat* pstat){
 }
 
 int _fstat_r(struct _reent* reent,int fd, struct stat* pstat){
-	*((uint32_t*)reent) = EINVAL;
+	reent->_errno = EINVAL;
 	return 0;
 }
 
 int _link_r(struct _reent* reent,const char *old, const char *new){
-	errno = EMLINK;
+	reent->_errno = EMLINK;
 	return -1;
 }
 

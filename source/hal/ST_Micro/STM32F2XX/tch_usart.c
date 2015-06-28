@@ -16,6 +16,7 @@
 #include "tch_hal.h"
 #include "tch_dma.h"
 #include "tch_kernel.h"
+#include "tch_fs.h"
 
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)
@@ -87,21 +88,21 @@ typedef struct tch_usart_request_s {
 }tch_usartRequest;
 
 typedef struct tch_usart_handle_prototype_s {
-	struct tch_usart_handle_s         pix;
-	uart_t                            pno;
+	struct tch_usart_handle_s        pix;
+	uart_t               	         pno;
 	tch_DmaHandle					 txDma;
 	tch_DmaHandle					 rxDma;
-	tch_eventId                       txEvId;
-	tch_eventId                       rxEvId;
-	tch_GpioHandle*                   ioHandle;
-	tch_mtxId                         rxMtx;
-	tch_condvId                       rxCondv;
-	tch_mtxId                         txMtx;
-	tch_condvId                       txCondv;
-	uint32_t                          status;
-	tch_usartRequest*                 txreq;
-	tch_usartRequest*                 rxreq;
-	const tch*                        env;
+	tch_eventId                      txEvId;
+	tch_eventId                      rxEvId;
+	tch_GpioHandle*                  ioHandle;
+	tch_mtxId                        rxMtx;
+	tch_condvId                      rxCondv;
+	tch_mtxId                        txMtx;
+	tch_condvId                      txCondv;
+	uint32_t                         status;
+	tch_usartRequest*                txreq;
+	tch_usartRequest*                rxreq;
+	const tch*                       env;
 }* tch_usartHandlePrototype;
 
 struct tch_usart_prototype_s {
@@ -136,6 +137,10 @@ __attribute__((section(".data"))) static struct tch_usart_prototype_s UART_Stati
 		0
 };
 
+static struct tch_file_operations uart_fops = {
+
+};
+
 tch_lld_usart* tch_usartHalInit(const tch* env){
 	if(UART_StaticInstance.mtx || UART_StaticInstance.condv)
 		return NULL;
@@ -145,6 +150,7 @@ tch_lld_usart* tch_usartHalInit(const tch* env){
 	UART_StaticInstance.lpoccp_state = 0;
 	UART_StaticInstance.mtx = env->Mtx->create();
 	UART_StaticInstance.condv = env->Condv->create();
+
 
 	return (tch_lld_usart*) &UART_StaticInstance;
 }

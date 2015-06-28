@@ -156,20 +156,6 @@ SECTIONS
     	*(.sysc.table)    
     } > FLASH
     
-    .kernel.stack :
-    {
-    	*(.kernel.stack)
-    	. = ALIGN(PAGE_SIZE);
-    	_estack = .;
-    } >RAM
-     
-    .kernel.dynamic :
-    {
-    	. = ALIGN(PAGE_SIZE);
-    	*(.kernel.dynamic)
-    	. = ALIGN(PAGE_SIZE);
-    } >RAM
-    
 
     
     
@@ -194,6 +180,13 @@ SECTIONS
     	_emb = .;
     } >RAM
     
+    .kernel.stack :
+    {
+        . = _estack - CONFIG_KERNEL_STACKSIZE;
+    	*(.kernel.stack)
+    	. = _estack;
+    } >RAM
+    // this section overflows
 
     
     /* this is the FLASH Bank1 */

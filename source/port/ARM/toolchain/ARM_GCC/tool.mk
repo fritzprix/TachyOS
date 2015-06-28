@@ -16,7 +16,6 @@ endif
 # Linker Option
 TOOL_LINKER_OPT=-Map,$(TARGET:%.elf=%.map)\
 				--gc-sections\
-				--defsym,PAGE_SIZE=$(CONFIG_PAGE_SIZE)
 
 
 

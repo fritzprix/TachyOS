@@ -21,6 +21,8 @@
 #include "tch_phymm.h"
 
 
+#define PAGE_MASK				(PAGE_SIZE - 1)
+
 /**
  * when region is freed first page of region has header for region information
  */
@@ -38,21 +40,40 @@ struct dynamic_segroot {
 
 struct page_frame {
 	union {
-		uint8_t __dummy[CONFIG_PAGE_SIZE];
+		uint8_t __dummy[PAGE_SIZE];
 		struct page_free_header fhdr;
 	};
 };
 
 
-static struct page_free_header __dummy_page_header;
 static struct dynamic_segroot segment_root = {NULL,0};
 
-int tch_registerDynamicSegment(struct dynamic_segment* segment){
+int tch_registerDynamicSegment(struct dynamic_segment* segment,void* base,size_t size){
 	if(!segment)
 		return -1;
 	if(!segment->psize)
 		return -1;
+	segment->pages = (page_frame_t*) (((size_t) base + PAGE_SIZE) & ~PAGE_MASK);
+	size_t seg_limit = ((size_t) base + size) & ~PAGE_MASK;
+	segment->psize = seg_limit - (size_t) segment->pages;
+
+	cdsl_dlistInit(&segment->pfree_list);
+
+
 	cdsl_rbtreeNodeInit(&segment->rbnode,segment_root.seg_idx);
+	cdsl_rbtreeInsert(&segment_root.root,&segment->rbnode);
+
+	uint32_t i = 0;
+	for(; i < segment->psize ;i++){
+		segment->pages[i].fhdr.offset = i;
+		segment->pages[i].fhdr.contig_pcount = 0;
+		cdsl_dlistInit(&segment->pages[i].fhdr.lhead);
+	}
+
+	segment->pages[0].fhdr.contig_pcount = segment->psize;
+	cdsl_dlistPutHead(&segment->pfree_list,&segment->pages[0].fhdr.lhead);
+
+	cdsl_rbtreeNodeInit(&segment->rbnode,((size_t)base >> CONFIG_PAGE_SHIFT));
 	cdsl_rbtreeInsert(&segment_root.root,&segment->rbnode);
 	return segment_root.seg_idx++;
 }
@@ -87,15 +108,15 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 	if(!rbnode)
 		return 0;
 	struct dynamic_segment* segment = container_of(rbnode,struct dynamic_segment,rbnode);
-	uint32_t pcount = sz / CONFIG_PAGE_SIZE;
-	if(sz % CONFIG_PAGE_SIZE)
+	uint32_t pcount = sz / PAGE_SIZE;
+	if(sz % PAGE_SIZE)
 		pcount++;
 	if(segment->pfree_cnt < pcount)
 		return 0;
 
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
 	struct page_frame *cframe,*nframe;
-	while(phead !=  (cdsl_dlistNode_t*) &__dummy_page_header){
+	while(phead !=  NULL){
 		cframe = (struct page_frame*) phead;
 		if(cframe->fhdr.contig_pcount >= pcount){ // find contiguos page region
 			mreg->p_offset = cframe->fhdr.offset;

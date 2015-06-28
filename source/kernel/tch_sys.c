@@ -55,7 +55,7 @@ static tch_mailqId sysTaskQ;
 static tch_threadId sysThread;
 
 tch_thread_queue procList;
-tch_boardHandle boardHandle = NULL;
+tch_boardParam boardHandle = NULL;
 BOOL __VALID_SYSCALL;
 
 const tch* tch_rti = &RuntimeInterface;
@@ -81,8 +81,6 @@ void tch_kernelInit(void* arg){
 	__VALID_SYSCALL = FALSE;
 	/*Bind API Object*/
 
-
-	RuntimeInterface.uStdLib = tch_initCrt0();
 
 	RuntimeInterface.Thread = Thread;
 	RuntimeInterface.Mtx = Mtx;
@@ -355,6 +353,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tchEvent evt;
 	tch_sysTask* task = NULL;
 
+	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		tch_kernel_errorHandler(FALSE,tchErrorValue);

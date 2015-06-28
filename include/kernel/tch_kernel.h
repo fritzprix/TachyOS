@@ -31,6 +31,7 @@
 
 
 
+
 #if !defined(__BUILD_TIME_EPOCH)
 #define __BUILD_TIME_EPOCH 0UL
 #endif
@@ -58,6 +59,7 @@ extern uint32_t* tch_kernelMemInit();
 extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern void tch_KernelOnSystick();
 extern void tch_kernelOnWakeup();
+extern void tch_kernelOnMemFault();
 extern void tch_kernelOnHardFault(int fault,int type);
 
 
@@ -136,7 +138,7 @@ extern tch_thread_uheader* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue procList;
 extern const tch* tch_rti;
-extern tch_boardHandle boardHandle;
+extern tch_boardParam boardHandle;
 extern tch_memId sharedMem;
 extern BOOL __VALID_SYSCALL;
 

@@ -1,9 +1,15 @@
 
 KERNEL_MM_SRCS=\
-	    tch_kmem.c\
 	    tch_phymm.c\
+	    tch_vm.c\
 	    wtree.c\
 	    wtmalloc.c
+	    
+ifeq ((CONFIG_MMU),1)
+	KERNEL_MM_SRCS+=tch_mmu.c
+else
+	KERNEL_MM_SRCS+=tch_nommu.c
+endif
 	    
 	    
 KERNEL_MM_CPP_SRCS=

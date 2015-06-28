@@ -38,7 +38,7 @@ const static struct tch_mfile_s tch_errFile = {
 		.write = tch_bderr_write
 };
 
-const static struct tch_board_handle_s BOARD_HANDLE = {
+const static struct tch_board_param BOARD_HANDLE = {
 		.bd_desc = &bd_Descriptor,
 		.bd_stdio = &tch_stdioFile,
 		.bd_errio = &tch_errFile
@@ -46,7 +46,7 @@ const static struct tch_board_handle_s BOARD_HANDLE = {
 
 static tch_usartHandle stdio_handle;
 
-tch_boardHandle tch_boardInit(const tch* ctx){
+tch_boardParam tch_boardInit(const tch* ctx){
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;

@@ -22,7 +22,13 @@
 extern "C"{
 #endif
 
-
+struct crt_param {
+	struct tch_file* 	__stdin;
+	struct tch_file* 	__stdout;
+	struct tch_file*	__stderr;
+	void*				__libc_heap;
+	size_t				__libc_heapSize;
+};
 
 /*!
  * \brief c standard I/O library structure
@@ -72,8 +78,6 @@ typedef struct _tch_stdlib_ix_t{
 	void* (*calloc)(size_t nitems,size_t size);
 	void (*free)(void* ptr);
 	void* (*malloc)(size_t size);
-	void* (*realloc)(void* ptr,size_t size);
-	long int (*labs)(long int x);
 	int (*rand)(void);
 	void (*srand)(unsigned seed);
 }tch_stdlib_ix;
@@ -96,17 +100,14 @@ typedef struct _tch_ctype_ix_t {
 	int (*toupper)(int c);
 }tch_ctype_ix;
 
+
 typedef struct _tch_time_ix_t{
 	char* (*asctime)(const struct tm* clock);
 	clock_t (*clock)(void);
 	char* (*ctime)(const time_t* clock);
 	double (*difftime)(time_t tim1,time_t tim2);
 	struct tm* (*gmtime)(const time_t *clock);
-	struct tm* (*localtime)(time_t* clock);
 	time_t (*mktime)(struct tm* timp);
-	size_t (*strftime)(char* s,size_t maxsize,const char* fmt,const struct tm* timp);
-	time_t (*time)(time_t* t);
-	void (*tzset)(void);
 }tch_time_ix;
 
 
@@ -120,7 +121,7 @@ typedef struct _tch_ustdl_ix_t {
 	const tch_time_ix* time;
 }tch_ulib_ix;
 
-extern tch_ustdlib_ix* tch_initCrt0(void);
+extern tch_ustdlib_ix* tch_initCrt0(struct crt_param* param);
 extern void crt0();
 
 #if defined(__cplusplus)
