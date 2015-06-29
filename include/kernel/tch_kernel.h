@@ -22,7 +22,7 @@
  */
 #include "tch.h"
 #include "tch_board.h"
-#include "tch_kcfg.h"
+#include "tch_kconfig.h"
 #include "tch_ktypes.h"
 #include "tch_port.h"
 #include "tch_sched.h"
@@ -67,7 +67,7 @@ extern void tch_kernelOnHardFault(int fault,int type);
 
 
 extern const tch_hal* tch_kernelInitHAL(const tch* ctx);
-extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc);
+extern BOOL tch_kernelInitPort();
 
 
 extern tchStatus tch_kernelPostSysTask(int id,tch_sysTaskFn fn,void* arg);
@@ -133,7 +133,7 @@ extern const tch_signal_ix* Sig;
 extern const tch_hal* Hal;
 
 
-extern tch_kernel_descriptor kernel_descriptor;
+extern const tch_kernel_descriptor kernel_descriptor;
 extern tch_thread_uheader* tch_currentThread;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue procList;

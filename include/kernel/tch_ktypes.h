@@ -26,11 +26,8 @@ typedef struct {
 	int		 		version_minor;
 	const char*		arch_name;
 	const char*		pltf_name;
-	size_t		 	target_memsz;
-	size_t			k_stacksz;
-	size_t			k_dynamicsz;
-	uint32_t*		k_stacktop;
 } tch_kernel_descriptor;
+
 
 typedef struct {
 	const char*          hw_vendor;

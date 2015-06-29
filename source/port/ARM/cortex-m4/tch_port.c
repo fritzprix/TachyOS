@@ -32,7 +32,7 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
-extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc){
+extern BOOL tch_kernelInitPort(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -48,7 +48,7 @@ extern BOOL tch_kernelInitPort(tch_kernel_descriptor* const kernel_desc){
 	                                                                                                       *  - for debugging convinience
 	                                                                                                       **/
 
-	__set_PSP((uint32_t)kernel_desc->k_stacktop);                         // Init Stack inherited to thread mode stack pointer
+	__set_PSP(__get_MSP());                         // Init Stack inherited to thread mode stack pointer
 	uint32_t mcu_ctrl = __get_CONTROL();            /** Modify Control register
 	                                                 *  - dedicated Thread Stack Pointer enabled
 	                                                 *

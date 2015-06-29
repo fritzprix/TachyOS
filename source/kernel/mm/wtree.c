@@ -31,7 +31,7 @@ void wtreeRootInit(wtreeRoot_t* root,uint32_t ext_gap){
 	root->ext_gap = ext_gap;
 }
 
-void wtreeNodeInit(wtreeNode_t* node,uint64_t base,uint64_t span){
+void wtreeNodeInit(wtreeNode_t* node,uint32_t base,uint32_t span){
 	node->left = node->right = NULL_NODE;
 	node->base = base;
 	node->span = span;
@@ -48,10 +48,10 @@ void wtreeInsert(wtreeRoot_t* root,wtreeNode_t* item){
 	root->entry = insert_r(root->entry,item,root->ext_gap);
 }
 
-wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint64_t* span){
+wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
 	if(!root || !root->entry)
 		return NULL;
-	uint64_t nspan = *span + root->ext_gap;
+	uint32_t nspan = *span + root->ext_gap;
 	if(root->entry->span < *span)
 		return NULL;
 
@@ -62,7 +62,7 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint64_t* span){
 		root->entry = (wtreeNode_t*)(((uint8_t*) root->entry) + nspan);
 		nspan = retrived->span - nspan;
 		retrived->span = *span;
-		wtreeNodeInit(root->entry,(uint64_t)root->entry,nspan);
+		wtreeNodeInit(root->entry,(uint32_t)root->entry,nspan);
 		root->entry->left = retrived->left;
 		root->entry->right = retrived->right;
 		if((root->entry->right->span > root->entry->span) || (root->entry->left->span > root->entry->span)){

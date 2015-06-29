@@ -16,7 +16,7 @@ __Stack_Size = 1024 ;
 
 PROVIDE ( _Stack_Size = __Stack_Size ) ;
 
-__Stack_Init = _estack  - __Stack_Size ;
+__Stack_Init = _estack  - CONFIG_KERNEL_STACKSIZE ;
 
 /*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
 PROVIDE ( _Stack_Init = __Stack_Init ) ;
@@ -47,7 +47,7 @@ MEMORY
 }
 
 /* higher address of the user mode stack (end of 128K RAM on AHB bus)*/
-_estack = 0x20020000;
+_estack = CONFIG_KERNEL_STACKLIMIT;
 
 
 
@@ -180,13 +180,13 @@ SECTIONS
     	_emb = .;
     } >RAM
     
-    .kernel.stack :
-    {
-        . = _estack - CONFIG_KERNEL_STACKSIZE;
-    	*(.kernel.stack)
-    	. = _estack;
+    .kstack __Stack_Init :
+    {	
+    	. = ALIGN(8);
+    	__kernel_stack_start = .;
+	   	KEEP(*(.kernel.stack))
+    	. = . + CONFIG_KERNEL_STACKSIZE;
     } >RAM
-    // this section overflows
 
     
     /* this is the FLASH Bank1 */

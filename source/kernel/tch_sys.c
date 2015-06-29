@@ -68,9 +68,8 @@ const tch* tch_rti = &RuntimeInterface;
  */
 void tch_kernelInit(void* arg){
 
-	kernel_descriptor.k_stacktop = tch_kernelMemInit(NULL);
-
-	if(!tch_kernelInitPort(&kernel_descriptor))										// initialize port layer
+	tch_kernelMemInit(NULL);
+	if(!tch_kernelInitPort())										// initialize port layer
 		tch_kernel_errorHandler(FALSE,tchErrorOS);
 
 
@@ -155,7 +154,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_exc_stack* sp = NULL;
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
-		sp = (tch_exc_stack*)tch_port_getThreadSP();
+		sp = (tch_exc_stack*)tch_port_getUserSP();
 		sp++;
 		cth = (tch_thread_kheader*) tch_currentThread->t_kthread;
 		cth->t_tslot = 0;
@@ -166,7 +165,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 #endif
 
 		tchk_mapPage(cth->t_pgId);			/// apply page mapping
-		tch_port_setThreadSP((uint32_t)sp);
+		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_kernel_unlock();
 		}else{

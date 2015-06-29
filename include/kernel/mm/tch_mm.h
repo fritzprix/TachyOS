@@ -69,7 +69,7 @@
 #endif
 
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
-#define PAGE_MASK					~(PAGE_SIZE - 1)
+#define PAGE_MASK					(~(PAGE_SIZE - 1))
 
 struct memory_description {
 	uint32_t		flags;
