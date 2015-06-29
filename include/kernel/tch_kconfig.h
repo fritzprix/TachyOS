@@ -10,10 +10,12 @@
 
 
 #if !defined(CONFIG_KERNEL_DYNAMICSIZE) || \
-	!defined(CONFIG_PAGE_SIZE) || \
-	!defined(CONFIG_KERNEL_STACKSIZE)
+	!defined(CONFIG_KERNEL_STACKSIZE) ||\
+	!defined(CONFIG_PAGE_SHIFT) ||\
+	!defined(CONFIG_KERNEL_STACKLIMIT)
 #warning "Kernel is not configured properly"
 #endif
+
 
 
 #ifndef TCH_ROUNDROBIN_TIMESLOT
