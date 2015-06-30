@@ -54,7 +54,7 @@ const tch_mailq_ix* MailQ = &MailQStaticInstance;
 static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) tch_shMemAlloc(sizeof(tch_mailqCb),TRUE);
 	tch_mailqCb umailq;
-	uStdLib->string->memset(&umailq,0,sizeof(tch_mailqCb));
+	memset(&umailq,0,sizeof(tch_mailqCb));
 	umailq.bpool = Mempool->create(sz,qlen);
 	umailq.msgq = MsgQ->create(qlen);
 	if(!umailq.bpool || !umailq.msgq){
@@ -70,7 +70,7 @@ static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 }
 
 tch_mailqId tch_mailqInit(tch_mailqId qdest,tch_mailqId qsrc){
-	uStdLib->string->memcpy(qdest,qsrc,sizeof(tch_mailqCb));
+	memcpy(qdest,qsrc,sizeof(tch_mailqCb));
 	tch_mailqValidate(qdest);
 	return qdest;
 }
@@ -127,7 +127,7 @@ static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* resul
 	void* chunk = NULL;
 	chunk = tch_mailq_alloc(qid,millisec,result);
 	if(chunk){
-		uStdLib->string->memset(chunk,0,((tch_mailqCb*)qid)->bsz);
+		memset(chunk,0,((tch_mailqCb*)qid)->bsz);
 	}
 	return chunk;
 }

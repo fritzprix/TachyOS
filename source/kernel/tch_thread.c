@@ -110,7 +110,7 @@ tch_thread_prior tchk_threadGetPriority(tch_threadId tid){
 tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv){
 	// allocate kernel thread header from kernel heap
 	tch_thread_kheader* kthread = (tch_thread_kheader*) tchk_kernelHeapAlloc(sizeof(tch_thread_kheader));
-	uStdLib->string->memset(kthread,0,sizeof(tch_thread_kheader));
+	memset(kthread,0,sizeof(tch_thread_kheader));
 	if(isroot){														// if new thread will be the root thread of a process, parent will be self
 		kthread->t_parent = kthread;
 		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
@@ -161,7 +161,7 @@ extern tchStatus tchk_threadLoadProgram(tch_threadId root,uint8_t* pgm_img,size_
 	if(!root || !tchk_threadIsValid(root))
 		return tchErrorParameter;
 	tch_thread_kheader* root_kheader = ((tch_thread_uheader*) root)->t_kthread;
-	uStdLib->string->memcpy(root_kheader->t_proc,pgm_img,img_sz);
+	memcpy(root_kheader->t_proc,pgm_img,img_sz);
 	return tchOK;
 }
 
@@ -245,7 +245,7 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 }
 
 static void tch_threadInitCfg(tch_threadCfg* cfg){
-	tch_rti->uStdLib->string->memset(cfg,0,sizeof(tch_threadCfg));
+	memset(cfg,0,sizeof(tch_threadCfg));
 }
 
 

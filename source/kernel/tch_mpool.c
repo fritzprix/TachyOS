@@ -53,7 +53,7 @@ const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
 tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shMemAlloc(sizeof(tch_mpoolCb) + sz * plen,FALSE);
-	uStdLib->string->memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
+	memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
 	mpcb->bpool = (tch_mpoolCb*) mpcb + 1;
 	mpcb->balign = sz;
 	mpcb->__obj.__destr_fn = (tch_kobjDestr) tch_mpool_destroy;

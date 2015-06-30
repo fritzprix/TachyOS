@@ -53,7 +53,7 @@ __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 const tch_mtx_ix* Mtx = &MTX_Instance;
 
 void tch_mtxInit(tch_mtxCb* mcb){
-	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
+	memset(mcb,0,sizeof(tch_mtxCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
 	mcb->__obj.__destr_fn = (tch_kobjDestr) __tch_noop_destr;
@@ -110,7 +110,7 @@ tchStatus tchk_mutex_destroy(tch_mtxId mtx){
 
 static tch_mtxId tch_mtx_create(){
 	tch_mtxCb* mcb = (tch_mtxCb*) tch_shMemAlloc(sizeof(tch_mtxCb),FALSE);
-	uStdLib->string->memset(mcb,0,sizeof(tch_mtxCb));
+	memset(mcb,0,sizeof(tch_mtxCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
 	mcb->__obj.__destr_fn = (tch_kobjDestr) tch_mtx_destroy;

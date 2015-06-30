@@ -54,7 +54,7 @@ const tch_condv_ix* Condv = &CondVar_StaticInstance;
 
 
 tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static){
-	uStdLib->string->memset(condv,0,sizeof(tch_condvCb));
+	memset(condv,0,sizeof(tch_condvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	tch_condvValidate(condv);

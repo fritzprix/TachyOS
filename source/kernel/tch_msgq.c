@@ -66,7 +66,7 @@ static tch_msgqId tch_msgq_create(uint32_t len){
 tch_msgqId tchk_msgqInit(tch_msgqId id,uint32_t len){
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) id;
 	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
-	uStdLib->string->memset(msgqCb,0,sz);
+	memset(msgqCb,0,sz);
 
 	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
 	msgqCb->__obj.__destr_fn = (tch_kobjDestr) tch_msgq_destroy;

@@ -69,14 +69,14 @@ const tch_event_ix* Event = &Event_StaticInstance;
 static tch_eventId tch_eventCreate(){
 	tch_eventCb* evcb = (tch_eventCb*) tch_shMemAlloc(sizeof(tch_eventCb),TRUE);
 	tch_eventCb initcb;
-	uStdLib->string->memset(&initcb,0,sizeof(tch_eventCb));
+	memset(&initcb,0,sizeof(tch_eventCb));
 	initcb.__obj.__destr_fn = (tch_kobjDestr) tch_eventDestroy;
 	cdsl_dlistInit((cdsl_dlistNode_t*)&initcb.ev_blockq);
 	return (tch_eventId) tch_port_enterSv(SV_EV_INIT,(uword_t) evcb,(uword_t) &initcb);
 }
 
 tch_eventId tchk_eventInit(tch_eventCb* evcb,tch_eventCb* initcb){
-	uStdLib->string->memcpy(evcb,initcb,sizeof(tch_eventCb));
+	memcpy(evcb,initcb,sizeof(tch_eventCb));
 	EVENT_VALIDATE(evcb);
 	return (tch_eventId) evcb;
 }

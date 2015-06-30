@@ -128,7 +128,7 @@ tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc){
 	tch_dynamic_bin_header header = (tch_dynamic_bin_header) loadableBin;
 //	loadableBin += sizeof(struct tch_dynamic_bin_meta_struct);
 	uint8_t* exImg = (uint8_t*) tchk_kernelHeapAlloc(header->b_sz);
-	uStdLib->string->memcpy(exImg,loadableBin,header->b_sz);
+	memcpy(exImg,loadableBin,header->b_sz);
 	tch_thread_routine entry = (tch_thread_routine)(((uint32_t)exImg + header->b_entry) | 0x1); // the address value for indirect branch in ARM should be 1 in its '0' bit, otherwise usagefault
 	tch_threadCfg thcfg;
 	thcfg.t_memDef.heap_sz = 0;
@@ -394,7 +394,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	Thread->start(idleThread);
 	Thread->start(mainThread);
 
-	uStdLib->string->memset(&evt,0,sizeof(tchEvent));
+	memset(&evt,0,sizeof(tchEvent));
 
 
 	// loop for handling system tasks (from ISR / from any user thread)
