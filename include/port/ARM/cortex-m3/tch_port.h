@@ -42,6 +42,7 @@
 #define HARDFAULT_RECOVERABLE                      (-2)
 
 
+
 #define MEM_UNPRIV_READ_PERMISSION					((uint32_t) 0x10000)
 #define MEM_UNPRIV_WRITE_PERMISSION					((uint32_t) 0x20000)
 
@@ -116,9 +117,7 @@ extern int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission
 extern int tch_port_clrMemPermission(int id);
 
 
-typedef struct _tch_exc_stack tch_exc_stack;
-typedef struct _tch_thread_context tch_thread_context;
-typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
+
 
 
 

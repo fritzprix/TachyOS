@@ -20,8 +20,9 @@
 #include "tch_kernel.h"
 #include "tch_phymm.h"
 
-
+#ifndef PAGE_MASK
 #define PAGE_MASK				(PAGE_SIZE - 1)
+#endif
 
 /**
  * when region is freed first page of region has header for region information
@@ -53,6 +54,7 @@ int tch_registerDynamicSegment(struct dynamic_segment* segment,void* base,size_t
 		return -1;
 	if(!segment->psize)
 		return -1;
+
 	segment->pages = (page_frame_t*) (((size_t) base + PAGE_SIZE) & ~PAGE_MASK);
 	size_t seg_limit = ((size_t) base + size) & ~PAGE_MASK;
 	segment->psize = seg_limit - (size_t) segment->pages;
@@ -87,8 +89,8 @@ struct dynamic_segment* tch_unregisterDynamicSegment(int seg_id){
 	while(!segment->reg_lhead.next){
 		node = cdsl_dlistDequeue(&segment->reg_lhead);
 		if(node){
-			reg = container_of(node,struct mem_region,reg_lnode);
-			if(!reg & (reg->seg_id == seg_id))
+			reg = container_of(node,struct mem_region,lnode);
+			if(!reg && (reg->segp->rbnode.key == seg_id))
 				tch_memFreeRegion(reg);
 		}
 	}
@@ -99,8 +101,8 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 	if(seg_id < 0)
 		return 0;
 	if((mreg == NULL) || (sz == 0)){
-		mreg->p_offset = 0;
-		mreg->p_cnt = 0;
+		mreg->poff = 0;
+		mreg->psz = 0;
 		return 0;
 	}
 	rb_treeNode_t* rbnode;
@@ -119,10 +121,10 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 	while(phead !=  NULL){
 		cframe = (struct page_frame*) phead;
 		if(cframe->fhdr.contig_pcount >= pcount){ // find contiguos page region
-			mreg->p_offset = cframe->fhdr.offset;
-			mreg->p_cnt = pcount;
-			segment->pfree_cnt -= mreg->p_cnt;
-			if((mreg->p_offset + mreg->p_cnt) == segment->psize){
+			mreg->poff = cframe->fhdr.offset;
+			mreg->psz = pcount;
+			segment->pfree_cnt -= mreg->psz;
+			if((mreg->poff + mreg->psz) == segment->psize){
 				cdsl_dlistRemove(&cframe->fhdr.lhead);
 				return pcount;
 			}
@@ -139,20 +141,20 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 void tch_freeRegion(const struct mem_region* mreg){
 	if(mreg == NULL)
 		return;
-	if(mreg->p_cnt == 0 ||(mreg->seg_id < 0))
+	if(mreg->psz == 0 ||!mreg->segp)
 		return;
-	struct dynamic_segment* segment = container_of(cdsl_rbtreeLookup(&segment_root.root,mreg->seg_id),struct dynamic_segment,rbnode);
+	struct dynamic_segment* segment = container_of(mreg->segp,struct dynamic_segment,rbnode);
 	if(!segment)
 		return;
-	if((mreg->p_offset >= segment->psize) && (mreg->p_cnt > (segment->psize - mreg->p_offset)))			// may mregion is not valid
+	if((mreg->poff >= segment->psize) && (mreg->psz > (segment->psize - mreg->poff)))			// may mregion is not valid
 		return;
 
 
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
 	struct page_frame* rframe,* cframe;
-	rframe = &segment->pages[mreg->p_offset];
-	rframe->fhdr.offset = mreg->p_offset;
-	rframe->fhdr.contig_pcount = mreg->p_cnt;
+	rframe = &segment->pages[mreg->poff];
+	rframe->fhdr.offset = mreg->poff;
+	rframe->fhdr.contig_pcount = mreg->psz;
 	// if page offset of freed region is larger than first node of free region list
 	do {
 		cframe = (struct page_frame*) container_of(phead,struct page_free_header,lhead);
@@ -161,7 +163,7 @@ void tch_freeRegion(const struct mem_region* mreg){
 
 	cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.prev,struct page_free_header,lhead);
 	cdsl_dlistInsertAfter(&cframe->fhdr.lhead,&rframe->fhdr.lhead);
-	segment->pfree_cnt += mreg->p_cnt;
+	segment->pfree_cnt += mreg->psz;
 	if(cframe == (struct page_frame*) &segment->pfree_list)
 		cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
 

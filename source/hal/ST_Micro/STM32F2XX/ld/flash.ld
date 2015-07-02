@@ -150,14 +150,6 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
-    .kernel.syscall :
-    {
-    	*(.sysc.entry)
-    	*(.sysc.table)    
-    } > FLASH
-    
-
-    
     
     /* 
       Heap Section start at the end of bss      

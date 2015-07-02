@@ -16,10 +16,23 @@ struct page_dummy{
 
 extern __kstack uint32_t __kernel_stack_start;
 
-static struct memory_description mem0_desc = {
+const struct memory_description km0_desc = {
+		.flags = MEMTYPE_KERNEL,
+		.address = NULL,
+		.size = 0
+};
+
+const struct memory_description km1_desc = {
 		.flags = MEMTYPE_NORMAL,
 		.address = (&__kernel_stack_start - CONFIG_KERNEL_DYNAMICSIZE),
 		.size = CONFIG_KERNEL_DYNAMICSIZE
+};
+
+
+const struct memory_description* __default_mem_desc[] = {
+		&km0_desc,
+		&km1_desc,
+		NULL
 };
 
 
@@ -57,7 +70,12 @@ static struct memory_description mem0_desc = {
  * 	   . Shareable dynamic memory for communicating between user & kernel mode but is not writable from user (uni-directional) is initialized
  * 	   . set mpu register to enable
  * 	 - mmu based hardware
- * 	   .
+ * 	   . kernel begins memory initialization from real mode(without enable paging unit)
+ * 	   . kernel initialize large dynamic memory pool for whole system
+ * 	   . initialize paging table (or other mapping equivalent)
+ * 	   . kernel initialize its dedicated dynamic memory
+ * 	   . kernel should prepare its own paging table before enable paging unit
+ * 	   . kernel registers page entry of its footprint(loaded memory area) in kernel page table
  * 	3. initailization process by normal process
  * 	 - mpu based hardware
  * 	    . kernel create task structure (tch_thread_kheader) from kernel heap and initialize it.
@@ -67,15 +85,40 @@ static struct memory_description mem0_desc = {
  *
  */
 
-uint32_t* tch_kernelMemInit(struct memory_description* mdesc_tbl){
+
+
+
+/**\brief kernel memory initailize
+ *  - find stack memory
+ *
+ */
+uint32_t* tch_kernelMemInit(struct memory_description** mdesc_tbl){
+
+	int idx;
+	struct memory_description* mem_desc = mdesc_tbl;
+	if(!mem_desc)
+		mem_desc = __default_mem_desc;
+
+	while(!mem_desc){
+		if(mem_desc->flags & MEMTYPE_KERNEL){
+			// register memory access permission for kernel
+		}else if(mem_desc->flags & MEMTYPE_NORMAL){
+
+		}
+	}
+
+
+	if(!mdesc_tbl){
+
+	}
+}
+
+
+void tch_registerPageMap(struct mem_region* mreg,const struct tch_pgmap* map,uint16_t permission){
 
 }
 
-void* kalloc(size_t sz){
-
-}
-
-void kfree(void* p){
+void tch_unregisterPageMap(struct mem_region* mreg){
 
 }
 

@@ -12,14 +12,6 @@ uint32_t* tch_kernelMemInit(){
 
 }
 
-void* kalloc(size_t sz){
-
-}
-
-void kfree(void* p){
-
-}
-
 void tch_kernelOnMemFault(){
 
 }
