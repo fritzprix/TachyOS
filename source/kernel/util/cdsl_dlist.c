@@ -114,6 +114,7 @@ BOOL cdsl_dlistRemove(cdsl_dlistNode_t* item){
 		prev->next = item->next;
 	if(item->next)
 		item->next->prev = prev;
+	item->next = item->prev = NULL;
 	return TRUE;
 }
 

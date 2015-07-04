@@ -16,7 +16,6 @@
 #define TCH_SEM_H_
 
 #include "tch_TypeDef.h"
-#include "tch_syscall.h"
 
 
 #if defined(__cplusplus)
@@ -31,7 +30,6 @@ extern "C"{
 //SYSCALL_1(SEMAPHORE_CREATE,semaphore_create,count,uint32_t);
 
 extern tchStatus semaphore_create(uint32_t count);
-const  SYSCALL_1A_T const semaphore_create_syscall_vec __attribute__((section(".sysc.table"))) = semaphore_create;
 //static  uint8_t sysc_id = (const size_t) semaphore_create_syscall_vec - (const size_t) __SYSCALL_ENTRY;
 
 

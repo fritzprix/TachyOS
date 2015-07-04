@@ -43,14 +43,10 @@ typedef struct tch_busy_monitor_t {
 
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
-static DECLARE_THREADROUTINE(idle);
-static DECLARE_SYSTASK(kernelTaskHandler);
-
 
 static tch_busy_monitor busyMonitor;
 static tch RuntimeInterface;
 static tch_threadId mainThread = NULL;
-static tch_threadId idleThread = NULL;
 static tch_mailqId sysTaskQ;
 static tch_threadId sysThread;
 
@@ -93,7 +89,6 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Event = Event;
 
 	mainThread = NULL;
-	idleThread = NULL;
 	sysThread = NULL;
 
 	/**
@@ -105,7 +100,7 @@ void tch_kernelInit(void* arg){
 	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
 	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
 
-	tch_port_kernel_lock();
+	tch_port_atomic_begin();
 
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg);
@@ -115,30 +110,8 @@ void tch_kernelInit(void* arg){
 	thcfg.t_memDef.stk_sz = 1 << 10;
 	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE);
 
-	tch_port_enableISR();                   // interrupt enable
 	tch_schedInit(sysThread);
 	return;
-}
-
-
-tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc){
-	if(!loadableBin)
-		return tchErrorParameter;
-
-	tch_dynamic_bin_header header = (tch_dynamic_bin_header) loadableBin;
-//	loadableBin += sizeof(struct tch_dynamic_bin_meta_struct);
-	uint8_t* exImg = (uint8_t*) tchk_kernelHeapAlloc(header->b_sz);
-	memcpy(exImg,loadableBin,header->b_sz);
-	tch_thread_routine entry = (tch_thread_routine)(((uint32_t)exImg + header->b_entry) | 0x1); // the address value for indirect branch in ARM should be 1 in its '0' bit, otherwise usagefault
-	tch_threadCfg thcfg;
-	thcfg.t_memDef.heap_sz = 0;
-	thcfg.t_memDef.stk_sz = (1 << 9);
-	thcfg.t_name = "Test";
-	thcfg.t_routine = entry;
-	thcfg.t_priority = Normal;
-
-	*nproc = tchk_threadCreateThread(&thcfg,NULL,TRUE,FALSE);
-	return tchOK;
 }
 
 
@@ -167,7 +140,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_mapPage(cth->t_pgId);			/// apply page mapping
 		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
-			tch_port_kernel_unlock();
+			tch_port_atomic_end();
 		}else{
 			tch_schedThreadDestroy(tch_currentThread,arg1);
 		}
@@ -304,53 +277,10 @@ tchStatus tch_kernel_disableInterrupt(IRQn_Type irq){
 	return tch_port_enterSv(SV_HAL_DISABLE_ISR,irq,0);
 }
 
-tchStatus tch_kernel_postSysTask(int id,tch_sysTaskFn fn,void* arg){
-	tchStatus result = tchOK;
-	tch_sysTask* task = tch_rti->MailQ->alloc(sysTaskQ,tchWaitForever,&result);
-	task->arg = arg;
-	task->fn = fn;
-	task->id = id;
-	task->prior = getThreadKHeader(tch_currentThread)->t_prior;
-	task->status = tchOK;
-	if(result == tchOK)
-		tch_rti->MailQ->put(sysTaskQ,task);
-	return result;
-}
-
-
-void tch_kernelSetBusyMark(){
-	if(RuntimeInterface.Mtx->lock(busyMonitor.mtx,tchWaitForever) != tchOK)
-		return;
-	busyMonitor.wrk_load++;
-	RuntimeInterface.Mtx->unlock(busyMonitor.mtx);
-}
-
-void tch_kernelClrBusyMark(){
-	if(RuntimeInterface.Mtx->lock(busyMonitor.mtx,tchWaitForever) != tchOK)
-		return;
-	busyMonitor.wrk_load--;
-	RuntimeInterface.Mtx->unlock(busyMonitor.mtx);
-}
-
-BOOL tch_kernelIsBusy(){
-	return !busyMonitor.wrk_load;
-}
-
-void tch_kernel_errorHandler(BOOL dump,tchStatus status){
-
-	/**
-	 *  optional register dump
-	 */
-	while(1){
-		asm volatile("NOP");
-	}
-}
 
 static DECLARE_THREADROUTINE(systhreadRoutine){
 	// perform runtime initialization
 
-	tchEvent evt;
-	tch_sysTask* task = NULL;
 
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
@@ -361,7 +291,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 
-	sysTaskQ = MailQ->create(sizeof(tch_sysTask),TCH_SYS_TASKQ_SZ);
 	if(!sysTaskQ)
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
@@ -379,97 +308,20 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,FALSE);
 
-	threadcfg.t_routine = (tch_thread_routine) idle;
-	threadcfg.t_priority = Idle;
-	threadcfg.t_name = "idle";
-	threadcfg.t_memDef.heap_sz = 0x200;
-	threadcfg.t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
-	idleThread = Thread->create(&threadcfg,NULL);
 
-
-	if((!mainThread) || (!idleThread))
+	if((!mainThread))
 		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 
-	Thread->start(idleThread);
+	tch_idleInit();
 	Thread->start(mainThread);
 
-	memset(&evt,0,sizeof(tchEvent));
+	tch_port_enableISR();                   // interrupt enable
 
-
-	// loop for handling system tasks (from ISR / from any user thread)
 	while(TRUE){
-		evt = MailQ->get(sysTaskQ,tchWaitForever);
-		if(evt.status == tchEventMail){
-			task = (tch_sysTask*) evt.value.p;
-			task->fn(task->id,&RuntimeInterface,task->arg);
-			MailQ->free(sysTaskQ,evt.value.p);
-		}
+		__lwtsk_start_loop();			// start loop lwtask handler
 	}
 	return tchOK;    // unreachable point
 }
-
-
-static DECLARE_THREADROUTINE(idle){
-	tch_rtcHandle* rtc_handle = env->Thread->getArg();
-
-	while(TRUE){
-		// some function entering sleep mode
-		if((!busyMonitor.wrk_load) && (getThreadKHeader(tch_currentThread)->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty())
-			tch_kernel_postSysTask(SYSTSK_ID_SLEEP,kernelTaskHandler,rtc_handle);
-		tch_hal_enterSleepMode();
-		// some function waking up from sleep mode
- 	}
-	return 0;
-}
-
-
-static DECLARE_SYSTASK(kernelTaskHandler){
-	tch_errorDescriptor* err = NULL;
-	struct tm lt;
-	switch(id){
-	case SYSTSK_ID_SLEEP:
-		tch_hal_disableSystick();
-		tch_hal_setSleepMode(LP_LEVEL1);
-		tch_hal_suspendSysClock();
-		tch_hal_enterSleepMode();
-		tch_hal_resumeSysClock();
-		tch_hal_setSleepMode(LP_LEVEL0);
-		tch_hal_enableSystick();
-		break;
-	case SYSTSK_ID_ERR_HANDLE:
-		// handle err
-		err = arg;
-		env->Time->getLocaltime(&lt);
-		env->Thread->terminate(err->subj,err->errno);
-		tchk_kernelHeapFree(err);
-		break;
-	case SYSTSK_ID_RESET:
-		tch_boardDeinit(env);
-		tch_port_reset();
-		break;
-	}
-}
-
-
-void tch_kernelOnHardFault(int fault,int type){
-	tch_errorDescriptor* err = (tch_errorDescriptor*) tchk_kernelHeapAlloc(sizeof(tch_errorDescriptor));
-	err->errtype = fault;
-	err->errno = type;
-	err->subj = tch_currentThread;
-	switch(fault){
-	case HARDFAULT_UNRECOVERABLE:
-		tch_kernel_postSysTask(SYSTSK_ID_RESET,kernelTaskHandler,err);
-		tch_port_clearFault(type);
-		return;
-	case HARDFAULT_RECOVERABLE:
-		tch_kernel_postSysTask(SYSTSK_ID_ERR_HANDLE,kernelTaskHandler,err);
-		return;
-	}
-	while(TRUE){
-		asm volatile("NOP");
-	}
-}
-
 
 

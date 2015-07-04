@@ -15,7 +15,10 @@ KERNEL_SRCS=\
 	    tch_event.c\
 	    tch_kmm.c\
 	    tch_kdesc.c\
-	    tch_crt0.c
+	    tch_crt0.c\
+	    tch_idle.c\
+	    tch_lwtask.c\
+	    tch_err.c
 	    
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp

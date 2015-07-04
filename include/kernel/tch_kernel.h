@@ -45,7 +45,6 @@
 #endif
 
 #define TCH_SYS_TASKQ_SZ                    (16)
-#define DECLARE_SYSTASK(fn)                  void fn(int id,const tch* env,void* arg)
 #define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->t_kRet = result
 #define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
 #define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->t_kthread)
@@ -72,11 +71,6 @@ extern tchStatus tch_kernelPostSysTask(int id,tch_sysTaskFn fn,void* arg);
 extern tchStatus tch_kernelEnableInterrupt(IRQn_Type irq,uint32_t priority);
 extern tchStatus tch_kernelDisableInterrupt(IRQn_Type irq);
 
-
-/*
- * @ will be deprecated
- */
-extern tchStatus tch_kernel_exec(const void* loadableBin,tch_threadId* nproc);
 
 
 
@@ -106,8 +100,6 @@ extern int Sys_Stack_Limit asm("sys_stack_limit");
 
 extern int Sys_Heap_Base asm("sys_heap_base");
 extern int Sys_Heap_Limit asm("sys_heap_limit");
-
-void tch_kernel_errorHandler(BOOL dump,tchStatus status) __attribute__((naked));
 
 
 /**

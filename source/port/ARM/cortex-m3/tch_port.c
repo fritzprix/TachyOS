@@ -92,12 +92,12 @@ void tch_port_disable_privilegedThread(){
 }
 
 
-void tch_port_kernel_lock(void){
+void tch_port_atomic_begin(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
 
 
-void tch_port_kernel_unlock(void){
+void tch_port_atomic_end(void){
 	__set_BASEPRI(MODE_USER);
 }
 
@@ -159,7 +159,7 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	__DMB();
 	__ISB();
 	tch_port_enable_privilegedThread();
-	tch_port_kernel_lock();                                       // 6. finally lock as kernel execution
+	tch_port_atomic_begin();                                       // 6. finally lock as kernel execution
 }
 
 

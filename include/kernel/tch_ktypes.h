@@ -64,7 +64,6 @@ typedef enum tch_thread_state_t {
 } tch_threadState;
 
 typedef void* tch_pageId;
-typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_kheader_s tch_thread_kheader;
 typedef struct tch_thread_uheader_s tch_thread_uheader;
@@ -77,24 +76,10 @@ typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
 
 typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
-typedef struct tch_errorDescriptor {
-	int            errtype;
-	int            errno;
-	tch_threadId   subj;
-}tch_errorDescriptor;
 
 struct tch_kobject_t {
 	tch_kobjDestr		__destr_fn;
 };
-
-
-struct tch_sys_task_t {
-	tch_sysTaskFn          fn;
-	tch_thread_prior       prior;
-	void*                  arg;
-	uint8_t                status;
-	int                    id;
-}__attribute__((packed));
 
 
 typedef struct tch_thread_queue{

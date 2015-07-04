@@ -70,12 +70,12 @@ extern void tch_port_disableISR(void);
 /** \brief system lock from kernel to prevent kernel operation from being interrupted or preempted
  *  \note must be invoked in Kernel mode
  */
-extern void tch_port_kernel_lock(void);
+extern void tch_port_atomic_begin(void);
 
 /** \brief system unlock from kernel to allow any interrupts or thread preemption
  *  \note must be invoked in kernel mode
  */
-extern void tch_port_kernel_unlock(void);
+extern void tch_port_atomic_end(void);
 
 /** \brief thread has privilege access to hardware
  */
