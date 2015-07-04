@@ -21,6 +21,8 @@
 
 #include "tch.h"
 
+#include "tch_err.h"
+
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mailq.h"
@@ -47,7 +49,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine);
 static tch_busy_monitor busyMonitor;
 static tch RuntimeInterface;
 static tch_threadId mainThread = NULL;
-static tch_mailqId sysTaskQ;
 static tch_threadId sysThread;
 
 tch_thread_queue procList;
@@ -66,7 +67,7 @@ void tch_kernelInit(void* arg){
 
 	tch_kernelMemInit(NULL);
 	if(!tch_kernelInitPort())										// initialize port layer
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
 
 	/*initialize kernel global variable*/
@@ -92,10 +93,10 @@ void tch_kernelInit(void* arg){
 	sysThread = NULL;
 
 	/**
-	 *  Initialize pageing sub-system for memory managment
+	 *  Initialize paging sub-system for memory managment
 	 */
 	if(tchk_pageInit(&Sys_Heap_Base,((uword_t)&Sys_Heap_Limit - (uword_t)&Sys_Heap_Base)) != tchOK)
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_sys.c","Can't initialize paging");
 
 	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
 	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
@@ -119,7 +120,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		tch_kernel_raise_error(tch_currentThread,tchErrorIllegalAccess,"Illegal System call route detected");
 
 
 	tch_thread_kheader* cth = NULL;
@@ -285,14 +286,11 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
-		tch_kernel_errorHandler(FALSE,tchErrorValue);
+		KERNEL_PANIC("tch_sys.c","Hal interface lost");
 	boardHandle = tch_boardInit(&RuntimeInterface);
 
 
 	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
-
-	if(!sysTaskQ)
-		tch_kernel_errorHandler(TRUE,tchErrorOS);
 
 	busyMonitor.wrk_load = 0;
 	busyMonitor.mtx = env->Mtx->create();
@@ -310,7 +308,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	if((!mainThread))
-		tch_kernel_errorHandler(TRUE,tchErrorOS);
+		KERNEL_PANIC("tch_sys.c","Can't create init thread");
 
 
 	tch_idleInit();

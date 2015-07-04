@@ -12,6 +12,7 @@
  *      Author: innocentevil
  */
 
+#include "tch_err.h"
 #include "tch_kernel.h"
 #include "cdsl_dlist.h"
 #include "tch_sched.h"
@@ -98,7 +99,7 @@ void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState next
 	tchk_systimeSetTimeout(tch_currentThread,timeout,tu);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*)&tch_readyQue);
 	if(!nth)
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
 	tchk_kernelSetResult(tch_currentThread,tchEventTimeout);
 	getListNode(nth)->prev = (cdsl_dlistNode_t*) getThreadKHeader(tch_currentThread);
 	getThreadKHeader(tch_currentThread)->t_state = nextState;
@@ -115,7 +116,7 @@ void tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
 	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) wq,&getThreadKHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);
 	if(!nth)
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
 	getListNode(nth)->prev = (cdsl_dlistNode_t*) getThreadKHeader(tch_currentThread);
 	getThreadKHeader(tch_currentThread)->t_state = WAIT;
 	getThreadKHeader(tch_currentThread)->t_waitQ = (cdsl_dlistNode_t*) wq;

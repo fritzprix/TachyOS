@@ -12,6 +12,7 @@
  *      Author: innocentevil
  */
 
+#include "tch_err.h"
 #include "tch_kernel.h"
 #include "tch_thread.h"
 #include "tch_mem.h"
@@ -121,13 +122,13 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		cfg->t_memDef.heap_sz = 0;
 		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
 	}else {
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)		// guarantee minimum stack size
 		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
 	if(tchk_userMemInit(kthread,&cfg->t_memDef,isroot) != tchOK)	// prepare memory space of new thread
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
 
 	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_proc,__tch_thread_entry);
 	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
@@ -143,7 +144,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	kthread->t_prior = cfg->t_priority;
 	kthread->t_to = 0;
 	if(!kthread->t_pgId)
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
 
 	kthread->t_uthread->t_arg = arg;														// initialize user level thread header
 	kthread->t_uthread->t_fn = cfg->t_routine;
@@ -228,7 +229,6 @@ static tchStatus tch_threadSleep(uint32_t sec){
 
 static tchStatus tch_threadYield(uint32_t millisec){
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,tchErrorISR);
 		return tchErrorISR;
 	}else{
 		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0);
@@ -237,7 +237,6 @@ static tchStatus tch_threadYield(uint32_t millisec){
 
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,tchErrorISR);
 		return tchErrorISR;					// unreachable code
 	}else{
 		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout);

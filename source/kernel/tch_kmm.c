@@ -8,6 +8,8 @@
 #include "tch_mtx.h"
 #include "tch_kmm.h"
 
+#include "tch_err.h"
+
 #define KMM_VALIDATION_KEY			((uint32_t) 0x3A3A)
 #define SHMEM_VALIDATION_KEY		((uint32_t) 0x3D3A)
 #define KHEAP_VALIDATION_KEY		((uint32_t) 0xD3A3)
@@ -320,7 +322,7 @@ void tchk_kernelHeapFree(void* km_chnk){
 	if(!km_chnk || !KHEAP_ISVALID(&KernelHeapHandle))
 		return;
 	if(tch_memFree(KernelHeapHandle.k_memId,km_chnk,&KernelHeapHandle.k_alc_le) != tchOK)
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
+		KERNEL_PANIC("tch_kmm.c","kernel heap corrupted");
 }
 
 uint32_t tchk_kernelHeapAvail(){
@@ -378,8 +380,7 @@ tchStatus tchk_shareableMemFreeAll(tch_thread_kheader* owner){
 
 tchStatus tchk_userMemInit(tch_thread_kheader* owner,tch_userMemDef_t* mem_def,BOOL isroot){
 	if(!PAGE_MGR_ISVALID(&PageManagerHandle)){
-		tch_kernel_errorHandler(FALSE,tchErrorOS);
-		return tchErrorOS;			// unreachable code
+		KERNEL_PANIC("tch_kmm.c","Paging is not initialized");
 	}
 	if(!owner)
 		return tchErrorParameter;

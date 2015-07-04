@@ -76,6 +76,7 @@ typedef enum  {
   tchEventMessage          =  0x10,       ///< function completed; message event occurred.
   tchEventMail             =  0x20,       ///< function completed; mail event occurred.
   tchEventTimeout          =  0x40,       ///< function completed; timeout occurred.
+  tchErrorIllegalAccess	   =  0x42,		  ///< illegal access to kernel functionality
   tchErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
   tchErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
   tchErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.

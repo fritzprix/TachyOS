@@ -81,7 +81,6 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 		return tchErrorResource;
 	condv->waitMtx = lock;
 	if(tch_port_isISR()){
-		tch_kernel_errorHandler(FALSE,tchErrorISR);
 		return tchErrorISR;
 	}
 	tch_condvSetWait(condv);
