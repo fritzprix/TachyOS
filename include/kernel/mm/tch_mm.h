@@ -10,6 +10,7 @@
 
 #include "tch_ktypes.h"
 #include "tch_port.h"
+#include "cdsl_rbtree.h"
 
 
 /**
@@ -61,7 +62,7 @@
 #endif
 
 #ifndef CONFIG_KERNEL_DYNAMICSIZE
-#define CONFIG_KERNEL_DYNAMICSIZE 	(32 << 10)
+#define CONFIG_KERNEL_DYNAMICSIZE 	(16 << 10)
 #endif
 
 #ifndef CONFIG_PAGE_SHIFT
@@ -71,13 +72,25 @@
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
-struct memory_description {
-	uint32_t		flags;
-#define MEMTYPE_NORMAL		((uint32_t) 2)
-#define MEMTYPE_KERNEL		((uint32_t) 1)		//	memory segment which is kernel is loaded
-	void* 			address;
+
+typedef void*	paddr_t;
+
+struct section_descriptor {
+	uint16_t		flags;
+#define SECTION_NORMAL		((uint16_t) 0)
+#define SECTION_KERNEL		((uint16_t) 1)		//	memory segment which is kernel is loaded
+#define SECTION_MSK			(SECTION_KERNEL | SECTION_NORMAL)
+
+
+#define TYPE_TEXT			((uint16_t) 4)
+#define TYPE_SDATA			((uint16_t) 5)
+#define TYPE_DATA			((uint16_t) 6)
+#define TYPE_STACK			((uint16_t) 7)
+#define TYPE_DYNAMIC		((uint16_t) 8)
+#define TYPE_MSK			(~(TYPE_TEXT - 1))
+	paddr_t* 		paddr;
 	size_t			size;
-};
+}__attribute__((packed));
 
 
 
@@ -88,45 +101,10 @@ struct memory_description {
 
 typedef struct page_frame page_frame_t;
 
-
 struct tch_mm {
-	void*			pgd;
+	rb_treeNode_t*			mregions;
+	pgd_t*					pgd;
 };
-
-struct tch_pgmap {
-	uint32_t 		p_offset;			// physical page frame offset
-	uint32_t		p_sz;				// physical memory region's contiguous size in pages
-	uint32_t		v_offset;			// virtual memory region offset in pages
-	uint32_t		v_sz;				// virtual memory region's contiguous size in pages
-};
-/**
- * represent allocated memory chunk from mem_node
- */
-struct mem_region {
-	cdsl_dlistNode_t		lnode;
-	uint16_t				perm;
-	rb_treeNode_t			rbnode;
-	struct dynamic_segment* segp;
-	uint32_t				poff;
-	uint32_t				psz;
-	uint32_t				voff;
-	uint32_t				vsz;
-};
-
-/**
- * represent dynamic memory pool
- */
-struct dynamic_segment {
-	cdsl_dlistNode_t		reg_lhead;
-	rb_treeNode_t			rbnode;
-	struct mem_region 		pmap_reg;
-	void*					pmap;
-	page_frame_t* 			pages;			// physical page frames
-	uint32_t				psize;			// total segment size in page
-	cdsl_dlistNode_t 		pfree_list;		// free page list
-	uint32_t 				pfree_cnt;		// the total number of free pages in this segment
-};
-
 
 #define PERMISSION_WRITE	((perm_t) 1)
 #define PERMISSION_READ		((perm_t) 2)
@@ -134,12 +112,10 @@ struct dynamic_segment {
 
 extern struct tch_mm*	current_mm;
 
-extern uint32_t* tch_kernelMemInit(struct memory_description** mdesc_tbl);
+extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
-
-extern void tch_registerPageMap(struct mem_region* mreg,const struct tch_pgmap* map,uint16_t permission);
-extern void tch_unregisterPageMap(struct mem_region* mreg);
-
+extern int tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg);
+extern int tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg);
 
 
 #endif /* TCH_MM_H_ */

@@ -87,6 +87,9 @@ ifeq ($(APP_NAME),)
 	APP_NAME=default
 endif
 
+ifeq ($(CONFIG_MMU),)
+	CONFIG_MMU=nommu
+endif
 
 ifeq ($(CONFIG_PAGE_SHIFT),)
 	CONFIG_PAGE_SHIFT=12		## 4k

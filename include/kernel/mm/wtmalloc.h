@@ -9,7 +9,7 @@
 #define MALLOC_H_
 
 #include <stddef.h>
-
+#include "wtree.h"
 
 typedef struct wt_alloc {
 	void*	 	heap_base;

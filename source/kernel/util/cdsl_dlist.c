@@ -6,6 +6,7 @@
  */
 
 #include "cdsl_dlist.h"
+#include "cdsl.h"
 
 
 
@@ -105,6 +106,7 @@ cdsl_dlistNode_t* cdsl_dlistGetTail(cdsl_dlistNode_t* lentry){
 	((cdsl_dlistNode_t*)lentry->prev)->next = NULL;
 	return last;
 }
+
 
 BOOL cdsl_dlistRemove(cdsl_dlistNode_t* item){
 	if(!item)
