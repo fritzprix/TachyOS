@@ -26,11 +26,12 @@ typedef int32_t  word_t;
 typedef int16_t  hword_t;
 typedef void* uaddr_t;
 
-typedef void* pgd_t;
-typedef void* pmd_t;
 
 #define WORD_MAX ((uint32_t) -1)
 
+typedef struct pte pte_t;
+typedef pte_t* pmd_t;
+typedef pmd_t* pgd_t;
 
 typedef struct _tch_exc_stack tch_exc_stack;
 typedef struct _tch_thread_context tch_thread_context;

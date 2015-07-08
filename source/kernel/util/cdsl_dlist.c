@@ -107,6 +107,18 @@ cdsl_dlistNode_t* cdsl_dlistGetTail(cdsl_dlistNode_t* lentry){
 	return last;
 }
 
+void cdsl_dlistReplace(cdsl_dlistNode_t* old,cdsl_dlistNode_t* nu){
+	if(!old || !nu)
+		return;
+	nu->next = old->next;
+	nu->prev = old->prev;
+	if(nu->next)
+		nu->next->prev = nu;
+	if(nu->prev)
+		nu->prev->next = nu;
+	old->next = old->prev = NULL;
+}
+
 
 BOOL cdsl_dlistRemove(cdsl_dlistNode_t* item){
 	if(!item)

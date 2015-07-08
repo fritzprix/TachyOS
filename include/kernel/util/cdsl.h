@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifndef TEST_SIZE

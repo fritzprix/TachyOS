@@ -9,8 +9,9 @@
 #define TCH_MM_H_
 
 #include "tch_ktypes.h"
-#include "tch_port.h"
+#include "tch_ptypes.h"
 #include "cdsl_rbtree.h"
+#include "cdsl_slist.h"
 
 
 /**
@@ -93,29 +94,19 @@ struct section_descriptor {
 }__attribute__((packed));
 
 
-
-#ifdef __GNUC__
-#define __kstack	__attribute__((section(".kernel.stack")))
-#elif __IAR__
-#endif
-
 typedef struct page_frame page_frame_t;
 
 struct tch_mm {
 	rb_treeNode_t*			mregions;
 	pgd_t*					pgd;
+	cdsl_slistNode_t		alc_list;
 };
 
-#define PERMISSION_WRITE	((perm_t) 1)
-#define PERMISSION_READ		((perm_t) 2)
-#define PERMISSION_EXC		((perm_t) 4)
+extern struct tch_mm		init_mm;
 
-extern struct tch_mm*	current_mm;
-
+extern struct tch_mm* tch_mmInit(struct tch_mm* mmp);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
-extern int tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg);
-extern int tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg);
 
 
 #endif /* TCH_MM_H_ */

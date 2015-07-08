@@ -9,21 +9,8 @@
 #include "tch_err.h"
 #include "tch_mm.h"
 #include "tch_segment.h"
-#include "wtmalloc.h"
-
-struct mem_segment {
-	rb_treeNode_t*			reg_root;
-	rb_treeNode_t			addr_rbn;
-	rb_treeNode_t			id_rbn;
-	uint16_t				flags;
-	page_frame_t* 			pages;			// physical page frames
-	uint32_t				psize;			// total segment size in page
-	cdsl_dlistNode_t 		pfree_list;		// free page list
-	uint32_t 				pfree_cnt;		// the total number of free pages in this segment
-};
-
-
-
+#include "tch_kmalloc.h"
+#include "tch_mmap.h"
 
 
 /**
@@ -35,13 +22,6 @@ struct page_free_header {
 	uint32_t 			offset;
 };
 
-struct segroot {
-	rb_treeNode_t*		id_root;
-	rb_treeNode_t*		addr_root;
-	uint32_t			seg_cnt;
-	struct mem_region	init_dynamic;
-	wt_alloc_t			init_cache;
-};
 
 struct page_frame {
 	union {
@@ -50,32 +30,86 @@ struct page_frame {
 	};
 };
 
-static int registerSegment(struct section_descriptor* section,struct mem_segment* seg);
+struct mem_segment {
+	rb_treeNode_t*			reg_root;
+	rb_treeNode_t			addr_rbn;
+	rb_treeNode_t			id_rbn;
+	uint16_t				flags;
+	page_frame_t* 			pages;			// physical page frames
+	size_t					psize;			// total segment size in page
+	cdsl_dlistNode_t 		pfree_list;		// free page list
+	size_t	 				pfree_cnt;		// the total number of free pages in this segment
+};
 
-static struct segroot segment_root = {NULL,0};
-static struct mem_segment init_seg;
+
+static struct mem_segment init_seg;		// segment to be used as dynamic free memory pool
+static struct mem_region init_dynamic_region;	// initial memory region
 static int init_segid;
+struct tch_mm init_mm;
+
+static rb_treeNode_t*		id_root;
+static rb_treeNode_t*		addr_root;
+static uint32_t				seg_cnt;
 
 
 void tch_initSegment(struct section_descriptor* init_section){
 	memset(&init_seg,0,sizeof(struct mem_segment));
-	init_segid = registerSegment(init_section,&init_seg);
+	init_segid = tch_registerSegment(init_section,&init_seg);
+	seg_cnt = 0;
 
-	if(!(tch_allocRegion(init_segid,&segment_root.init_dynamic,CONFIG_KERNEL_DYNAMICSIZE) > 0))
+	if(!(tch_allocRegion(init_segid, &init_dynamic_region, CONFIG_KERNEL_DYNAMICSIZE,PERM_KERNEL_ALL) > 0))
 		KERNEL_PANIC("tch_segment.c","Can't create memory regions for kernel heap");
 
+	init_mm.mregions = NULL;
+	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
+	tch_mapRegion(&init_mm,&init_dynamic_region);
+
+	tch_initKmalloc(init_segid);
 
 }
 
 
-int tch_registerSegment(struct section_descriptor* section){
 
+int tch_registerSegment(struct section_descriptor* section,struct mem_segment* seg){
+	if(!section || !seg)
+		return -1;
+
+	uint32_t i;
+	seg->pages = (struct page_frame* )(((size_t) section->paddr + PAGE_SIZE - 1) & ~PAGE_MASK);
+	size_t section_limit = ((size_t) section->paddr + section->size) & ~PAGE_MASK;
+	seg->psize = (section_limit -  (size_t) seg->pages) / PAGE_SIZE;			//page count
+	seg->flags = section->flags;
+	cdsl_dlistInit(&seg->pfree_list);
+	cdsl_rbtreeNodeInit(&seg->id_rbn,seg_cnt);
+	cdsl_rbtreeNodeInit(&seg->addr_rbn,((uint32_t)seg->pages) >> CONFIG_PAGE_SHIFT);
+	switch(seg->flags & SECTION_MSK){
+	case SECTION_KERNEL:
+		seg->pfree_cnt = 0;				// marked as segment has no free page for kernel section & keep its memory content
+		break;
+	case SECTION_NORMAL:
+		seg->pfree_cnt = seg->psize;
+		for(i = 0; i < seg->psize ;i++){
+			seg->pages[i].fhdr.offset = i;
+			seg->pages[i].fhdr.contig_pcount = 0;
+			cdsl_dlistInit(&seg->pages[i].fhdr.lhead);
+		}
+		seg->pages[0].fhdr.contig_pcount = seg->psize;
+		cdsl_dlistPutHead(&seg->pfree_list,&seg->pages[0].fhdr.lhead);
+		break;
+	}
+
+	cdsl_rbtreeInsert(&id_root,&seg->id_rbn);			// any registered segment doesn't need to be unregistered in typical case
+	cdsl_rbtreeInsert(&addr_root,&seg->addr_rbn);		// tree is used only for lookup
+	return seg_cnt++;
 }
 
 void tch_unregisterSegment(int seg_id){
 	if(seg_id < 0)
 		return;
-	struct mem_segment* segment = container_of(cdsl_rbtreeDelete(&segment_root.id_root,seg_id),struct mem_segment,id_rbn);
+	struct mem_segment* segment = cdsl_rbtreeDelete(&id_root,seg_id);
+	if(!segment)
+		return;
+	segment = container_of(segment,struct mem_segment,id_rbn);
 	struct mem_region* reg;
 	while(!segment->reg_root){
 		reg = (struct mem_region*) cdsl_rbtreeDelete(&segment->reg_root,segment->reg_root->key);
@@ -88,10 +122,30 @@ void tch_unregisterSegment(int seg_id){
 }
 
 
+size_t tch_getSegmentSize(int seg_id){
+	if(seg_id < 0)
+		return 0;
+	struct mem_segment* segment = cdsl_rbtreeLookup(&id_root,seg_id);
+	if(!segment)
+		return 0;
+	segment = container_of(segment,struct mem_segment,id_rbn);
+	return segment->psize;
+}
 
-//extern uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz);
+size_t tch_getSegmentAvailable(int seg_id){
+	if(seg_id < 0)
+		return 0;
+	struct mem_segment* segment = cdsl_rbtreeLookup(&id_root,seg_id);
+	if(!segment)
+		return 0;
+	segment = container_of(segment,struct mem_segment,id_rbn);
+	return segment->pfree_cnt;
+}
 
-uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
+
+
+
+uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint16_t permission){
 	if(seg_id < 0)
 		return 0;
 	if((mreg == NULL) || (sz == 0)){
@@ -100,7 +154,7 @@ uint32_t tch_allocRegion(int seg_id,struct mem_region* mreg,size_t sz){
 		return 0;
 	}
 	struct mem_segment* segment;
-	segment = cdsl_rbtreeLookup(&segment_root.id_root,seg_id);
+	segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return 0;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -170,36 +224,4 @@ void tch_freeRegion(const struct mem_region* mreg){
 }
 
 
-static int registerSegment(struct section_descriptor* section,struct mem_segment* seg){
-	if(!section || !seg)
-		return -1;
-
-	uint32_t i;
-	seg->pages = (((size_t) section->paddr + PAGE_SIZE - 1) & ~PAGE_MASK);
-	size_t section_limit = ((size_t) section->paddr + section->size) & ~PAGE_MASK;
-	seg->psize = (section_limit -  (size_t) seg->pages) / PAGE_SIZE;			//page count
-	seg->flags = section->flags;
-	cdsl_dlistInit(&seg->pfree_list);
-	cdsl_rbtreeNodeInit(&seg->id_rbn,segment_root.seg_cnt);
-	cdsl_rbtreeNodeInit(&seg->addr_rbn,((uint32_t)seg->pages) >> CONFIG_PAGE_SHIFT);
-	switch(seg->flags & SECTION_MSK){
-	case SECTION_KERNEL:
-		seg->pfree_cnt = 0;				// marked as segment has no free page for kernel section & keep its memory content
-		break;
-	case SECTION_NORMAL:
-		seg->pfree_cnt = seg->psize;
-		for(i = 0; i < seg->psize ;i++){
-			seg->pages[i].fhdr.offset = i;
-			seg->pages[i].fhdr.contig_pcount = 0;
-			cdsl_dlistInit(&seg->pages[i].fhdr.lhead);
-		}
-		seg->pages[0].fhdr.contig_pcount = seg->psize;
-		cdsl_dlistPutHead(&seg->pfree_list,&seg->pages[0].fhdr.lhead);
-		break;
-	}
-
-	cdsl_rbtreeInsert(&segment_root.id_root,&seg->id_rbn);			// any registered segment doesn't need to be unregistered in typical case
-	cdsl_rbtreeInsert(&segment_root.addr_root,&seg->addr_rbn);		// tree is used only for lookup
-	return segment_root.seg_cnt++;
-}
 
