@@ -99,10 +99,12 @@ typedef struct page_frame page_frame_t;
 struct tch_mm {
 	rb_treeNode_t*			mregions;
 	pgd_t*					pgd;
-	cdsl_slistNode_t		alc_list;
+	cdsl_dlistNode_t		alc_list;
 };
 
 extern struct tch_mm		init_mm;
+extern struct tch_mm*		current_mm;
+
 
 extern struct tch_mm* tch_mmInit(struct tch_mm* mmp);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);

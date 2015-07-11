@@ -1,8 +1,7 @@
 
 KERNEL_MM_NOMMU_SRCS=\
 				tch_mm.c\
-				tch_segment.c\
-				tch_mmap.c
+				tch_segment.c
 	    
 KERNEL_MM_NOMMU_SRC_DIR=$(KERNEL_MM_SRC_DIR)/nommu
 KERNEL_MM_NOMMU_CPP_SRCS=

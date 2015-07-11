@@ -311,6 +311,11 @@ int cdsl_rbtreeMaxDepth(rb_treeNode_t** root){
 	return max + 1;
 }
 
+int cdsl_rbtreeIsNIL(rb_treeNode_t* rbn){
+	return rbn == RB_NIL;
+}
+
+
 
 static rb_treeNode_t* insert_r(rb_treeNode_t* parent,rb_treeNode_t* item,uint8_t* context){
 	if(!item || !parent)

@@ -103,26 +103,27 @@ struct tch_thread_uheader_s {
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
-	cdsl_dlistNode_t                 t_schedNode;	///<thread queue node to be scheduled
-	cdsl_dlistNode_t                 t_waitNode;		///<thread queue node to be blocked
-	cdsl_dlistNode_t                 t_joinQ;		///<thread queue to wait for this thread's termination
-	cdsl_dlistNode_t                 t_childLn;		///<thread queue node to iterate child thread
-	cdsl_dlistNode_t					t_siblingLn;	///<linked list entry for added into child list
-	cdsl_dlistNode_t*                t_waitQ;		///<reference to wait queue in which this thread is waiting
-	void*                       t_ctx;			///<ptr to thread saved context (stack pointer value)
-	void*						t_proc;			///<ptr to base address of process image
-	cdsl_dlistNode_t					t_palc;			///<allocation list for page
-	cdsl_dlistNode_t                 t_pshalc;		///<allocation list for shared heap
-	cdsl_dlistNode_t					t_upshalc;
-	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
-	tch_threadState             t_state;		///<thread state
-	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
-	uint8_t                     t_lckCnt;		///<lock count to know whether  restore original priority
-	uint8_t                     t_prior;		///<priority
-	uint64_t					t_to;			///<timeout value for pending operation
-	tch_pageId					t_pgId;
-	tch_thread_uheader*			t_uthread;		///<pointer to user level thread header
-	tch_thread_kheader*			t_parent;
+	cdsl_dlistNode_t                t_schedNode;	///<thread queue node to be scheduled
+	cdsl_dlistNode_t                t_waitNode;		///<thread queue node to be blocked
+	cdsl_dlistNode_t                t_joinQ;		///<thread queue to wait for this thread's termination
+	cdsl_dlistNode_t                t_childLn;		///<thread queue node to iterate child thread
+	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
+	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
+	void*   	                    t_ctx;			///<ptr to thread saved context (stack pointer value)
+	void*							t_proc;			///<ptr to base address of process image
+	void*							t_mm;			///<ptr to per-process memory management handle
+	cdsl_dlistNode_t				t_palc;			///<allocation list for page
+	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
+	cdsl_dlistNode_t				t_upshalc;
+	uint32_t                	    t_tslot;		///<time slot for round robin scheduling (currently not used)
+	tch_threadState       	   		t_state;		///<thread state
+	uint8_t                	    	t_flag;			///<flag for dealing with attributes of thread
+	uint8_t                	     	t_lckCnt;		///<lock count to know whether  restore original priority
+	uint8_t               	 	    t_prior;		///<priority
+	uint64_t						t_to;			///<timeout value for pending operation
+	tch_pageId						t_pgId;
+	tch_thread_uheader*				t_uthread;		///<pointer to user level thread header
+	tch_thread_kheader*				t_parent;
 } __attribute__((aligned(8)));
 
 

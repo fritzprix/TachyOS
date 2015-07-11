@@ -65,6 +65,17 @@ const tch* tch_rti = &RuntimeInterface;
  */
 void tch_kernelInit(void* arg){
 
+	RuntimeInterface.Thread = Thread;
+	RuntimeInterface.Mtx = Mtx;
+	RuntimeInterface.Sem = Sem;
+	RuntimeInterface.Condv = Condv;
+	RuntimeInterface.Barrier = Barrier;
+	RuntimeInterface.Mempool = Mempool;
+	RuntimeInterface.MailQ = MailQ;
+	RuntimeInterface.MsgQ = MsgQ;
+	RuntimeInterface.Mem = uMem;
+	RuntimeInterface.Event = Event;
+
 	tch_kernelMemInit(NULL);
 	if(!tch_kernelInitPort())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
@@ -78,16 +89,7 @@ void tch_kernelInit(void* arg){
 	/*Bind API Object*/
 
 
-	RuntimeInterface.Thread = Thread;
-	RuntimeInterface.Mtx = Mtx;
-	RuntimeInterface.Sem = Sem;
-	RuntimeInterface.Condv = Condv;
-	RuntimeInterface.Barrier = Barrier;
-	RuntimeInterface.Mempool = Mempool;
-	RuntimeInterface.MailQ = MailQ;
-	RuntimeInterface.MsgQ = MsgQ;
-	RuntimeInterface.Mem = uMem;
-	RuntimeInterface.Event = Event;
+
 
 	mainThread = NULL;
 	sysThread = NULL;
