@@ -44,10 +44,8 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 
 	// register rest segment
 	do {
-		segment = (struct mem_segment*) kmalloc(sizeof(struct mem_segment));
-		seg_id = tch_segmentRegister(*section,segment);
+		seg_id = tch_segmentRegister(*section);
 		tch_mapSegment(current_mm,seg_id);
-
 		section++;
 	} while (!section);
 

@@ -74,21 +74,64 @@
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
 
-typedef void*	paddr_t;
 
+
+
+
+typedef void*	paddr_t;
 struct section_descriptor {
 	uint16_t		flags;
 #define SECTION_NORMAL		((uint16_t) 0)
-#define SECTION_KERNEL		((uint16_t) 1)		//	memory segment which is kernel is loaded
+#define SECTION_KERNEL		((uint16_t) 1 << 0)		//	memory segment which is kernel is loaded
 #define SECTION_MSK			(SECTION_KERNEL | SECTION_NORMAL)
 
+#define get_section(flag)	(flag & SECTION_MSK)
 
-#define TYPE_TEXT			((uint16_t) 4)
-#define TYPE_SDATA			((uint16_t) 5)
-#define TYPE_DATA			((uint16_t) 6)
-#define TYPE_STACK			((uint16_t) 7)
-#define TYPE_DYNAMIC		((uint16_t) 8)
-#define TYPE_MSK			(~(TYPE_TEXT - 1))
+#define TYPE_TEXT			((uint16_t) 2)
+#define TYPE_SDATA			((uint16_t) 3)
+#define TYPE_DATA			((uint16_t) 4)
+#define TYPE_STACK			((uint16_t) 5)
+#define TYPE_DYNAMIC		((uint16_t) 6)
+
+#define TYPE_MSK			(TYPE_TEXT | \
+							 TYPE_SDATA | \
+							 TYPE_DATA | \
+							 TYPE_STACK | \
+							 TYPE_DYNAMIC)
+#define get_type(flag)		(flag & TYPE_MSK)
+
+
+#define PERM_KERNEL_RD		((uint16_t) (TYPE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
+#define PERM_KERNEL_WR		((uint16_t) (TYPE_MSK + 1) << 1)		// allows kernel process to write access
+#define PERM_KERNEL_XC		((uint16_t) (TYPE_MSK + 1) << 2)		// allows kernel process to execute access
+#define PERM_KERNEL_ALL		(PERM_KERNEL_RD |\
+							 PERM_KERNEL_WR |\
+							 PERM_KERNEL_XC)	// allows kernel process to all access type
+
+#define PERM_OWNER_RD		((uint16_t) (TYPE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
+#define PERM_OWNER_WR		((uint16_t) (TYPE_MSK + 1) << 4)		// allows owner process to write access
+#define PERM_OWNER_XC		((uint16_t) (TYPE_MSK + 1) << 5)		// allows owner process to execute aceess
+#define PERM_OWNER_ALL		(PERM_OWNER_RD |\
+							 PERM_OWNER_WR |\
+							 PERM_OWNER_XC)
+
+#define PERM_OTHER_RD		((uint16_t) (TYPE_MSK + 1) << 6)		// allows other process to read access
+#define PERM_OTHER_WR		((uint16_t) (TYPE_MSK + 1) << 7)	// allows other process to write access
+#define PERM_OTHER_XC		((uint16_t) (TYPE_MSK + 1) << 8)	// allows other process to execute access
+#define PERM_OTHER_ALL		(PERM_OTHER_RD |\
+							 PERM_OTHER_WR |\
+							 PERM_OTHER_XC)
+
+#define PERM_MSK			(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
+
+#define clr_permission(flag) (flag &= ~PERM_MSK)
+#define get_permission(flag) (flag & PERM_MSK)
+#define set_permission(flag,perm) 		do {\
+	clr_permission(flag);\
+	flag |= perm;\
+}while(0)
+
+
 	paddr_t* 		paddr;
 	size_t			size;
 }__attribute__((packed));
