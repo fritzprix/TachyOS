@@ -62,7 +62,8 @@ extern tch_lld_rtc* tch_rtc; /**<RTC HAL Object  */
 extern tch_lld_dma* tch_dma; /**<DMA HAL Object  */
 
 
-
+extern const int _sdata;
+extern const int _edata;
 
 
 

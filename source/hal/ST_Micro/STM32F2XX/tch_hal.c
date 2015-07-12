@@ -14,6 +14,7 @@
 
 #include "tch_hal.h"
 #include "tch_kernel.h"
+#include "tch_mm.h"
 
 
 
@@ -664,53 +665,52 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
-//				DMA_Str15,
-				DMA_NOT_USED,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				9,
-				10,
-				11,
-				12,
-				7
+				.txdma = DMA_NOT_USED,
+				.rxdma = DMA_NOT_USED,
+				.txch = DMA_Ch4,
+				.rxch = DMA_Ch4,
+				.port = tch_gpio0,
+				.txp = 9,
+				.rxp = 10,
+				.ctsp = 11,
+				.rtsp = 12,
+				.afv = 7
 		},
 		{
-				DMA_Str6,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				2,
-				3,
-				0,
-				1,
-				7
+				.txdma = DMA_Str6,
+				.rxdma = DMA_NOT_USED,
+				.txch = DMA_Ch4,
+				.rxch = DMA_Ch4,
+				.port = tch_gpio0,
+				.txp = 2,
+				.rxp = 3,
+				.ctsp = 0,
+				.rtsp = 1,
+				.afv = 7
 		},
 		{
-				DMA_Str4,
-				DMA_NOT_USED,
-				DMA_Ch7,
-				DMA_Ch4,
-				tch_gpio1,
-				10,
-				11,
-				13,
-				14,
-				7
+				.txdma = DMA_Str4,
+				.rxdma = DMA_NOT_USED,
+				.txch = DMA_Ch7,
+				.rxch = DMA_Ch4,
+				.port = tch_gpio1,
+				.txp = 10,
+				.rxp = 11,
+				.ctsp = 13,
+				.rtsp = 14,
+				.afv = 7
 		},
 		{
-				DMA_Str4,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				0,
-				1,
-				-1,
-				-1,
-				8
+				.txdma = DMA_Str4,
+				.rxdma = DMA_NOT_USED,
+				.txch = DMA_Ch4,
+				.rxch = DMA_Ch4,
+				.port = tch_gpio0,
+				.txp = 0,
+				.rxp = 1,
+				.ctsp = -1,
+				.rtsp = -1,
+				.afv = 8
 		}
 };
 
@@ -725,153 +725,142 @@ __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 
 __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
-				tch_gpio0,
+				.port = tch_gpio0,
 				{
 						0,
 						1,
 						2,
 						3
 				},
-				1
+				.afv = 1
 		},
 		{// TIM3
-				tch_gpio1,
+				.port = tch_gpio1,
 				{
 						4,
 						5,
 						0,
 						1
 				},
-				2
+				.afv = 2
 		},
 		{// TIM4
-				tch_gpio1,
+				.port = tch_gpio1,
 				{
 						6,
 						7,
 						8,
 						9
 				},
-				2
+				.afv = 2
 		},
 		{// TIM5
-				tch_gpio7,
+				.port = tch_gpio7,
 				{
 						10,
 						11,
 						12,
 						-1
 				},
-				2
+				.afv = 2
 		},
 		{// TIM9
-				tch_gpio4,
+				.port = tch_gpio4,
 				{
 						5,
 						6,
 						-1,
 						-1
 				},
-				3
+				.afv = 3
 		},
 		{// TIM10
-				tch_gpio1,
+				.port = tch_gpio1,
 				{
 						8,
 						-1,
 						-1,
 						-1
 				},
-				3
+				.afv = 3
 		},
 		{// TIM11
-				tch_gpio1,
+				.port = tch_gpio1,
 				{
 						9,
 						-1,
 						-1,
 						-1
 				},
-				3
+				.afv = 3
 		},
 		{// TIM12
-				tch_gpio1,
+				.port = tch_gpio1,
 				{
 						14,
 						15,
 						-1,
 						-1
 				},
-				9
+				.afv = 9
 		},
 		{// TIM13
-				tch_gpio5,
+				.port = tch_gpio5,
 				{
 						8,
 						-1,
 						-1,
 						-1
 				},
-				9
+				.afv = 9
 		},
 		{// TIM14
-				tch_gpio5,
+				.port =tch_gpio5,
 				{
 						9,
 						-1,
 						-1,
 						-1
 				},
-				9
+				.afv = 9
 		}
 };
 
-/**
- * 	spi_t          spi;
-	dma_t          txdma;
-	dma_t          rxdma;
-	gpIo_x         port;
-	uint8_t        mosi;
-	uint8_t        miso;
-	uint8_t        sck;
- */
 
 __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
 
-//				DMA_Str13,    //dma2_stream5
-//				DMA_Str10,    //dma2_stream2
-				DMA_NOT_USED,
-				DMA_NOT_USED,
-				3,            //dma channel 3
-				3,            //dma channel 3
-				0,            // port A (0)
-				7,            // pin  7
-				6,            // pin  6
-				5,            // pin  5
-				5             // af5
+				.txdma = DMA_NOT_USED,
+				.rxdma = DMA_NOT_USED,
+				.txch = 3,
+				.rxch = 3,
+				.port = 0,            // port A (0)
+				.mosi = 7,            // pin  7
+				.miso = 6,            // pin  6
+				.sck = 5,             // pin  5
+				.afv = 5              // af5
 		},
 		{
-				DMA_Str4,     //dma1_stream4
-				DMA_Str3,     //dma1_stream3
-				0,
-				0,
-				1,            // port B (1)
-				15,           // pin  15
-				14,           // pin  14
-				13,           // pin  13
-				5             // af5
+				.txdma = DMA_Str4,     //dma1_stream4
+				.rxdma = DMA_Str3,     //dma1_stream3
+				.txch = 0,
+				.rxch = 0,
+				.port = 1,             // port B (1)
+				.mosi = 15,            // pin  15
+				.miso = 14,            // pin  14
+				.sck = 13,             // pin  13
+				.afv = 5               // af5
 		},
 		{
-				DMA_Str7,     //dma1_stream7
-				DMA_Str2,     //dma1_stream2
-				0,
-				0,
-				2,            // port C (2)
-				12,           // pin  12
-				11,           // pin  11
-				10,           // pin  10
-				6
+				.txdma = DMA_Str7,     //dma1_stream7
+				.rxdma = DMA_Str2,     //dma1_stream2
+				.txch = 0,
+				.rxch = 0,
+				.port = 2,             // port C (2)
+				.mosi = 12,            // pin  12
+				.miso = 11,            // pin  11
+				.sck = 10,             // pin  10
+				.afv = 6
 		}
 };
 /**
@@ -1013,6 +1002,7 @@ const tch_hal* tch_kernelInitHAL(const tch* env){
 }
 
 
+
 void tch_hal_enableSystick(){
 	SysTick_Config(SYS_CLK / 1000);
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
@@ -1041,6 +1031,45 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 		break;
 	}
 }
+
+
+const struct section_descriptor __default_sections[] = {
+		{
+				// kernel text section
+				.flags = TYPE_TEXT,
+				.paddr = 0,
+				.size = 0
+		},
+		{		// kernel bss section (zero filled data)
+				.flags = TYPE_DATA,
+				.paddr = 0,
+				.size = 0
+		},
+		{		// kernel data section (initialized to specified value)
+				.flags = TYPE_SDATA,
+				.paddr = &_sdata,
+				.size = 0
+		},
+		{		// kernel dynamic section
+				.flags = TYPE_DYNAMIC,
+				.paddr = 0,
+				.size = 0
+		},
+		{		// kernel stack
+				.flags = TYPE_STACK,
+				.paddr = 0,
+				.size = 0
+		}
+};
+
+const struct section_descriptor* default_sections[] = {
+		&__default_sections[0],
+		&__default_sections[1],
+		&__default_sections[2],
+		&__default_sections[3],
+		&__default_sections[4],
+		NULL
+};
 
 void tch_hal_enterSleepMode(){
 	__DMB();

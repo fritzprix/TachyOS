@@ -88,6 +88,7 @@ SECTIONS
     .text :
     {
 	    . = ALIGN(4);
+	    _btext = .;
 	    
         *(.text)                   /* remaining code */
         *(.text.*)                 /* remaining code */
@@ -97,12 +98,15 @@ SECTIONS
         *(.glue_7t)
 
 	    . = ALIGN(4);
+	    _etext = .;
+	    
+	    
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = .;
     } >FLASH
     
    
-    _etext = .;
+    
     
     /* MEMORY_ARRAY */
     .ROarraySection :
@@ -117,7 +121,7 @@ SECTIONS
     It is one task of the startup to copy the initial values from FLASH to RAM. */
     .data  : AT ( _sidata )
     {
-	    . = ALIGN(4);
+	    . = ALIGN(CONFIG_PAGE_SIZE);
         /* This is used by the startup in order to initialize the .data secion */
         _sdata = . ;
         
@@ -142,7 +146,7 @@ SECTIONS
         *(.bss.*)
         *(COMMON)
         
-	    . = ALIGN(4);
+	    . = ALIGN(CONFIG_PAGE_SIZE);
 	    /* This is used by the startup in order to initialize the .bss secion */
 	    _ebss = . ;
     } >RAM
@@ -172,12 +176,22 @@ SECTIONS
     	_emb = .;
     } >RAM
     
+    .kheap :
+    {
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_bkheap = .;
+    	. += CONFIG_KERNEL_DYNAMICSIZE;
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_ekheap = .;
+    } >RAM
+    
     .kstack __Stack_Init :
     {	
-    	. = ALIGN(8);
-    	__kernel_stack_start = .;
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_bstack = .;
 	   	KEEP(*(.kernel.stack))
     	. = . + CONFIG_KERNEL_STACKSIZE;
+    	_estack = .;
     } >RAM
 
     
