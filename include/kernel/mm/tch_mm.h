@@ -132,8 +132,8 @@ struct section_descriptor {
 }while(0)
 
 
-	paddr_t 		paddr;
-	size_t			size;
+	paddr_t 		start;
+	paddr_t			end;
 }__attribute__((packed));
 
 

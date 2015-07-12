@@ -58,11 +58,9 @@ static struct mem_segment* findSegmentFromPtr(void* ptr);
 
 void tch_initSegment(struct section_descriptor* init_section){
 	memset(&init_seg,0,sizeof(struct mem_segment));
-	init_segid = initSegment(init_section,&init_seg);
 	seg_cnt = 0;
 
-	if(!(tch_segmentAllocRegion(init_segid, &init_dynamic_region, CONFIG_KERNEL_DYNAMICSIZE,PERM_KERNEL_ALL) > 0))
-		KERNEL_PANIC("tch_segment.c","Can't create memory regions for kernel heap");
+	init_segid = initSegment(init_section,&init_seg);
 
 	init_mm.mregions = NULL;
 	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
@@ -259,15 +257,17 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 		return -1;
 
 	uint32_t i;
-	seg->poff = ((size_t) section->paddr + PAGE_SIZE - 1) >> CONFIG_PAGE_SHIFT;				// calculate page index of segment's begining from section base address
-	size_t section_limit = ((size_t) section->paddr + section->size)  >> CONFIG_PAGE_SHIFT; // calculate page index of segment's ending from sectioni size
+	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> CONFIG_PAGE_SHIFT;				// calculate page index of segment's begining from section base address
+	size_t section_limit = ((size_t) section->end)  >> CONFIG_PAGE_SHIFT; // calculate page index of segment's ending from sectioni size
 	seg->psize = section_limit - seg->poff;													// segment size in pages
 	page_frame_t* pages = (page_frame_t*) (seg->poff << CONFIG_PAGE_SHIFT);
 
 	seg->flags = section->flags;															// inherit permission of section
+	seg->reg_root = NULL;
 	cdsl_dlistInit(&seg->pfree_list);														// init members
 	cdsl_rbtreeNodeInit(&seg->id_rbn,seg_cnt);
 	cdsl_rbtreeNodeInit(&seg->addr_rbn,seg->poff);
+
 
 	switch(seg->flags & SECTION_MSK){
 	case SECTION_KERNEL:
@@ -277,7 +277,7 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	case SECTION_NORMAL:
 		seg->pfree_cnt = seg->psize;
 		for(i = 0; i < seg->psize ;i++){
-			pages[i].fhdr.offset = i;
+			pages[i].fhdr.offset = seg->poff + i;
 			pages[i].fhdr.contig_pcount = 0;
 			cdsl_dlistInit(&pages[i].fhdr.lhead);
 		}

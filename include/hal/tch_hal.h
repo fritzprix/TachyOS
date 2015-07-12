@@ -61,11 +61,18 @@ typedef enum {
 extern tch_lld_rtc* tch_rtc; /**<RTC HAL Object  */
 extern tch_lld_dma* tch_dma; /**<DMA HAL Object  */
 
+extern int _stext;
+extern int _etext;
+extern int _sdata;
+extern int _edata;
+extern int _sbss;
+extern int _ebss;
+extern int _skheap;
+extern int _ekheap;
+extern int _sstack;
+extern int _estack;
 
-extern const int _sdata;
-extern const int _edata;
-
-
+extern struct section_descriptor* default_sections[];
 
 /**
  * \callgraph

@@ -88,7 +88,7 @@ SECTIONS
     .text :
     {
 	    . = ALIGN(4);
-	    _btext = .;
+	    _stext = .;
 	    
         *(.text)                   /* remaining code */
         *(.text.*)                 /* remaining code */
@@ -179,16 +179,16 @@ SECTIONS
     .kheap :
     {
     	. = ALIGN(CONFIG_PAGE_SIZE);
-    	_bkheap = .;
+    	_skheap = .;
     	. += CONFIG_KERNEL_DYNAMICSIZE;
     	. = ALIGN(CONFIG_PAGE_SIZE);
-    	_ekheap = .;
     } >RAM
     
     .kstack __Stack_Init :
     {	
     	. = ALIGN(CONFIG_PAGE_SIZE);
-    	_bstack = .;
+    	_ekheap = .;
+    	_sstack = .;
 	   	KEEP(*(.kernel.stack))
     	. = . + CONFIG_KERNEL_STACKSIZE;
     	_estack = .;

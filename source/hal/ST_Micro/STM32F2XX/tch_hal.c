@@ -1034,35 +1034,35 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 
 
 const struct section_descriptor __default_sections[] = {
+		{		// kernel dynamic section
+				.flags = TYPE_DYNAMIC,
+				.start = &_skheap,
+				.end = &_ekheap
+		},
 		{
 				// kernel text section
 				.flags = TYPE_TEXT,
-				.paddr = 0,
-				.size = 0
+				.start = &_stext,
+				.end = &_etext
 		},
 		{		// kernel bss section (zero filled data)
 				.flags = TYPE_DATA,
-				.paddr = 0,
-				.size = 0
+				.start = &_sbss,
+				.end = &_ebss
 		},
 		{		// kernel data section (initialized to specified value)
 				.flags = TYPE_SDATA,
-				.paddr = &_sdata,
-				.size = 0
-		},
-		{		// kernel dynamic section
-				.flags = TYPE_DYNAMIC,
-				.paddr = 0,
-				.size = 0
+				.start = &_sdata,
+				.end = &_edata
 		},
 		{		// kernel stack
 				.flags = TYPE_STACK,
-				.paddr = 0,
-				.size = 0
+				.start = &_sstack,
+				.end = &_estack
 		}
 };
 
-const struct section_descriptor* default_sections[] = {
+struct __attribute__((section(".data"))) section_descriptor* default_sections[] = {
 		&__default_sections[0],
 		&__default_sections[1],
 		&__default_sections[2],

@@ -44,7 +44,7 @@ void* kmalloc(size_t sz){
 		return NULL;
 	struct obj_entry* chunk = NULL;
 	size_t asz = sz + sizeof(struct obj_entry);
-	if(!(wtreeHeap_available(&kernel_cache_root) -  asz > MIN_CACHE_SIZE)){
+	if(!(wtreeHeap_available(&kernel_cache_root)  > (MIN_CACHE_SIZE + asz))){
 		// try to allocate new memory region and add it to kernel heap
 		struct mem_region *nregion = wtreeHeap_malloc(&kernel_cache_root,sizeof(struct mem_region));
 		wt_alloc_t	*alloc = wtreeHeap_malloc(&kernel_cache_root,sizeof(wt_alloc_t));
