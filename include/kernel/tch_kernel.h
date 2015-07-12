@@ -56,8 +56,10 @@ extern void tch_kernelInit(void* arg);
 extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern void tch_KernelOnSystick();
 extern void tch_kernelOnWakeup();
-extern void tch_kernelOnMemFault();
-extern void tch_kernelOnHardFault(int fault,int type);
+
+
+extern void tch_kernelOnMemFault(paddr_t pa, int fault);
+extern void tch_kernelOnHardFault(int fault);
 
 
 

@@ -19,7 +19,7 @@ void tch_kernel_panic(const char* floc,int lno, const char* msg){
 	}
 }
 
-void tch_kernelOnHardFault(int fault,int type){
+void tch_kernelOnHardFault(int fault){
 	while(TRUE){
 	}
 }

@@ -42,7 +42,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	current_mm = &init_mm;
 	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
 
-	// register rest segment
+	// register segments
 	do {
 		seg_id = tch_segmentRegister(*section);
 		tch_mapSegment(current_mm,seg_id);
@@ -52,7 +52,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 }
 
 
-void tch_kernelOnMemFault(){
+void tch_kernelOnMemFault(paddr_t pa, int fault){
 
 }
 

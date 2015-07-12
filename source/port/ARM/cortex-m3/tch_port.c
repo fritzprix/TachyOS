@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include "tch_kernel.h"
+#include "tch_fault.h"
 #include "tch_hal.h"
 
 
@@ -277,17 +278,28 @@ int tch_port_reset(){
 
 
 void HardFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_UNRECOVERABLE,FAULT_TYPE_HARD);
+	tch_kernelOnHardFault(FAULT_TYPE_HARD);
 }
 
 void MemManage_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_MEM);
+	uint32_t mfault = SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk;
+	paddr_t pa = 0;
+	int fault = 0;
+	if(mfault & (1 << 7)){		// if fault address is valid
+		pa = SCB->MMFAR;
+	}
+	if(mfault & (1 << 1)){
+		fault = MEM_FAULT_DABORT;
+	}else if(mfault & (1)){
+		fault = MEM_FAULT_IABORT;
+	}
+	tch_kernelOnMemFault(pa,fault);
 }
 
 void BusFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_BUS);
+	tch_kernelOnHardFault(FAULT_TYPE_BUS);
 }
 
 void UsageFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_USG);
+	tch_kernelOnHardFault(FAULT_TYPE_USG);
 }
