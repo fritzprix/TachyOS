@@ -29,12 +29,16 @@ static tch_threadId idleThread;
 
 void tch_idleInit(){
 	tch_threadCfg thcfg;
+	Thread->initCfg(&thcfg);
 	thcfg.t_routine = (tch_thread_routine) idle;
 	thcfg.t_priority = Idle;
 	thcfg.t_name = "idle";
 	thcfg.t_memDef.heap_sz = 0x200;
 	thcfg.t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
 	idleThread = Thread->create(&thcfg,NULL);
+
+	busy_cnt = 0;
+	idle_lock = tch_rti->Mtx->create();
 
 	tch_rti->Thread->start(idleThread);
 }
@@ -62,8 +66,6 @@ static DECLARE_THREADROUTINE(idle){
 
 	int idle_tskid = tch_lwtsk_registerTask(idleTaskHandler,TSK_PRIOR_NORMAL);
 	tch_rtcHandle* rtc_handle = tch_rti->Thread->getArg();
-	idle_lock = tch_rti->Mtx->create();
-	busy_cnt = 0;
 	struct idle_parameter parm;
 
 	while(TRUE){

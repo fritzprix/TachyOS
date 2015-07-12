@@ -76,7 +76,7 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
-	tch_kernelMemInit(NULL);
+	tch_kernelMemInit(default_sections);
 	if(!tch_kernelInitPort())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
@@ -86,10 +86,6 @@ void tch_kernelInit(void* arg){
 
 
 	__VALID_SYSCALL = FALSE;
-	/*Bind API Object*/
-
-
-
 
 	mainThread = NULL;
 	sysThread = NULL;
@@ -286,6 +282,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
+	tch_port_enableISR();                   // interrupt enable
+
 	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		KERNEL_PANIC("tch_sys.c","Hal interface lost");
@@ -315,8 +313,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	tch_idleInit();
 	Thread->start(mainThread);
-
-	tch_port_enableISR();                   // interrupt enable
 
 	while(TRUE){
 		__lwtsk_start_loop();			// start loop lwtask handler

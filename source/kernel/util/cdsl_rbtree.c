@@ -81,7 +81,7 @@ rb_treeNode_t* cdsl_rbtreeLookup(rb_treeNode_t** root,int key){
 		return NULL;
 	rb_treeNode_t* current = *root;
 	while(current != RB_NIL){
-		if(key >= current->key)
+		if(key > current->key)
 			current = current->right;
 		else if(key < current->key)
 			current = current->left;
