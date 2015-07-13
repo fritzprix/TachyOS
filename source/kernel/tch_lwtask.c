@@ -128,32 +128,44 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
 	tsk = container_of(tsk,struct lw_task,rbn);
 	if(tch_port_isISR()){
 		canblock = FALSE;
-		if(tsk->status != LWSTATUS_DONE)
+	}
+
+	if (canblock) {
+		if (tch_rti->Mtx->lock(tsk->lock, tchWaitForever) != tchOK)
 			return;
-	}
+		while (tsk->status != LWSTATUS_DONE) {
+			tch_rti->Condv->wait(tsk->condv, tsk->lock, tchWaitForever);
+		}
+		tsk->status = LWSTATUS_PENDING;
+		tsk->arg = arg;
+		tch_rti->Mtx->unlock(tsk->lock);
+	}else{
+		tch_port_atomic_begin();
+		if(tsk->status != LWSTATUS_DONE){
+			tch_port_atomic_end();
+			return;
+		}
 
-
-	if(tch_rti->Mtx->lock(tsk->lock,tchWaitForever) != tchOK)
-		return;
-	while(tsk->status != LWSTATUS_DONE){
-		tch_rti->Condv->wait(tsk->condv,tsk->lock,tchWaitForever);
+		tsk->status = LWSTATUS_PENDING;
+		tsk->arg = arg;
+		tch_port_atomic_end();
 	}
-	tsk->status = LWSTATUS_PENDING;
-	tsk->arg = arg;
-	tch_rti->Mtx->unlock(tsk->lock);
 
 	tch_port_atomic_begin();
 	cdsl_dlistEnqueuePriority(&tsk_queue,&tsk->tsk_qn,lwtask_priority_rule);
 	tch_port_atomic_end();
-	if(!canblock)
-		return;
 
-	if(tch_rti->Mtx->lock(tsk->lock,tchWaitForever) != tchOK)
-		return;
-	while(tsk->status != LWSTATUS_DONE){
-		tch_rti->Condv->wait(tsk->condv,tsk->lock,tchWaitForever);
+	tch_rti->Barrier->signal(looper_waitq,tchOK);
+
+
+	if(canblock){
+		if (tch_rti->Mtx->lock(tsk->lock, tchWaitForever) != tchOK)
+			return;
+		while (tsk->status != LWSTATUS_DONE) {
+			tch_rti->Condv->wait(tsk->condv, tsk->lock, tchWaitForever);
+		}
+		tch_rti->Mtx->unlock(tsk->lock);
 	}
-	tch_rti->Mtx->unlock(tsk->lock);
 }
 
 void tch_lwtsk_cancel(int tsk_id){

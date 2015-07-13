@@ -28,6 +28,7 @@ static tch_threadId idleThread;
 
 
 void tch_idleInit(){
+
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg);
 	thcfg.t_routine = (tch_thread_routine) idle;
