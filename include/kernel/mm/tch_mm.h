@@ -67,7 +67,7 @@
 #endif
 
 #ifndef CONFIG_PAGE_SHIFT
-#define CONFIG_PAGE_SHIFT			(10)
+#define CONFIG_PAGE_SHIFT			(12)
 #endif
 
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
@@ -87,17 +87,17 @@ struct section_descriptor {
 
 #define get_section(flag)	(flag & SECTION_MSK)
 
-#define TYPE_TEXT			((uint16_t) 2)
-#define TYPE_SDATA			((uint16_t) 3)
-#define TYPE_DATA			((uint16_t) 4)
-#define TYPE_STACK			((uint16_t) 5)
-#define TYPE_DYNAMIC		((uint16_t) 6)
+#define TYPE_EXROM			((uint16_t) 2)
+#define TYPE_INROM			((uint16_t) 3)
+#define TYPE_DEVICE			((uint16_t) 4)
+#define TYPE_EXRAM			((uint16_t) 5)
+#define TYPE_INRAM			((uint16_t) 6)
 
-#define TYPE_MSK			(TYPE_TEXT | \
-							 TYPE_SDATA | \
-							 TYPE_DATA | \
-							 TYPE_STACK | \
-							 TYPE_DYNAMIC)
+#define TYPE_MSK			(TYPE_EXROM | \
+							 TYPE_INROM | \
+							 TYPE_DEVICE | \
+							 TYPE_EXRAM | \
+							 TYPE_INRAM)
 #define get_type(flag)		(flag & TYPE_MSK)
 
 
@@ -123,6 +123,9 @@ struct section_descriptor {
 							 PERM_OTHER_XC)
 
 #define PERM_MSK			(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
+
+#define perm_is_only_priv(flags) 		(!(flags & (PERM_OWNER_ALL || PERM_OTHER_ALL)))
+#define perm_is_public(flags)			((flags & PERM_OTHER_ALL))
 
 #define clr_permission(flag) (flag &= ~PERM_MSK)
 #define get_permission(flag) (flag & PERM_MSK)

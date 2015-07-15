@@ -33,14 +33,13 @@
 #define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
 #define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
 
-#define tch_port_setUserSP           __set_PSP
-#define tch_port_getUserSP           __get_PSP
+#define tch_port_setUserSP            __set_PSP
+#define tch_port_getUserSP            __get_PSP
 #define tch_port_setKerenlSP          __set_MSP
 #define tch_port_getKernelSP          __get_MSP
 
 #define HARDFAULT_UNRECOVERABLE                    (-1)
 #define HARDFAULT_RECOVERABLE                      (-2)
-
 
 
 #define MEM_UNPRIV_READ_PERMISSION					((uint32_t) 0x10000)
@@ -71,12 +70,12 @@ extern void tch_port_disableISR(void);
 /** \brief system lock from kernel to prevent kernel operation from being interrupted or preempted
  *  \note must be invoked in Kernel mode
  */
-extern void tch_port_kernel_lock(void);
+extern void tch_port_atomic_begin(void);
 
 /** \brief system unlock from kernel to allow any interrupts or thread preemption
  *  \note must be invoked in kernel mode
  */
-extern void tch_port_kernel_unlock(void);
+extern void tch_port_atomic_end(void);
 
 /** \brief thread has privilege access to hardware
  */
@@ -105,6 +104,12 @@ extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
 
+typedef void (*kernel_alloc_t) (size_t s);
+
+extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm);
+extern int tch_port_removePageEntry(pgd_t* pgd,uint32_t page);
+
 
 /**
  *
@@ -117,7 +122,9 @@ extern int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission
 extern int tch_port_clrMemPermission(int id);
 
 
-
+typedef struct _tch_exc_stack tch_exc_stack;
+typedef struct _tch_thread_context tch_thread_context;
+typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
 
 
 

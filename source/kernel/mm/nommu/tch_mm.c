@@ -53,6 +53,19 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 
 
 void tch_kernelOnMemFault(paddr_t pa, int fault){
-
+	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
+	if(perm_is_only_priv(region->flags)){
+		//kill thread
+		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);
+	}
+	if(perm_is_public(region->flags)){
+		((struct tch_mm*) tch_currentThread->t_kthread->t_mm)->pgd = 1;
+		if(!tch_port_addPageEntry(((struct tch_mm*) tch_currentThread->t_kthread->t_mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
+			tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
+		}
+	}
+	if(region->owner != tch_currentThread->t_kthread->t_mm){
+		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);
+	}
 }
 

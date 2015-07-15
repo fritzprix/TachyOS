@@ -33,9 +33,9 @@
 #define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
 #define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
 
-#define tch_port_setUserSP           __set_PSP
-#define tch_port_getUserSP           __get_PSP
-#define tch_port_setKernelSP          __set_MSP
+#define tch_port_setUserSP            __set_PSP
+#define tch_port_getUserSP            __get_PSP
+#define tch_port_setKerenlSP          __set_MSP
 #define tch_port_getKernelSP          __get_MSP
 
 #define HARDFAULT_UNRECOVERABLE                    (-1)
@@ -70,12 +70,12 @@ extern void tch_port_disableISR(void);
 /** \brief system lock from kernel to prevent kernel operation from being interrupted or preempted
  *  \note must be invoked in Kernel mode
  */
-extern void tch_port_kernel_lock(void);
+extern void tch_port_atomic_begin(void);
 
 /** \brief system unlock from kernel to allow any interrupts or thread preemption
  *  \note must be invoked in kernel mode
  */
-extern void tch_port_kernel_unlock(void);
+extern void tch_port_atomic_end(void);
 
 /** \brief thread has privilege access to hardware
  */
@@ -103,6 +103,12 @@ extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t upd
 extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
+
+typedef void (*kernel_alloc_t) (size_t s);
+
+extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern int tch_port_addPageEntry(pgd_t* pgd,paddr_t page);
+extern int tch_port_removePageEntry(pgd_t* pgd,paddr_t page);
 
 
 /**

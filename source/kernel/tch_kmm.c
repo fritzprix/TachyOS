@@ -140,7 +140,7 @@ tchStatus tchk_pageInit(void* kmem_base,uint32_t msz){
 	if(PageManagerHandle.p_mem == NULL)
 		return tchErrorParameter;
 	cdsl_dlistInit(&PageManagerHandle.p_alc);	// initialize page allocation list
-	PageManagerHandle.p_base_mpermId = tch_port_setMemPermission(kmem_base,msz,MEM_PRIV_READ_PERMISSION | MEM_PRIV_WRITE_PERMISSION);  // kernel heap is protected from unprivilidged access by default
+	PageManagerHandle.p_base_mpermId = 1;  // kernel heap is protected from unprivilidged access by default
 	PAGE_MGR_VALIDATE(&PageManagerHandle);
 	return tchOK;
 }
@@ -270,7 +270,7 @@ tchStatus tchk_mapPage(tch_pageId pgId){
 	uint8_t* mem = (uint8_t*) ((uword_t)pheader + sizeof(struct tch_page_header));
 	while(idx++ < pheader->p_regCnt){
 		subreg = &pheader->p_reg[idx];
-		subreg->permId = tch_port_setMemPermission(subreg->addr,subreg->sz_shoffset,(pheader->p_status & MEM_PERMISSION_MSK));
+		subreg->permId = 1;
 		if(subreg->permId == 0)
 			return tchErrorOS;
 	}
@@ -287,8 +287,9 @@ tchStatus tchk_unmapPage(tch_pageId pgId){
 	tch_pageSubRegion* subreg = NULL;
 	while(idx++ < pheader->p_regCnt){
 		subreg = &pheader->p_reg[idx];
+		/*
 		if(!tch_port_clrMemPermission(subreg->permId))
-			return tchErrorOS;
+			return tchErrorOS;*/
 	}
 	return tchOK;
 }
