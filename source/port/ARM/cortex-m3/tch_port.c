@@ -33,6 +33,27 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
+
+#define NR_PAGE_ENTRY				8
+
+
+
+struct pte  {
+	union {
+		struct {
+			uint32_t	ar;
+			uint32_t	attr;
+		}__attribute__((packed));
+		uint64_t value;
+	};
+};
+
+struct pgd {
+	uint8_t		idx;
+	struct pte 	_pte[8];
+};
+
+
 extern BOOL tch_kernelInitPort(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
@@ -238,19 +259,6 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 	return result;
 }
 
-/**
- *
- */
-int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission){
-	return TRUE;
-}
-
-/**
- *
- */
-int tch_port_clrMemPermission(int id){
-	return TRUE;
-}
 
 
 void SVC_Handler(void){
@@ -275,6 +283,29 @@ int tch_port_clearFault(int type){
 int tch_port_reset(){
 
 }
+
+void* tch_port_allocPageDirectory(kernel_alloc_t alloc){
+	struct pgd* pgdp = alloca(sizeof(struct pgd));
+	uint8_t i;
+	for(i = 0;i < NR_PAGE_ENTRY;i++){
+		pgdp->_pte[i].value = -1;
+	}
+	pgdp->idx = 0;
+	return pgdp;
+}
+
+int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm){
+	if(!pgd)
+		return FALSE;
+
+}
+
+int tch_port_removePageEntry(pgd_t* pgd,uint32_t page){
+
+}
+
+
+
 
 
 void HardFault_Handler(){

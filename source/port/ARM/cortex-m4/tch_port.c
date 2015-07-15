@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include "tch_kernel.h"
+#include "tch_fault.h"
 #include "tch_hal.h"
 
 
@@ -32,6 +33,27 @@
 #define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
 
+#define NR_PAGE_ENTRY				8
+
+
+
+struct pte  {
+	union {
+		struct {
+			uint32_t	ar;
+			uint32_t	attr;
+		}__attribute__((packed));
+		uint64_t value;
+	};
+};
+
+struct pgd {
+	uint8_t		idx;
+	struct pte 	_pte[8];
+};
+
+
+
 extern BOOL tch_kernelInitPort(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
@@ -47,7 +69,6 @@ extern BOOL tch_kernelInitPort(){
 	                                                                                                       *  General Fault handler enable
 	                                                                                                       *  - for debugging convinience
 	                                                                                                       **/
-
 	__set_PSP(__get_MSP());                         // Init Stack inherited to thread mode stack pointer
 	uint32_t mcu_ctrl = __get_CONTROL();            /** Modify Control register
 	                                                 *  - dedicated Thread Stack Pointer enabled
@@ -238,20 +259,6 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 	return result;
 }
 
-/**
- *
- */
-int tch_port_setMemPermission(void* baddr,uint32_t sz,uint32_t permission){
-	return TRUE;
-}
-
-/**
- *
- */
-int tch_port_clrMemPermission(int id){
-	return TRUE;
-}
-
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
@@ -277,18 +284,60 @@ int tch_port_reset(){
 }
 
 
+void* tch_port_allocPageDirectory(kernel_alloc_t alloc){
+	struct pgd* pgdp = alloca(sizeof(struct pgd));
+	uint8_t i;
+	for(i = 0;i < NR_PAGE_ENTRY;i++){
+		pgdp->_pte[i].value = -1;
+	}
+	pgdp->idx = 0;
+	return pgdp;
+}
+
+int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm){
+	if(!pgd || !page)
+		return FALSE;
+	struct pgd* pgdp = (struct pgd*) pgd;
+	MPU->RNR = (pgdp->idx & MPU_RNR_REGION_Msk);
+	uint32_t rbar = MPU->RBAR;
+	uint32_t attr = MPU->RASR;
+	pgdp->_pte[pgdp->idx].value = 0;
+	rbar = (MPU_RBAR_ADDR_Msk & page) | MPU_RBAR_VALID_Msk | (pgdp->idx << MPU_RBAR_REGION_Pos);
+	attr |= (perm & (PERM_KERNEL_XC | PERM_OWNER_XC | PERM_OTHER_XC)) ? MPU_RASR_XN_Msk : 0;
+
+
+}
+
+int tch_port_removePageEntry(pgd_t* pgd,uint32_t page){
+
+}
+
+
+
+
 void HardFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_UNRECOVERABLE,FAULT_TYPE_HARD);
+	tch_kernelOnHardFault(FAULT_TYPE_HARD);
 }
 
 void MemManage_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_MEM);
+	uint32_t mfault = SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk;
+	paddr_t pa = 0;
+	int fault = 0;
+	if(mfault & (1 << 7)){		// if fault address is valid
+		pa = SCB->MMFAR;
+	}
+	if(mfault & (1 << 1)){
+		fault = MEM_FAULT_DABORT;
+	}else if(mfault & (1)){
+		fault = MEM_FAULT_IABORT;
+	}
+	tch_kernelOnMemFault(pa,fault);
 }
 
 void BusFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_BUS);
+	tch_kernelOnHardFault(FAULT_TYPE_BUS);
 }
 
 void UsageFault_Handler(){
-	tch_kernelOnHardFault(HARDFAULT_RECOVERABLE,FAULT_TYPE_USG);
+	tch_kernelOnHardFault(FAULT_TYPE_USG);
 }
