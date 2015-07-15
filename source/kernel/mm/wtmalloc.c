@@ -158,9 +158,11 @@ static wt_alloc_t* free_cache_r(wt_alloc_t* current,void* ptr,size_t *sz){
 		current->left = free_cache_r(current->left,ptr,sz);
 		if(current->left->size > current->size)
 			return rotateRight(current);
-	}else if((current->right->base > ptr) || (current->right == NULL_CACHE)){
+
+	}
+	else if((current->base <= ptr) && (current->limit > ptr)) {
 		*sz = cache_free(current,ptr);
-	}else {
+	} else {
 		current->right = free_cache_r(current->right,ptr,sz);
 		if(current->right->size > current->size)
 			return rotateLeft(current);
