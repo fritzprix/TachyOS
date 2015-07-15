@@ -74,67 +74,72 @@
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
 
+#define SEGMENT_NORMAL			((uint32_t) 0)
+#define SEGMENT_KERNEL			((uint32_t) 1)		//	memory section for kernel instruction code
+#define SEGMENT_DEVICE			((uint32_t) 2)
+
+#define SEGMENT_MSK				(SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE)
+
+#define SECTION_TEXT			((uint32_t) 4)
+#define SECTION_DATA			((uint32_t) 8)
+#define SECTION_STACK			((uint32_t) 16)
+
+#define SECTION_MSK				(SECTION_DATA | SECTION_STACK | SECTION_TEXT)
 
 
+#define get_section(flag)		(flag & SEGMENT_MSK)
+
+#define MEMTYPE_EXROM				((uint32_t) 32)
+#define MEMTYPE_INROM				((uint32_t) 64)
+#define MEMTYPE_EXRAM				((uint32_t) 128)
+#define MEMTYPE_INRAM				((uint32_t) 256)
+
+#define TYPE_MSK				(MEMTYPE_EXROM | \
+							 	 MEMTYPE_INROM | \
+							 	 MEMTYPE_EXRAM | \
+							 	 MEMTYPE_INRAM)
+#define get_type(flag)			(flag & TYPE_MSK)
 
 
-typedef void*	paddr_t;
-struct section_descriptor {
-	uint16_t		flags;
-#define SECTION_NORMAL		((uint16_t) 0)
-#define SECTION_KERNEL		((uint16_t) 1 << 0)		//	memory segment which is kernel is loaded
-#define SECTION_MSK			(SECTION_KERNEL | SECTION_NORMAL)
+#define PERM_KERNEL_RD			((uint32_t) (TYPE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
+#define PERM_KERNEL_WR			((uint32_t) (TYPE_MSK + 1) << 1)		// allows kernel process to write access
+#define PERM_KERNEL_XC			((uint32_t) (TYPE_MSK + 1) << 2)		// allows kernel process to execute access
+#define PERM_KERNEL_ALL			(PERM_KERNEL_RD |\
+								PERM_KERNEL_WR |\
+								PERM_KERNEL_XC)	// allows kernel process to all access type
 
-#define get_section(flag)	(flag & SECTION_MSK)
+#define PERM_OWNER_RD			((uint32_t) (TYPE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
+#define PERM_OWNER_WR			((uint32_t) (TYPE_MSK + 1) << 4)		// allows owner process to write access
+#define PERM_OWNER_XC			((uint32_t) (TYPE_MSK + 1) << 5)		// allows owner process to execute aceess
+#define PERM_OWNER_ALL			(PERM_OWNER_RD |\
+								PERM_OWNER_WR |\
+								PERM_OWNER_XC)
 
-#define TYPE_EXROM			((uint16_t) 2)
-#define TYPE_INROM			((uint16_t) 3)
-#define TYPE_DEVICE			((uint16_t) 4)
-#define TYPE_EXRAM			((uint16_t) 5)
-#define TYPE_INRAM			((uint16_t) 6)
+#define PERM_OTHER_RD			((uint32_t) (TYPE_MSK + 1) << 6)		// allows other process to read access
+#define PERM_OTHER_WR			((uint32_t) (TYPE_MSK + 1) << 7)	// allows other process to write access
+#define PERM_OTHER_XC			((uint32_t) (TYPE_MSK + 1) << 8)	// allows other process to execute access
+#define PERM_OTHER_ALL			(PERM_OTHER_RD |\
+								PERM_OTHER_WR |\
+								PERM_OTHER_XC)
 
-#define TYPE_MSK			(TYPE_EXROM | \
-							 TYPE_INROM | \
-							 TYPE_DEVICE | \
-							 TYPE_EXRAM | \
-							 TYPE_INRAM)
-#define get_type(flag)		(flag & TYPE_MSK)
+#define PERM_MSK				(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
 
+#define perm_is_only_priv(flags)		(!(flags & (PERM_OWNER_ALL || PERM_OTHER_ALL)))
+#define perm_is_public(flags)			((flags & PERM_OTHER_ALL) == PERM_OTHER_ALL)
 
-#define PERM_KERNEL_RD		((uint16_t) (TYPE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
-#define PERM_KERNEL_WR		((uint16_t) (TYPE_MSK + 1) << 1)		// allows kernel process to write access
-#define PERM_KERNEL_XC		((uint16_t) (TYPE_MSK + 1) << 2)		// allows kernel process to execute access
-#define PERM_KERNEL_ALL		(PERM_KERNEL_RD |\
-							 PERM_KERNEL_WR |\
-							 PERM_KERNEL_XC)	// allows kernel process to all access type
+#define clr_permission(flag)			(flag &= ~PERM_MSK)
+#define get_permission(flag)			(flag & PERM_MSK)
 
-#define PERM_OWNER_RD		((uint16_t) (TYPE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
-#define PERM_OWNER_WR		((uint16_t) (TYPE_MSK + 1) << 4)		// allows owner process to write access
-#define PERM_OWNER_XC		((uint16_t) (TYPE_MSK + 1) << 5)		// allows owner process to execute aceess
-#define PERM_OWNER_ALL		(PERM_OWNER_RD |\
-							 PERM_OWNER_WR |\
-							 PERM_OWNER_XC)
-
-#define PERM_OTHER_RD		((uint16_t) (TYPE_MSK + 1) << 6)		// allows other process to read access
-#define PERM_OTHER_WR		((uint16_t) (TYPE_MSK + 1) << 7)	// allows other process to write access
-#define PERM_OTHER_XC		((uint16_t) (TYPE_MSK + 1) << 8)	// allows other process to execute access
-#define PERM_OTHER_ALL		(PERM_OTHER_RD |\
-							 PERM_OTHER_WR |\
-							 PERM_OTHER_XC)
-
-#define PERM_MSK			(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
-
-#define perm_is_only_priv(flags) 		(!(flags & (PERM_OWNER_ALL || PERM_OTHER_ALL)))
-#define perm_is_public(flags)			((flags & PERM_OTHER_ALL))
-
-#define clr_permission(flag) (flag &= ~PERM_MSK)
-#define get_permission(flag) (flag & PERM_MSK)
-#define set_permission(flag,perm) 		do {\
+#define set_permission(flag,perm) 		 do {\
 	clr_permission(flag);\
 	flag |= perm;\
 }while(0)
 
 
+
+typedef void*	paddr_t;
+struct section_descriptor {
+	uint32_t		flags;
 	paddr_t 		start;
 	paddr_t			end;
 }__attribute__((packed));

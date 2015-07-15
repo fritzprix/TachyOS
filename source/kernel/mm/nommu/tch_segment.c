@@ -269,12 +269,12 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	cdsl_rbtreeNodeInit(&seg->addr_rbn,seg->poff);
 
 
-	switch(seg->flags & SECTION_MSK){
-	case SECTION_KERNEL:
+	switch(seg->flags & SEGMENT_MSK){
+	case SEGMENT_KERNEL:
 		seg->pfree_cnt = 0;							// marked as segment has no free page for kernel section & keep its memory content
 		set_permission(seg->flags,PERM_KERNEL_ALL);	// kernel is only accessible privilidge level
 		break;
-	case SECTION_NORMAL:
+	case SEGMENT_NORMAL:
 		seg->pfree_cnt = seg->psize;
 		for(i = 0; i < seg->psize ;i++){
 			pages[i].fhdr.offset = seg->poff + i;
@@ -284,6 +284,8 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 		pages[0].fhdr.contig_pcount = seg->psize;
 		cdsl_dlistPutHead(&seg->pfree_list,&pages[0].fhdr.lhead);
 		set_permission(seg->flags,PERM_KERNEL_ALL | PERM_OTHER_RD);	// normal default permission (kernel_all | public read)
+		break;
+	case SEGMENT_DEVICE:
 		break;
 	}
 
