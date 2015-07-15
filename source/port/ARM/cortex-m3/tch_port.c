@@ -284,20 +284,50 @@ int tch_port_reset(){
 
 }
 
-void* tch_port_allocPageDirectory(kernel_alloc_t alloc){
+pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
 	struct pgd* pgdp = alloca(sizeof(struct pgd));
 	uint8_t i;
 	for(i = 0;i < NR_PAGE_ENTRY;i++){
 		pgdp->_pte[i].value = -1;
 	}
 	pgdp->idx = 0;
-	return pgdp;
+	return (pgd_t*) pgdp;
 }
 
 int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm){
-	if(!pgd)
+	if(!pgd || !page)
 		return FALSE;
+	struct pgd* pgdp = (struct pgd*) pgd;
 
+	// check page is already in the table
+	uint8_t idx;
+	for(idx = 0;idx < NR_PAGE_ENTRY;idx++ ) {
+		if((pgdp->_pte[idx].ar & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk))
+			return FALSE;
+	}
+	MPU->RNR = (pgdp->idx & MPU_RNR_REGION_Msk);
+	uint32_t address;
+	uint32_t attr = 0;
+	pgdp->_pte[pgdp->idx].value = 0;
+	switch(get_type(perm)){
+	case MEMTYPE_EXRAM:
+		break;
+	case MEMTYPE_INRAM:
+		break;
+	case MEMTYPE_EXROM:
+		break;
+	case MEMTYPE_INROM:
+		break;
+	}
+	attr |= (perm & (PERM_KERNEL_XC | PERM_OWNER_XC | PERM_OTHER_XC)) ? MPU_RASR_XN_Msk : 0;
+	address = (MPU_RBAR_ADDR_Msk & page) | MPU_RBAR_VALID_Msk | (pgdp->idx << MPU_RBAR_REGION_Pos);
+
+	pgdp->_pte[pgdp->idx].attr = attr;
+	pgdp->_pte[pgdp->idx].ar = address;
+
+	MPU->RBAR = address;
+	MPU->RASR = attr;
+	return TRUE;
 }
 
 int tch_port_removePageEntry(pgd_t* pgd,uint32_t page){

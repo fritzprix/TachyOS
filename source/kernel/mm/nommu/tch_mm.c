@@ -35,7 +35,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	struct mem_segment* segment;
 	int seg_id;
 	struct section_descriptor** section = &mdesc_tbl[0];		// firts section descriptor should be normal
-	if(((*section)->flags & SECTION_MSK) != SECTION_NORMAL)
+	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL)
 		KERNEL_PANIC("tch_mm.c","invalid section descriptor table");
 
 	tch_mmInit(&init_mm);

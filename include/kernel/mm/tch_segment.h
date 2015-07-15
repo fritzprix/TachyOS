@@ -22,7 +22,7 @@ struct mem_segment {
 	rb_treeNode_t*			reg_root;
 	rb_treeNode_t			addr_rbn;
 	rb_treeNode_t			id_rbn;
-	uint16_t				flags;
+	uint32_t				flags;
 	uint32_t				poff;
 	size_t					psize;			// total segment size in page
 	cdsl_dlistNode_t 		pfree_list;		// free page list
@@ -36,7 +36,7 @@ struct mem_region {
 	rb_treeNode_t			rbn;
 	rb_treeNode_t			mm_rbn;
 	struct tch_mm*			owner;
-	uint16_t				flags;
+	uint32_t				flags;
 	struct mem_segment*		segp;
 	uint32_t				poff;
 	uint32_t				psz;

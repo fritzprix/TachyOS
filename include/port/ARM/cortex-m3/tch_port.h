@@ -106,7 +106,7 @@ extern int tch_port_reset();
 
 typedef void (*kernel_alloc_t) (size_t s);
 
-extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc);
 extern int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm);
 extern int tch_port_removePageEntry(pgd_t* pgd,uint32_t page);
 
