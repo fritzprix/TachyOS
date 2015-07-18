@@ -210,14 +210,6 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 }
 */
 
-extern tchStatus tchk_threadLoadProgram(tch_threadId root,uint8_t* pgm_img,size_t img_sz,uint32_t pgm_entry_offset){
-	if(!root || !tchk_threadIsValid(root))
-		return tchErrorParameter;
-	tch_thread_kheader* root_kheader = ((tch_thread_uheader*) root)->t_kthread;
-	memcpy(root_kheader->t_proc,pgm_img,img_sz);
-	return tchOK;
-}
-
 
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t tm = 0;
@@ -241,8 +233,6 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	}
 	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg);
 }
-
-
 
 
 
