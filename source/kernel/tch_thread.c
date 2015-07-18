@@ -16,6 +16,7 @@
 #include "tch_kernel.h"
 #include "tch_thread.h"
 #include "tch_mem.h"
+#include "tch_kmalloc.h"
 #include <sys/reent.h>
 
 #define THREAD_CHK_PATTERN		((uint32_t) 0xF3F3D5D5)
@@ -157,6 +158,57 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	return (tch_threadId) kthread->t_uthread;
 }
 
+/*
+tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc){
+	// allocate kernel thread header from kernel heap
+	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader));
+	memset(kthread,0,sizeof(tch_thread_kheader));
+	if(isroot){														// if new thread will be the root thread of a process, parent will be self
+		kthread->t_parent = kthread;
+		kthread->t_mm = tch_mmInit(&kthread->t_mm,proc);
+		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
+		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
+			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
+	}else if(tch_currentThread){									// new thread will be child of caller thread
+		kthread->t_parent = tch_currentThread->t_kthread->t_parent;
+		cfg->t_memDef.heap_sz = 0;
+		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
+	}else {
+		KERNEL_PANIC("tch_thread.c","Null Running Thread");
+	}
+	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)		// guarantee minimum stack size
+		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
+
+	if(tchk_userMemInit(kthread,&cfg->t_memDef,isroot) != tchOK)	// prepare memory space of new thread
+		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
+
+	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_proc,__tch_thread_entry);
+	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
+	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
+
+	cdsl_dlistInit(&kthread->t_palc);
+	cdsl_dlistInit(&kthread->t_pshalc);
+	cdsl_dlistInit(&kthread->t_upshalc);
+
+	kthread->t_tslot = TCH_ROUNDROBIN_TIMESLOT;
+	kthread->t_state = PENDED;
+	kthread->t_lckCnt = 0;
+	kthread->t_prior = cfg->t_priority;
+	kthread->t_to = 0;
+	if(!kthread->t_pgId)
+		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
+
+	kthread->t_uthread->t_arg = arg;														// initialize user level thread header
+	kthread->t_uthread->t_fn = cfg->t_routine;
+	kthread->t_uthread->t_name = cfg->t_name;
+	kthread->t_uthread->t_kRet = tchOK;
+#ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
+	_REENT_INIT_PTR(&kthread->t_uthread->t_reent)
+#endif
+	kthread->t_uthread->t_chks = THREAD_CHK_PATTERN;
+	return (tch_threadId) kthread->t_uthread;
+}
+*/
 
 extern tchStatus tchk_threadLoadProgram(tch_threadId root,uint8_t* pgm_img,size_t img_sz,uint32_t pgm_entry_offset){
 	if(!root || !tchk_threadIsValid(root))

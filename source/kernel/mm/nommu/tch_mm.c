@@ -22,10 +22,13 @@ struct tch_mm*		current_mm;
  *
  */
 
-struct tch_mm* tch_mmInit(struct tch_mm* mmp){
+struct tch_mm* tch_mmInit(struct tch_mm** mm,struct proc_header* proc_header){
+	struct tch_mm* mmp = kmalloc(sizeof(struct tch_mm));
+	*mm = mmp;
 	cdsl_dlistInit(&mmp->alc_list);
 	mmp->mregions = NULL;
 	mmp->pgd = NULL;
+	tch_mapRegion(mmp,proc_header->text_region);
 	return mmp;
 }
 

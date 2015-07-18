@@ -51,6 +51,27 @@ typedef struct tch_hal_t tch_hal;
 typedef struct _tch_event_ix_t tch_event_ix;
 
 
+/**
+ *  tachyos app post processor attach header in front of application binary
+ */
+struct application_header {
+	uint64_t			vid;
+	uint64_t			appid;
+	uint32_t			ver;
+	uint32_t			permission;
+	uint32_t			req_stk;
+	uint32_t			req_heap;
+	void* 				stext;
+	void* 				etext;
+	void*				sbss;
+	void*				ebss;
+	void*				sdata;
+	void*				edata;
+	void*				entry;
+	uint64_t			chks;
+};
+
+
 
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;

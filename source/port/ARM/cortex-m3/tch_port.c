@@ -30,8 +30,12 @@
 
 #define FAULT_TYPE_HARD            ((int) -1)
 #define FAULT_TYPE_BUS             ((int) -2)
-#define FAULT_TYPE_MEM             ((int) -3)
 #define FAULT_TYPE_USG             ((int) -4)
+
+#define PE_TEXT						((uint8_t) 0)
+#define PE_DATA						((uint8_t) 1)
+#define PE_STACK					((uint8_t) 2)
+#define PE_DYNAMIC					((uint8_t) 3)
 
 
 #define NR_PAGE_ENTRY				8
@@ -41,7 +45,7 @@
 struct pte  {
 	union {
 		struct {
-			uint32_t	ar;
+			uint32_t	baddr;
 			uint32_t	attr;
 		}__attribute__((packed));
 		uint64_t value;
@@ -49,7 +53,7 @@ struct pte  {
 };
 
 struct pgd {
-	uint8_t		idx;
+	uint8_t		dynamic_idx;
 	struct pte 	_pte[8];
 };
 
@@ -272,17 +276,32 @@ int tch_port_clearFault(int type){
 		break;
 	case FAULT_TYPE_BUS:
 		break;
-	case FAULT_TYPE_MEM:
-		break;
 	case FAULT_TYPE_USG:
 		break;
 	}
 }
 
+void inline tch_port_updateProtectionEntry(struct pte* ptep){
+	MPU->RNR = ptep->baddr & MPU_RBAR_REGION_Msk;
+	MPU->RASR &= ~MPU_RASR_ENABLE_Msk;			// disable mpu region
+
+	MPU->RBAR = ptep->baddr;					// setup base address
+	MPU->RASR = ptep->attr;						// setup attribute
+	__ISB();
+}
 
 int tch_port_reset(){
 
 }
+
+void tch_port_loadPageTable(pgd_t* pgd){
+	struct pgd* pgdp = (struct pgd*) pgd;
+	uint8_t idx = 0;
+	for(;idx < NR_PAGE_ENTRY;idx++){
+		tch_port_updateProtectionEntry(&pgdp->_pte[idx]);
+	}
+}
+
 
 pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
 	struct pgd* pgdp = alloca(sizeof(struct pgd));
@@ -290,51 +309,100 @@ pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
 	for(i = 0;i < NR_PAGE_ENTRY;i++){
 		pgdp->_pte[i].value = -1;
 	}
-	pgdp->idx = 0;
+	pgdp->dynamic_idx = 0;
 	return (pgd_t*) pgdp;
 }
 
-int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int perm){
+int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int flag){
 	if(!pgd || !page)
 		return FALSE;
 	struct pgd* pgdp = (struct pgd*) pgd;
 
-	// check page is already in the table
 	uint8_t idx;
-	for(idx = 0;idx < NR_PAGE_ENTRY;idx++ ) {
-		if((pgdp->_pte[idx].ar & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk))
-			return FALSE;
+	switch(flag & SECTION_MSK){
+	case SECTION_DYNAMIC:
+		// check page is already in the table
+		for(idx = PE_DYNAMIC;idx < NR_PAGE_ENTRY;idx++){
+			if((pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk)){
+				return FALSE;
+			}
+		}
+		idx = pgdp->dynamic_idx + PE_DYNAMIC;
+		pgdp->dynamic_idx++;
+		if(pgdp >= NR_PAGE_ENTRY)
+			pgdp->dynamic_idx = PE_DYNAMIC;
+		break;
+	case SECTION_TEXT:
+		idx = PE_TEXT;
+		break;
+	case SECTION_STACK:
+		idx = PE_STACK;
+		break;
+	case SECTION_DATA:
+		idx = PE_DATA;
+		break;
 	}
-	MPU->RNR = (pgdp->idx & MPU_RNR_REGION_Msk);
-	uint32_t address;
+
+	uint32_t address = 0;
 	uint32_t attr = 0;
-	pgdp->_pte[pgdp->idx].value = 0;
-	switch(get_type(perm)){
-	case MEMTYPE_EXRAM:
-		break;
-	case MEMTYPE_INRAM:
-		break;
-	case MEMTYPE_EXROM:
-		break;
-	case MEMTYPE_INROM:
-		break;
+	pgdp->_pte[idx].value = 0;
+
+	attr &= ~MPU_RASR_TEX_Msk;
+	if(flag & SEGMENT_DEVICE) {
+		attr |= (MPU_RASR_B_Msk | MPU_RASR_S_Msk);
+	} else {
+		switch (get_memtype(flag)) {
+		case MEMTYPE_INROM:
+			attr |= MPU_RASR_C_Msk;
+			break;
+		case MEMTYPE_EXROM:
+			attr |= MPU_RASR_C_Msk;
+			break;
+		case MEMTYPE_INRAM:
+			attr |= (MPU_RASR_C_Msk | MPU_RASR_S_Msk);
+			break;
+		case MEMTYPE_EXRAM:
+			attr |= (MPU_RASR_C_Msk | MPU_RASR_B_Msk | MPU_RASR_S_Msk);
+			break;
+		}
 	}
-	attr |= (perm & (PERM_KERNEL_XC | PERM_OWNER_XC | PERM_OTHER_XC)) ? MPU_RASR_XN_Msk : 0;
-	address = (MPU_RBAR_ADDR_Msk & page) | MPU_RBAR_VALID_Msk | (pgdp->idx << MPU_RBAR_REGION_Pos);
 
-	pgdp->_pte[pgdp->idx].attr = attr;
-	pgdp->_pte[pgdp->idx].ar = address;
+	attr |= (flag & (PERM_KERNEL_XC | PERM_OTHER_XC | PERM_OWNER_XC)) ? 0 : MPU_RASR_XN_Msk;	// instruction fetch
+	if(!(flag & (PERM_KERNEL_WR | PERM_OWNER_WR)))
+		attr |= (4 << MPU_RASR_AP_Pos);				// read only
+	attr |= (2 << MPU_RASR_AP_Pos);
+	attr |= (flag & PERM_OWNER_WR) ? (1 << MPU_RASR_AP_Pos) : 0;
+	attr |= (MPU_RASR_SIZE_Msk & CONFIG_PAGE_SHIFT);
+	attr |= MPU_RASR_ENABLE_Msk;
 
-	MPU->RBAR = address;
-	MPU->RASR = attr;
+	address = (MPU_RBAR_ADDR_Msk & page)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
+
+	pgdp->_pte[idx].baddr = address;
+	pgdp->_pte[idx].attr = attr;
+
+	__ISB();
+	__DMB();
+
+	tch_port_updateProtectionEntry(&pgdp->_pte[idx]);
+	idx++;
 	return TRUE;
 }
 
 int tch_port_removePageEntry(pgd_t* pgd,uint32_t page){
-
+	uint8_t idx;
+	struct pgd* pgdp = (struct pgd*) pgd;
+	struct pte* ptep;
+	for(idx = 0;idx < NR_PAGE_ENTRY; idx++) {
+		ptep = *pgdp->_pte[idx];
+		if((ptep->baddr & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk)){
+			ptep->attr &= ~MPU_RASR_ENABLE_Msk;			// clear enable bit
+			tch_port_updateProtectionEntry(ptep);
+			ptep->value = 0;
+			return idx;
+		}
+	}
+	return -1;
 }
-
-
 
 
 

@@ -304,7 +304,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	threadcfg.t_memDef.heap_sz = 0x800;
 	threadcfg.t_memDef.stk_sz = 0x800;
 
-	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,FALSE);
+	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE);
 
 
 	if((!mainThread))

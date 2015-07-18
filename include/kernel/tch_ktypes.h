@@ -111,7 +111,7 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*   	                    t_ctx;			///<ptr to thread saved context (stack pointer value)
 	void*							t_proc;			///<ptr to base address of process image
-	void*							t_mm;			///<ptr to per-process memory management handle
+	struct tch_mm*					t_mm;			///<ptr to per-process memory management handle
 	cdsl_dlistNode_t				t_palc;			///<allocation list for page
 	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
 	cdsl_dlistNode_t				t_upshalc;
