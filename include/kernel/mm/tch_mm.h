@@ -12,6 +12,7 @@
 #include "tch_ptypes.h"
 #include "cdsl_rbtree.h"
 #include "cdsl_slist.h"
+#include "wtmalloc.h"
 
 
 /**
@@ -74,50 +75,58 @@
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
 
-#define SEGMENT_NORMAL			((uint32_t) 0)
-#define SEGMENT_KERNEL			((uint32_t) 1)		//	memory section for kernel instruction code
-#define SEGMENT_DEVICE			((uint32_t) 2)
+#define SEGMENT_NORMAL			((uint32_t) 1)
+#define SEGMENT_KERNEL			((uint32_t) 2)		//	memory section for kernel instruction code
+#define SEGMENT_DEVICE			((uint32_t) 3)
 
 #define SEGMENT_MSK				(SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE)
 
 #define SECTION_TEXT			((uint32_t) 4)
 #define SECTION_DATA			((uint32_t) 8)
-#define SECTION_STACK			((uint32_t) 16)
+#define SECTION_STACK			((uint32_t) 12)
+#define SECTION_DYNAMIC			((uint32_t) 0)
 
 #define SECTION_MSK				(SECTION_DATA | SECTION_STACK | SECTION_TEXT)
 
 
 #define get_section(flag)		(flag & SEGMENT_MSK)
 
-#define MEMTYPE_EXROM				((uint32_t) 32)
-#define MEMTYPE_INROM				((uint32_t) 64)
-#define MEMTYPE_EXRAM				((uint32_t) 128)
-#define MEMTYPE_INRAM				((uint32_t) 256)
+#define CACHE_WRITE_THROUGH				((uint32_t) 32)
+#define CACHE_WRITE_BACK_WA				((uint32_t) 64)			// write back (write allocate)
+#define CACHE_WRITE_BACK_NWA			((uint32_t) 128)		// write back (no write allocate)
+#define CACHE_BYPASS					((uint32_t) 256)
 
-#define TYPE_MSK				(MEMTYPE_EXROM | \
-							 	 MEMTYPE_INROM | \
-							 	 MEMTYPE_EXRAM | \
-							 	 MEMTYPE_INRAM)
-#define get_type(flag)			(flag & TYPE_MSK)
+#define CACHE_POLICY_MSK				(CACHE_WRITE_THROUGH | \
+										 CACHE_WRITE_BACK_WA | \
+										 CACHE_WRITE_BACK_NWA | \
+										 CACHE_BYPASS)
 
 
-#define PERM_KERNEL_RD			((uint32_t) (TYPE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
-#define PERM_KERNEL_WR			((uint32_t) (TYPE_MSK + 1) << 1)		// allows kernel process to write access
-#define PERM_KERNEL_XC			((uint32_t) (TYPE_MSK + 1) << 2)		// allows kernel process to execute access
+#define get_cachepol(flag)				(flag & CACHE_POLICY_MSK)
+
+#define SHAREABLE_MSK					((uint32_t) CACHE_BYPASS <<  1)
+#define get_shareability(flag)			(flag & SHAREABLE_MSK)
+
+
+
+
+#define PERM_KERNEL_RD			((uint32_t) (SHAREABLE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
+#define PERM_KERNEL_WR			((uint32_t) (SHAREABLE_MSK + 1) << 1)		// allows kernel process to write access
+#define PERM_KERNEL_XC			((uint32_t) (SHAREABLE_MSK + 1) << 2)		// allows kernel process to execute access
 #define PERM_KERNEL_ALL			(PERM_KERNEL_RD |\
 								PERM_KERNEL_WR |\
 								PERM_KERNEL_XC)	// allows kernel process to all access type
 
-#define PERM_OWNER_RD			((uint32_t) (TYPE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
-#define PERM_OWNER_WR			((uint32_t) (TYPE_MSK + 1) << 4)		// allows owner process to write access
-#define PERM_OWNER_XC			((uint32_t) (TYPE_MSK + 1) << 5)		// allows owner process to execute aceess
+#define PERM_OWNER_RD			((uint32_t) (SHAREABLE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
+#define PERM_OWNER_WR			((uint32_t) (SHAREABLE_MSK + 1) << 4)		// allows owner process to write access
+#define PERM_OWNER_XC			((uint32_t) (SHAREABLE_MSK + 1) << 5)		// allows owner process to execute aceess
 #define PERM_OWNER_ALL			(PERM_OWNER_RD |\
 								PERM_OWNER_WR |\
 								PERM_OWNER_XC)
 
-#define PERM_OTHER_RD			((uint32_t) (TYPE_MSK + 1) << 6)		// allows other process to read access
-#define PERM_OTHER_WR			((uint32_t) (TYPE_MSK + 1) << 7)	// allows other process to write access
-#define PERM_OTHER_XC			((uint32_t) (TYPE_MSK + 1) << 8)	// allows other process to execute access
+#define PERM_OTHER_RD			((uint32_t) (SHAREABLE_MSK + 1) << 6)		// allows other process to read access
+#define PERM_OTHER_WR			((uint32_t) (SHAREABLE_MSK + 1) << 7)	// allows other process to write access
+#define PERM_OTHER_XC			((uint32_t) (SHAREABLE_MSK + 1) << 8)	// allows other process to execute access
 #define PERM_OTHER_ALL			(PERM_OTHER_RD |\
 								PERM_OTHER_WR |\
 								PERM_OTHER_XC)
@@ -135,6 +144,15 @@
 	flag |= perm;\
 }while(0)
 
+#define MEMTYPE_INROM 			((uint32_t) PERM_MSK + 1)
+#define MEMTYPE_EXROM			((uint32_t) MEMTYPE_INROM * 2)
+#define MEMTYPE_INRAM			((uint32_t) MEMTYPE_INROM * 3)
+#define MEMTYPE_EXRAM			((uint32_t) MEMTYPE_INROM * 4)
+#define MEMTYPE_MSK				(MEMTYPE_INROM | MEMTYPE_EXROM | MEMTYPE_INRAM | MEMTYPE_EXRAM)
+
+#define get_memtype(flag)		(flag & MEMTYPE_MSK)
+
+
 
 
 typedef void*	paddr_t;
@@ -151,13 +169,14 @@ struct tch_mm {
 	rb_treeNode_t*			mregions;
 	pgd_t*					pgd;
 	cdsl_dlistNode_t		alc_list;
+
 };
 
 extern struct tch_mm		init_mm;
 extern struct tch_mm*		current_mm;
 
 
-extern struct tch_mm* tch_mmInit(struct tch_mm* mmp);
+extern struct tch_mm* tch_mmInit(struct tch_mm** mmp);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
 
