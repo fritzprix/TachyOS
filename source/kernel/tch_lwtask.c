@@ -77,7 +77,7 @@ void __lwtsk_start_loop(){
 int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior){
 	if(!fnp)
 		return -1;
-	struct lw_task* tsk = (struct lw_task*) tchk_kernelHeapAlloc(sizeof(struct lw_task));
+	struct lw_task* tsk = (struct lw_task*) kmalloc(sizeof(struct lw_task));
 	tsk->condv = tch_rti->Condv->create();
 	tsk->lock = tch_rti->Mtx->create();
 	tsk->arg = NULL;

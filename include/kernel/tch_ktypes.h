@@ -91,7 +91,7 @@ typedef struct tch_thread_queue{
 struct tch_thread_uheader_s {
 	tch_kobjDestr				t_destr;
 	tch_thread_routine          t_fn;			///<thread function pointer
-	void* 	 					t_heap;
+	void* 	 					t_cache;
 	uword_t                     t_kRet;			///<kernel return value
 	const char*                 t_name;			///<thread name
 	void*                       t_arg;			///<thread arg field
@@ -110,12 +110,12 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
 	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*   	                    t_ctx;			///<ptr to thread saved context (stack pointer value)
-	void*							t_proc;			///<ptr to base address of process image
 	struct tch_mm*					t_mm;			///<ptr to per-process memory management handle
 	cdsl_dlistNode_t				t_palc;			///<allocation list for page
 	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
 	cdsl_dlistNode_t				t_upshalc;
 	uint32_t                	    t_tslot;		///<time slot for round robin scheduling (currently not used)
+	uint32_t						t_permission;
 	tch_threadState       	   		t_state;		///<thread state
 	uint8_t                	    	t_flag;			///<flag for dealing with attributes of thread
 	uint8_t                	     	t_lckCnt;		///<lock count to know whether  restore original priority

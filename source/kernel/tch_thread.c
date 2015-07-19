@@ -45,7 +45,12 @@ static tch_threadId tch_threadSelf();
 static tchStatus tch_threadSleep(uint32_t sec);
 static tchStatus tch_threadYield(uint32_t millisec);
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
-static void tch_threadInitCfg(tch_threadCfg* cfg);
+static void tch_threadInitCfg(tch_threadCfg* cfg,
+							  tch_thread_routine entry,
+							  tch_threadPrior prior,
+							  uint32_t req_stksz,
+							  uint32_t req_heapsz,
+							  const char* name);
 static void* tch_threadGetArg();
 
 
@@ -97,18 +102,19 @@ BOOL tchk_threadIsRoot(tch_threadId thread){
 }
 
 
-void tchk_threadSetPriority(tch_threadId tid,tch_thread_prior nprior){
+void tchk_threadSetPriority(tch_threadId tid,tch_threadPrior nprior){
 	if(nprior > Unpreemtible)
 		return;
 	getThreadKHeader(tid)->t_prior = nprior;
 }
 
-tch_thread_prior tchk_threadGetPriority(tch_threadId tid){
+tch_threadPrior tchk_threadGetPriority(tch_threadId tid){
 	return getThreadKHeader(tid)->t_prior;
 }
 /**
  * create new thread
  */
+/*
 tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv){
 	// allocate kernel thread header from kernel heap
 	tch_thread_kheader* kthread = (tch_thread_kheader*) tchk_kernelHeapAlloc(sizeof(tch_thread_kheader));
@@ -156,51 +162,69 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 #endif
 	kthread->t_uthread->t_chks = THREAD_CHK_PATTERN;
 	return (tch_threadId) kthread->t_uthread;
-}
+}*/
 
-/*
+/**
+ * \brief create thread
+ * \note kernel mode function (should not be invoked in user mode)
+ * \param[in] cfg thread configuration
+ */
+
 tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc){
 	// allocate kernel thread header from kernel heap
-	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader));
-	memset(kthread,0,sizeof(tch_thread_kheader));
-	if(isroot){														// if new thread will be the root thread of a process, parent will be self
+	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader) + sizeof(struct tch_mm));
+	if(!kthread)
+		KERNEL_PANIC("tch_thread.c","thread cant'be created - not enough memory ");
+
+	kthread->t_mm = (struct tch_mm*) &kthread[1];
+	memset(kthread,0,(sizeof(tch_thread_kheader) + sizeof(struct tch_mm)));
+
+
+	if(isroot){ 			// if new thread will be the root thread of a process, parent will be self
+		if(!proc){			// if new thread is trusted thread
+			proc = &default_prochdr;
+			proc->entry = cfg->entry;
+			proc->req_stksz = cfg->stksz;
+			proc->req_heapsz = cfg->heapsz;
+			proc->argv = arg;
+			proc->argv_sz = 0;
+			proc->flag = PROCTYPE_STATIC | HEADER_ROOT_THREAD;
+			kthread->t_permission = 0xffffffff;
+		}
 		kthread->t_parent = kthread;
-		kthread->t_mm = tch_mmInit(&kthread->t_mm,proc);
+		tch_mmProcInit(kthread, kthread->t_mm, proc);
 		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
-		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
-			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
 	}else if(tch_currentThread){									// new thread will be child of caller thread
-		kthread->t_parent = tch_currentThread->t_kthread->t_parent;
-		cfg->t_memDef.heap_sz = 0;
+		proc = &default_prochdr;
+		proc->entry = cfg->entry;
+		proc->req_stksz = cfg->stksz;
+		proc->req_heapsz = cfg->heapsz;
+		proc->argv = arg;
+		proc->argv_sz = 0;
+		proc->flag = HEADER_CHILD_THREAD;
+		kthread->t_parent = tch_currentThread->t_kthread;
+		kthread->t_permission = kthread->t_parent->t_permission;		// inherit parent permission
+		tch_mmProcInit(kthread, kthread->t_mm, proc);
 		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
 	}else {
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
-	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)		// guarantee minimum stack size
-		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
 
-	if(tchk_userMemInit(kthread,&cfg->t_memDef,isroot) != tchOK)	// prepare memory space of new thread
-		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
-
-	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_proc,__tch_thread_entry);
+	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_mm->stk_region,__tch_thread_entry);
 	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
-
-	cdsl_dlistInit(&kthread->t_palc);
-	cdsl_dlistInit(&kthread->t_pshalc);
-	cdsl_dlistInit(&kthread->t_upshalc);
 
 	kthread->t_tslot = TCH_ROUNDROBIN_TIMESLOT;
 	kthread->t_state = PENDED;
 	kthread->t_lckCnt = 0;
-	kthread->t_prior = cfg->t_priority;
+	kthread->t_prior = cfg->priority;
 	kthread->t_to = 0;
 	if(!kthread->t_pgId)
 		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
 
 	kthread->t_uthread->t_arg = arg;														// initialize user level thread header
-	kthread->t_uthread->t_fn = cfg->t_routine;
-	kthread->t_uthread->t_name = cfg->t_name;
+	kthread->t_uthread->t_fn = cfg->entry;
+	kthread->t_uthread->t_name = cfg->name;
 	kthread->t_uthread->t_kRet = tchOK;
 #ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
 	_REENT_INIT_PTR(&kthread->t_uthread->t_reent)
@@ -208,29 +232,12 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	kthread->t_uthread->t_chks = THREAD_CHK_PATTERN;
 	return (tch_threadId) kthread->t_uthread;
 }
-*/
 
 
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t tm = 0;
 	if(tch_port_isISR())
 		return NULL;
-	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)
-		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
-
-	cfg->t_memDef.heap_sz = 0;
-	cfg->t_memDef.pimg_sz = 0;
-	uint32_t msz = ((cfg->t_memDef.stk_sz + sizeof(tch_thread_uheader)) | 0xF) + 1;
-	if(!cfg->t_memDef.u_mem){
-		cfg->t_memDef.u_mem = tch_rti->Mem->alloc(msz);
-		cfg->t_memDef.u_memsz = msz;
-	}else{
-		/**
-		 * test read access.
-		 * if memory access is not allowed by this thread, memory fault will be raiesd by hardware
-		 */
-		tm = *cfg->t_memDef.u_mem;
-	}
 	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg);
 }
 
@@ -285,8 +292,26 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	}
 }
 
-static void tch_threadInitCfg(tch_threadCfg* cfg){
+/**
+ * void (*initCfg)(tch_threadCfg* cfg,
+					tch_thread_routine entry,
+					tch_threadPrior prior,
+					uint32_t stksz,
+					uint32_t heapsz,
+					const char* name);
+ */
+static void tch_threadInitCfg(tch_threadCfg* cfg,
+							  tch_thread_routine entry,
+							  tch_threadPrior prior,
+							  uint32_t req_stksz,
+							  uint32_t req_heapsz,
+							  const char* name){
 	memset(cfg,0,sizeof(tch_threadCfg));
+	cfg->heapsz = req_heapsz;
+	cfg->stksz = req_stksz;
+	cfg->priority = prior;
+	cfg->name = name;
+	cfg->entry = entry;
 }
 
 
@@ -318,7 +343,12 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 	tch_thread_kheader* th_p = getThreadKHeader(thread);
 	tch_thread_kheader* ch_p = NULL;
 
-	tchk_userMemFreeAll(th_p);
+	// has a child
+	// destroy child
+	// join
+	if(th_p)
+	tch_mmProcClean(th_p,th_p->t_mm);
+	/*
 	tchk_shareableMemFreeAll(th_p);
 
 	if(th_p->t_flag & THREAD_ROOT_BIT){
@@ -335,7 +365,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 		cdsl_dlistRemove(&th_p->t_siblingLn);
 		tch_currentThread = th_p->t_parent->t_uthread;
 		uMem->free(&th_p->t_uthread->t_destr);
-	}
+	}*/
 	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thread,status);
 }
 

@@ -59,8 +59,8 @@ struct application_header {
 	uint64_t			appid;
 	uint32_t			ver;
 	uint32_t			permission;
-	uint32_t			req_stk;
-	uint32_t			req_heap;
+	uint32_t			req_stksz;
+	uint32_t			req_heapsz;
 	void* 				stext;
 	void* 				etext;
 	void*				sbss;
@@ -176,7 +176,7 @@ typedef enum {
 	Normal = 3,
 	Low = 2,
 	Idle = 1
-} tch_thread_prior;
+} tch_threadPrior;
 
 typedef int (*tch_thread_routine)(const tch* env);
 
@@ -189,10 +189,11 @@ typedef struct tch_user_mem_cfg_s {
 } tch_userMemDef_t;
 
 typedef struct _tch_thread_cfg_t {
-	tch_userMemDef_t 	 t_memDef;
-	tch_thread_routine   t_routine;
-	tch_thread_prior     t_priority;
-	const char*          t_name;
+	size_t				 stksz;
+	size_t				 heapsz;
+	tch_thread_routine	 entry;
+	tch_threadPrior      priority;
+	const char*          name;
 }tch_threadCfg;
 
 

@@ -60,7 +60,7 @@ extern void tch_mapSegment(struct tch_mm* mm,int seg_id);
 extern void tch_unmapSegment(struct tch_mm* mm,int seg_id);
 
 
-extern uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint16_t permission);
+extern uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint32_t permission);
 extern void tch_segmentFreeRegion(const struct mem_region* mreg);
 extern struct mem_region* tch_segmentGetRegionFromPtr(void* ptr);
 extern void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg);

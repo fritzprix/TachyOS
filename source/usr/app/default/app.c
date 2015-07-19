@@ -70,18 +70,10 @@ int main(const tch* env) {
 
 	tch_threadCfg thcfg;
 	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
-	env->Thread->initCfg(&thcfg);
-	thcfg.t_name = "child1";
-	thcfg.t_routine = childThreadRoutine;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 720;
+	env->Thread->initCfg(&thcfg,childThreadRoutine,Normal,720,0,"child1");
 	childId = env->Thread->create(&thcfg,spi);
 
-	env->Thread->initCfg(&thcfg);
-	thcfg.t_name = "btnHandler";
-	thcfg.t_routine = btnHandler;
-	thcfg.t_memDef.stk_sz = 720;
-	thcfg.t_priority = Normal;
+	env->Thread->initCfg(&thcfg,btnHandler,Normal,720,0,"btnHandler");
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
 	env->Thread->start(childId);

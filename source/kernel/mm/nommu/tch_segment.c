@@ -49,7 +49,7 @@ static rb_treeNode_t*		addr_root;
 static uint32_t				seg_cnt;
 
 static int initSegment(struct section_descriptor* section,struct mem_segment* seg);
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint16_t perm);
+static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm);
 static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr);
 static struct mem_segment* findSegmentFromPtr(void* ptr);
 
@@ -67,6 +67,8 @@ void tch_initSegment(struct section_descriptor* init_section){
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
 	tch_initKmalloc(init_segid);
+	tchk_shmInit(init_segid);
+	init_mm.pgd = tch_port_allocPageDirectory(kmalloc);
 }
 
 
@@ -174,7 +176,7 @@ void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 
 
 
-uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint16_t permission){
+uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint32_t permission){
 	if(seg_id < 0)
 		return 0;
 	if((mreg == NULL) || (sz == 0)){
@@ -294,7 +296,7 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	return seg_cnt++;
 }
 
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint16_t perm){
+static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm){
 	if(!regp)
 		return;
 	regp->poff = poff;

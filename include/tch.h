@@ -98,7 +98,12 @@ struct _tch_thread_ix_t {
 	tchStatus (*yield)(uint32_t millisec);
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
-	void (*initCfg)(tch_threadCfg* cfg);
+	void (*initCfg)(tch_threadCfg* cfg,
+					tch_thread_routine entry,
+					tch_threadPrior prior,
+					uint32_t stksz,
+					uint32_t heapsz,
+					const char* name);
 	void* (*getArg)();
 };
 
@@ -246,7 +251,7 @@ struct _tch_mailbox_ix_t {
 struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
-	uint32_t (*available)();
+	size_t (*available)();
 };
 
 

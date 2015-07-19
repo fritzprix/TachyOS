@@ -7,6 +7,7 @@
 
 #include "wtree.h"
 #include "wtmalloc.h"
+#include "tch_kernel.h"
 
 
 
@@ -222,7 +223,7 @@ static void * cache_malloc(wt_alloc_t* alloc,size_t sz){
 		chdr->size = sz;
 		nhdr->psize = sz;
 	}else{
-		chdr = (wtreeNode_t*) container_of(chunk,struct heapHeader,wtree_node);  //?
+		chdr = (struct heapHeader *) container_of(chunk,struct heapHeader,wtree_node);  //?
 		nnhdr = (struct heapHeader *) ((size_t) &chdr->wtree_node + sz);
 		chdr->size = sz;
 		nnhdr->psize = sz;
@@ -238,8 +239,8 @@ static size_t cache_free(wt_alloc_t* alloc,void* ptr){
 	chdr = (struct heapHeader*) container_of(ptr,struct heapHeader,wtree_node);
 	nhdr = (struct heapHeader*) ((size_t)ptr + chdr->size);
 	if(chdr->size != nhdr->psize)
-		error(-1,0,"Heap Corrupted\n");
-	wtreeNodeInit(&chdr->wtree_node,(uint64_t)&chdr->wtree_node,chdr->size);
+		Thread->terminate(tch_currentThread,tchErrorNoMemory);
+	wtreeNodeInit(&chdr->wtree_node,(uint32_t)&chdr->wtree_node,chdr->size);
 	wtreeInsert(&alloc->entry,&chdr->wtree_node);
 	alloc->size += chdr->size;
 	return chdr->size;

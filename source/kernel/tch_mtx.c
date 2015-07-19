@@ -75,7 +75,7 @@ tchStatus tchk_mutex_lock(tch_mtxId mtx,uint32_t timeout){
 				return tchOK;
 			}
 		}else{
-			tch_thread_prior prior = tchk_threadGetPriority(tid);
+			tch_threadPrior prior = tchk_threadGetPriority(tid);
 			if(tchk_threadGetPriority(mcb->own) < prior)
 				tchk_threadSetPriority((tch_threadId)mcb->own,prior);
 			tchk_schedThreadSuspend(&mcb->que,timeout);
@@ -102,14 +102,14 @@ tchStatus tchk_mutex_destroy(tch_mtxId mtx){
 	MTX_INVALIDATE(mcb);
 	tchk_threadSetPriority(tch_currentThread,mcb->svdPrior);
 	mcb->svdPrior = Idle;
-	tchk_shareableMemFree(mcb);
+	tchk_shmFree(mcb);
 	tchk_schedThreadResumeM(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	return tchOK;
 }
 
 
 static tch_mtxId tch_mtx_create(){
-	tch_mtxCb* mcb = (tch_mtxCb*) tch_shMemAlloc(sizeof(tch_mtxCb),FALSE);
+	tch_mtxCb* mcb = (tch_mtxCb*) tch_shmAlloc(sizeof(tch_mtxCb));
 	memset(mcb,0,sizeof(tch_mtxCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;

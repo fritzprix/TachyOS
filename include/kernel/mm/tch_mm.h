@@ -13,6 +13,7 @@
 #include "cdsl_rbtree.h"
 #include "cdsl_slist.h"
 #include "wtmalloc.h"
+#include "tch_loader.h"
 
 
 /**
@@ -69,6 +70,10 @@
 
 #ifndef CONFIG_PAGE_SHIFT
 #define CONFIG_PAGE_SHIFT			(12)
+#endif
+
+#ifndef CONFIG_SHM_SIZE
+#define CONFIG_SHM_SIZE				(1 << 14)
 #endif
 
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
@@ -152,10 +157,11 @@
 
 #define get_memtype(flag)		(flag & MEMTYPE_MSK)
 
+#define get_addr_from_page(paddr)	((size_t) paddr << CONFIG_PAGE_SHIFT)
 
 
 
-typedef void*	paddr_t;
+
 struct section_descriptor {
 	uint32_t		flags;
 	paddr_t 		start;
@@ -166,17 +172,23 @@ struct section_descriptor {
 typedef struct page_frame page_frame_t;
 
 struct tch_mm {
-	rb_treeNode_t*			mregions;
+	rb_treeNode_t*			mregions;			// region mapping node
+	struct mem_region*		text_region;
+	struct mem_region*		bss_region;
+	struct mem_region*		data_region;
+	struct mem_region*		stk_region;
 	pgd_t*					pgd;
 	cdsl_dlistNode_t		alc_list;
-
+	paddr_t					estk;
+	tch_condvId 			condv;
+	tch_mtxId 				mtx;
 };
 
 extern struct tch_mm		init_mm;
-extern struct tch_mm*		current_mm;
 
-
-extern struct tch_mm* tch_mmInit(struct tch_mm** mmp);
+extern void tch_mmInit(struct tch_mm* mmp);
+extern struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc);
+extern int tch_mmProcClean(tch_thread_kheader* thread,struct tch_mm* mmp);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
 

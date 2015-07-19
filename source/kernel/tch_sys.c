@@ -93,21 +93,18 @@ void tch_kernelInit(void* arg){
 	/**
 	 *  Initialize paging sub-system for memory managment
 	 */
+	/*
 	if(tchk_pageInit(&Sys_Heap_Base,((uword_t)&Sys_Heap_Limit - (uword_t)&Sys_Heap_Base)) != tchOK)
 		KERNEL_PANIC("tch_sys.c","Can't initialize paging");
 
 	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
 	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
-
+*/
 	tch_port_atomic_begin();
 
 	tch_threadCfg thcfg;
-	Thread->initCfg(&thcfg);
-	thcfg.t_name = "systhread";
-	thcfg.t_routine = systhreadRoutine;
-	thcfg.t_priority = Kernel;
-	thcfg.t_memDef.stk_sz = 1 << 10;
-	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE);
+	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
+	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 
 	tch_schedInit(sysThread);
 	return;
@@ -136,7 +133,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		_impure_ptr = &tch_currentThread->t_reent;
 #endif
 
-		tchk_mapPage(cth->t_pgId);			/// apply page mapping
+		tch_port_loadPageTable(tch_currentThread->t_kthread->t_mm->pgd);/// apply page mapping
 		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_atomic_end();
@@ -163,16 +160,16 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_kernelSetResult(tch_currentThread,tchk_barrierDeinit(arg1));
 		break;
 	case SV_SHMEM_ALLOC:
-		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemAlloc(arg1,arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_shmalloc(arg1,arg2));
 		break;
 	case SV_SHMEM_FREE:
-		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemFree(arg1));
+		tchk_kernelSetResult(tch_currentThread,tchk_shmFree(arg1));
 		break;
 	case SV_SHMEM_AVAILABLE:
-		tchk_kernelSetResult(tch_currentThread,tchk_shareableMemAvail(arg1));
+		tchk_kernelSetResult(tch_currentThread,tchk_shmAvail(arg1));
 		break;
 	case SV_THREAD_CREATE:
-		tchk_kernelSetResult(tch_currentThread,(uword_t) tchk_threadCreateThread((tch_threadCfg*) arg1,(void*) arg2,FALSE,FALSE));
+		tchk_kernelSetResult(tch_currentThread,(uword_t) tchk_threadCreateThread((tch_threadCfg*) arg1,(void*) arg2,FALSE,FALSE,NULL));
 		break;
 	case SV_THREAD_START:              // start thread first time
 		tchk_schedThreadStart((tch_threadId) arg1);
@@ -297,14 +294,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	tch_threadCfg threadcfg;
-	Thread->initCfg(&threadcfg);
-	threadcfg.t_routine = (tch_thread_routine) main;
-	threadcfg.t_priority = Normal;
-	threadcfg.t_name = "main";
-	threadcfg.t_memDef.heap_sz = 0x800;
-	threadcfg.t_memDef.stk_sz = 0x800;
-
-	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE);
+	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");
+	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE,NULL);
 
 
 	if((!mainThread))

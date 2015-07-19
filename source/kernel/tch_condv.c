@@ -67,7 +67,7 @@ static tch_condvId tch_condv_create(){
 	if(tch_port_isISR()){
 		return NULL;
 	}
-	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
+	tch_condvCb* condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb),FALSE);
 	return tch_port_enterSv(SV_CONDV_INIT,condv,FALSE);
 }
 
@@ -170,7 +170,7 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 		tch_condvInvalidate(condv);
 		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource);
 		Mtx->unlock(condv->waitMtx);
-		tch_shMemFree(condv);
+		kfree(condv);
 		return result;
 	}
 }

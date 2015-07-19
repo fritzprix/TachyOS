@@ -52,7 +52,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
 
 static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
-	tch_mailqCb* mailqcb = (tch_mailqCb*) tch_shMemAlloc(sizeof(tch_mailqCb),TRUE);
+	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb),TRUE);
 	tch_mailqCb umailq;
 	memset(&umailq,0,sizeof(tch_mailqCb));
 	umailq.bpool = Mempool->create(sz,qlen);
@@ -213,7 +213,7 @@ static tchStatus tch_mailq_destroy(tch_mailqId qid){
 		return result;
 	Mempool->destroy(mailqcb->bpool);
 	MsgQ->destroy(mailqcb->msgq);
-	tch_shMemFree(qid);
+	kfree(qid);
 	return tchOK;
 }
 

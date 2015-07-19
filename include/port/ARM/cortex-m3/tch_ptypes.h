@@ -24,8 +24,8 @@ typedef uint32_t uword_t;
 typedef uint16_t uhword_t;
 typedef int32_t  word_t;
 typedef int16_t  hword_t;
-typedef void* uaddr_t;
-
+typedef void* 	uaddr_t;
+typedef void*	paddr_t;
 
 #define WORD_MAX ((uint32_t) -1)
 

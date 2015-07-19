@@ -18,6 +18,8 @@
 #include "tch_kernel.h"
 #include "tch_fault.h"
 #include "tch_hal.h"
+#include "tch_port.h"
+#include "tch_ptypes.h"
 
 
 
@@ -204,8 +206,8 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 /**
  *  prepare initial context for start thread
  */
-void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn){
-	tch_exc_stack* exc_sp = (tch_exc_stack*) sp - 1;                // offset exc_stack size (size depends on floating point option)
+void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t initfn){
+	tch_exc_stack* exc_sp = (tch_exc_stack*) stktop - 1;                // offset exc_stack size (size depends on floating point option)
 	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
 	memset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
@@ -304,7 +306,7 @@ void tch_port_loadPageTable(pgd_t* pgd){
 
 
 pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
-	struct pgd* pgdp = alloca(sizeof(struct pgd));
+	struct pgd* pgdp = alloc(sizeof(struct pgd));
 	uint8_t i;
 	for(i = 0;i < NR_PAGE_ENTRY;i++){
 		pgdp->_pte[i].value = -1;
@@ -313,8 +315,8 @@ pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
 	return (pgd_t*) pgdp;
 }
 
-int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int flag){
-	if(!pgd || !page)
+int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
+	if(!pgd || !poffset)
 		return FALSE;
 	struct pgd* pgdp = (struct pgd*) pgd;
 
@@ -323,13 +325,13 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int flag){
 	case SECTION_DYNAMIC:
 		// check page is already in the table
 		for(idx = PE_DYNAMIC;idx < NR_PAGE_ENTRY;idx++){
-			if((pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk)){
+			if(((uint32_t)pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << CONFIG_PAGE_SHIFT)){
 				return FALSE;
 			}
 		}
 		idx = pgdp->dynamic_idx + PE_DYNAMIC;
 		pgdp->dynamic_idx++;
-		if(pgdp >= NR_PAGE_ENTRY)
+		if(pgdp->dynamic_idx >= NR_PAGE_ENTRY)
 			pgdp->dynamic_idx = PE_DYNAMIC;
 		break;
 	case SECTION_TEXT:
@@ -375,7 +377,7 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int flag){
 	attr |= (MPU_RASR_SIZE_Msk & CONFIG_PAGE_SHIFT);
 	attr |= MPU_RASR_ENABLE_Msk;
 
-	address = (MPU_RBAR_ADDR_Msk & page)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
+	address = ((uint32_t) poffset << CONFIG_PAGE_SHIFT)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
 
 	pgdp->_pte[idx].baddr = address;
 	pgdp->_pte[idx].attr = attr;
@@ -388,13 +390,13 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t page,int flag){
 	return TRUE;
 }
 
-int tch_port_removePageEntry(pgd_t* pgd,uint32_t page){
+int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 	uint8_t idx;
 	struct pgd* pgdp = (struct pgd*) pgd;
 	struct pte* ptep;
 	for(idx = 0;idx < NR_PAGE_ENTRY; idx++) {
-		ptep = *pgdp->_pte[idx];
-		if((ptep->baddr & MPU_RBAR_ADDR_Msk) == (page & MPU_RBAR_ADDR_Msk)){
+		ptep = &pgdp->_pte[idx];
+		if(((uint32_t)ptep->baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << CONFIG_PAGE_SHIFT)){
 			ptep->attr &= ~MPU_RASR_ENABLE_Msk;			// clear enable bit
 			tch_port_updateProtectionEntry(ptep);
 			ptep->value = 0;
@@ -415,7 +417,7 @@ void MemManage_Handler(){
 	paddr_t pa = 0;
 	int fault = 0;
 	if(mfault & (1 << 7)){		// if fault address is valid
-		pa = SCB->MMFAR;
+		pa = (paddr_t) SCB->MMFAR;
 	}
 	if(mfault & (1 << 1)){
 		fault = MEM_FAULT_DABORT;

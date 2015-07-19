@@ -27,7 +27,7 @@ typedef struct _tch_mtx_cb_t  {
 	uint32_t            status;
 	tch_thread_queue    que;
 	tch_threadId        own;
-	tch_thread_prior    svdPrior;
+	tch_threadPrior    svdPrior;
 }tch_mtxCb;
 
 
