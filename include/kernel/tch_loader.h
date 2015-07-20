@@ -8,9 +8,7 @@
 #ifndef TCH_LOADER_H_
 #define TCH_LOADER_H_
 
-#include "tch_mm.h"
 #include "tch_fs.h"
-#include "tch_segment.h"
 
 #define PROCTYPE_DYNAMIC				((uint32_t) 0)			// process which is separtely built from kernel
 #define PROCTYPE_STATIC					((uint32_t) 1)			// process which is statically linked to kernel binary

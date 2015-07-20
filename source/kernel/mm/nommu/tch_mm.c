@@ -33,8 +33,8 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 	/**
 	 *  add mapping to region containing process binary image
 	 */
-	wt_heaproot_t* cache_root;
-	wt_alloc_t* cache;
+	wt_heapRoot_t* cache_root;
+	wt_heapNode_t* cache;
 	tch_mmInit(mmp);
 	/**
 	 *  ================= setup regions for binary images ============================
@@ -131,14 +131,14 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 		if(!tch_segmentAllocRegion(0,heap_region,proc_header->req_heapsz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_DYNAMIC)))
 			goto MM_INIT_FAIL;
 		tch_mapRegion(mmp,heap_region);
-		cache_root = (wt_heaproot_t*) ((heap_region->poff + heap_region->psz) << CONFIG_PAGE_SHIFT);
+		cache_root = (wt_heapRoot_t*) ((heap_region->poff + heap_region->psz) << CONFIG_PAGE_SHIFT);
 		cache_root--;
-		wtreeHeap_initCacheRoot(cache_root);
-		cache = (wt_alloc_t*) cache_root;
+		wt_initRoot(cache_root);
+		cache = (wt_heapNode_t*) cache_root;
 		cache--;
 		paddr_t sheap = (paddr_t) (heap_region->poff << CONFIG_PAGE_SHIFT);
-		wtreeHeap_initCacheNode(cache,sheap,((size_t) cache -  (size_t) sheap));
-		wtreeHeap_addCache(cache_root,cache);
+		wt_initNode(cache,sheap,((size_t) cache -  (size_t) sheap));
+		wt_addNode(cache_root,cache);
 		tch_port_addPageEntry(mmp->pgd,heap_region->poff,heap_region->flags);
 		thread->t_uthread->t_cache = cache_root;
 	}else {

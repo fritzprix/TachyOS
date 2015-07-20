@@ -12,32 +12,46 @@
 #include "wtree.h"
 
 
-typedef struct wt_alloc wt_alloc_t;
+typedef struct wt_heap_node wt_heapNode_t;
+typedef struct wt_heaproot wt_heapRoot_t;
+typedef struct wt_cache wt_cache_t;
 
-struct wt_alloc {
-	wt_alloc_t *left,*right;
-	void*	 	base;
-	void* 		pos;
-	void* 		limit;
-	size_t 		size;
-	wtreeRoot_t	entry;
+struct wt_heap_node {
+	wt_heapNode_t 	*left,*right;
+	void*		 	base;
+	void* 			pos;
+	void* 			limit;
+	size_t 			size;
+	wtreeRoot_t		entry;
 };
 
-typedef struct wt_heaproot {
-	wt_alloc_t*  cache;
-	size_t		 size;
-	size_t		 free_sz;
-}wt_heaproot_t;
+struct wt_heaproot {
+	wt_heapNode_t*  hnodes;
+	size_t		 	size;
+	size_t		 	free_sz;
+};
+
+struct wt_cache {
+	wtreeRoot_t		entry;
+	size_t			size;
+};
 
 
-extern void wtreeHeap_initCacheRoot(wt_heaproot_t* root);
-extern void wtreeHeap_initCacheNode(wt_alloc_t* aloc,void* addr,size_t size);
-extern void wtreeHeap_addCache(wt_heaproot_t* heap,wt_alloc_t* cache);
-extern void* wtreeHeap_malloc(wt_heaproot_t* heap,size_t sz);
-extern void wtreeHeap_free(wt_heaproot_t* heap,void* ptr);
-extern size_t wtreeHeap_size(wt_heaproot_t* heap);
-extern size_t wtreeHeap_available(wt_heaproot_t* heap);
-extern void wtreeHeap_print(wt_heaproot_t* heap);
+extern void wt_initRoot(wt_heapRoot_t* root);
+extern void wt_initNode(wt_heapNode_t* aloc,void* addr,uint32_t size);
+extern void wt_initCache(wt_cache_t* cache);
+extern void wt_addNode(wt_heapRoot_t* heap,wt_heapNode_t* cache);
+extern void* wt_malloc(wt_heapRoot_t* heap,uint32_t sz);
+extern void wt_free(wt_heapRoot_t* heap,void* ptr);
+
+extern void* wt_cacheMalloc(wt_heapRoot_t* heap,wt_cache_t* cache,uint32_t sz);
+extern void wt_cacheFree(wt_cache_t* cache,void* ptr);
+extern void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache);
+
+extern uint32_t wt_size(wt_heapRoot_t* heap);
+extern uint32_t wt_available(wt_heapRoot_t* heap);
+
+extern void wt_print(wt_heapRoot_t* heap);
 
 
 #endif /* MALLOC_H_ */

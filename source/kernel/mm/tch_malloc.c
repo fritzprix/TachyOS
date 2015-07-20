@@ -27,7 +27,7 @@ void* tch_malloc(size_t sz){
 	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return NULL;
-	result = wtreeHeap_malloc(tch_currentThread->t_cache,sz);
+	result = wt_malloc(tch_currentThread->t_cache,sz);
 	Mtx->unlock(mtx);
 	return result;
 }
@@ -38,7 +38,7 @@ void tch_free(void* ptr){
 	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return;
-	wtreeHeap_free(tch_currentThread->t_cache,ptr);
+	wt_free(tch_currentThread->t_cache,ptr);
 	Mtx->unlock(mtx);
 }
 
@@ -47,7 +47,7 @@ size_t tch_avail(){
 	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return 0;
-	res_sz = wtreeHeap_available(tch_currentThread->t_cache);
+	res_sz = wt_available(tch_currentThread->t_cache);
 	Mtx->unlock(mtx);
 	return res_sz;
 }
