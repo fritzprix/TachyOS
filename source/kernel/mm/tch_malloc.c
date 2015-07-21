@@ -24,30 +24,31 @@ void* tch_malloc(size_t sz){
 	void* result;
 	if(!sz)
 		return NULL;
-	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
-	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
-		return NULL;
-	result = wt_malloc(tch_currentThread->t_cache,sz);
-	Mtx->unlock(mtx);
+	result = wt_cacheMalloc(tch_currentThread->t_cache, sz);
+	if (!result) {
+		tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->dynamic->mtx;
+		if (Mtx->lock(mtx, tchWaitForever) != tchOK)
+			return NULL;
+		result = wt_malloc(tch_currentThread->t_kthread->t_mm->dynamic->heap, sz);
+		Mtx->unlock(mtx);
+	}
 	return result;
 }
 
 void tch_free(void* ptr){
 	if(!ptr)
 		return;
-	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
+	if(wt_cacheFree(tch_currentThread->t_cache,ptr))
+		return;
+
+	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->dynamic->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return;
-	wt_free(tch_currentThread->t_cache,ptr);
+	wt_free(tch_currentThread->t_kthread->t_mm->dynamic->heap,ptr);
 	Mtx->unlock(mtx);
 }
 
 size_t tch_avail(){
-	size_t res_sz = 0;
-	tch_mtxId mtx = tch_currentThread->t_kthread->t_mm->mtx;
-	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
-		return 0;
-	res_sz = wt_available(tch_currentThread->t_cache);
-	Mtx->unlock(mtx);
-	return res_sz;
+	return ((wt_cache_t*) tch_currentThread->t_cache)->size +
+			((wt_heapRoot_t*) tch_currentThread->t_kthread->t_mm->dynamic->heap)->size;
 }

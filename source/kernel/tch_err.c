@@ -11,7 +11,9 @@
 
 
 void tch_kernel_raise_error(tch_threadId who,int errno,const char* msg){			//managable error which is cuased by thread level erroneous behavior
-
+	while(TRUE){
+		__WFE();
+	}
 }
 
 void tch_kernel_panic(const char* floc,int lno, const char* msg){

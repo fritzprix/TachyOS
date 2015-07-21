@@ -121,7 +121,6 @@ struct tch_thread_kheader_s {
 	uint8_t                	     	t_lckCnt;		///<lock count to know whether  restore original priority
 	uint8_t               	 	    t_prior;		///<priority
 	uint64_t						t_to;			///<timeout value for pending operation
-	tch_pageId						t_pgId;
 	tch_thread_uheader*				t_uthread;		///<pointer to user level thread header
 	tch_thread_kheader*				t_parent;
 } __attribute__((aligned(8)));

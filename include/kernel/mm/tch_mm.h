@@ -64,6 +64,15 @@
 #define CONFIG_KERNEL_STACKSIZE 	(4 << 10)
 #endif
 
+#ifndef CONFIG_HEAP_SIZE
+#define CONFIG_HEAP_SIZE 			(0x2000)
+#endif
+
+#ifndef CONFIG_MAX_CACHE_SIZE
+#define CONFIG_MAX_CACHE_SIZE		(0x800)
+#endif
+
+
 #ifndef CONFIG_KERNEL_DYNAMICSIZE
 #define CONFIG_KERNEL_DYNAMICSIZE 	(16 << 10)
 #endif
@@ -171,23 +180,33 @@ struct section_descriptor {
 
 typedef struct page_frame page_frame_t;
 
-struct tch_mm {
+/**
+ *
+ */
+
+struct proc_dynamic {
 	rb_treeNode_t*			mregions;			// region mapping node
-	struct mem_region*		text_region;
-	struct mem_region*		bss_region;
-	struct mem_region*		data_region;
-	struct mem_region*		stk_region;
-	pgd_t*					pgd;
-	cdsl_dlistNode_t		alc_list;
-	paddr_t					estk;
+	void*					heap;
 	tch_condvId 			condv;
 	tch_mtxId 				mtx;
+};
+
+struct tch_mm {
+	struct proc_dynamic* 	dynamic;
+	struct mem_region* 		text_region;		// ============ per thread field ==================
+	struct mem_region* 		bss_region;
+	struct mem_region* 		data_region;
+	struct mem_region* 		stk_region;
+	struct mem_region*		heap_region;
+	pgd_t* 					pgd;
+	cdsl_dlistNode_t		alc_list;
+	paddr_t 				estk;
 };
 
 extern struct tch_mm		init_mm;
 
 extern void tch_mmInit(struct tch_mm* mmp);
-extern struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc);
+extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc);
 extern int tch_mmProcClean(tch_thread_kheader* thread,struct tch_mm* mmp);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 

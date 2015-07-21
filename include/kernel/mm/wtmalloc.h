@@ -34,18 +34,19 @@ struct wt_heaproot {
 struct wt_cache {
 	wtreeRoot_t		entry;
 	size_t			size;
+	size_t			size_limit;
 };
 
 
 extern void wt_initRoot(wt_heapRoot_t* root);
 extern void wt_initNode(wt_heapNode_t* aloc,void* addr,uint32_t size);
-extern void wt_initCache(wt_cache_t* cache);
+extern void wt_initCache(wt_cache_t* cache,size_t sz_limit);
 extern void wt_addNode(wt_heapRoot_t* heap,wt_heapNode_t* cache);
 extern void* wt_malloc(wt_heapRoot_t* heap,uint32_t sz);
 extern void wt_free(wt_heapRoot_t* heap,void* ptr);
 
-extern void* wt_cacheMalloc(wt_heapRoot_t* heap,wt_cache_t* cache,uint32_t sz);
-extern void wt_cacheFree(wt_cache_t* cache,void* ptr);
+extern void* wt_cacheMalloc(wt_cache_t* cache,uint32_t sz);
+extern int wt_cacheFree(wt_cache_t* cache,void* ptr);
 extern void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache);
 
 extern uint32_t wt_size(wt_heapRoot_t* heap);

@@ -107,49 +107,53 @@ void wt_free(wt_heapRoot_t* heap,void* ptr){
 		heap->free_sz += sz;
 }
 
-void wt_initCache(wt_cache_t* cache){
+void wt_initCache(wt_cache_t* cache,size_t sz_limit){
 	if(!cache)
 		return;
 	wtreeRootInit(&cache->entry,sizeof(struct ext_header));
 	cache->size = 0;
+	cache->size_limit = sz_limit;
 }
 
-void* wt_cacheMalloc(wt_heapRoot_t* heap,wt_cache_t* cache,uint32_t sz){
+void* wt_cacheMalloc(wt_cache_t* cache,uint32_t sz){
 	if(!sz || (cache->size < sz))
 		return NULL;
 
 	wtreeNode_t* chunk = wtreeRetrive(&cache->entry,&sz);
 	struct heapHeader *chdr,*nhdr,*nnhdr;
-	if(chunk == NULL){
-		return wt_malloc(heap,sz);
-	}else {
-		chdr = (struct heapHeader*) container_of(chunk,struct heapHeader,wtree_node);
-		nnhdr = (struct heapHeader*) ((uint32_t) &chdr->wtree_node + sz);
-		chdr->size = sz;
-		nnhdr->psize = sz;
-	}
+	if(chunk == NULL)
+		return NULL;
+
+	chdr = (struct heapHeader*) container_of(chunk, struct heapHeader,wtree_node);
+	nnhdr = (struct heapHeader*) ((uint32_t) &chdr->wtree_node + sz);
+	chdr->size = sz;
+	nnhdr->psize = sz;
 	cache->size -= sz;
 	return &chdr->wtree_node;
 }
 
-void wt_cacheFree(wt_cache_t* cache,void* ptr){
+int wt_cacheFree(wt_cache_t* cache,void* ptr){
 	if(!ptr)
-		return;
+		return FALSE;
+	if(cache->size_limit >= cache->size)
+		return FALSE;
+
 	struct heapHeader* chdr,* nhdr;
 	chdr = (struct heapHeader* ) container_of(ptr,struct heapHeader,wtree_node);
 	nhdr = (struct heapHeader* ) ((uint32_t) ptr + chdr->size);
 	if(chdr->size != nhdr->psize)
-		Thread->terminate(tch_currentThread,tchErrorHeapCorruption);
+		tch_kernel_raise_error(tch_currentThread,tchErrorHeapCorruption,"heap corruption detected");
 	wtreeNodeInit(&chdr->wtree_node,(uint32_t) &chdr->wtree_node,chdr->size);
 	wtreeInsert(&cache->entry,&chdr->wtree_node);
 	cache->size += chdr->size;
+	return TRUE;
 }
 
 void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache){
 	if(!heap || !cache)
 		return;
 	wtreeNode_t* wtn;
-	while((wtn = wtreeDeleteRightMost()) != NULL) {
+	while((wtn = wtreeDeleteRightMost(&cache->entry)) != NULL) {
 		wt_free(heap,wtn);
 	}
 }

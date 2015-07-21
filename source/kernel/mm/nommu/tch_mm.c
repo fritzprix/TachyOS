@@ -26,15 +26,14 @@ struct tch_mm		init_mm;
 void tch_mmInit(struct tch_mm* mmp){
 	memset(mmp,0,sizeof(struct tch_mm));
 	cdsl_dlistInit(&mmp->alc_list);
-	mmp->mregions = NULL;
 }
 
-struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc_header){
+BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc_header){
 	/**
 	 *  add mapping to region containing process binary image
 	 */
 	wt_heapRoot_t* cache_root;
-	wt_heapNode_t* cache;
+	wt_heapNode_t* heap;
 	tch_mmInit(mmp);
 	/**
 	 *  ================= setup regions for binary images ============================
@@ -49,7 +48,13 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 	 *     - share memory mapping with its root
 	 */
 	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
-		mmp->mregions = NULL;
+		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
+		mmp->dynamic = (struct proc_dynamic*) kmalloc(sizeof(struct proc_dynamic));
+		if(!mmp->dynamic || mmp->pgd){
+			kfree(mmp->pgd);
+			kfree(mmp->dynamic);
+			return FALSE;
+		}
 		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
@@ -61,22 +66,17 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 			mmp->bss_region = NULL;
 			mmp->data_region = NULL;
 		}
-		mmp->mtx = Mtx->create();
-		mmp->condv = Condv->create();
-	}else {
-		/**
-		 * 	rb_treeNode_t*			mregions;			// region mapping node
-		 * 	struct mem_region*		text_region;		// shared with parent
-		 * 	struct mem_region*		bss_region;			// shared with parent
-		 * 	struct mem_region*		data_region;		// shared with parent
-		 * 	struct mem_region*		stk_region;			// has its own
-		 * 	pgd_t*					pgd;				// has its own
-		 * 	cdsl_dlistNode_t		alc_list;			// has its own
-		 */
 
+		mmp->dynamic->mregions = NULL;
+		mmp->dynamic->mtx = Mtx->create();
+		mmp->dynamic->condv = Condv->create();
+	}else {
 		struct tch_mm* parent_mm = tch_currentThread->t_kthread->t_parent->t_mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
+		if(!mmp->pgd)
+			return FALSE;
+		mmp->dynamic = parent_mm->dynamic;
 		if(mmp->text_region && mmp->bss_region && mmp->data_region){
 			tch_port_addPageEntry(mmp->pgd, mmp->text_region->poff,mmp->text_region->flags);
 			tch_port_addPageEntry(mmp->pgd, mmp->bss_region->poff,mmp->bss_region->flags);
@@ -93,12 +93,16 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 	 *  3. mapped to tch_mm struct for memory fault handling
 	 */
 	struct mem_region* regions = (struct mem_region*) kmalloc(sizeof(struct mem_region) * 2);
-	struct mem_region* heap_region = &regions[0];
+	mmp->heap_region = &regions[0];
 	mmp->stk_region = &regions[1];
 	if(!proc_header->req_stksz)										// stack size should not 0
 		proc_header->req_heapsz = TCH_CFG_THREAD_STACK_MIN_SIZE;
-	if(!tch_segmentAllocRegion(0,mmp->stk_region,proc_header->req_stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK)))
-		goto MM_INIT_FAIL;
+	if(!tch_segmentAllocRegion(0,mmp->stk_region,proc_header->req_stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK))){
+		kfree(regions);
+		kfree(mmp->pgd);
+		kfree(mmp->dynamic);
+		return FALSE;
+	}
 	tch_mapRegion(mmp,mmp->stk_region);
 	tch_port_addPageEntry(mmp->pgd, mmp->stk_region->poff,mmp->stk_region->flags);
 
@@ -112,6 +116,7 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 	thread->t_uthread->t_kthread = thread;
 	thread->t_uthread->t_fn = proc_header->entry;
 	thread->t_uthread->t_destr = __tch_noop_destr;
+	thread->t_uthread->t_kRet = tchOK;
 
 	/***
 	 *  ================= Prepare Process Argument in topper most area of stack =====================
@@ -127,29 +132,34 @@ struct tch_mm* tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,stru
 		thread->t_uthread->t_arg = proc_header->argv;							// just copy refernece
 	}
 	mmp->estk = argv;
-	if(proc_header->req_heapsz) {
-		if(!tch_segmentAllocRegion(0,heap_region,proc_header->req_heapsz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_DYNAMIC)))
-			goto MM_INIT_FAIL;
-		tch_mapRegion(mmp,heap_region);
-		cache_root = (wt_heapRoot_t*) ((heap_region->poff + heap_region->psz) << CONFIG_PAGE_SHIFT);
-		cache_root--;
+	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
+		if(proc_header->req_heapsz < CONFIG_HEAP_SIZE)
+			proc_header->req_heapsz = CONFIG_HEAP_SIZE;
+		if(!tch_segmentAllocRegion(0,mmp->heap_region,proc_header->req_heapsz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_DYNAMIC))){
+			tch_segmentFreeRegion(mmp->stk_region);
+			kfree(regions);
+			kfree(mmp->pgd);
+			kfree(mmp->dynamic);
+			return FALSE;
+		}
+		cache_root = (wt_heapRoot_t*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
 		wt_initRoot(cache_root);
-		cache = (wt_heapNode_t*) cache_root;
-		cache--;
-		paddr_t sheap = (paddr_t) (heap_region->poff << CONFIG_PAGE_SHIFT);
-		wt_initNode(cache,sheap,((size_t) cache -  (size_t) sheap));
-		wt_addNode(cache_root,cache);
-		tch_port_addPageEntry(mmp->pgd,heap_region->poff,heap_region->flags);
-		thread->t_uthread->t_cache = cache_root;
+		cache_root++;
+		heap = (wt_heapNode_t*) cache_root;
+		paddr_t sheap = (paddr_t) &heap[1];
+		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << CONFIG_PAGE_SHIFT);
+		wt_initNode(heap, sheap, ((size_t) eheap -  (size_t) sheap));
+		wt_addNode(cache_root,heap);
+		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
+		thread->t_uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		wt_initCache(thread->t_uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}else {
-		thread->t_uthread->t_cache = thread->t_parent->t_uthread->t_cache;
+		thread->t_uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		wt_initCache(thread->t_uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}
 
-	return mmp;
+	return TRUE;
 
-MM_INIT_FAIL:
-	KERNEL_PANIC("tch_mm.c","mm struct init failed");
-	return NULL;
 }
 
 int tch_mmProcClean(tch_thread_kheader* thread,struct tch_mm* mmp){

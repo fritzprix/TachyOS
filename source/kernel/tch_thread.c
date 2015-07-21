@@ -173,8 +173,10 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc){
 	// allocate kernel thread header from kernel heap
 	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader) + sizeof(struct tch_mm));
-	if(!kthread)
-		KERNEL_PANIC("tch_thread.c","thread cant'be created - not enough memory ");
+	if(!kthread){
+		kfree(kthread);
+		return NULL;
+	}
 
 	kthread->t_mm = (struct tch_mm*) &kthread[1];
 	memset(kthread,0,(sizeof(tch_thread_kheader) + sizeof(struct tch_mm)));
@@ -192,7 +194,10 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			kthread->t_permission = 0xffffffff;
 		}
 		kthread->t_parent = kthread;
-		tch_mmProcInit(kthread, kthread->t_mm, proc);
+		if(!tch_mmProcInit(kthread, kthread->t_mm, proc)){
+			kfree(kthread);
+			return NULL;
+		}
 		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
 	}else if(tch_currentThread){									// new thread will be child of caller thread
 		proc = &default_prochdr;
@@ -204,7 +209,10 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->flag = HEADER_CHILD_THREAD;
 		kthread->t_parent = tch_currentThread->t_kthread;
 		kthread->t_permission = kthread->t_parent->t_permission;		// inherit parent permission
-		tch_mmProcInit(kthread, kthread->t_mm, proc);
+		if(tch_mmProcInit(kthread, kthread->t_mm, proc)){
+			kfree(kthread);
+			return NULL;
+		}
 		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
 	}else {
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
@@ -219,13 +227,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	kthread->t_lckCnt = 0;
 	kthread->t_prior = cfg->priority;
 	kthread->t_to = 0;
-	if(!kthread->t_pgId)
-		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
 
-	kthread->t_uthread->t_arg = arg;														// initialize user level thread header
-	kthread->t_uthread->t_fn = cfg->entry;
-	kthread->t_uthread->t_name = cfg->name;
-	kthread->t_uthread->t_kRet = tchOK;
 #ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
 	_REENT_INIT_PTR(&kthread->t_uthread->t_reent)
 #endif
