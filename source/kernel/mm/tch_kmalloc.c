@@ -70,7 +70,7 @@ void* kmalloc(size_t sz){
 	if(!chunk){
 		return NULL;
 	}
-	cdsl_dlistPutHead(&tch_currentThread->t_kthread->t_mm->alc_list,&chunk->alc_ln);			// add alloc list
+	cdsl_dlistPutHead(&tch_currentThread->kthread->t_mm->alc_list,&chunk->alc_ln);			// add alloc list
 	return (void*) ((size_t) chunk + sizeof(struct obj_entry));
 }
 

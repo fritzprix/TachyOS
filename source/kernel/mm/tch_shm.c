@@ -15,7 +15,7 @@
 static struct mem_region 	shm_region;
 static wt_heapRoot_t		shm_cacheroot;
 
-void tchk_shmInit(int seg_id){
+void tch_shmInit(int seg_id){
 	if(seg_id < 0)
 		KERNEL_PANIC("tch_shm.c","Segment given in initialization is not valid");
 	tch_segmentAllocRegion(seg_id,&shm_region,CONFIG_SHM_SIZE,PERM_OTHER_ALL | PERM_OWNER_ALL | PERM_KERNEL_ALL);

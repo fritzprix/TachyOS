@@ -66,7 +66,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!busy_cnt) && (getThreadKHeader(tch_currentThread)->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
+		if((!busy_cnt) && (getThreadKHeader(tch_currentThread)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;
 			parm.obj = rtc_handle;
 			tch_lwtsk_request(idle_tskid,&parm,FALSE);

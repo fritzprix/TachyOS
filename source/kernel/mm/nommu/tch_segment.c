@@ -68,7 +68,7 @@ void tch_initSegment(struct section_descriptor* init_section){
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
 	tch_initKmalloc(init_segid);
-	tchk_shmInit(init_segid);
+	tch_shmInit(init_segid);
 	init_mm.pgd = tch_port_allocPageDirectory(kmalloc);
 }
 

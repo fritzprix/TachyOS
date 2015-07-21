@@ -32,8 +32,9 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	/**
 	 *  add mapping to region containing process binary image
 	 */
-	wt_heapRoot_t* cache_root;
-	wt_heapNode_t* heap;
+	wt_heapRoot_t* heap_root;
+	wt_heapNode_t* init_heap;
+	wt_cache_t* cache;
 	tch_mmInit(mmp);
 	/**
 	 *  ================= setup regions for binary images ============================
@@ -71,7 +72,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		mmp->dynamic->mtx = Mtx->create();
 		mmp->dynamic->condv = Condv->create();
 	}else {
-		struct tch_mm* parent_mm = tch_currentThread->t_kthread->t_parent->t_mm;
+		struct tch_mm* parent_mm = tch_currentThread->kthread->parent->t_mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		if(!mmp->pgd)
@@ -112,11 +113,11 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	 *  1. located in stack bottom for check stack integrity
 	 */
 	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << CONFIG_PAGE_SHIFT);
-	thread->t_uthread = uthread;
-	thread->t_uthread->t_kthread = thread;
-	thread->t_uthread->t_fn = proc_header->entry;
-	thread->t_uthread->t_destr = __tch_noop_destr;
-	thread->t_uthread->t_kRet = tchOK;
+	thread->uthread = uthread;
+	thread->uthread->kthread = thread;
+	thread->uthread->fn = proc_header->entry;
+	thread->uthread->destr = __tch_noop_destr;
+	thread->uthread->kRet = tchOK;
 
 	/***
 	 *  ================= Prepare Process Argument in topper most area of stack =====================
@@ -127,9 +128,9 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	argv = argv - proc_header->argv_sz;
 	if (proc_header->argv_sz > 0) {												// if process argument is null terminated strings,
 		memcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
-		thread->t_uthread->t_arg = argv;
+		thread->uthread->t_arg = argv;
 	}else {																		// if process argument is just pointer to another object
-		thread->t_uthread->t_arg = proc_header->argv;							// just copy refernece
+		thread->uthread->t_arg = proc_header->argv;							// just copy refernece
 	}
 	mmp->estk = argv;
 	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
@@ -142,20 +143,22 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 			kfree(mmp->dynamic);
 			return FALSE;
 		}
-		cache_root = (wt_heapRoot_t*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
-		wt_initRoot(cache_root);
-		cache_root++;
-		heap = (wt_heapNode_t*) cache_root;
-		paddr_t sheap = (paddr_t) &heap[1];
+		heap_root = (wt_heapRoot_t*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
+		wt_initRoot(heap_root);
+		heap_root++;
+		init_heap = (wt_heapNode_t*) heap_root;
+		paddr_t sheap = (paddr_t) &init_heap[1];
 		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << CONFIG_PAGE_SHIFT);
-		wt_initNode(heap, sheap, ((size_t) eheap -  (size_t) sheap));
-		wt_addNode(cache_root,heap);
+		wt_initNode(init_heap, sheap, ((size_t) eheap -  (size_t) sheap));
+		wt_addNode(heap_root,init_heap);
 		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
-		thread->t_uthread->t_cache = kmalloc(sizeof(wt_cache_t));
-		wt_initCache(thread->t_uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
+		// TODO : cache should be accessible from unprivilidged mode
+		thread->uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}else {
-		thread->t_uthread->t_cache = kmalloc(sizeof(wt_cache_t));
-		wt_initCache(thread->t_uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
+		// TODO : cache should be accessible from unprivilidged mode
+		thread->uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}
 
 	return TRUE;
@@ -191,12 +194,12 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 
 void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
-	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != tch_currentThread->t_kthread->t_mm){
+	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != tch_currentThread->kthread->t_mm){
 		//kill thread
 		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);
 	}
 
-	if(!tch_port_addPageEntry(((struct tch_mm*) tch_currentThread->t_kthread->t_mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
+	if(!tch_port_addPageEntry(((struct tch_mm*) tch_currentThread->kthread->t_mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
 		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
 	}
 }

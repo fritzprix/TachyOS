@@ -136,7 +136,7 @@ void tch_port_disableISR(void){
 }
 
 void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
-	((tch_thread_kheader*)nth)->t_uthread->t_kRet = kret;
+	((tch_thread_kheader*)nth)->uthread->kRet = kret;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"
@@ -193,7 +193,7 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
 			"dmb\n"
 			"isb\n"
 			"svc #3"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
-	return ((tch_thread_uheader*)tch_currentThread)->t_kRet;
+	return ((tch_thread_uheader*)tch_currentThread)->kRet;
 }
 
 

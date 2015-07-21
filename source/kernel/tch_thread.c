@@ -76,40 +76,40 @@ const tch_thread_ix* Thread = &tch_threadix;
 tchStatus tchk_threadIsValid(tch_threadId thread){
 	if(!thread)
 		return tchErrorParameter;
-	if(getThreadHeader(thread)->t_chks != ((uint32_t) THREAD_CHK_PATTERN)){
-		getThreadHeader(thread)->t_reent._errno = tchErrorStackOverflow;
+	if(getThreadHeader(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN)){
+		getThreadHeader(thread)->reent._errno = tchErrorStackOverflow;
 		return tchErrorStackOverflow;
 	}
-	if(getThreadHeader(thread)->t_kthread->t_flag & THREAD_DEATH_BIT)
-		return getThreadHeader(thread)->t_reent._errno;
+	if(getThreadHeader(thread)->kthread->flag & THREAD_DEATH_BIT)
+		return getThreadHeader(thread)->reent._errno;
 	return tchOK;
 }
 
 BOOL tchk_threadIsPrivilidged(tch_threadId thread){
-	return ((getThreadKHeader(thread)->t_flag & THREAD_PRIV_BIT) > 0);
+	return ((getThreadKHeader(thread)->flag & THREAD_PRIV_BIT) > 0);
 }
 
 
 
 void tchk_threadInvalidate(tch_threadId thread,tchStatus reason){
-	getThreadHeader(thread)->t_reent._errno = reason;
-	getThreadHeader(thread)->t_kthread->t_flag |= THREAD_DEATH_BIT;
+	getThreadHeader(thread)->reent._errno = reason;
+	getThreadHeader(thread)->kthread->flag |= THREAD_DEATH_BIT;
 }
 
 
 BOOL tchk_threadIsRoot(tch_threadId thread){
-	return (getThreadHeader(thread)->t_kthread->t_flag & THREAD_ROOT_BIT);
+	return (getThreadHeader(thread)->kthread->flag & THREAD_ROOT_BIT);
 }
 
 
 void tchk_threadSetPriority(tch_threadId tid,tch_threadPrior nprior){
 	if(nprior > Unpreemtible)
 		return;
-	getThreadKHeader(tid)->t_prior = nprior;
+	getThreadKHeader(tid)->prior = nprior;
 }
 
 tch_threadPrior tchk_threadGetPriority(tch_threadId tid){
-	return getThreadKHeader(tid)->t_prior;
+	return getThreadKHeader(tid)->prior;
 }
 /**
  * create new thread
@@ -191,9 +191,9 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			proc->argv = arg;
 			proc->argv_sz = 0;
 			proc->flag = PROCTYPE_STATIC | HEADER_ROOT_THREAD;
-			kthread->t_permission = 0xffffffff;
+			kthread->permission = 0xffffffff;
 		}
-		kthread->t_parent = kthread;
+		kthread->parent = kthread;
 		if(!tch_mmProcInit(kthread, kthread->t_mm, proc)){
 			kfree(kthread);
 			return NULL;
@@ -207,32 +207,32 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->argv = arg;
 		proc->argv_sz = 0;
 		proc->flag = HEADER_CHILD_THREAD;
-		kthread->t_parent = tch_currentThread->t_kthread;
-		kthread->t_permission = kthread->t_parent->t_permission;		// inherit parent permission
+		kthread->parent = tch_currentThread->kthread;
+		kthread->permission = kthread->parent->permission;		// inherit parent permission
 		if(tch_mmProcInit(kthread, kthread->t_mm, proc)){
 			kfree(kthread);
 			return NULL;
 		}
-		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
+		cdsl_dlistPutTail(&kthread->parent->t_childLn,&kthread->t_siblingLn);
 	}else {
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 
-	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_mm->stk_region,__tch_thread_entry);
-	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
-	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
+	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,kthread->t_mm->stk_region,__tch_thread_entry);
+	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
+	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
-	kthread->t_tslot = TCH_ROUNDROBIN_TIMESLOT;
-	kthread->t_state = PENDED;
-	kthread->t_lckCnt = 0;
-	kthread->t_prior = cfg->priority;
-	kthread->t_to = 0;
+	kthread->tslot = TCH_ROUNDROBIN_TIMESLOT;
+	kthread->state = PENDED;
+	kthread->lckCnt = 0;
+	kthread->prior = cfg->priority;
+	kthread->to = 0;
 
 #ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
-	_REENT_INIT_PTR(&kthread->t_uthread->t_reent)
+	_REENT_INIT_PTR(&kthread->uthread->reent)
 #endif
-	kthread->t_uthread->t_chks = THREAD_CHK_PATTERN;
-	return (tch_threadId) kthread->t_uthread;
+	kthread->uthread->chks = THREAD_CHK_PATTERN;
+	return (tch_threadId) kthread->uthread;
 }
 
 
@@ -327,7 +327,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;
 #endif
-	tchStatus res = thr_p->t_fn(tch_rti);
+	tchStatus res = thr_p->fn(tch_rti);
 	tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
 }
 

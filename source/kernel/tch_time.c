@@ -60,12 +60,12 @@ tchStatus tchk_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 		return tchErrorParameter;
 	switch (tu) {
 	case mSECOND:
-		getThreadKHeader(thread)->t_to = tch_systimeTick + timeout;
+		getThreadKHeader(thread)->to = tch_systimeTick + timeout;
 		cdsl_dlistEnqueuePriority(&tch_systimeWaitQ, (cdsl_dlistNode_t*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
 	case SECOND:
-		getThreadKHeader(thread)->t_to = tch_sysUpTimeSec + timeout;
+		getThreadKHeader(thread)->to = tch_sysUpTimeSec + timeout;
 		cdsl_dlistEnqueuePriority(&tch_lpsystimeWaitQ, (cdsl_dlistNode_t*) getThreadKHeader(thread),
 				tch_systimeWaitQRule);
 		return tchOK;
@@ -77,7 +77,7 @@ tchStatus tchk_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 tchStatus tch_systimeCancelTimeout(tch_threadId thread) {
 	if (!thread)
 		return tchErrorParameter;
-	getThreadKHeader(thread)->t_to = 0;
+	getThreadKHeader(thread)->to = 0;
 	if (!cdsl_dlistRemove( (cdsl_dlistNode_t*) getThreadKHeader(thread)))
 		return tchErrorParameter;
 	return tchOK;
@@ -116,11 +116,11 @@ BOOL tch_systimeIsPendingEmpty() {
 void tch_kernelOnWakeup() {
 	tch_thread_kheader* nth = NULL;
 	tch_sysUpTimeSec++;
-	while ((!cdsl_dlistIsEmpty(&tch_lpsystimeWaitQ)) && (((tch_thread_kheader*) tch_lpsystimeWaitQ.next)->t_to	<= tch_sysUpTimeSec)) {
+	while ((!cdsl_dlistIsEmpty(&tch_lpsystimeWaitQ)) && (((tch_thread_kheader*) tch_lpsystimeWaitQ.next)->to	<= tch_sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&tch_lpsystimeWaitQ);
-		nth->t_to = 0;
-		tchk_schedThreadReady(nth->t_uthread);
-		tchk_kernelSetResult(nth->t_uthread, tchEventTimeout);
+		nth->to = 0;
+		tchk_schedThreadReady(nth->uthread);
+		tchk_kernelSetResult(nth->uthread, tchEventTimeout);
 		if (nth->t_waitQ) {
 			cdsl_dlistRemove(&nth->t_waitNode);
 			nth->t_waitQ = NULL;
@@ -132,12 +132,12 @@ void tch_kernelOnWakeup() {
 void tch_KernelOnSystick() {
 	tch_thread_kheader* nth = NULL;
 	tch_systimeTick++;
-	getThreadKHeader(tch_currentThread)->t_tslot++;
-	while ((!cdsl_dlistIsEmpty(&tch_systimeWaitQ)) && (((tch_thread_kheader*) tch_systimeWaitQ.next)->t_to <= tch_systimeTick)) {
+	getThreadKHeader(tch_currentThread)->tslot++;
+	while ((!cdsl_dlistIsEmpty(&tch_systimeWaitQ)) && (((tch_thread_kheader*) tch_systimeWaitQ.next)->to <= tch_systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&tch_systimeWaitQ);
-		nth->t_to = 0;
-		tchk_schedThreadReady(nth->t_uthread);
-		tchk_kernelSetResult(nth->t_uthread, tchEventTimeout);
+		nth->to = 0;
+		tchk_schedThreadReady(nth->uthread);
+		tchk_kernelSetResult(nth->uthread, tchEventTimeout);
 		if (nth->t_waitQ) {
 			cdsl_dlistRemove(&nth->t_waitNode);
 			nth->t_waitQ = NULL;
@@ -147,6 +147,6 @@ void tch_KernelOnSystick() {
 }
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule) {
-	return ((tch_thread_kheader*)a)->t_to < ((tch_thread_kheader*) b)->t_to? a : b;
+	return ((tch_thread_kheader*)a)->to < ((tch_thread_kheader*) b)->to? a : b;
 }
 

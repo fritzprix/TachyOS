@@ -89,17 +89,21 @@ typedef struct tch_thread_queue{
 
 
 struct tch_thread_uheader_s {
-	tch_kobjDestr				t_destr;
-	tch_thread_routine          t_fn;			///<thread function pointer
+	tch_kobjDestr				destr;
+	tch_thread_routine          fn;			///<thread function pointer
 	void* 	 					t_cache;
-	uword_t                     t_kRet;			///<kernel return value
+	uword_t                     kRet;			///<kernel return value
 	const char*                 t_name;			///<thread name
 	void*                       t_arg;			///<thread arg field
-	tch_thread_kheader*			t_kthread;		///<pointer to kernel level thread header
+	tch_thread_kheader*			kthread;		///<pointer to kernel level thread header
+	void*						heap;
+	void*						shmem;
+	tch_condvId 				condv;
+	tch_mtxId 					mtx;
 #ifdef __NEWLIB__
-	struct _reent               t_reent;		///<reentrant struct used by c standard library
+	struct _reent               reent;		///<reentrant struct used by c standard library
 #endif
-	uint32_t					t_chks;			///<check-sum for determine corruption of thread header
+	uint32_t					chks;			///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
@@ -109,20 +113,20 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t                t_childLn;		///<thread queue node to iterate child thread
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
 	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
-	void*   	                    t_ctx;			///<ptr to thread saved context (stack pointer value)
+	void*   	                    ctx;			///<ptr to thread saved context (stack pointer value)
 	struct tch_mm*					t_mm;			///<ptr to per-process memory management handle
 	cdsl_dlistNode_t				t_palc;			///<allocation list for page
 	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
 	cdsl_dlistNode_t				t_upshalc;
-	uint32_t                	    t_tslot;		///<time slot for round robin scheduling (currently not used)
-	uint32_t						t_permission;
-	tch_threadState       	   		t_state;		///<thread state
-	uint8_t                	    	t_flag;			///<flag for dealing with attributes of thread
-	uint8_t                	     	t_lckCnt;		///<lock count to know whether  restore original priority
-	uint8_t               	 	    t_prior;		///<priority
-	uint64_t						t_to;			///<timeout value for pending operation
-	tch_thread_uheader*				t_uthread;		///<pointer to user level thread header
-	tch_thread_kheader*				t_parent;
+	uint32_t                	    tslot;		///<time slot for round robin scheduling (currently not used)
+	uint32_t						permission;
+	tch_threadState       	   		state;		///<thread state
+	uint8_t                	    	flag;			///<flag for dealing with attributes of thread
+	uint8_t                	     	lckCnt;		///<lock count to know whether  restore original priority
+	uint8_t               	 	    prior;		///<priority
+	uint64_t						to;			///<timeout value for pending operation
+	tch_thread_uheader*				uthread;		///<pointer to user level thread header
+	tch_thread_kheader*				parent;
 } __attribute__((aligned(8)));
 
 

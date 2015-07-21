@@ -70,8 +70,8 @@ tchStatus tchk_mutex_lock(tch_mtxId mtx,uint32_t timeout){
 		if(!tch_port_exclusiveCompareUpdate((uaddr_t)&mcb->own,0,(uword_t)tid)){
 			if(tch_currentThread)
 			{
-				tch_currentThread->t_kthread->t_lckCnt++;
-				mcb->svdPrior = tch_currentThread->t_kthread->t_prior;
+				tch_currentThread->kthread->lckCnt++;
+				mcb->svdPrior = tch_currentThread->kthread->prior;
 				return tchOK;
 			}
 		}else{
@@ -86,7 +86,7 @@ tchStatus tchk_mutex_lock(tch_mtxId mtx,uint32_t timeout){
 
 tchStatus tchk_mutex_unlock(tch_mtxId mtx){
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
-	if(!(--tch_currentThread->t_kthread->t_lckCnt)){
+	if(!(--tch_currentThread->kthread->lckCnt)){
 		tchk_threadSetPriority(mcb->own,mcb->svdPrior);
 		mcb->svdPrior = Idle;
 	}
@@ -137,7 +137,7 @@ static tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 				return result;
 			if(mcb->own == tch_currentThread)		// check if mutex is successfully locked
 				return result;						// if mutex locked by current thread,return with ok, otherwise retry or return with error
-		}while(tch_currentThread->t_kRet == tchOK);
+		}while(tch_currentThread->kRet == tchOK);
 		return result;
 	}
 }

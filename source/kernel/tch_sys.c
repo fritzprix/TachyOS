@@ -125,15 +125,15 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getUserSP();
 		sp++;
-		cth = (tch_thread_kheader*) tch_currentThread->t_kthread;
-		cth->t_tslot = 0;
-		cth->t_state = RUNNING;
+		cth = (tch_thread_kheader*) tch_currentThread->kthread;
+		cth->tslot = 0;
+		cth->state = RUNNING;
 
 #ifdef __NEWLIB__
-		_impure_ptr = &tch_currentThread->t_reent;
+		_impure_ptr = &tch_currentThread->reent;
 #endif
 
-		tch_port_loadPageTable(tch_currentThread->t_kthread->t_mm->pgd);/// apply page mapping
+		tch_port_loadPageTable(tch_currentThread->kthread->t_mm->pgd);/// apply page mapping
 		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_atomic_end();
@@ -181,8 +181,8 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_schedThreadSleep(arg1,SECOND,SLEEP);
 		break;
 	case SV_THREAD_JOIN:
-		nth = ((tch_thread_uheader*) arg1)->t_kthread;
-		if(nth->t_state != TERMINATED){                                 // check target if thread has terminated
+		nth = ((tch_thread_uheader*) arg1)->kthread;
+		if(nth->state != TERMINATED){                                 // check target if thread has terminated
 			tchk_schedThreadSuspend((tch_thread_queue*) &nth->t_joinQ,arg2);   				 //if not, thread wait
 			break;
 		}
