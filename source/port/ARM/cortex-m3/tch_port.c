@@ -236,9 +236,9 @@ int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 			"CMP r4,r1\n"           // compare read val to comp
 			"ITTEE EQ\n"            // if equal
 			"STREXEQ r6,r2,[r0]\n"  // update dest with new one
-			"LDREQ r5,=#0\n"        // return 0
+			"LDREQ r5,=#1\n"        // return 0
 			"STREXNE r6,r4,[r0]\n"  // else update previous value
-			"LDRNE r5,=#1\n"        // return 1
+			"LDRNE r5,=#0\n"        // return 1
 			"CMP r6,#0\n"
 			"BNE __exCmpUpdate\n"
 			"STR r5,[%0]\n"

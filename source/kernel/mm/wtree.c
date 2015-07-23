@@ -150,14 +150,14 @@ static void print_r(wtreeNode_t* node,int depth){
 	if(node == NULL_NODE)
 		return;
 	print_r(node->right,depth + 1);
-	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
+//	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
 	print_r(node->left,depth + 1);
 
 }
 
 
 static void print_tab(int k){
-	while(k--)printf("\t");
+	//while(k--)printf("\t");
 }
 
 static wtreeNode_t* rotateLeft(wtreeNode_t* rot_pivot){

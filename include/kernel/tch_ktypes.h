@@ -149,6 +149,7 @@ struct tch_thread_kheader_s {
 #define SV_THREAD_DESTROY                ((uint32_t) 0x27)
 #define SV_THREAD_SLEEP                  ((uint32_t) 0x28)               ///< Supervisor call id to put thread in low power stand-by mode
 
+#define SV_MTX_CREATE					 ((uint32_t) 0x40)
 #define SV_MTX_LOCK						 ((uint32_t) 0x29)
 #define SV_MTX_UNLOCK					 ((uint32_t) 0x2A)
 #define SV_MTX_DESTROY					 ((uint32_t) 0x2B)

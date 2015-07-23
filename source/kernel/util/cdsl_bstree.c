@@ -145,11 +145,11 @@ static void print_r(bs_treeNode_t* current,cdsl_generic_printer_t prt,int depth)
 	if(!current)
 		return;
 	print_r(current->right,prt,depth + 1);
-	print_tab(depth); if(prt) prt(current); printf("{key : %d} @ depth %d\n",current->key,depth);
+	//print_tab(depth); if(prt) prt(current); printf("{key : %d} @ depth %d\n",current->key,depth);
 	print_r(current->left,prt,depth + 1);
 }
 
 static void print_tab(int cnt){
-	while(cnt--)
-		printf("\t");
+//	while(cnt--)
+	//	printf("\t");
 }

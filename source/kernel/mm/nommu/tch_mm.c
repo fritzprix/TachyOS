@@ -11,6 +11,8 @@
 #include "tch_segment.h"
 #include "tch_loader.h"
 #include "tch_kmalloc.h"
+#include "tch_mtx.h"
+#include "tch_condv.h"
 
 #ifndef CONFIG_NR_KERNEL_SEG
 #define CONFIG_NR_KERNEL_SEG	5		// segment 0 dynamic /  segment 1 kernel text / segment 2 data / segment 3 sdata /  segment 4 kernel stack
@@ -34,8 +36,11 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	 */
 	wt_heapRoot_t* heap_root;
 	wt_heapNode_t* init_heap;
+	tch_mtxCb* mtx;
+	tch_condvCb* condv;
 	wt_cache_t* cache;
 	tch_mmInit(mmp);
+	thread->t_mm = mmp;
 	/**
 	 *  ================= setup regions for binary images ============================
 	 *  1. dynamic program => dynamically loaded program in run time
@@ -51,7 +56,11 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		mmp->dynamic = (struct proc_dynamic*) kmalloc(sizeof(struct proc_dynamic));
-		if(!mmp->dynamic || mmp->pgd){
+		mtx = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
+		condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb));
+		if(!mmp->dynamic || !mmp->pgd || !mtx || !condv){
+			kfree(condv);
+			kfree(mtx);
 			kfree(mmp->pgd);
 			kfree(mmp->dynamic);
 			return FALSE;
@@ -69,8 +78,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		}
 
 		mmp->dynamic->mregions = NULL;
-		mmp->dynamic->mtx = Mtx->create();
-		mmp->dynamic->condv = Condv->create();
+		mmp->dynamic->mtx = tchk_mutexInit(mtx,FALSE);
+		mmp->dynamic->condv = tchk_condvInit(condv,FALSE);
 	}else {
 		struct tch_mm* parent_mm = tch_currentThread->kthread->parent->t_mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
@@ -99,6 +108,10 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	if(!proc_header->req_stksz)										// stack size should not 0
 		proc_header->req_heapsz = TCH_CFG_THREAD_STACK_MIN_SIZE;
 	if(!tch_segmentAllocRegion(0,mmp->stk_region,proc_header->req_stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK))){
+		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD){
+			kfree(condv);
+			kfree(mtx);
+		}
 		kfree(regions);
 		kfree(mmp->pgd);
 		kfree(mmp->dynamic);
@@ -113,11 +126,6 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	 *  1. located in stack bottom for check stack integrity
 	 */
 	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << CONFIG_PAGE_SHIFT);
-	thread->uthread = uthread;
-	thread->uthread->kthread = thread;
-	thread->uthread->fn = proc_header->entry;
-	thread->uthread->destr = __tch_noop_destr;
-	thread->uthread->kRet = tchOK;
 
 	/***
 	 *  ================= Prepare Process Argument in topper most area of stack =====================
@@ -145,21 +153,31 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		}
 		heap_root = (wt_heapRoot_t*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
 		wt_initRoot(heap_root);
-		heap_root++;
-		init_heap = (wt_heapNode_t*) heap_root;
-		paddr_t sheap = (paddr_t) &init_heap[1];
+		init_heap = (wt_heapNode_t*) &heap_root[1];
+		cache = (wt_cache_t*) &init_heap[1];
+		paddr_t sheap = (paddr_t) &cache[1];
+
 		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << CONFIG_PAGE_SHIFT);
 		wt_initNode(init_heap, sheap, ((size_t) eheap -  (size_t) sheap));
 		wt_addNode(heap_root,init_heap);
 		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
-		// TODO : cache should be accessible from unprivilidged mode
-		thread->uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		thread->uthread->t_cache = cache;								// cache struct is made at upper area of proc heap
 		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}else {
-		// TODO : cache should be accessible from unprivilidged mode
-		thread->uthread->t_cache = kmalloc(sizeof(wt_cache_t));
+		thread->uthread->t_cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
+		thread->uthread->heap = thread->parent->uthread->heap;
 		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}
+
+	thread->uthread->heap = thread->t_mm->dynamic->heap;
+	thread->uthread->condv = thread->t_mm->dynamic->condv;
+	thread->uthread->mtx = thread->t_mm->dynamic->mtx;
+	thread->uthread->shmem = NULL;
+	thread->uthread = uthread;
+	thread->uthread->kthread = thread;
+	thread->uthread->fn = proc_header->entry;
+	thread->uthread->destr = __tch_noop_destr;
+	thread->uthread->kRet = tchOK;
 
 	return TRUE;
 

@@ -204,13 +204,13 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_schedThreadDestroy((tch_threadId) arg1,arg2);
 		break;
 	case SV_MTX_LOCK:
-		tchk_kernelSetResult(tch_currentThread,tchk_mutex_lock(arg1,arg2));
+		tchk_kernelSetResult(tch_currentThread,tchk_mutexLock(arg1,arg2));
 		break;
 	case SV_MTX_UNLOCK:
-		tchk_kernelSetResult(tch_currentThread,tchk_mutex_unlock(arg1));
+		tchk_kernelSetResult(tch_currentThread,tchk_mutexUnlock(arg1));
 		break;
 	case SV_MTX_DESTROY:
-		tchk_kernelSetResult(tch_currentThread,tchk_mutex_destroy(arg1));
+		tchk_kernelSetResult(tch_currentThread,tchk_mutexDestroy(arg1));
 		break;
 	case SV_EV_INIT:
 		tchk_kernelSetResult(tch_currentThread,tchk_eventInit(arg1,arg2));

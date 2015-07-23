@@ -11,9 +11,13 @@
 #include "tch_segment.h"
 #include "tch_err.h"
 #include "wtmalloc.h"
+#include "tch_mtx.h"
+#include "tch_condv.h"
 
 static struct mem_region 	shm_region;
 static wt_heapRoot_t		shm_cacheroot;
+static tch_mtxId			shm_mtx;
+static tch_condvId 			shm_condv;
 
 void tch_shmInit(int seg_id){
 	if(seg_id < 0)
@@ -21,6 +25,8 @@ void tch_shmInit(int seg_id){
 	tch_segmentAllocRegion(seg_id,&shm_region,CONFIG_SHM_SIZE,PERM_OTHER_ALL | PERM_OWNER_ALL | PERM_KERNEL_ALL);
 
 	wt_heapNode_t* cache = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
+
+
 	wt_initRoot(&shm_cacheroot);
 	wt_initNode(cache,(uint8_t*)(shm_region.poff << CONFIG_PAGE_SHIFT), shm_region.psz << CONFIG_PAGE_SHIFT);
 	wt_addNode(&shm_cacheroot,cache);

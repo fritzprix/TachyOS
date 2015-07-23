@@ -223,7 +223,7 @@ static uint32_t node_available_r(wt_heapNode_t* current){
 
 
 static void print_tab(int k){
-	while(k--)	printf("\t");
+	//while(k--)	printf("\t");
 }
 
 
@@ -231,7 +231,7 @@ static void print_r(wt_heapNode_t* current,int k){
 	if(current == NULL_CACHE)
 		return;
 	print_r(current->left,k + 1);
-	print_tab(k);printf("{cache : base %d , size %d @ %d}\n",current->base,current->size,k);
+	//print_tab(k);printf("{cache : base %d , size %d @ %d}\n",current->base,current->size,k);
 	print_r(current->right,k + 1);
 }
 
@@ -293,9 +293,9 @@ static uint32_t node_size(wt_heapNode_t* alloc){
 
 
 static void node_print(wt_heapNode_t* alloc){
-	printf("======================================================================================================\n");
+//	printf("======================================================================================================\n");
 	wtreePrint(&alloc->entry);
-	printf("======================================================================================================\n");
+//	printf("======================================================================================================\n");
 }
 
 

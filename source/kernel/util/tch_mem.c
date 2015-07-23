@@ -65,7 +65,7 @@ tch_memId tch_memInit(void* mem,uint32_t sz,BOOL isMultiThreaded){
 	if(isMultiThreaded){
 		tch_mtxCb* mtxCb = (uint32_t) mem + sizeof(tch_memEntry);		//
 		m_entry->mtx = mtxCb;
-		tch_mtxInit(mtxCb);
+		tchk_mutexInit(mtxCb,TRUE);
 		m_entry = (uint32_t) mtxCb + sizeof(tch_mtxCb);
 	}else{
 		m_entry->mtx = NULL;
