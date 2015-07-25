@@ -8,6 +8,7 @@
 #ifndef TCH_MALLOC_H_
 #define TCH_MALLOC_H_
 
+#include "tch_ktypes.h"
 
 
 extern void* tch_malloc(size_t sz);

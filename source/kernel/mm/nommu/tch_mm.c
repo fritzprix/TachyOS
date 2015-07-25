@@ -28,6 +28,7 @@ struct tch_mm		init_mm;
 void tch_mmInit(struct tch_mm* mmp){
 	memset(mmp,0,sizeof(struct tch_mm));
 	cdsl_dlistInit(&mmp->alc_list);
+	cdsl_dlistInit(&mmp->shm_list);
 }
 
 BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc_header){
@@ -172,7 +173,6 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	thread->uthread->heap = thread->t_mm->dynamic->heap;
 	thread->uthread->condv = thread->t_mm->dynamic->condv;
 	thread->uthread->mtx = thread->t_mm->dynamic->mtx;
-	thread->uthread->shmem = NULL;
 	thread->uthread = uthread;
 	thread->uthread->kthread = thread;
 	thread->uthread->fn = proc_header->entry;

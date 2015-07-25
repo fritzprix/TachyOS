@@ -97,7 +97,6 @@ struct tch_thread_uheader_s {
 	void*                       t_arg;			///<thread arg field
 	tch_thread_kheader*			kthread;		///<pointer to kernel level thread header
 	void*						heap;
-	void*						shmem;
 	tch_condvId 				condv;
 	tch_mtxId 					mtx;
 #ifdef __NEWLIB__

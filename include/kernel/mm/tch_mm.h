@@ -169,7 +169,9 @@
 #define get_addr_from_page(paddr)	((size_t) paddr << CONFIG_PAGE_SHIFT)
 
 
-
+struct kobj_header {
+	cdsl_dlistNode_t		alc_ln;
+};
 
 struct section_descriptor {
 	uint32_t		flags;
@@ -201,6 +203,7 @@ struct tch_mm {
 	struct mem_region*		heap_region;
 	pgd_t* 					pgd;
 	cdsl_dlistNode_t		alc_list;
+	cdsl_dlistNode_t		shm_list;
 	paddr_t 				estk;
 };
 

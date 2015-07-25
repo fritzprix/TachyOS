@@ -38,14 +38,23 @@ void* tch_malloc(size_t sz){
 void tch_free(void* ptr){
 	if(!ptr)
 		return;
-	if(wt_cacheFree(tch_currentThread->t_cache,ptr))
+	int result;
+	if(WT_OK == (result = wt_cacheFree(tch_currentThread->t_cache,ptr)))
 		return;
-
+	if(result == WT_ERROR)
+		goto ERR_HEAP_FREE;
 	tch_mtxId mtx = tch_currentThread->kthread->t_mm->dynamic->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return;
-	wt_free(tch_currentThread->kthread->t_mm->dynamic->heap,ptr);
+	result = wt_free(tch_currentThread->kthread->t_mm->dynamic->heap,ptr);
 	Mtx->unlock(mtx);
+	if(result == WT_ERROR)
+		goto ERR_HEAP_FREE;
+	return;
+
+ERR_HEAP_FREE :
+	tch_kernel_raise_error(tch_currentThread,tchErrorHeapCorruption,"heap corrupted");
+
 }
 
 size_t tch_avail(){
