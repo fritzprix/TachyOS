@@ -86,7 +86,18 @@ typedef struct tch_thread_queue{
 	cdsl_dlistNode_t             thque;
 } tch_thread_queue;
 
-
+struct tch_mm {
+	struct proc_dynamic* 	dynamic;
+	struct mem_region* 		text_region;		// ============ per thread field ==================
+	struct mem_region* 		bss_region;
+	struct mem_region* 		data_region;
+	struct mem_region* 		stk_region;
+	struct mem_region*		heap_region;
+	pgd_t* 					pgd;
+	cdsl_dlistNode_t		alc_list;
+	cdsl_dlistNode_t		shm_list;
+	paddr_t 				estk;
+};
 
 struct tch_thread_uheader_s {
 	tch_kobjDestr				destr;
@@ -113,7 +124,7 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
 	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*   	                    ctx;			///<ptr to thread saved context (stack pointer value)
-	struct tch_mm*					t_mm;			///<ptr to per-process memory management handle
+	struct tch_mm					mm;			///<ptr to per-process memory management handle
 	cdsl_dlistNode_t				t_palc;			///<allocation list for page
 	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
 	cdsl_dlistNode_t				t_upshalc;

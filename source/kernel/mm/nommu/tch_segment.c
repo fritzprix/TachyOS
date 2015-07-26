@@ -297,6 +297,10 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	return seg_cnt++;
 }
 
+/**
+ *  @brief initialize region struct and insert it to parent segment
+ *  @param[in] regp	pointer to mem_region struct
+ */
 static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm){
 	if(!regp)
 		return;

@@ -172,15 +172,13 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 
 tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc){
 	// allocate kernel thread header from kernel heap
-	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader) + sizeof(struct tch_mm));
+	tch_thread_kheader* kthread = (tch_thread_kheader*) kmalloc(sizeof(tch_thread_kheader));
 	if(!kthread){
 		kfree(kthread);
 		return NULL;
 	}
 
-	kthread->t_mm = (struct tch_mm*) &kthread[1];
-	memset(kthread,0,(sizeof(tch_thread_kheader) + sizeof(struct tch_mm)));
-
+	memset(kthread,0,(sizeof(tch_thread_kheader)));
 
 	if(isroot){ 			// if new thread will be the root thread of a process, parent will be self
 		if(!proc){			// if new thread is trusted thread
@@ -194,7 +192,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			kthread->permission = 0xffffffff;
 		}
 		kthread->parent = kthread;
-		if(!tch_mmProcInit(kthread, kthread->t_mm, proc)){
+		if(!tch_mmProcInit(kthread, &kthread->mm, proc)){
 			kfree(kthread);
 			return NULL;
 		}
@@ -209,7 +207,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->flag = HEADER_CHILD_THREAD;
 		kthread->parent = tch_currentThread->kthread;
 		kthread->permission = kthread->parent->permission;		// inherit parent permission
-		if(tch_mmProcInit(kthread, kthread->t_mm, proc)){
+		if(tch_mmProcInit(kthread, &kthread->mm, proc)){
 			kfree(kthread);
 			return NULL;
 		}
@@ -218,7 +216,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 
-	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,kthread->t_mm->stk_region,__tch_thread_entry);
+	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,kthread->mm.stk_region,__tch_thread_entry);
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
@@ -349,7 +347,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 	// destroy child
 	// join
 	if(th_p)
-	tch_mmProcClean(th_p,th_p->t_mm);
+	tch_mmProcClean(th_p,&th_p->mm);
 	/*
 	tchk_shareableMemFreeAll(th_p);
 

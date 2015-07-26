@@ -194,18 +194,7 @@ struct proc_dynamic {
 	tch_mtxId 				mtx;
 };
 
-struct tch_mm {
-	struct proc_dynamic* 	dynamic;
-	struct mem_region* 		text_region;		// ============ per thread field ==================
-	struct mem_region* 		bss_region;
-	struct mem_region* 		data_region;
-	struct mem_region* 		stk_region;
-	struct mem_region*		heap_region;
-	pgd_t* 					pgd;
-	cdsl_dlistNode_t		alc_list;
-	cdsl_dlistNode_t		shm_list;
-	paddr_t 				estk;
-};
+
 
 extern struct tch_mm		init_mm;
 

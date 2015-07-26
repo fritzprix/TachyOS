@@ -28,13 +28,13 @@ void tch_shmInit(int seg_id){
 		KERNEL_PANIC("tch_shm.c","Segment given in initialization is not valid");
 
 	shm_init_segid = seg_id;
-	tch_segmentAllocRegion(seg_id,&shm_init_region,CONFIG_SHM_SIZE,PERM_OTHER_ALL | PERM_OWNER_ALL | PERM_KERNEL_ALL);
+	if(!(tch_segmentAllocRegion(seg_id,&shm_init_region,CONFIG_SHM_SIZE,PERM_OTHER_ALL | PERM_OWNER_ALL | PERM_KERNEL_ALL) > 0))
+		KERNEL_PANIC("tch_shm.c","Can't allocate region for shmem");
 
-	wt_heapNode_t* cache = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
-
+	wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
 	wt_initRoot(&shm_root);
-	wt_initNode(cache,tch_getRegionBase(&shm_init_region), tch_getRegionSize(&shm_init_region));
-	wt_addNode(&shm_root,cache);
+	wt_initNode(shm_node,tch_getRegionBase(&shm_init_region), tch_getRegionSize(&shm_init_region));
+	wt_addNode(&shm_root,shm_node);
 }
 
 void* tchk_shmalloc(size_t sz){
@@ -45,10 +45,13 @@ void* tchk_shmalloc(size_t sz){
 	if(!(wt_available(&shm_root) > asz)){
 		struct mem_region* nregion = (struct mem_region*) kmalloc(sizeof(struct mem_region));
 		wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
+
 		if(!nregion || !shm_node)
 			goto RETURN_FAIL;
-		if(!(tch_segmentAllocRegion(shm_init_segid,nregion,asz,PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL) > 0))
+		if(!(tch_segmentAllocRegion(shm_init_segid,nregion,asz,PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL) > 0)){
+			//TODO : deal with shmem depletion
 			goto RETURN_FAIL;
+		}
 
 		wt_initNode(shm_node,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
 		wt_addNode(&shm_root,shm_node);
@@ -60,7 +63,7 @@ void* tchk_shmalloc(size_t sz){
 	}
 
 	chnk = wt_malloc(&shm_root,asz);
-	cdsl_dlistPutHead(&tch_currentThread->kthread->t_mm->shm_list,&chnk->alc_ln);
+	cdsl_dlistPutHead(&tch_currentThread->kthread->mm.shm_list,&chnk->alc_ln);
 	return &chnk[1];
 }
 
@@ -85,6 +88,7 @@ tchStatus tchk_shmCleanUp(struct tch_mm* owner){
 		if(wt_free(&shm_root,chnk) == WT_ERROR){
 			// TODO : handle shmem corruption in thread termination (this function intended to be called from thread termination)
 
+		}else {
 		}
 	}
 }

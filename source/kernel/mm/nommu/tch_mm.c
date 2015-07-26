@@ -18,6 +18,16 @@
 #define CONFIG_NR_KERNEL_SEG	5		// segment 0 dynamic /  segment 1 kernel text / segment 2 data / segment 3 sdata /  segment 4 kernel stack
 #endif
 
+#define SECTION_KERNEL_DYNAMIC
+
+struct user_heap {
+	wt_heapRoot_t		heap_root;
+	wt_heapNode_t		heap_node;
+};
+
+
+
+
 struct tch_mm		init_mm;
 /**
  *  kernel has initial mem_segment array which is declared as static variable,
@@ -31,6 +41,9 @@ void tch_mmInit(struct tch_mm* mmp){
 	cdsl_dlistInit(&mmp->shm_list);
 }
 
+
+static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz);
+
 BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc_header){
 	/**
 	 *  add mapping to region containing process binary image
@@ -41,7 +54,6 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	tch_condvCb* condv;
 	wt_cache_t* cache;
 	tch_mmInit(mmp);
-	thread->t_mm = mmp;
 	/**
 	 *  ================= setup regions for binary images ============================
 	 *  1. dynamic program => dynamically loaded program in run time
@@ -82,7 +94,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		mmp->dynamic->mtx = tchk_mutexInit(mtx,FALSE);
 		mmp->dynamic->condv = tchk_condvInit(condv,FALSE);
 	}else {
-		struct tch_mm* parent_mm = tch_currentThread->kthread->parent->t_mm;
+		struct tch_mm* parent_mm = &tch_currentThread->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		if(!mmp->pgd)
@@ -106,9 +118,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	struct mem_region* regions = (struct mem_region*) kmalloc(sizeof(struct mem_region) * 2);
 	mmp->heap_region = &regions[0];
 	mmp->stk_region = &regions[1];
-	if(!proc_header->req_stksz)										// stack size should not 0
-		proc_header->req_heapsz = TCH_CFG_THREAD_STACK_MIN_SIZE;
-	if(!tch_segmentAllocRegion(0,mmp->stk_region,proc_header->req_stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK))){
+
+	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz)){
 		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD){
 			kfree(condv);
 			kfree(mtx);
@@ -118,15 +129,24 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		kfree(mmp->dynamic);
 		return FALSE;
 	}
-	tch_mapRegion(mmp,mmp->stk_region);
-	tch_port_addPageEntry(mmp->pgd, mmp->stk_region->poff,mmp->stk_region->flags);
-
 
 	/**
+	 *  ================== Stack layout =========================
+	 *  |  thread argment										|
+	 *  |  : null terminated string or pointer to object        |
+	 *  ---------------------------------------------------------
+	 *  |  stack												|
+	 *  |														|
+	 *  ---------------------------------------------------------
+	 *  | user mode accessible thread struct (uthread)			|
+	 *  ---------------------------------------------------------
+	 *
 	 *  ============== prepare per thread user mode accessible struct ==============
 	 *  1. located in stack bottom for check stack integrity
 	 */
 	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << CONFIG_PAGE_SHIFT);
+	thread->uthread = uthread;
+	thread->uthread->t_cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
 
 	/***
 	 *  ================= Prepare Process Argument in topper most area of stack =====================
@@ -142,6 +162,14 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 		thread->uthread->t_arg = proc_header->argv;							// just copy refernece
 	}
 	mmp->estk = argv;
+
+
+	/****
+	 * ================= setup per process heap ====================================
+	 * 1. allocate heap region from init_segment
+	 * 2. create heap control block at the begining of heap region
+	 * 3. add mapping of this region
+	 */
 	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
 		if(proc_header->req_heapsz < CONFIG_HEAP_SIZE)
 			proc_header->req_heapsz = CONFIG_HEAP_SIZE;
@@ -152,27 +180,26 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 			kfree(mmp->dynamic);
 			return FALSE;
 		}
-		heap_root = (wt_heapRoot_t*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
-		wt_initRoot(heap_root);
-		init_heap = (wt_heapNode_t*) &heap_root[1];
-		cache = (wt_cache_t*) &init_heap[1];
-		paddr_t sheap = (paddr_t) &cache[1];
 
+		struct user_heap* proc_heap = (struct user_heap*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
+		paddr_t sheap = (paddr_t) &proc_heap[1];
 		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << CONFIG_PAGE_SHIFT);
-		wt_initNode(init_heap, sheap, ((size_t) eheap -  (size_t) sheap));
-		wt_addNode(heap_root,init_heap);
-		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
-		thread->uthread->t_cache = cache;								// cache struct is made at upper area of proc heap
+
+		wt_initRoot(&proc_heap->heap_root);
+		wt_initNode(&proc_heap->heap_node,sheap,((size_t) eheap - (size_t) sheap));
+		wt_addNode(&proc_heap->heap_root,&proc_heap->heap_node);
 		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
+
+		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
+		mmp->dynamic->heap = &proc_heap->heap_root;
 	}else {
-		thread->uthread->t_cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
 		thread->uthread->heap = thread->parent->uthread->heap;
 		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
 	}
 
-	thread->uthread->heap = thread->t_mm->dynamic->heap;
-	thread->uthread->condv = thread->t_mm->dynamic->condv;
-	thread->uthread->mtx = thread->t_mm->dynamic->mtx;
+	thread->uthread->heap = thread->mm.dynamic->heap;
+	thread->uthread->condv = thread->mm.dynamic->condv;
+	thread->uthread->mtx = thread->mm.dynamic->mtx;
 	thread->uthread = uthread;
 	thread->uthread->kthread = thread;
 	thread->uthread->fn = proc_header->entry;
@@ -201,26 +228,42 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
 
 	// register segments
+	uint32_t* ekstk = NULL;
 	do {
 		seg_id = tch_segmentRegister(*section);
 		tch_mapSegment(&init_mm,seg_id);
+		if(((*section)->flags & SECTION_MSK) == SECTION_STACK)
+			ekstk = (*section)->end;
 		section++;
 	} while (*section);
 
+	return ekstk; // return top address of kernel stack
 }
 
 
 void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
-	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != tch_currentThread->kthread->t_mm){
+	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &tch_currentThread->kthread->mm){
 		//kill thread
 		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);
 	}
 
-	if(!tch_port_addPageEntry(((struct tch_mm*) tch_currentThread->kthread->t_mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
+	if(!tch_port_addPageEntry(((struct tch_mm*) &tch_currentThread->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
 		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
 	}
 }
+
+
+static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz){
+	if(!stksz)										// stack size should not 0
+		stksz = TCH_CFG_THREAD_STACK_MIN_SIZE;
+	if(!(tch_segmentAllocRegion(0,stkregion,stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK)) > 0)){
+		return NULL;
+	}
+	tch_port_addPageEntry(mmp->pgd, stkregion->poff,stkregion->flags);
+	return stkregion->poff << CONFIG_PAGE_SHIFT;
+}
+
 
 tchStatus __tch_noop_destr(tch_kobj* obj){return tchOK; }
 

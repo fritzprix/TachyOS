@@ -76,7 +76,8 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
-	tch_kernelMemInit(default_sections);
+	tch_port_setKerenlSP(tch_kernelMemInit(default_sections));
+
 	if(!tch_kernelInitPort())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
@@ -133,7 +134,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		_impure_ptr = &tch_currentThread->reent;
 #endif
 
-		tch_port_loadPageTable(tch_currentThread->kthread->t_mm->pgd);/// apply page mapping
+		tch_port_loadPageTable(tch_currentThread->kthread->mm.pgd);/// apply page mapping
 		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 			tch_port_atomic_end();
