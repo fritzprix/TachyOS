@@ -14,7 +14,6 @@
 #include "tch_mm.h"
 
 #define  MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
-typedef void (*obj_destr) (void* self);
 
 
 static wt_heapRoot_t kernel_heap_root;
@@ -24,7 +23,9 @@ static struct mem_region init_region;
 static int init_segid;
 
 
-void tch_initKmalloc(int segid){
+void tch_kmalloc_init(int segid){
+
+
 
 	init_segid = segid;
 	tch_segmentAllocRegion(segid,&init_region,CONFIG_KERNEL_DYNAMICSIZE,PERM_KERNEL_ALL | PERM_OTHER_RD);
@@ -69,7 +70,7 @@ void* kmalloc(size_t sz){
 	if(!chunk){
 		return NULL;
 	}
-	cdsl_dlistPutHead(&tch_currentThread->kthread->mm.alc_list,&chunk->alc_ln);			// add alloc list
+	cdsl_dlistPutHead(&current_mm->alc_list,&chunk->alc_ln);			// add alloc list
 	return (void*) ((size_t) chunk + sizeof(struct kobj_header));
 }
 
@@ -77,7 +78,7 @@ void kfree(void* p){
 	if(!p)
 		return;
 	int result;
-	struct kobj_header* obj_entry = (struct kobj_header*) ((size_t) p - sizeof(struct kobj_header));
+	struct kobj_entry* obj_entry = (struct kobj_entry*) container_of(p,struct kobj_entry,kobj);
 	tch_port_atomic_begin();
 	result = wt_free(&kernel_heap_root,obj_entry);
 	tch_port_atomic_end();

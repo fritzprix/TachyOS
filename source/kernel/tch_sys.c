@@ -33,6 +33,7 @@
 #include "tch_thread.h"
 #include "tch_time.h"
 #include "tch_board.h"
+#include "tch_mm.h"
 
 #define SYSTSK_ID_SLEEP             ((int) -3)
 #define SYSTSK_ID_ERR_HANDLE        ((int) -2)
@@ -76,7 +77,8 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
-	tch_port_setKerenlSP(tch_kernelMemInit(default_sections));
+	tch_kernelMemInit(default_sections);
+//	tch_port_setKerenlSP();
 
 	if(!tch_kernelInitPort())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
@@ -104,6 +106,20 @@ void tch_kernelInit(void* arg){
 	tch_port_atomic_begin();
 
 	tch_threadCfg thcfg;
+/*
+ * 	cfg->heapsz = req_heapsz;
+	cfg->stksz = req_stksz;
+	cfg->priority = prior;
+	cfg->name = name;
+	cfg->entry = entry;
+ */
+	/*
+	thcfg.heapsz = 1 << 10;
+	thcfg.stksz = 0;
+	thcfg.priority = Kernel;
+	thcfg.name = "systhread";
+	thcfg.entry = systhreadRoutine;
+*/
 	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 
@@ -129,6 +145,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		cth = (tch_thread_kheader*) tch_currentThread->kthread;
 		cth->tslot = 0;
 		cth->state = RUNNING;
+		current_mm = &tch_currentThread->kthread->mm;
 
 #ifdef __NEWLIB__
 		_impure_ptr = &tch_currentThread->reent;
@@ -203,6 +220,9 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		break;
 	case SV_THREAD_DESTROY:
 		tch_schedThreadDestroy((tch_threadId) arg1,arg2);
+		break;
+	case SV_MTX_CREATE:
+		tchk_kernelSetResult(tch_currentThread,tchk_mutexCreate());
 		break;
 	case SV_MTX_LOCK:
 		tchk_kernelSetResult(tch_currentThread,tchk_mutexLock(arg1,arg2));

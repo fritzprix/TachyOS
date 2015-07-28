@@ -10,7 +10,7 @@
 
 #include "tch_mm.h"
 
-extern void tch_initKmalloc(int segid);
+extern void tch_kmalloc_init(int segid);
 
 extern void* kmalloc(size_t sz);
 extern void kfree(void* );

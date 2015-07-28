@@ -23,7 +23,7 @@ static wt_heapRoot_t		shm_root;
 static int 					shm_init_segid;
 
 
-void tch_shmInit(int seg_id){
+void tch_shm_init(int seg_id){
 	if(seg_id < 0)
 		KERNEL_PANIC("tch_shm.c","Segment given in initialization is not valid");
 
@@ -83,24 +83,40 @@ uint32_t tchk_shmAvail(){
 tchStatus tchk_shmCleanUp(struct tch_mm* owner){
 	if(!owner)
 		return tchErrorParameter;
-	struct kobj_header* chnk;
-	while((chnk = (struct kobj_header*) cdsl_dlistDequeue(&owner->shm_list)) != NULL){
+	struct kobj_entry* chnk;
+	while((chnk = (struct kobj_entry*)cdsl_dlistDequeue(&owner->shm_list)) != NULL){
+		chnk = (struct kobj_entry*) container_of(chnk,struct kobj_entry,alc_ln);
 		if(wt_free(&shm_root,chnk) == WT_ERROR){
 			// TODO : handle shmem corruption in thread termination (this function intended to be called from thread termination)
-
 		}else {
+			if(chnk->kobj.__destr_fn(&chnk->kobj) != tchOK){
+				// TODO : deal with destructor error
+			}
 		}
 	}
+	return tchOK;
 }
 
 void* tch_shmAlloc(size_t sz){
-
+	if(tch_port_isISR()){
+		return tchk_shmalloc(sz);
+	}else{
+		return tch_port_enterSv(SV_SHMEM_ALLOC,sz,0);
+	}
 }
 
 void tch_shmFree(void* mchunk){
-
+	if(tch_port_isISR()){
+		tchk_shmFree(mchunk);
+	}else{
+		tch_port_enterSv(SV_SHMEM_FREE,mchunk,0);
+	}
 }
 
 uint32_t tch_shmAvali(){
-
+	if(tch_port_isISR()){
+		return tchk_shmAvail();
+	}else {
+		return tch_port_enterSv(SV_SHMEM_AVAILABLE,0,0);
+	}
 }

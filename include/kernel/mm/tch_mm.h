@@ -168,10 +168,15 @@
 
 #define get_addr_from_page(paddr)	((size_t) paddr << CONFIG_PAGE_SHIFT)
 
+struct kobj_entry {
+	cdsl_dlistNode_t 	alc_ln;
+	tch_kobj			kobj;
+};
 
 struct kobj_header {
 	cdsl_dlistNode_t		alc_ln;
 };
+
 
 struct section_descriptor {
 	uint32_t		flags;
@@ -197,10 +202,11 @@ struct proc_dynamic {
 
 
 extern struct tch_mm		init_mm;
+extern volatile struct tch_mm* current_mm;
 
 extern void tch_mmInit(struct tch_mm* mmp);
-extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc);
-extern int tch_mmProcClean(tch_thread_kheader* thread,struct tch_mm* mmp);
+extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
+extern int tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
 

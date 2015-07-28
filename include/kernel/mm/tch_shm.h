@@ -10,7 +10,7 @@
 
 #include "tch_ktypes.h"
 
-extern void tch_shmInit(int seg_id);
+extern void tch_shm_init(int seg_id);
 
 
 extern void* tchk_shmalloc(size_t sz);

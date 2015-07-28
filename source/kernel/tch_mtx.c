@@ -52,6 +52,13 @@ __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 
 const tch_mtx_ix* Mtx = &MTX_Instance;
 
+tch_mtxId tchk_mutexCreate(){
+	tch_mtxCb* mcb = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
+	tchk_mutexInit(mcb,FALSE);
+	return (tch_mtxId) mcb;
+}
+
+
 tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static){
 	mcb->svdPrior = Normal;
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);

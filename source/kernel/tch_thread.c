@@ -192,7 +192,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			kthread->permission = 0xffffffff;
 		}
 		kthread->parent = kthread;
-		if(!tch_mmProcInit(kthread, &kthread->mm, proc)){
+		if(!tch_mmProcInit(kthread, proc)){
 			kfree(kthread);
 			return NULL;
 		}
@@ -207,7 +207,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->flag = HEADER_CHILD_THREAD;
 		kthread->parent = tch_currentThread->kthread;
 		kthread->permission = kthread->parent->permission;		// inherit parent permission
-		if(tch_mmProcInit(kthread, &kthread->mm, proc)){
+		if(tch_mmProcInit(kthread, proc)){
 			kfree(kthread);
 			return NULL;
 		}
@@ -347,7 +347,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 	// destroy child
 	// join
 	if(th_p)
-	tch_mmProcClean(th_p,&th_p->mm);
+		tch_mmProcClean(th_p);
 	/*
 	tchk_shareableMemFreeAll(th_p);
 

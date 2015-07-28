@@ -27,8 +27,8 @@ struct user_heap {
 
 
 
-
-struct tch_mm		init_mm;
+volatile struct tch_mm*		current_mm;
+struct tch_mm				init_mm;
 /**
  *  kernel has initial mem_segment array which is declared as static variable,
  *  because there is not support of dynamic memory allocation in early kernel initialization stage.
@@ -44,7 +44,7 @@ void tch_mmInit(struct tch_mm* mmp){
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz);
 
-BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_header* proc_header){
+BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	/**
 	 *  add mapping to region containing process binary image
 	 */
@@ -53,6 +53,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 	tch_mtxCb* mtx;
 	tch_condvCb* condv;
 	wt_cache_t* cache;
+	struct tch_mm* mmp = &thread->mm;
 	tch_mmInit(mmp);
 	/**
 	 *  ================= setup regions for binary images ============================
@@ -210,8 +211,12 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct tch_mm* mmp,struct proc_he
 
 }
 
-int tch_mmProcClean(tch_thread_kheader* thread,struct tch_mm* mmp){
+int tch_mmProcClean(tch_thread_kheader* thread){
+	if(!thread)
+		KERNEL_PANIC("tch_mm.c","thread clean-up fail : null reference");
 
+	struct tch_mm* mmp = &thread->mm;
+	tchk_shmCleanUp(mmp);
 }
 
 
@@ -225,10 +230,12 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 		KERNEL_PANIC("tch_mm.c","invalid section descriptor table");
 
 	tch_mmInit(&init_mm);
+	current_mm = &init_mm;
 	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
 
 	// register segments
 	uint32_t* ekstk = NULL;
+	section = &mdesc_tbl[1];
 	do {
 		seg_id = tch_segmentRegister(*section);
 		tch_mapSegment(&init_mm,seg_id);
@@ -261,7 +268,7 @@ static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregio
 		return NULL;
 	}
 	tch_port_addPageEntry(mmp->pgd, stkregion->poff,stkregion->flags);
-	return stkregion->poff << CONFIG_PAGE_SHIFT;
+	return (uint32_t*) (stkregion->poff << CONFIG_PAGE_SHIFT);
 }
 
 

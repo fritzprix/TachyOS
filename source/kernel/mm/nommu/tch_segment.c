@@ -67,8 +67,8 @@ void tch_initSegment(struct section_descriptor* init_section){
 	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
-	tch_initKmalloc(init_segid);
-	tch_shmInit(init_segid);
+	tch_kmalloc_init(init_segid);
+	tch_shm_init(init_segid);
 	init_mm.pgd = tch_port_allocPageDirectory(kmalloc);
 }
 
