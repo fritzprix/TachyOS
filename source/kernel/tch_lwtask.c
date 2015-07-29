@@ -22,7 +22,7 @@ struct lw_task {
 	tch_mtxId			lock;
 	tch_condvId			condv;
 	cdsl_dlistNode_t	tsk_qn;
-}__attribute__((packed));
+};
 
 static DECLARE_COMPARE_FN(lwtask_priority_rule);
 
