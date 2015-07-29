@@ -104,7 +104,7 @@ struct tch_thread_uheader_s {
 	tch_thread_routine          fn;			///<thread function pointer
 	void* 	 					t_cache;
 	uword_t                     kRet;			///<kernel return value
-	const char*                 t_name;			///<thread name
+	const char*                 name;			///<thread name
 	void*                       t_arg;			///<thread arg field
 	tch_thread_kheader*			kthread;		///<pointer to kernel level thread header
 	void*						heap;

@@ -17,6 +17,8 @@
 #include "tch_thread.h"
 #include "tch_mem.h"
 #include "tch_kmalloc.h"
+#include "tch_mm.h"
+#include "tch_segment.h"
 #include <sys/reent.h>
 
 #define THREAD_CHK_PATTERN		((uint32_t) 0xF3F3D5D5)
@@ -180,7 +182,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 
 	memset(kthread,0,(sizeof(tch_thread_kheader)));
 
-	if(isroot){ 			// if new thread will be the root thread of a process, parent will be self
+	if(isroot){ 			// if new thread is the root thread of a process, parent will be self
 		if(!proc){			// if new thread is trusted thread
 			proc = &default_prochdr;
 			proc->entry = cfg->entry;
@@ -207,7 +209,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->flag = HEADER_CHILD_THREAD;
 		kthread->parent = tch_currentThread->kthread;
 		kthread->permission = kthread->parent->permission;		// inherit parent permission
-		if(tch_mmProcInit(kthread, proc)){
+		if(!tch_mmProcInit(kthread, proc)){
 			kfree(kthread);
 			return NULL;
 		}
@@ -216,7 +218,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 
-	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,kthread->mm.stk_region,__tch_thread_entry);
+	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << CONFIG_PAGE_SHIFT,__tch_thread_entry);
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
@@ -230,6 +232,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	_REENT_INIT_PTR(&kthread->uthread->reent)
 #endif
 	kthread->uthread->chks = THREAD_CHK_PATTERN;
+	kthread->uthread->name = cfg->name;
 	return (tch_threadId) kthread->uthread;
 }
 

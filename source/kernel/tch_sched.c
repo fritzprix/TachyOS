@@ -226,6 +226,7 @@ void tch_schedThreadDestroy(tch_threadId thread,int result){
 
 static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 	tch_currentThread = init_thr;
+	current_mm = &tch_currentThread->kthread->mm;
 	tch_thread_kheader* thr_p = (tch_thread_kheader*) getThreadKHeader(init_thr);
 	tch_port_setUserSP((uint32_t)thr_p->ctx);
 #ifdef MFEATURE_HFLOAT
