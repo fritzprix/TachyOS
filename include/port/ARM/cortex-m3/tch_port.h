@@ -104,13 +104,13 @@ extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
 
-typedef void (*kernel_alloc_t) (size_t s);
+typedef void* (*kernel_alloc_t) (size_t s);
 
 
 extern void tch_port_loadPageTable(pgd_t* pgd);
-extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
-extern int tch_port_addPageEntry(pgd_t* pgd,paddr_t page,uint32_t flag);
-extern int tch_port_removePageEntry(pgd_t* pgd,paddr_t page);
+extern pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag);
+extern int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset);
 
 
 /**

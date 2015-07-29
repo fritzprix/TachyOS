@@ -56,19 +56,17 @@ const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 static tch_msgqId tch_msgq_create(uint32_t len){
 	if(!len)
 		return NULL;
-	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) tch_shMemAlloc(sz,TRUE);
-	if(!msgqCb)
+	uint8_t* msg_bptr = (uint8_t*) tch_shmAlloc(len);
+	if(!msg_bptr)
 		return NULL;
-	return tch_port_enterSv(SV_MSGQ_INIT,msgqCb,len);
+	return (tch_msgqId) tch_port_enterSv(SV_MSGQ_INIT,(uword_t) msg_bptr,(uword_t)len);
 }
 
-tch_msgqId tchk_msgqInit(tch_msgqId id,uint32_t len){
-	tch_msgq_cb* msgqCb = (tch_msgq_cb*) id;
-	size_t sz = sizeof(tch_msgq_cb) + len * sizeof(uaddr_t);
-	memset(msgqCb,0,sz);
+tch_msgqId tchk_msgqInit(uint8_t* bptr,uint32_t len){
+	tch_msgq_cb* msgqCb = (tch_msgq_cb*) kmalloc(sizeof(tch_msgq_cb));
+	memset(msgqCb,0,sizeof(msgqCb));
 
-	msgqCb->bp = (tch_msgq_cb*) msgqCb + 1;
+	msgqCb->bp = bptr;
 	msgqCb->__obj.__destr_fn = (tch_kobjDestr) tch_msgq_destroy;
 	msgqCb->gidx = 0;
 	msgqCb->pidx = 0;
@@ -217,17 +215,20 @@ static uint32_t tch_msgq_getLength(tch_msgqId mqId){
 
 static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 	tch_thread_uheader* nth = NULL;
-	if(!mqId || !tch_msgqIsValid(mqId))
-		return tchErrorResource;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	tch_port_enterSv(SV_MSGQ_DEINIT,(uword_t)mqId,0);
-	tch_shMemFree(mqId);
+	uint8_t* bptr = tch_port_enterSv(SV_MSGQ_DEINIT,(uword_t)mqId,0);
+	if(!bptr)
+		return tchErrorResource;
+
+	tch_shmFree(bptr);
 	return tchOK;
 }
 
 
-tchStatus tchk_msgqDeinit(tch_msgqId mqId){
+void* tchk_msgqDeinit(tch_msgqId mqId){
+	if(!mqId || !tch_msgqIsValid(mqId))
+		return NULL;
 	tch_msgq_cb* msgqCb = (tch_msgq_cb*) mqId;
 	tch_thread_uheader* nth = NULL;
 	msgqCb->gidx = 0;
@@ -236,7 +237,8 @@ tchStatus tchk_msgqDeinit(tch_msgqId mqId){
 	tch_msgqInvalidate(msgqCb);
 	tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->pwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
-	return tchOK;
+	kfree(msgqCb);
+	return msgqCb->bp;
 }
 
 static void tch_msgqValidate(tch_msgqId mqId){

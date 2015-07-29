@@ -160,13 +160,13 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	__FILE* fp = NULL;
 	switch(fd) {
 		case STDERR_FILENO:
-		fp = tch_currentThread->t_reent._stderr;
+		fp = tch_currentThread->reent._stderr;
 		break;
 		case STDOUT_FILENO:
-		fp = tch_currentThread->t_reent._stdout;
+		fp = tch_currentThread->reent._stdout;
 		break;
 		case STDIN_FILENO:
-		fp = tch_currentThread->t_reent._stdin;
+		fp = tch_currentThread->reent._stdin;
 		break;
 	}
 	return fp->_write(reent,fp->_cookie,buf,cnt);
@@ -176,13 +176,13 @@ int _close_r(struct _reent* reent, int fd){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->t_reent._stderr;
+		fp = tch_currentThread->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->t_reent._stdout;
+		fp = tch_currentThread->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->t_reent._stdin;
+		fp = tch_currentThread->reent._stdin;
 		break;
 	}
 	return fp->_close(reent,fp->_cookie);
@@ -192,13 +192,13 @@ off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->t_reent._stderr;
+		fp = tch_currentThread->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->t_reent._stdout;
+		fp = tch_currentThread->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->t_reent._stdin;
+		fp = tch_currentThread->reent._stdin;
 		break;
 	}
 	return fp->_seek(reent,fp->_cookie,pos,whence);
@@ -211,13 +211,13 @@ _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->t_reent._stderr;
+		fp = tch_currentThread->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->t_reent._stdout;
+		fp = tch_currentThread->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->t_reent._stdin;
+		fp = tch_currentThread->reent._stdin;
 		break;
 	}
 	return fp->_read(reent,fp->_cookie,buf,cnt);

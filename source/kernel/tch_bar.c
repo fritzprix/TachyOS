@@ -58,24 +58,27 @@ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
 static tch_barId tch_bar_create(){
-	tch_barCb* bar = (tch_barCb*) tch_shMemAlloc(sizeof(tch_barCb),TRUE);
-	if(!bar)
-		return NULL;
-	tch_port_enterSv(SV_BAR_INIT,(uword_t) bar,(uword_t) FALSE);
-	return (tch_barId) bar;
+	return tch_port_enterSv(SV_BAR_INIT,(uword_t) NULL,(uword_t) FALSE);
 }
 
 
-void tchk_barrierInit(tch_barCb* bar,BOOL is_static){
+tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static){
+	if(!is_static){
+		bar = (tch_barCb*) kmalloc(sizeof(tch_barCb));
+	}
 	memset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
 	cdsl_dlistInit(&bar->wq);
 	bar->__obj.__destr_fn =  is_static? (tch_kobjDestr) __tch_noop_destr : (tch_kobjDestr) tch_bar_destroy;
+	return bar;
 }
 
 tchStatus tchk_barrierDeinit(tch_barCb* bar){
+	if((!bar) || (!BAR_ISVALID(bar)))
+		return tchErrorParameter;
 	BAR_INVALIDATE(bar);
 	tchk_schedThreadResumeM((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	kfree(bar);
 	return tchOK;
 }
 
@@ -101,14 +104,8 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 }
 
 static tchStatus tch_bar_destroy(tch_barId barId){
-	tch_barCb* bar = (tch_barCb*) barId;
-	tchStatus result = tchOK;
-	if((!bar) || (!BAR_ISVALID(bar)))
-		return tchErrorParameter;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	result =  tch_port_enterSv(SV_BAR_DEINIT,(uint32_t)&bar->wq,tchErrorResource);
-	tch_shMemFree(bar);
-	return result;
+	return tch_port_enterSv(SV_BAR_DEINIT,(uint32_t)barId,0);
 }
 

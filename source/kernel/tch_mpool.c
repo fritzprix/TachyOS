@@ -52,7 +52,7 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
 tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
-	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shMemAlloc(sizeof(tch_mpoolCb) + sz * plen,FALSE);
+	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shmAlloc(sizeof(tch_mpoolCb) + sz * plen);
 	memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
 	mpcb->bpool = (tch_mpoolCb*) mpcb + 1;
 	mpcb->balign = sz;
@@ -119,7 +119,7 @@ static tchStatus tch_mpool_destroy(tch_mpoolId mpool){
 	}
 	tch_mpoolInvalidate(mpool);
 	tch_mpoolCb* mcb = (tch_mpoolCb*) mpool;
-	tch_shMemFree(mcb);
+	tch_shmFree(mcb);
 	return tchOK;
 }
 

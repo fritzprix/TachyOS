@@ -67,7 +67,7 @@ const tch_event_ix* Event = &Event_StaticInstance;
 
 
 static tch_eventId tch_eventCreate(){
-	tch_eventCb* evcb = (tch_eventCb*) tch_shMemAlloc(sizeof(tch_eventCb),TRUE);
+	tch_eventCb* evcb = (tch_eventCb*) kmalloc(sizeof(tch_eventCb),TRUE);
 	tch_eventCb initcb;
 	memset(&initcb,0,sizeof(tch_eventCb));
 	initcb.__obj.__destr_fn = (tch_kobjDestr) tch_eventDestroy;
@@ -127,7 +127,7 @@ static tchStatus tch_eventDestroy(tch_eventId ev){
 		return tchErrorISR;
 	}
 	tch_port_enterSv(SV_EV_DEINIT,(uint32_t) ev,0);
-	tch_shMemFree(ev);
+	kfree(ev);
 	return tchOK;
 }
 

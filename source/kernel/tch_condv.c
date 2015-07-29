@@ -20,12 +20,6 @@
 #define tch_condvClrWait(condv)       ((tch_condvCb*) condv)->state &= ~CONDV_WAIT
 #define tch_condvIsWait(condv)        ((tch_condvCb*) condv)->state & CONDV_WAIT
 
-struct _tch_condv_cb_t {
-	tch_kobj          __obj;
-	uint32_t          state;
-	tch_mtxId         waitMtx;
-	tch_thread_queue  wq;
-};
 
 
 static inline void tch_condvValidate(tch_condvId condv);
@@ -64,11 +58,14 @@ tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static){
 
 
 static tch_condvId tch_condv_create(){
-	if(tch_port_isISR()){
+	tch_condvCb* condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb),FALSE);
+	if(!condv)
 		return NULL;
+	if(tch_port_isISR()){
+		tchk_condvInit(condv,FALSE);
+		return (tch_condvId) condv;
 	}
-	tch_condvCb* condv = (tch_condvCb*) tch_shMemAlloc(sizeof(tch_condvCb),FALSE);
-	return tch_port_enterSv(SV_CONDV_INIT,condv,FALSE);
+	return (tch_condvId) tch_port_enterSv(SV_CONDV_INIT,condv,FALSE);
 }
 
 /*! \brief thread wait until given condition is met
@@ -170,9 +167,27 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 		tch_condvInvalidate(condv);
 		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource);
 		Mtx->unlock(condv->waitMtx);
-		tch_shMemFree(condv);
+		kfree(condv);
 		return result;
 	}
+}
+
+
+
+tchStatus tchk_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout){
+
+}
+
+tchStatus tchk_condvWake(tch_condvId condv){
+
+}
+
+tchStatus tchk_condvWakeAll(tch_condvId condv){
+
+}
+
+tchStatus tchk_condvDestroy(tch_condvId condv){
+
 }
 
 static inline void tch_condvValidate(tch_condvId condId){

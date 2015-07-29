@@ -47,9 +47,10 @@ static int init_segid;
 static rb_treeNode_t*		id_root;
 static rb_treeNode_t*		addr_root;
 static uint32_t				seg_cnt;
+static struct proc_dynamic  init_dynamic;
 
 static int initSegment(struct section_descriptor* section,struct mem_segment* seg);
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint16_t perm);
+static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm);
 static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr);
 static struct mem_segment* findSegmentFromPtr(void* ptr);
 
@@ -61,12 +62,14 @@ void tch_initSegment(struct section_descriptor* init_section){
 	seg_cnt = 0;
 
 	init_segid = initSegment(init_section,&init_seg);
-
-	init_mm.mregions = NULL;
+	init_mm.dynamic = &init_dynamic;
+	init_mm.dynamic->mregions = NULL;
 	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
-	tch_initKmalloc(init_segid);
+	tch_kmalloc_init(init_segid);
+	tch_shm_init(init_segid);
+	init_mm.pgd = tch_port_allocPageDirectory(kmalloc);
 }
 
 
@@ -149,7 +152,7 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 		KERNEL_PANIC("tch_segment.c","mem_region can't created");
 	initRegion(region,segment,segment->poff,segment->psize,get_permission(segment->flags));		// region has same page offset and count to its parent segment
 	region->owner = mm;
-	cdsl_rbtreeInsert(&mm->mregions,&region->mm_rbn);
+	cdsl_rbtreeInsert(&mm->dynamic->mregions,&region->mm_rbn);
 
 }
 
@@ -166,7 +169,7 @@ void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 	struct mem_region* region = container_of(segment->reg_root,struct mem_region,rbn);
 	region->owner = NULL;
 
-	cdsl_rbtreeDelete(&mm->mregions,region->poff);				// region is removed from all the tracking red black tree
+	cdsl_rbtreeDelete(&mm->dynamic->mregions,region->poff);				// region is removed from all the tracking red black tree
 	cdsl_rbtreeDelete(&segment->reg_root,region->poff);
 
 	kfree(region);
@@ -174,7 +177,7 @@ void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 
 
 
-uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint16_t permission){
+uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint32_t permission){
 	if(seg_id < 0)
 		return 0;
 	if((mreg == NULL) || (sz == 0)){
@@ -294,7 +297,11 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	return seg_cnt++;
 }
 
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint16_t perm){
+/**
+ *  @brief initialize region struct and insert it to parent segment
+ *  @param[in] regp	pointer to mem_region struct
+ */
+static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm){
 	if(!regp)
 		return;
 	regp->poff = poff;
@@ -368,14 +375,14 @@ void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	if(!mm || !mreg)
 		return;
 	mreg->owner = mm;
-	cdsl_rbtreeInsert(&mm->mregions,&mreg->mm_rbn);
+	cdsl_rbtreeInsert(&mm->dynamic->mregions,&mreg->mm_rbn);
 }
 
 void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	if(!mm || !mreg)
 		return;
 	mreg->owner = NULL;
-	cdsl_rbtreeDelete(&mm->mregions,mreg->poff);
+	cdsl_rbtreeDelete(&mm->dynamic->mregions,mreg->poff);
 }
 
 

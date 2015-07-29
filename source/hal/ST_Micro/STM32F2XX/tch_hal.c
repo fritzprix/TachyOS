@@ -1035,28 +1035,28 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 
 const struct section_descriptor __default_sections[] = {
 		{		// kernel dynamic section
-				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL),
+				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
 				.start = &_skheap,
 				.end = &_ekheap
 		},
 		{
 				// kernel text section
-				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL),
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
 				.start = &_stext,
 				.end = &_etext
 		},
 		{		// kernel bss section (zero filled data)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL),
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
 				.start = &_sbss,
 				.end = &_ebss
 		},
 		{		// kernel data section (initialized to specified value)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL),
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
 				.start = &_sdata,
 				.end = &_edata
 		},
 		{		// kernel stack
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL),
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
 				.start = &_sstack,
 				.end = &_estack
 		}

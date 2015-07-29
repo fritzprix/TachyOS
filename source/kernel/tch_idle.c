@@ -30,12 +30,7 @@ static tch_threadId idleThread;
 void tch_idleInit(){
 
 	tch_threadCfg thcfg;
-	Thread->initCfg(&thcfg);
-	thcfg.t_routine = (tch_thread_routine) idle;
-	thcfg.t_priority = Idle;
-	thcfg.t_name = "idle";
-	thcfg.t_memDef.heap_sz = 0x200;
-	thcfg.t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
+	Thread->initCfg(&thcfg,idle,Idle,0x200,TCH_CFG_THREAD_STACK_MIN_SIZE,"idle");
 	idleThread = Thread->create(&thcfg,NULL);
 
 	busy_cnt = 0;
@@ -71,7 +66,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!busy_cnt) && (getThreadKHeader(tch_currentThread)->t_tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
+		if((!busy_cnt) && (getThreadKHeader(tch_currentThread)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;
 			parm.obj = rtc_handle;
 			tch_lwtsk_request(idle_tskid,&parm,FALSE);

@@ -27,18 +27,18 @@ typedef struct _tch_mtx_cb_t  {
 	uint32_t            status;
 	tch_thread_queue    que;
 	tch_threadId        own;
-	tch_thread_prior    svdPrior;
+	tch_threadPrior    svdPrior;
 }tch_mtxCb;
 
 
 /***
  *  mutex  types
  */
-
-extern void tch_mtxInit(tch_mtxCb* mtx);
-extern tchStatus tchk_mutex_lock(tch_mtxId mtx,uint32_t timeout);
-extern tchStatus tchk_mutex_unlock(tch_mtxId mtx);
-extern tchStatus tchk_mutex_destroy(tch_mtxId mtx);
+extern tch_mtxId tchk_mutexCreate();
+extern tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static);
+extern tchStatus tchk_mutexLock(tch_mtxId mtx,uint32_t timeout);
+extern tchStatus tchk_mutexUnlock(tch_mtxId mtx);
+extern tchStatus tchk_mutexDestroy(tch_mtxId mtx);
 
 #if defined(__cplusplus)
 }

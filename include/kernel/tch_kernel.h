@@ -45,9 +45,9 @@
 #endif
 
 #define TCH_SYS_TASKQ_SZ                    (16)
-#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->t_kRet = result
+#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->kRet = result
 #define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
-#define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->t_kthread)
+#define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->kthread)
 
 /*!
  * \brief

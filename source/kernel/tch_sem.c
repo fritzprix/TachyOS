@@ -52,7 +52,7 @@ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
 
 
 static tch_semId tch_semaphore_create(uint32_t count){
-	tch_semaphore_cb* sem = (tch_semaphore_cb*) tch_shMemAlloc(sizeof(tch_semaphore_cb),FALSE);
+	tch_semaphore_cb* sem = (tch_semaphore_cb*) tch_shmAlloc(sizeof(tch_semaphore_cb));
 	if(!sem)
 		return NULL;
 	sem->count = count;
@@ -112,7 +112,7 @@ static tchStatus tch_semaphore_destroy(tch_semId id){
 		else
 			tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&sem->wq,tchErrorResource);
 	}
-	tch_shMemFree(sem);
+	tch_shmFree(sem);
 	return  tchOK;
 }
 

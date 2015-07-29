@@ -82,6 +82,27 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
 	return retrived;
 }
 
+wtreeNode_t* wtreeDeleteRightMost(wtreeRoot_t*root){
+	if(!root)
+		return NULL;
+	if(root == NULL_NODE)
+		return NULL;
+	wtreeNode_t* rm;
+	wtreeNode_t ** current;
+	current = &root->entry;
+	while((*current)->right != NULL_NODE){
+		current = &(*current)->right;
+	}
+	rm = *current;
+	if(rm->left == NULL_NODE){
+		*current = NULL;
+	}else {
+		*current = rm->left;
+	}
+	return rm;
+}
+
+
 
 void wtreePrint(wtreeRoot_t* root){
 	print_r(root->entry,0);
@@ -129,13 +150,14 @@ static void print_r(wtreeNode_t* node,int depth){
 	if(node == NULL_NODE)
 		return;
 	print_r(node->right,depth + 1);
-	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
+//	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
 	print_r(node->left,depth + 1);
 
 }
 
+
 static void print_tab(int k){
-	while(k--)printf("\t");
+	//while(k--)printf("\t");
 }
 
 static wtreeNode_t* rotateLeft(wtreeNode_t* rot_pivot){

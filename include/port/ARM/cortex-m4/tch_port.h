@@ -98,7 +98,7 @@ extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribu
 
 extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
 extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
-extern void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn);
+extern void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t initfn);
 extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
 extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
@@ -107,9 +107,9 @@ extern int tch_port_reset();
 typedef void (*kernel_alloc_t) (size_t s);
 
 extern void tch_port_loadPageTable(pgd_t* pgd);
-extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
-extern int tch_port_addPageEntry(pgd_t* pgd,paddr_t page,uint32_t flag);
-extern int tch_port_removePageEntry(pgd_t* pgd,paddr_t page);
+extern pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag);
+extern int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset);
 
 
 typedef struct _tch_exc_stack tch_exc_stack;

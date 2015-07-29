@@ -61,26 +61,19 @@ tchStatus monitor_performTest(tch* api){
 	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,tchErrorOS);
 
 	tch_threadCfg thcfg;
-	thcfg.t_name = "consumer1";
-	thcfg.t_routine = consumerRoutine;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 512;
-
+	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
 	consumer1Thread = api->Thread->create(&thcfg,api);
 
-	thcfg.t_name = "consumer2";
+	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
 	consumer2Thread = api->Thread->create(&thcfg,api);
 
 
 
-	thcfg.t_name = "producer1";
-	thcfg.t_routine = producerRoutine;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 512;
 
+	api->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer1");
 	producer1Thread = api->Thread->create(&thcfg,api);
 
-	thcfg.t_name = "producer2";
+	api->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer2");
 	producer2Thread = api->Thread->create(&thcfg,api);
 
 
