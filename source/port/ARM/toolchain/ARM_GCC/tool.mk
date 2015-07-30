@@ -6,7 +6,7 @@
 
 # Optimization options (BUILD = Release / Debug)
 ifeq ($(BUILD),Release)
-	OPT_FLAG=-O2 -g0
+	OPT_FLAG=-O2 -g3
 	DBG_OPTION=
 else
 	OPT_FLAG=-O0 -g3

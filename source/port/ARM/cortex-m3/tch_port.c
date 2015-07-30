@@ -241,8 +241,8 @@ int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 			"LDRNE r5,=#0\n"        // return 1
 			"CMP r6,#0\n"
 			"BNE __exCmpUpdate\n"
-			"STR r5,[%0]\n"
-			"pop {r4-r6}" : : "r"(&result) : "r4","r5","r6");
+			"mov %0,r5\n"
+			"pop {r4-r6}" : "=r"(result) :  : "r4","r5","r6");
 	return result;
 }
 
