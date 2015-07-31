@@ -93,6 +93,7 @@ typedef struct _tch_runtime_t {
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
 typedef enum  {
   tchOK                    =     0,       ///< function completed; no error or event occurred.
+  tchInterrupted		   =  0x01,		  ///< thread is interrupted from waiting
   tchEventSignal           =  0x08,       ///< function completed; signal event occurred.
   tchEventMessage          =  0x10,       ///< function completed; message event occurred.
   tchEventMail             =  0x20,       ///< function completed; mail event occurred.

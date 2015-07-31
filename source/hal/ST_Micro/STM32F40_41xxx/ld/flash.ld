@@ -153,7 +153,7 @@ SECTIONS
     
     .kernel.syscall :
     {
-    	*(.sysc.entry)
+    	_syscall_entry = .;
     	*(.sysc.table)    
     } > FLASH
     

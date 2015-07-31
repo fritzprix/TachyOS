@@ -23,6 +23,8 @@
 
 #include "tch_err.h"
 
+
+#include "tch_board.h"
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mailq.h"
@@ -32,7 +34,6 @@
 #include "tch_port.h"
 #include "tch_thread.h"
 #include "tch_time.h"
-#include "tch_board.h"
 #include "tch_mm.h"
 
 #define SYSTSK_ID_SLEEP             ((int) -3)
@@ -46,6 +47,7 @@ typedef struct tch_busy_monitor_t {
 
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
+
 
 static tch_busy_monitor busyMonitor;
 static tch RuntimeInterface;
@@ -78,7 +80,6 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Event = Event;
 
 	tch_kernelMemInit(default_sections);
-//	tch_port_setKerenlSP();
 
 	if(!tch_kernelInitPort())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
@@ -93,33 +94,9 @@ void tch_kernelInit(void* arg){
 	mainThread = NULL;
 	sysThread = NULL;
 
-	/**
-	 *  Initialize paging sub-system for memory managment
-	 */
-	/*
-	if(tchk_pageInit(&Sys_Heap_Base,((uword_t)&Sys_Heap_Limit - (uword_t)&Sys_Heap_Base)) != tchOK)
-		KERNEL_PANIC("tch_sys.c","Can't initialize paging");
-
-	tchk_shareableMemInit(TCH_CFG_SHARED_MEM_SIZE);					// Initialize shareable(publicly accessable from all execution context) memory allocator
-	tchk_kernelHeapInit(TCH_CFG_KERNEL_HEAP_MEM_SIZE);				// Initialize kernel heap allocator(only accessible from privilidged level)
-*/
 	tch_port_atomic_begin();
 
 	tch_threadCfg thcfg;
-/*
- * 	cfg->heapsz = req_heapsz;
-	cfg->stksz = req_stksz;
-	cfg->priority = prior;
-	cfg->name = name;
-	cfg->entry = entry;
- */
-	/*
-	thcfg.heapsz = 1 << 10;
-	thcfg.stksz = 0;
-	thcfg.priority = Kernel;
-	thcfg.name = "systhread";
-	thcfg.entry = systhreadRoutine;
-*/
 	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 

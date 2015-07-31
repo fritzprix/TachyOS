@@ -260,8 +260,8 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 			"STREX r6,r4,[r0]\n"
 			"CMP r6,#0\n"
 			"BNE _exCmpDec\n"
-			"STR r5,[%0]\n"
-			"pop {r4-r6}\n" : :"r"(&result) : "r4","r5","r6");
+			"mov %0,r5\n"
+			"pop {r4-r6}\n" : "=r"(result) : : "r4","r5","r6");
 	return result;
 }
 

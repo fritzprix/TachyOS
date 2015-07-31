@@ -60,32 +60,6 @@ defined in linker script */
 
 
 
-.globl sys_heap_base
-.globl sys_heap_limit
-
-.globl mbarrier_upperLimit
-.globl mbarrier_lowerLimit
-
-#ifdef __HEAP_SIZE
-.equ Sys_Heap_Size, __HEAP_SIZE
-#else
-.equ Sys_Heap_Size, 0x10000
-#endif
-
-#ifdef __MBARRIER_SIZE
-.equ mBarrier_Size, __MBARRIER_SIZE
-#else
-.equ mBarrier_Size, 0x60
-#endif
-
-
-.section .heap
-sys_heap_base:
-	.align 4
-	.space Sys_Heap_Size
-sys_heap_limit:
-
-
 /**
  * @brief  This is the code that gets called when the processor first
  *          starts execution following a reset event. Only the absolutely

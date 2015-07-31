@@ -44,6 +44,25 @@
 #define container_of(ptr,type,member) 		(type*) (((size_t) ptr - (size_t) offsetof(type,member)))
 #endif
 
+#define __SYSCALL__	__attribute__((section(".sysc.table")))
+
+typedef tchStatus (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
+extern uint32_t __syscall_entry;
+
+#define DECLARE_SYSCALL(fn) \
+	extern tchStatus __##fn(uint32_t arg1,uint32_t arg2,uint32_t arg3);\
+
+#define SYSCALL(fn)	\
+	const __SYSCALL__ tch_syscall __entry__##fn = __##fn;\
+	tchStatus __##fn(uint32_t arg1,uint32_t arg2, uint32_t arg3)
+
+
+#define INVOKE_SYSCALL(fn,arg1,arg2) \
+	tch_port_enterSv(__##fn - (uint32_t) &__syscall_entry,arg1,arg2);
+
+
+
+
 #define TCH_SYS_TASKQ_SZ                    (16)
 #define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->kRet = result
 #define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
@@ -94,14 +113,6 @@ extern void tch_kernelClrBusyMark();
  *
  */
 extern BOOL tch_kernelIsBusy();
-
-
-
-extern int Sys_Stack_Top asm("sys_stack_top");
-extern int Sys_Stack_Limit asm("sys_stack_limit");
-
-extern int Sys_Heap_Base asm("sys_heap_base");
-extern int Sys_Heap_Limit asm("sys_heap_limit");
 
 
 /**

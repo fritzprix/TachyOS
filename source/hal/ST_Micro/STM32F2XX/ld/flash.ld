@@ -105,6 +105,12 @@ SECTIONS
 	    _sidata = .;
     } >FLASH
     
+    .kernel.syscall :
+    {
+    	__syscall_entry = .;
+    	*(.sysc.table)    
+    } > FLASH
+    
    
     
     
@@ -154,7 +160,7 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
-    
+
     /* 
       Heap Section start at the end of bss      
     */
