@@ -12,6 +12,9 @@
  *      Author: innocentevil
  */
 
+#include "tch_gpio.h"
+#include "tch_timer.h"
+#include "tch_port.h"
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mm.h"
@@ -977,10 +980,12 @@ tch_hal tch_hal_instance;
 tch_lld_rtc* tch_rtc;
 tch_lld_dma* tch_dma;
 
-const tch_hal* tch_kernelInitHAL(const tch* env){
+const tch_hal* tch_hal_init(const tch* env){
+
 	/***
 	 *  initialize clock subsystem
 	 */
+
 
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
@@ -1000,7 +1005,6 @@ const tch_hal* tch_kernelInitHAL(const tch* env){
 
 	return &tch_hal_instance;
 }
-
 
 
 void tch_hal_enableSystick(){
@@ -1062,7 +1066,7 @@ const struct section_descriptor __default_sections[] = {
 		}
 };
 
-struct __attribute__((section(".data"))) section_descriptor* default_sections[] = {
+const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
 		&__default_sections[0],
 		&__default_sections[1],
 		&__default_sections[2],
@@ -1079,8 +1083,11 @@ void tch_hal_enterSleepMode(){
 	__ISB();
 }
 
-void tch_hal_suspendSysClock(){
-
+void tch_hal_pauseSysClock(){
+	/**
+	 *  it's handled by hardware in ARMv7m.
+	 *  thus blank stub
+	 */
 }
 
 void tch_hal_resumeSysClock(){
@@ -1100,7 +1107,6 @@ void tch_hal_resumeSysClock(){
 	while((RCC->CFGR & RCC_CFGR_SWS_PLL) != RCC_CFGR_SWS_PLL)
 		__NOP();
 }
-
 
 void SysTick_Handler(void){
 	tch_KernelOnSystick();

@@ -25,9 +25,6 @@
 #include "tch_rtc.h"
 
 
-#define __TCH_STATIC_INIT  __attribute__((section(".data")))
-
-
 ////////////////////////////////   Device Description Header   ////////////////////////////////////
 
 

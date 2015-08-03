@@ -60,7 +60,7 @@ struct pgd {
 };
 
 
-extern BOOL tch_kernelInitPort(){
+extern BOOL tch_port_init(){
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
 	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
@@ -107,25 +107,31 @@ extern BOOL tch_kernelInitPort(){
 }
 
 
-void tch_port_enable_privilegedThread(){
+void tch_port_setIsrVectorMap(uint32_t isrv){
+	isrv &= ~0x200;
+	SCB->VTOR = isrv;
+}
+
+
+void tch_port_enablePrivilegedThread(){
 	uint32_t mcu_control = __get_CONTROL();
 	mcu_control &= ~CTRL_UNPRIV_THREAD_ENABLE;
 	__set_CONTROL(mcu_control);
 }
 
-void tch_port_disable_privilegedThread(){
+void tch_port_disablePrivilegedThread(){
 	uint32_t mcu_control = __get_CONTROL();
 	mcu_control |= CTRL_UNPRIV_THREAD_ENABLE;
 	__set_CONTROL(mcu_control);
 }
 
 
-void tch_port_atomic_begin(void){
+void tch_port_atomicBegin(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
 
 
-void tch_port_atomic_end(void){
+void tch_port_atomicEnd(void){
 	__set_BASEPRI(MODE_USER);
 }
 
@@ -141,7 +147,7 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
-void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
+void tch_port_switch(uaddr_t nth,uaddr_t cth,tchStatus kret){
 	((tch_thread_kheader*)nth)->uthread->kRet = kret;
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
@@ -163,7 +169,7 @@ void tch_port_switchContext(uaddr_t nth,uaddr_t cth,tchStatus kret){
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
+void tch_port_enterPrivThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
 	                                                              //   prepare fake exception stack
 	                                                              //    - passing arguement to kernel mode thread
@@ -186,8 +192,8 @@ void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uw
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	__DMB();
 	__ISB();
-	tch_port_enable_privilegedThread();
-	tch_port_atomic_begin();                                       // 6. finally lock as kernel execution
+	tch_port_enablePrivilegedThread();
+	tch_port_atomicBegin();                                       // 6. finally lock as kernel execution
 }
 
 

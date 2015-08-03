@@ -23,9 +23,8 @@
 #include "tch.h"
 #include "tch_dma.h"
 #include "tch_rtc.h"
+#include "tch_ktypes.h"
 
-
-#define __TCH_STATIC_INIT  __attribute__((section(".data")))
 
 
 ////////////////////////////////   Device Description Header   ////////////////////////////////////

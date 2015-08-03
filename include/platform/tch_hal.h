@@ -20,15 +20,15 @@
 #ifndef TCH_HAL_H_
 #define TCH_HAL_H_
 
-#if defined(__cplusplus)
-extern "C"{
-#endif
-
 #include "tch_halcfg.h"
 #include "tch_haldesc.h"
 
-#include "tch_rtc.h"
-#include "tch_dma.h"
+#include "platform/tch_rtc.h"
+#include "platform/tch_dma.h"
+
+#if defined(__cplusplus)
+extern "C"{
+#endif
 
 
 /**
@@ -72,7 +72,8 @@ extern int _ekheap;
 extern int _sstack;
 extern int _estack;
 
-extern struct section_descriptor* default_sections[];
+extern const struct section_descriptor* const default_sections[];
+extern const tch_hal* tch_hal_init(const tch* ctx);
 
 /**
  * \callgraph
@@ -111,13 +112,13 @@ extern void tch_hal_setSleepMode(tch_lplvl lplvl);
 extern void tch_hal_enterSleepMode();
 
 /**
- * \brief Suspend system core clock
+ * \brief pause system core clock
  *
  * this function is invoked from kernel when main clock should be turned off
  * \see tch_hal_resumeSysClock
  */
 
-extern void tch_hal_suspendSysClock();
+extern void tch_hal_pauseSysClock();
 
 /**
  * \brief Resume system core clock
@@ -127,8 +128,6 @@ extern void tch_hal_suspendSysClock();
  */
 
 extern void tch_hal_resumeSysClock();
-
-
 
 
 

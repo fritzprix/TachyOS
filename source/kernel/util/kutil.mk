@@ -5,8 +5,7 @@ KERNEL_UTIL_SRCS=\
 	    cdsl_heap.c\
 	    cdsl_rbtree.c\
 	    cdsl_slist.c\
-	    cdsl_spltree.c\
-	    tch_mem.c
+	    cdsl_spltree.c
 	    
 KERNEL_UTIL_CPP_SRCS=
 KERNEL_UTIL_BUILD_DIR=$(GEN_DIR)/kutil

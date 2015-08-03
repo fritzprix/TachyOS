@@ -17,7 +17,7 @@
 
 
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 #include <time.h>
 
 #if defined(__cplusplus)

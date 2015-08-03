@@ -55,6 +55,8 @@
 
 
 
+extern BOOL tch_port_init();
+extern void tch_port_setIsrVectorMap(uint32_t);
 
 
 /** \brief enable global interrupts
@@ -92,7 +94,7 @@ extern BOOL tch_port_isISR();
 /** \brief switch task (or thread) context
  *
  */
-extern void tch_port_switchContext(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
+extern void tch_port_switch(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
 
 
 
@@ -104,11 +106,13 @@ extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
 
-typedef void (*kernel_alloc_t) (size_t s);
+typedef void* (*kernel_alloc_t) (size_t s);
 
-extern void* tch_port_allocPageDirectory(kernel_alloc_t alloc);
-extern int tch_port_addPageEntry(pgd_t* pgd,paddr_t page);
-extern int tch_port_removePageEntry(pgd_t* pgd,paddr_t page);
+
+extern void tch_port_loadPageTable(pgd_t* pgd);
+extern pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc);
+extern int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag);
+extern int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset);
 
 
 /**

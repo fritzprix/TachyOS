@@ -12,7 +12,7 @@
 #include "tch.h"
 
 #if defined(__cplusplus)
-extern "C"{
+extern "C" {
 #endif
 
 typedef struct tch_board_descriptor_s {

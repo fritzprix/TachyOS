@@ -138,7 +138,7 @@ LoopFillZerobss:
 /* Call the clock system intitialization function.*/
   bl  SystemInit   
 /* Call the application's entry point.*/
-  bl  tch_kernelInit
+  bl  __init
   bx  lr    
 .size  Reset_Handler, .-Reset_Handler
 

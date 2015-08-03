@@ -14,6 +14,7 @@
 extern "C"{
 #endif
 
+#include "kernel/tch_ktypes.h"
 
 #define tch_ADC1                  ((adc_t) 0)
 #define tch_ADC2                  ((adc_t) 1)

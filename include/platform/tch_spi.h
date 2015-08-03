@@ -15,6 +15,7 @@
 #ifndef TCH_SPI_H_
 #define TCH_SPI_H_
 
+#include "kernel/tch_ktypes.h"
 
 #if defined(__cplusplus)
 extern "C"{

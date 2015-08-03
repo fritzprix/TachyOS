@@ -11,6 +11,7 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
+#include "tch_ptypes.h"
 #include "cdsl_dlist.h"
 #include "cdsl_rbtree.h"
 
@@ -19,6 +20,9 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+
+#define __TCH_STATIC_INIT  __attribute__((section(".data")))
 
 
 typedef struct {

@@ -16,7 +16,6 @@
 #include "tch_kernel.h"
 #include "tch_bar.h"
 #include "tch_sched.h"
-#include "tch_mem.h"
 
 
 #define TCH_BARRIER_CLASS_KEY        ((uhword_t) 0x2D03)

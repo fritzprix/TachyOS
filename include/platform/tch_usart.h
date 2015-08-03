@@ -15,9 +15,9 @@
 #ifndef TCH_USART_H_
 #define TCH_USART_H_
 
-#include "tch.h"
+#include "kernel/tch_ktypes.h"
 
-#if defined(_cplusplus)
+#if defined(__cplusplus)
 extern "C"{
 #endif
 
@@ -69,7 +69,7 @@ typedef struct tch_lld_usart {
 	tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_usart;
 
-#if defined(_cplusplus)
+#if defined(__cplusplus)
 }
 #endif
 

@@ -16,7 +16,7 @@
 #define TCH_THREAD_H_
 
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 #if defined(__cplusplus)
 extern "C"{

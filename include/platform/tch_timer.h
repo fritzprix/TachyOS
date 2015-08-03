@@ -15,7 +15,12 @@
 #ifndef TCH_TIMER_H_
 #define TCH_TIMER_H_
 
-#include "tch.h"
+
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 
 #define tch_TIMER0               ((tch_timer) 0)
@@ -105,6 +110,11 @@ typedef struct tch_lld_timer {
 	uint32_t (*getChannelCount)(tch_timer timer);
 	uint8_t (*getPrecision)(tch_timer timer);
 } tch_lld_timer;
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 
 #endif /* TCH_TIMER_H_ */

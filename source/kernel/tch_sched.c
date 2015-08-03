@@ -17,7 +17,6 @@
 #include "cdsl_dlist.h"
 #include "tch_sched.h"
 #include "tch_thread.h"
-#include "tch_mem.h"
 
 
 
@@ -71,7 +70,7 @@ extern void tchk_schedThreadStart(tch_threadId thread){
 		getListNode(thr->kthread)->prev = (cdsl_dlistNode_t*) tch_currentThread->kthread; 	                                                            ///< set new thread as current thread
 		tch_currentThread = thr;
 		((tch_thread_kheader*)getListNode(tch_currentThread->kthread)->prev)->state = READY;
-		tch_port_jmpToKernelModeThread((uaddr_t) tch_port_switchContext,(uword_t)thread,(uword_t) getListNode(thread)->prev,tchOK);
+		tch_port_enterPrivThread((uaddr_t) tch_port_switch,(uword_t)thread,(uword_t) getListNode(thread)->prev,tchOK);
 	}else{
 		thr->kthread->state = READY;
 		tchk_kernelSetResult(tch_currentThread,tchOK);
@@ -104,7 +103,7 @@ void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState next
 	getListNode(nth)->prev = (cdsl_dlistNode_t*) getThreadKHeader(tch_currentThread);
 	getThreadKHeader(tch_currentThread)->state = nextState;
 	tch_currentThread = nth->uthread;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
+	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
 }
 
 
@@ -121,7 +120,7 @@ void tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getThreadKHeader(tch_currentThread)->state = WAIT;
 	getThreadKHeader(tch_currentThread)->t_waitQ = (cdsl_dlistNode_t*) wq;
 	tch_currentThread = nth->uthread;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
+	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
 }
 
 
@@ -141,7 +140,7 @@ int tch_schedThreadResume(tch_thread_queue* wq,tch_threadId thread,tchStatus res
 		tchk_schedThreadReady(tch_currentThread);                       // put current thread in ready queue for preemption
 		getListNode(nth)->prev = getListNode(getThreadKHeader(tch_currentThread)); // set current thread as previous node of new thread
 		tch_currentThread = nth->uthread;                                 // set new thread as current thread
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);    // go to switch context
+		tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,res);    // go to switch context
 		return TRUE;
 	}
 	tchk_schedThreadReady(nth->uthread);
@@ -171,7 +170,7 @@ BOOL tchk_schedThreadResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL pre
 		tchk_schedThreadReady(tch_currentThread);
 		getListNode(tpreempt)->prev = getListNode(getThreadKHeader(tch_currentThread));
 		tch_currentThread = tpreempt->uthread;
-		tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
+		tch_port_enterPrivThread(tch_port_switch,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,res);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
 	}
 	return TRUE;
 }
@@ -186,7 +185,7 @@ void tch_schedThreadUpdate(void){
 	getListNode(nth)->prev = (cdsl_dlistNode_t*) cth;
 	tch_currentThread = nth->uthread;
 	getThreadKHeader(getListNode(nth)->prev)->state = SLEEP;
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);   // switch context without change
+	tch_port_enterPrivThread(tch_port_switch,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);   // switch context without change
 }
 
 BOOL tch_schedIsEmpty(){
@@ -210,14 +209,14 @@ void tchk_schedThreadTerminate(tch_threadId thread, int result){
 		tchk_kernelSetResult(jth,result);
 	}
 	jth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);									/// get new thread from readyque
-	tch_port_jmpToKernelModeThread(tch_port_switchContext,(uint32_t)jth,(uint32_t)thr,jth->uthread->kRet);
+	tch_port_enterPrivThread(tch_port_switch,(uint32_t)jth,(uint32_t)thr,jth->uthread->kRet);
 }
 
 void tch_schedThreadDestroy(tch_threadId thread,int result){
 	/// manipulated exc stack to return atexit
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	if(thread == tch_currentThread){
-		tch_port_jmpToKernelModeThread(__tchk_thread_atexit,(uint32_t)thread,result,0);
+		tch_port_enterPrivThread(__tchk_thread_atexit,(uint32_t)thread,result,0);
 	}else{
 		tchk_threadInvalidate(thread,result);
 	}

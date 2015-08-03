@@ -15,10 +15,11 @@
 #ifndef TCH_I2C_H_
 #define TCH_I2C_H_
 
+#include "kernel/tch_ktypes.h"
+
 #if defined(__cplusplus)
 extern "C"{
 #endif
-
 
 #define IIc1                  ((tch_iic) 0)
 #define IIc2                  ((tch_iic) 1)

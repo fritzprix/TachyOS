@@ -12,6 +12,9 @@
  *      Author: innocentevil
  */
 
+#include "tch_gpio.h"
+#include "tch_timer.h"
+#include "tch_port.h"
 #include "tch_hal.h"
 #include "tch_kernel.h"
 
@@ -988,7 +991,7 @@ tch_hal tch_hal_instance;
 tch_lld_rtc* tch_rtc;
 tch_lld_dma* tch_dma;
 
-const tch_hal* tch_kernelInitHAL(const tch* env){
+const tch_hal* tch_hal_init(const tch* env){
 	/***
 	 *  initialize clock subsystem
 	 */
@@ -1050,7 +1053,7 @@ void tch_hal_enterSleepMode(){
 	__ISB();
 }
 
-void tch_hal_suspendSysClock(){
+void tch_hal_pauseSysClock(){
 
 }
 

@@ -1,16 +1,16 @@
 
-.SUFFIXES : .c .o
 HAL_SRCS=\
-system_stm32f4xx.c\
-tch_adc.c\
-tch_dma.c\
-tch_gpio.c\
-tch_hal.c\
-tch_i2c.c\
-tch_rtc.c\
-tch_spi.c\
-tch_timer.c\
-tch_usart.c
+	system_stm32f4xx.c\
+	tch_adc.c\
+	tch_dma.c\
+	tch_gpio.c\
+	tch_hal.c\
+	tch_i2c.c\
+	tch_rtc.c\
+	tch_spi.c\
+	tch_timer.c\
+	tch_usart.c\
+	tch_boot.c
 	
 HAL_ASM_SRCS=\
      startup_stm32f40xx.S
@@ -18,7 +18,7 @@ HAL_ASM_SRCS=\
 ASM_OPT=-x assembler-with-cpp\
         -nostdinc
 
-HAL_BUILD_DIR=$(GEN_DIR)/hal
+HAL_BUILD_DIR=$(GEN_DIR)/platform
 GEN_SUB_DIR+=$(HAL_BUILD_DIR)
 
 HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(HAL_BUILD_DIR)/%.o)

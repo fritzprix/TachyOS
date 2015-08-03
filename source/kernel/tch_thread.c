@@ -15,7 +15,6 @@
 #include "tch_err.h"
 #include "tch_kernel.h"
 #include "tch_thread.h"
-#include "tch_mem.h"
 #include "tch_kmalloc.h"
 #include "tch_mm.h"
 #include "tch_segment.h"

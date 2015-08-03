@@ -102,10 +102,10 @@ LoopFillZerobss:
   cmp  r2, r3
   bcc  FillZerobss
 /* Call the clock system intitialization function.*/
-  bl  SystemInit   
+//  bl  SystemInit
 /* Call the application's entry point.*/
   ldr r0,=#0			// kernel arg null
-  bl  tch_kernelInit
+  bl  __init
   bx  lr    
 .size  Reset_Handler, .-Reset_Handler
 

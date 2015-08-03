@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 #include "tch_usart.h"
 #include "tch_spi.h"
@@ -72,15 +72,6 @@ struct tch_hal_t{
 #define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
-
-
-typedef struct _tch_runtime_t tch;
-
-/*!
- *  tachyos kernel interface
- */
-
-
 
 
 

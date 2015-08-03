@@ -9,8 +9,8 @@
 #define TCH_TYPEDEF_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <time.h>
-#include "tch_ptypes.h"
 
 #if defined(__cplusplus)
 extern "C"{
@@ -87,7 +87,7 @@ typedef struct _tch_runtime_t {
 	const tch_hal* Device;                      ///< Entry of Device Driver Handles
 	const tch_mem_ix* Mem;
 	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
-}tch;
+} tch;
 
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
@@ -111,7 +111,7 @@ typedef enum  {
   tchErrorStackOverflow    =  0x88,       ///< stack overflow error
   tchErrorHeapCorruption   =  0x89,		  /// <heap corrupted
   tchErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
-  tch_status_reserved       =  WORD_MAX    ///< prevent from enum down-size compiler optimization.
+  tch_status_reserved       =  0xFFFFFFFF    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
 typedef enum {
@@ -161,6 +161,14 @@ typedef struct  {
 /***
  *  General Types
  */
+ /*
+#ifndef BOOL
+#define BOOL	uint8_t
+#endif
+
+#define TRUE  	((uint8_t) (1 > 0))
+#define FALSE	!(TRUE)*/
+
 typedef enum {	TRUE = ((uint8_t)(1 > 0)),FALSE = ((uint8_t)!TRUE)  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_PwrOpt;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;

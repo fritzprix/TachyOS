@@ -20,7 +20,7 @@
 #ifndef TCH_GPIO_H_
 #define TCH_GPIO_H_
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -192,7 +192,7 @@ typedef struct tch_lld_gpio {
 	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout);
 	void (*initCfg)(tch_GpioCfg* cfg);
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
-}tch_lld_gpio;
+} tch_lld_gpio;
 
 
 #if defined(__cplusplus)
