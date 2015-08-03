@@ -8,7 +8,6 @@
 #include "tch.h"
 #include "tch_kernel.h"
 #include "tch_condv.h"
-#include "tch_mem.h"
 
 
 #define CONDV_VALID        ((uint8_t) 1)

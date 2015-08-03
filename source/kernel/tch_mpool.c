@@ -82,12 +82,12 @@ void* tch_mpool_alloc(tch_mpoolId mpool){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	if(!mpcb->bfree)
 		return NULL;
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	void** free = (void**)mpcb->bfree;
 	if(free){
 		mpcb->bfree = *free;
 	}
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 	return free;
 }
 
@@ -105,10 +105,10 @@ tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	if((block < mpcb->bpool) || (block > mpcb->bend))
 		return tchErrorParameter;
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	*((void**)block) = mpcb->bfree;
 	mpcb->bfree = block;
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 	return tchOK;
 }
 

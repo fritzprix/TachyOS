@@ -84,7 +84,7 @@ static DECLARE_LWTASK(idleTaskHandler){
 	case IDLE_CMD_GOSLEEP:
 		tch_hal_disableSystick();
 		tch_hal_setSleepMode(LP_LEVEL1);
-		tch_hal_suspendSysClock();
+		tch_hal_pauseSysClock();
 		tch_hal_enterSleepMode();
 		tch_hal_resumeSysClock();
 		tch_hal_setSleepMode(LP_LEVEL0);

@@ -9,7 +9,6 @@
 #define CDSL_RBTREE_H_
 
 #include "cdsl.h"
-#include "cdsl_rbtree.h"
 
 #if defined(__cplusplus)
 extern "C" {

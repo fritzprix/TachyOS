@@ -47,9 +47,9 @@ void __lwtsk_start_loop(){
 	struct lw_task* tsk = NULL;
 	while(TRUE){
 		do {
-			tch_port_atomic_begin();
+			tch_port_atomicBegin();
 			tsk = (struct lw_task*) cdsl_dlistDequeue(&tsk_queue);
-			tch_port_atomic_end();
+			tch_port_atomicEnd();
 
 			if (!tsk) {
 				if (tch_rti->Barrier->wait(looper_waitq, tchWaitForever) != tchOK) {
@@ -87,9 +87,9 @@ int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior){
 	cdsl_dlistInit(&tsk->tsk_qn);
 	cdsl_rbtreeNodeInit(&tsk->rbn,tsk_cnt++);
 
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	cdsl_rbtreeInsert(&tsk_root,&tsk->rbn);
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 
 	return tsk->rbn.key;
 }
@@ -140,20 +140,20 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
 		tsk->arg = arg;
 		tch_rti->Mtx->unlock(tsk->lock);
 	}else{
-		tch_port_atomic_begin();
+		tch_port_atomicBegin();
 		if(tsk->status != LWSTATUS_DONE){
-			tch_port_atomic_end();
+			tch_port_atomicEnd();
 			return;
 		}
 
 		tsk->status = LWSTATUS_PENDING;
 		tsk->arg = arg;
-		tch_port_atomic_end();
+		tch_port_atomicEnd();
 	}
 
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	cdsl_dlistEnqueuePriority(&tsk_queue,&tsk->tsk_qn,lwtask_priority_rule);
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 
 	tch_rti->Barrier->signal(looper_waitq,tchOK);
 
@@ -180,9 +180,9 @@ void tch_lwtsk_cancel(int tsk_id){
 	if(tch_rti->Mtx->lock(tsk->lock,tchWaitForever) != tchOK)
 		return;
 	tsk->status = LWSTATUS_DONE;
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	cdsl_dlistRemove(&tsk->tsk_qn);
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 	tch_rti->Mtx->unlock(tsk->lock);
 }
 

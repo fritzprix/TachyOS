@@ -44,14 +44,14 @@ void* kmalloc(size_t sz){
 	struct kobj_header* chunk = NULL;
 	size_t asz = sz + sizeof(struct kobj_header);
 
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	if(!(wt_available(&kernel_heap_root)  > (MIN_CACHE_SIZE + asz))){
 		// try to allocate new memory region and add it to kernel heap
 		struct mem_region *nregion = wt_malloc(&kernel_heap_root,sizeof(struct mem_region));
 		wt_heapNode_t	*alloc = wt_malloc(&kernel_heap_root,sizeof(wt_heapNode_t));
 		size_t rsz = tch_segmentGetFreeSize(init_segid);
 		if(rsz < sz){
-			tch_port_atomic_end();
+			tch_port_atomicEnd();
 			return NULL;		// not able to satisfies memory request
 								// otherwise, allocate new region and add it to kernel heap
 		}
@@ -61,11 +61,11 @@ void* kmalloc(size_t sz){
 		wt_initNode(&init_kernel_cache,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
 		wt_addNode(&kernel_heap_root,&init_kernel_cache);
 	}
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct kobj_header));
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 
 	if(!chunk){
 		return NULL;
@@ -79,9 +79,9 @@ void kfree(void* p){
 		return;
 	int result;
 	struct kobj_entry* obj_entry = (struct kobj_entry*) container_of(p,struct kobj_entry,kobj);
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 	result = wt_free(&kernel_heap_root,obj_entry);
-	tch_port_atomic_end();
+	tch_port_atomicEnd();
 	if(result == WT_ERROR)
 		KERNEL_PANIC("tch_kmalloc.c","kernel heap corrupted");
 	cdsl_dlistRemove(&obj_entry->alc_ln);

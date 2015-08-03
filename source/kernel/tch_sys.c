@@ -29,7 +29,6 @@
 #include "tch_kernel.h"
 #include "tch_mailq.h"
 #include "tch_msgq.h"
-#include "tch_mem.h"
 #include "tch_nclib.h"
 #include "tch_port.h"
 #include "tch_thread.h"
@@ -79,9 +78,7 @@ void tch_kernelInit(void* arg){
 	RuntimeInterface.Mem = uMem;
 	RuntimeInterface.Event = Event;
 
-	tch_kernelMemInit(default_sections);
-
-	if(!tch_kernelInitPort())										// initialize port layer
+	if(!tch_port_init())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
 
@@ -94,7 +91,7 @@ void tch_kernelInit(void* arg){
 	mainThread = NULL;
 	sysThread = NULL;
 
-	tch_port_atomic_begin();
+	tch_port_atomicBegin();
 
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
@@ -131,14 +128,14 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tch_port_loadPageTable(tch_currentThread->kthread->mm.pgd);/// apply page mapping
 		tch_port_setUserSP((uint32_t)sp);
 		if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
-			tch_port_atomic_end();
+			tch_port_atomicEnd();
 		}else{
 			tch_schedThreadDestroy(tch_currentThread,arg1);
 		}
 		if(tchk_threadIsPrivilidged(tch_currentThread))
-			tch_port_enable_privilegedThread();
+			tch_port_enablePrivilegedThread();
 		else
-			tch_port_disable_privilegedThread();
+			tch_port_disablePrivilegedThread();
 		break;
 	case SV_CONDV_INIT:
 		tchk_kernelSetResult(tch_currentThread,tchk_condvInit(arg1,arg2));
@@ -279,7 +276,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	tch_port_enableISR();                   // interrupt enable
 
-	RuntimeInterface.Device = tch_kernelInitHAL(&RuntimeInterface);
+	RuntimeInterface.Device = tch_hal_init(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
 		KERNEL_PANIC("tch_sys.c","Hal interface lost");
 	boardHandle = tch_boardInit(&RuntimeInterface);

@@ -24,7 +24,6 @@
 
 #include "tch_kernel.h"
 #include "tch_mtx.h"
-#include "tch_mem.h"
 
 #define TCH_MTX_CLASS_KEY        ((uint16_t) 0x2D02)
 #define MTX_VALIDATE(mcb)	do{\

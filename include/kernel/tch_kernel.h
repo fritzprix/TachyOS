@@ -64,13 +64,14 @@ extern uint32_t __syscall_entry;
 
 
 #define TCH_SYS_TASKQ_SZ                    (16)
-#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->kRet = result
+#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->kRet = (uint32_t) result
 #define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
 #define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->kthread)
 
 /*!
  * \brief
  */
+extern __attribute__((naked)) void __init(void* arg);
 extern void tch_kernelInit(void* arg);
 extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
 extern void tch_KernelOnSystick();
@@ -79,13 +80,6 @@ extern void tch_kernelOnWakeup();
 
 extern void tch_kernelOnMemFault(paddr_t pa, int fault);
 extern void tch_kernelOnHardFault(int fault);
-
-
-
-
-
-extern const tch_hal* tch_kernelInitHAL(const tch* ctx);
-extern BOOL tch_kernelInitPort();
 
 
 extern tchStatus tch_kernelPostSysTask(int id,tch_sysTaskFn fn,void* arg);

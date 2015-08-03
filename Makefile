@@ -42,8 +42,8 @@ endif
 KERNEL_UTIL_SRC_DIR=$(ROOT_DIR)/source/kernel/util
 KERNEL_MM_SRC_DIR=$(ROOT_DIR)/source/kernel/mm
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
-PORT_SRC_DIR=$(ROOT_DIR)/source/port
-HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
+PORT_SRC_DIR=$(ROOT_DIR)/source/arch
+HAL_SRC_DIR=$(ROOT_DIR)/source/platform/$(HW_VENDOR)/$(HW_PLF)
 BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
 USR_SRC_DIR=$(ROOT_DIR)/source/usr
 UTEST_SRC_BASE=$(ROOT_DIR)/source/test
@@ -52,10 +52,10 @@ UTEST_SRC_BASE=$(ROOT_DIR)/source/test
 BASE_HEADER_DIR=$(ROOT_DIR)/include
 KERNEL_UTIL_HEADER_DIR=$(ROOT_DIR)/include/kernel/util
 KERNEL_HEADER_DIR=$(ROOT_DIR)/include/kernel
-PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/port/$(ARCH)
+PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/arch/$(ARCH)
 PORT_ARCH_HEADER_DIR=$(PORT_ARCH_COMMON_HEADER_DIR)/$(CPU)
-HAL_COMMON_HEADER_DIR=$(ROOT_DIR)/include/hal
-HAL_VENDOR_HEADER_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
+HAL_COMMON_HEADER_DIR=$(ROOT_DIR)/include/platform
+HAL_VENDOR_HEADER_DIR=$(ROOT_DIR)/include/platform/$(HW_VENDOR)/$(HW_PLF)
 BOARD_HEADER_DIR=$(ROOT_DIR)/include/board
 UTEST_HEADER_DIR=$(ROOT_DIR)/include/test
 USR_HEADER_DIR=$(ROOT_DIR)/include/usr
@@ -66,7 +66,6 @@ USR_HEADER_DIR=$(ROOT_DIR)/include/usr
 TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
 TIME_STAMP=$(shell date +%s)
 TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
-
 
 
 ifeq ($(LDSCRIPT),)
