@@ -1,4 +1,5 @@
 #TachyOS 
+[![Build Status](https://drone.io/github.com/fritzprix/tachyos/status.png)](https://drone.io/github.com/fritzprix/tachyos/latest)
 ##About
 >This project is started by personal interest in real-time operating system. I have built this from scratch while enjoying various topics (scheduler, memory management, synchronization, etc.) in operating system. although this project is still its infant stage and required to be tested extensively. it functions normally for a few ported target.
 
