@@ -22,7 +22,6 @@
  */
 #include "tch.h"
 #include "tch_board.h"
-#include "tch_kconfig.h"
 #include "tch_ktypes.h"
 #include "tch_port.h"
 #include "tch_sched.h"
@@ -49,16 +48,27 @@
 typedef tchStatus (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
 extern uint32_t __syscall_entry;
 
-#define DECLARE_SYSCALL(fn) \
-	extern tchStatus __##fn(uint32_t arg1,uint32_t arg2,uint32_t arg3);\
+#define DECLARE_SYSCALL_3(fn,t1,t2,t3) \
+	extern uint32_t __##fn(##t1,##t2,##t3)
 
-#define SYSCALL(fn)	\
+#define DEFINE_SYSCALL_3(fn,t1,p1,t2,p2,t3,p3)	\
 	const __SYSCALL__ tch_syscall __entry__##fn = __##fn;\
-	tchStatus __##fn(uint32_t arg1,uint32_t arg2, uint32_t arg3)
+	uint32_t __##fn(uint32_t ##p1,uint32_t ##p2, uint32_t ##p3)
+
+#define INVOKE_SYSCALL_3(fn,arg1,arg2,arg3) \
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,arg1,arg2,arg3);
 
 
-#define INVOKE_SYSCALL(fn,arg1,arg2) \
-	tch_port_enterSv(__##fn - (uint32_t) &__syscall_entry,arg1,arg2);
+#define DECLARE_SYSCALL_2(fn,t1,t2,rt) \
+		static rt __##fn(t1, t2)
+
+#define DEFINE_SYSCALL_2(fn,t1,p1,t2,p2,rt)  \
+		const __SYSCALL__ tch_syscall __entry__##fn = __##fn;\
+		static rt __##fn(t1 ##p1,t2 ##p2)
+
+#define INVOKE_SYSCALL_2(fn,arg1,arg2) \
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,arg1,arg2);
+
 
 
 
@@ -73,7 +83,7 @@ extern uint32_t __syscall_entry;
  */
 extern __attribute__((naked)) void __init(void* arg);
 extern void tch_kernelInit(void* arg);
-extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2);
+extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3);
 extern void tch_KernelOnSystick();
 extern void tch_kernelOnWakeup();
 

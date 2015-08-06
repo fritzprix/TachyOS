@@ -30,7 +30,7 @@ static tch_threadId idleThread;
 void tch_idleInit(){
 
 	tch_threadCfg thcfg;
-	Thread->initCfg(&thcfg,idle,Idle,0x200,TCH_CFG_THREAD_STACK_MIN_SIZE,"idle");
+	Thread->initCfg(&thcfg,idle,Idle,CONFIG_THREAD_MIN_STACK,0,"idle");
 	idleThread = Thread->create(&thcfg,NULL);
 
 	busy_cnt = 0;

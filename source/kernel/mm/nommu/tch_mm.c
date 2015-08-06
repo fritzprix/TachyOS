@@ -13,6 +13,7 @@
 #include "tch_kmalloc.h"
 #include "tch_mtx.h"
 #include "tch_condv.h"
+#include "kernel/tch_kconfig.h"
 
 #ifndef CONFIG_NR_KERNEL_SEG
 #define CONFIG_NR_KERNEL_SEG	5		// segment 0 dynamic /  segment 1 kernel text / segment 2 data / segment 3 sdata /  segment 4 kernel stack
@@ -263,7 +264,7 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz){
 	if(!stksz)										// stack size should not 0
-		stksz = TCH_CFG_THREAD_STACK_MIN_SIZE;
+		stksz = CONFIG_THREAD_MIN_STACK;
 	if(!(tch_segmentAllocRegion(0,stkregion,stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK)) > 0)){
 		return NULL;
 	}

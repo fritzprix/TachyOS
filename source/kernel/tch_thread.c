@@ -53,8 +53,6 @@ static void tch_threadInitCfg(tch_threadCfg* cfg,
 							  uint32_t req_heapsz,
 							  const char* name);
 static void* tch_threadGetArg();
-
-
 static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status) __attribute__((naked));
 
 
@@ -69,6 +67,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 		tch_threadInitCfg,
 		tch_threadGetArg,
 };
+
 
 
 const tch_thread_ix* Thread = &tch_threadix;
@@ -221,7 +220,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
-	kthread->tslot = TCH_ROUNDROBIN_TIMESLOT;
+	kthread->tslot = CONFIG_ROUNDROBIN_TIMESLOT;
 	kthread->state = PENDED;
 	kthread->lckCnt = 0;
 	kthread->prior = cfg->priority;
@@ -240,7 +239,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	uint8_t tm = 0;
 	if(tch_port_isISR())
 		return NULL;
-	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg);
+	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg,0);
 }
 
 
@@ -250,7 +249,7 @@ static tchStatus tch_threadStart(tch_threadId thread){
 		tchk_schedThreadReady(thread);    // if handler mode call, put current thread in ready queue
 		return tchOK;
 	}else{
-		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0);
+		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0,0);
 	}
 }
 
@@ -259,7 +258,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 	if(tch_port_isISR()){
 		return tchErrorISR;
 	}else{
-		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err);
+		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err,0);
 	}
 }
 
@@ -273,7 +272,7 @@ static tchStatus tch_threadSleep(uint32_t sec){
 	if(tch_port_isISR()){
 		return tchErrorISR;
 	}else{
-		return tch_port_enterSv(SV_THREAD_SLEEP,sec,0);
+		return tch_port_enterSv(SV_THREAD_SLEEP,sec,0,0);
 	}
 }
 
@@ -282,7 +281,7 @@ static tchStatus tch_threadYield(uint32_t millisec){
 	if(tch_port_isISR()){
 		return tchErrorISR;
 	}else{
-		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0);
+		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0,0);
 	}
 }
 
@@ -290,7 +289,7 @@ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	if(tch_port_isISR()){
 		return tchErrorISR;					// unreachable code
 	}else{
-		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout);
+		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout,0);
 	}
 }
 
@@ -328,7 +327,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
 	_force_fctx += 0.1f;
 #endif
 	tchStatus res = thr_p->fn(tch_rti);
-	tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thr_p,status);
+	tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thr_p,status,0);
 }
 
 
@@ -368,6 +367,6 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 		tch_currentThread = th_p->t_parent->t_uthread;
 		uMem->free(&th_p->t_uthread->t_destr);
 	}*/
-	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thread,status);
+	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thread,status,0);
 }
 

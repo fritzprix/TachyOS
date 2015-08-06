@@ -40,7 +40,7 @@ struct page_frame {
  *
  */
 
-static struct mem_segment init_seg;				// segment to be used as dynamic free memory pool
+static struct mem_segment init_seg;				// segment to be used as dynamic memory pool
 static struct mem_region  init_dynamic_region;	// initial memory region, **NOTE : the only region which is statically declared
 static int init_segid;
 

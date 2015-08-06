@@ -1,54 +1,48 @@
 /*
- * tch_kcfg.h
+ * tch_kconfig.h
  *
- *  Created on: 2014. 11. 15.
+ *  Created on: 2015. 8. 5.
  *      Author: innocentevil
  */
 
-#ifndef TCH_KCFG_H_
-#define TCH_KCFG_H_
+#ifndef TCH_KCONFIG_H_
+#define TCH_KCONFIG_H_
 
 
-#if !defined(CONFIG_KERNEL_DYNAMICSIZE) || \
-	!defined(CONFIG_KERNEL_STACKSIZE) ||\
-	!defined(CONFIG_PAGE_SHIFT) ||\
-	!defined(CONFIG_KERNEL_STACKLIMIT)
-#warning "Kernel is not configured properly"
+
+
+#ifndef CONFIG_KERNEL_STACKSIZE
+#define CONFIG_KERNEL_STACKSIZE 	(4 << 10)
+#endif
+
+#ifndef CONFIG_HEAP_SIZE
+#define CONFIG_HEAP_SIZE 			0x2000
+#endif
+
+#ifndef CONFIG_ROUNDROBIN_TIMESLOT
+#define CONFIG_ROUNDROBIN_TIMESLOT  10
+#endif
+
+#ifndef CONFIG_MAX_CACHE_SIZE
+#define CONFIG_MAX_CACHE_SIZE		0x800
 #endif
 
 
-
-#ifndef TCH_ROUNDROBIN_TIMESLOT
-#define TCH_ROUNDROBIN_TIMESLOT				((uint16_t) 10)
+#ifndef CONFIG_KERNEL_DYNAMICSIZE
+#define CONFIG_KERNEL_DYNAMICSIZE 	(16 << 10)
 #endif
 
-#ifndef TCH_CFG_SHARED_MEM_SIZE
-#define TCH_CFG_SHARED_MEM_SIZE				((uint16_t) 0x2000)             // shared mem size : 8Kbyte
+#ifndef CONFIG_PAGE_SHIFT
+#define CONFIG_PAGE_SHIFT			12
 #endif
 
-#ifndef TCH_CFG_KERNEL_HEAP_MEM_SIZE
-#define TCH_CFG_KERNEL_HEAP_MEM_SIZE		((uint16_t) 0x2000)				// kernel mem size : 8Kbyte
+#ifndef CONFIG_THREAD_MIN_STACK
+#define CONFIG_THREAD_MIN_STACK		0x400
 #endif
 
-#ifndef TCH_CFG_THREAD_STACK_MIN_SIZE
-#define TCH_CFG_THREAD_STACK_MIN_SIZE		((uint16_t) 0x400)
+#ifndef CONFIG_SHM_SIZE
+#define CONFIG_SHM_SIZE				(1 << 14)
 #endif
 
-#ifndef TCH_CFG_HEAP_MIN_SIZE
-#define TCH_CFG_HEAP_MIN_SIZE				((uint16_t) 0x1800)
-#endif
 
-#ifndef TCH_KMEM_PAGE_SIZE
-#define TCH_KMEM_PAGE_SIZE					((uint32_t) 0x400)  // default page size : 1024 byte
-#endif
-
-/**
- *  if boot loader is used. boot loader prepare this parameter for kernel initialization
- */
-
-/**
- * test configuration will be moved boot loader
- */
-
-
-#endif /* TCH_KCFG_H_ */
+#endif /* TCH_KCONFIG_H_ */

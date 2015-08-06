@@ -101,7 +101,7 @@ void* tch_shmAlloc(size_t sz){
 	if(tch_port_isISR()){
 		return tchk_shmalloc(sz);
 	}else{
-		return tch_port_enterSv(SV_SHMEM_ALLOC,sz,0);
+		return tch_port_enterSv(SV_SHMEM_ALLOC,sz,0,0);
 	}
 }
 
@@ -109,7 +109,7 @@ void tch_shmFree(void* mchunk){
 	if(tch_port_isISR()){
 		tchk_shmFree(mchunk);
 	}else{
-		tch_port_enterSv(SV_SHMEM_FREE,mchunk,0);
+		tch_port_enterSv(SV_SHMEM_FREE,mchunk,0,0);
 	}
 }
 
@@ -117,6 +117,6 @@ uint32_t tch_shmAvali(){
 	if(tch_port_isISR()){
 		return tchk_shmAvail();
 	}else {
-		return tch_port_enterSv(SV_SHMEM_AVAILABLE,0,0);
+		return tch_port_enterSv(SV_SHMEM_AVAILABLE,0,0,0);
 	}
 }

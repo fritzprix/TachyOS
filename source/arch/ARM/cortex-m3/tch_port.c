@@ -198,13 +198,13 @@ void tch_port_enterPrivThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t 
 
 
 
-int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2){
+int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
 	asm volatile(
-			"ldr r3,=#1\n"
-			"str r3,[%0]\n"
+			"ldr r4,=#1\n"
+			"str r4,[%0]\n"
 			"dmb\n"
 			"isb\n"
-			"svc #3"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3" );        // return from sv interrupt and get result from register #0
+			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3","r4" );        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)tch_currentThread)->kRet;
 }
 
@@ -275,7 +275,7 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2);
+	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
 }
 
 int tch_port_clearFault(int type){

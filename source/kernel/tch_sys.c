@@ -20,20 +20,25 @@
 
 
 #include "tch.h"
-
-#include "tch_err.h"
-
-
 #include "tch_board.h"
 #include "tch_hal.h"
-#include "tch_kernel.h"
-#include "tch_mailq.h"
-#include "tch_msgq.h"
-#include "tch_nclib.h"
 #include "tch_port.h"
-#include "tch_thread.h"
-#include "tch_time.h"
-#include "tch_mm.h"
+
+#include "kernel/tch_err.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mailq.h"
+#include "kernel/tch_msgq.h"
+#include "kernel/tch_thread.h"
+#include "kernel/tch_time.h"
+#include "kernel/mm/tch_mm.h"
+
+
+#if !defined(CONFIG_KERNEL_DYNAMICSIZE) || \
+	!defined(CONFIG_KERNEL_STACKSIZE) ||\
+	!defined(CONFIG_PAGE_SHIFT) ||\
+	!defined(CONFIG_KERNEL_STACKLIMIT)
+#warning "Kernel is not configured properly"
+#endif
 
 #define SYSTSK_ID_SLEEP             ((int) -3)
 #define SYSTSK_ID_ERR_HANDLE        ((int) -2)
@@ -45,9 +50,10 @@ typedef struct tch_busy_monitor_t {
 }tch_busy_monitor;
 
 
+
 static DECLARE_THREADROUTINE(systhreadRoutine);
 
-
+static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
 static tch_busy_monitor busyMonitor;
 static tch RuntimeInterface;
 static tch_threadId mainThread = NULL;
@@ -102,7 +108,9 @@ void tch_kernelInit(void* arg){
 }
 
 
-void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
+#define LEGACY 1
+
+void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3){
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
@@ -112,6 +120,15 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 	tch_thread_kheader* cth = NULL;
 	tch_thread_kheader* nth = NULL;
 	tch_exc_stack* sp = NULL;
+
+#if !LEGACY
+	if(!sv_id){
+
+	}else{
+		tchk_kernelSetResult(tch_currentThread,__syscall_table[sv_id](arg1,arg2));
+	}
+#else
+
 	switch(sv_id){
 	case SV_EXIT_FROM_SV:
 		sp = (tch_exc_stack*)tch_port_getUserSP();
@@ -141,9 +158,13 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_kernelSetResult(tch_currentThread,tchk_condvInit(arg1,arg2));
 		break;
 	case SV_CONDV_WAIT:
-
+		tchk_kernelSetResult(tch_currentThread,tchk_condvWait(arg1,arg2));
+		break;
 	case SV_CONDV_WAKE:
+		tchk_kernelSetResult(tch_currentThread,tchk_condvWake(arg1));
+		break;
 	case SV_CONDV_DEINIT:
+		tchk_kernelSetResult(tch_currentThread,tchk_condvDestroy(arg1));
 		break;
 	case SV_BAR_INIT:
 		tchk_kernelSetResult(tch_currentThread,tchk_barrierInit(arg1,arg2));
@@ -254,18 +275,19 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2){
 		tchk_kernelSetResult(tch_currentThread,tchOK);
 		break;
 	}
+#endif
 }
 
 tchStatus tch_kernel_enableInterrupt(IRQn_Type irq,uint32_t priority){
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_HAL_ENABLE_ISR,irq,priority);
+	return tch_port_enterSv(SV_HAL_ENABLE_ISR,irq,priority,0);
 }
 
 tchStatus tch_kernel_disableInterrupt(IRQn_Type irq){
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_HAL_DISABLE_ISR,irq,0);
+	return tch_port_enterSv(SV_HAL_DISABLE_ISR,irq,0,0);
 }
 
 
