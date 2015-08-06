@@ -8,12 +8,16 @@
 #ifndef TCH_MM_H_
 #define TCH_MM_H_
 
-#include "tch_ktypes.h"
-#include "tch_ptypes.h"
-#include "cdsl_rbtree.h"
-#include "cdsl_slist.h"
-#include "wtmalloc.h"
-#include "tch_loader.h"
+
+
+#include "tch_ptypes.h".
+
+#include "kernel/tch_ktypes.h"
+#include "kernel/tch_loader.h"
+#include "kernel/tch_kconfig.h"
+#include "kernel/mm/wtmalloc.h"
+#include "kernel/util/cdsl_rbtree.h"
+#include "kernel/util/cdsl_slist.h"
 
 
 /**
@@ -59,31 +63,6 @@
  *
  */
 
-
-#ifndef CONFIG_KERNEL_STACKSIZE
-#define CONFIG_KERNEL_STACKSIZE 	(4 << 10)
-#endif
-
-#ifndef CONFIG_HEAP_SIZE
-#define CONFIG_HEAP_SIZE 			(0x2000)
-#endif
-
-#ifndef CONFIG_MAX_CACHE_SIZE
-#define CONFIG_MAX_CACHE_SIZE		(0x800)
-#endif
-
-
-#ifndef CONFIG_KERNEL_DYNAMICSIZE
-#define CONFIG_KERNEL_DYNAMICSIZE 	(16 << 10)
-#endif
-
-#ifndef CONFIG_PAGE_SHIFT
-#define CONFIG_PAGE_SHIFT			(12)
-#endif
-
-#ifndef CONFIG_SHM_SIZE
-#define CONFIG_SHM_SIZE				(1 << 14)
-#endif
 
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
 #define PAGE_MASK					(~(PAGE_SIZE - 1))

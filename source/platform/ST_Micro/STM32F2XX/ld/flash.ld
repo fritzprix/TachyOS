@@ -108,7 +108,8 @@ SECTIONS
     
     .kernel.syscall :
     {
-    	__syscall_entry = .;
+    	. = ALIGN(4);
+    	__syscall_entry = . ;
     	*(.sysc.table)    
     } > FLASH
     
@@ -162,27 +163,6 @@ SECTIONS
     PROVIDE ( _end = _ebss );
     
 
-    /* 
-      Heap Section start at the end of bss      
-    */
-    .heap :
-    {
-    	. = ALIGN(8);
-    	_sheap = .;
-    	*(.heap)
-    	. = ALIGN(8);
-    	_eheap = .;
-    } >RAM
-    
-    .mbarrier :
-    {
-    	. = ALIGN(8);
-    	_smb = .;
-    	*(.mbarrier)
-    	. = ALIGN(8);
-    	_emb = .;
-    } >RAM
-    
     .kheap :
     {
     	. = ALIGN(CONFIG_PAGE_SIZE);

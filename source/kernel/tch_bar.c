@@ -57,7 +57,7 @@ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
 static tch_barId tch_bar_create(){
-	return tch_port_enterSv(SV_BAR_INIT,(uword_t) NULL,(uword_t) FALSE);
+	return tch_port_enterSv(SV_BAR_INIT,(uword_t) NULL,(uword_t) FALSE,0);
 }
 
 
@@ -86,7 +86,7 @@ static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){
 		return tchErrorParameter;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&((tch_barCb*)bar)->wq,timeout);
+	return tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&((tch_barCb*)bar)->wq,timeout,0);
 }
 
 static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
@@ -99,12 +99,12 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 		tchk_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
-	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK);
+	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK,0);
 }
 
 static tchStatus tch_bar_destroy(tch_barId barId){
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_BAR_DEINIT,(uint32_t)barId,0);
+	return tch_port_enterSv(SV_BAR_DEINIT,(uint32_t)barId,0,0);
 }
 

@@ -37,7 +37,9 @@
 #define MTX_ISVALID(mcb)	((((tch_mtxCb*) mcb)->status & 0xFFFF) == (((uint32_t) mcb ^ TCH_MTX_CLASS_KEY) & 0xFFFF))
 
 SYSCALL(mutex_create){
-	return tchOK;
+	tch_mtxCb* mcb = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
+	tchk_mutexInit(mcb,FALSE);
+	return (tch_mtxId) mcb;
 }
 
 static tch_mtxId tch_mtx_create();
@@ -128,7 +130,7 @@ tchStatus tchk_mutexDestroy(tch_mtxId mtx){
 static tch_mtxId tch_mtx_create(){
 	if(tch_port_isISR())
 		return NULL;
-	return tch_port_enterSv(SV_MTX_CREATE,0,0);
+	return tch_port_enterSv(SV_MTX_CREATE,0,0,0);
 }
 
 static tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
@@ -139,7 +141,7 @@ static tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 		return tchErrorISR;
 	}
 	do {
-		result = tch_port_enterSv(SV_MTX_LOCK, (uword_t) id, timeout);
+		result = tch_port_enterSv(SV_MTX_LOCK, (uword_t) id, timeout,0xf3);
 		if (result == tchOK) // check if mutex is successfully locked
 			return result; // if mutex locked by current thread,return with ok, otherwise retry or return with error
 	} while (result == tchInterrupted);
@@ -152,14 +154,14 @@ static tchStatus tch_mtx_unlock(tch_mtxId id){
 		return tchErrorResource;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_MTX_UNLOCK,(uword_t) id,0);
+	return tch_port_enterSv(SV_MTX_UNLOCK,(uword_t) id,0,0);
 }
 
 static tchStatus tch_mtx_destroy(tch_mtxId id){
 	tchStatus result = tchOK;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_MTX_DESTROY,(uword_t)id,0);
+	return tch_port_enterSv(SV_MTX_DESTROY,(uword_t)id,0,0);
 }
 
 

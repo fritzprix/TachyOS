@@ -59,7 +59,7 @@ static tch_msgqId tch_msgq_create(uint32_t len){
 	uint8_t* msg_bptr = (uint8_t*) tch_shmAlloc(len);
 	if(!msg_bptr)
 		return NULL;
-	return (tch_msgqId) tch_port_enterSv(SV_MSGQ_INIT,(uword_t) msg_bptr,(uword_t)len);
+	return (tch_msgqId) tch_port_enterSv(SV_MSGQ_INIT,(uword_t) msg_bptr,(uword_t)len,0);
 }
 
 tch_msgqId tchk_msgqInit(uint8_t* bptr,uint32_t len){
@@ -104,7 +104,7 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = msg;
-		while((result = tch_port_enterSv(SV_MSGQ_PUT,(uword_t)mqId,(uword_t)&arg)) != tchOK){
+		while((result = tch_port_enterSv(SV_MSGQ_PUT,(uword_t)mqId,(uword_t)&arg,0)) != tchOK){
 			if(!tch_msgqIsValid(msgqCb))
 				return tchErrorResource;
 			switch(result){
@@ -168,7 +168,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 		tch_msgq_karg arg;
 		arg.timeout = millisec;
 		arg.msg = 0;
-		while((evt.status = tch_port_enterSv(SV_MSGQ_GET,(uword_t)mqId,(uword_t)&arg)) != tchEventMessage){
+		while((evt.status = tch_port_enterSv(SV_MSGQ_GET,(uword_t)mqId,(uword_t)&arg,0)) != tchEventMessage){
 				if(!tch_msgqIsValid(msgqCb)){
 					evt.status = tchErrorResource;
 					return evt;
@@ -217,7 +217,7 @@ static tchStatus tch_msgq_destroy(tch_msgqId mqId){
 	tch_thread_uheader* nth = NULL;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	uint8_t* bptr = tch_port_enterSv(SV_MSGQ_DEINIT,(uword_t)mqId,0);
+	uint8_t* bptr = tch_port_enterSv(SV_MSGQ_DEINIT,(uword_t)mqId,0,0);
 	if(!bptr)
 		return tchErrorResource;
 

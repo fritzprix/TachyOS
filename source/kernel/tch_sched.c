@@ -234,7 +234,7 @@ static inline void tch_schedInitKernelThread(tch_threadId init_thr){
 #endif
 	thr_p->state = RUNNING;
 	int result = getThreadHeader(init_thr)->fn(getThreadHeader(init_thr)->t_arg);
-	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thr_p,result);
+	tch_port_enterSv(SV_THREAD_TERMINATE,(uint32_t) thr_p,result,0);
 }
 
 static DECLARE_COMPARE_FN(tch_schedReadyQRule){

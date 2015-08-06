@@ -6,13 +6,12 @@
  */
 
 #include "tch.h"
-#include "tch_kernel.h"
-#include "tch_condv.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_condv.h"
 
 
 #define CONDV_VALID        ((uint8_t) 1)
 #define CONDV_WAIT         ((uint8_t) 2)
-
 #define TCH_CONDV_CLASS_KEY           ((uint16_t) 0x2D01)
 
 #define tch_condvSetWait(condv)       ((tch_condvCb*) condv)->state |= CONDV_WAIT
@@ -64,7 +63,7 @@ static tch_condvId tch_condv_create(){
 		tchk_condvInit(condv,FALSE);
 		return (tch_condvId) condv;
 	}
-	return (tch_condvId) tch_port_enterSv(SV_CONDV_INIT,condv,FALSE);
+	return (tch_condvId) tch_port_enterSv(SV_CONDV_INIT,condv,FALSE,0);
 }
 
 /*! \brief thread wait until given condition is met
@@ -82,7 +81,7 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 	tch_condvSetWait(condv);
 	Mtx->unlock(lock);
 	tchStatus result = tchOK;
-	if((result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&condv->wq,timeout)) != tchOK){
+	if((result = tch_port_enterSv(SV_THREAD_SUSPEND,(uint32_t)&condv->wq,timeout,0)) != tchOK){
 		if(!tch_condvIsValid(condv))
 			return tchErrorResource;
 		switch(result){
@@ -123,7 +122,7 @@ static tchStatus tch_condv_wake(tch_condvId id){
 			tch_condvClrWait(condv);
 			if(Mtx->unlock(condv->waitMtx) != tchOK)          // if mtx is not locked by this thread
 				return tchErrorResource;
-			tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&condv->wq,tchOK);   // wake single thread from wait queue
+			tch_port_enterSv(SV_THREAD_RESUME,(uint32_t)&condv->wq,tchOK,0);   // wake single thread from wait queue
 			return Mtx->lock(condv->waitMtx,tchWaitForever);                        // lock mtx and return
 		}
 		return tchErrorParameter;
@@ -147,7 +146,7 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 			tch_condvClrWait(condv);
 			if(Mtx->unlock(condv->waitMtx) != tchOK)
 				return tchErrorParameter;
-			tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchOK);
+			tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchOK,0);
 			return Mtx->lock(condv->waitMtx,tchWaitForever);
 		}
 		return tchErrorResource;
@@ -164,7 +163,7 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 	}else{
 		Mtx->lock(condv->waitMtx,tchWaitForever);
 		tch_condvInvalidate(condv);
-		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource);
+		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource,0);
 		Mtx->unlock(condv->waitMtx);
 		kfree(condv);
 		return result;
