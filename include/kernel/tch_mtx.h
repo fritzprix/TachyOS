@@ -35,13 +35,7 @@ typedef struct _tch_mtx_cb_t  {
  *  mutex  types
  */
 
-DECLARE_SYSCALL(mutex_create);
-
-extern tch_mtxId tchk_mutexCreate();
 extern tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static);
-extern tchStatus tchk_mutexLock(tch_mtxId mtx,uint32_t timeout);
-extern tchStatus tchk_mutexUnlock(tch_mtxId mtx);
-extern tchStatus tchk_mutexDestroy(tch_mtxId mtx);
 
 #if defined(__cplusplus)
 }

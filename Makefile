@@ -92,7 +92,7 @@ include $(PORT_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 ####################  Toolchain Independent section of Makefile  ######################
 #######################################################################################
 
-CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
+CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG) -DSIMPLIFIED_SYSCALL
 CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
 
 include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk

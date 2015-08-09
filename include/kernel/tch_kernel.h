@@ -43,31 +43,57 @@
 #define container_of(ptr,type,member) 		(type*) (((size_t) ptr - (size_t) offsetof(type,member)))
 #endif
 
+
+/**
+ *  syscall definition
+ */
 #define __SYSCALL__	__attribute__((section(".sysc.table")))
 
-typedef tchStatus (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
+typedef uword_t (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
 extern uint32_t __syscall_entry;
 
-#define DECLARE_SYSCALL_3(fn,t1,t2,t3) \
-	extern uint32_t __##fn(##t1,##t2,##t3)
+#define DECLARE_SYSCALL_3(fn,t1,t2,t3,rt) \
+	static rt __##fn(t1,t2,t3)
 
-#define DEFINE_SYSCALL_3(fn,t1,p1,t2,p2,t3,p3)	\
-	const __SYSCALL__ tch_syscall __entry__##fn = __##fn;\
-	uint32_t __##fn(uint32_t ##p1,uint32_t ##p2, uint32_t ##p3)
+#define DEFINE_SYSCALL_3(fn,t1,p1,t2,p2,t3,p3,rt)	\
+	const __SYSCALL__ void* __entry__##fn = __##fn;\
+	static rt __##fn(t1 p1,t2 p2, t3 p3)
 
-#define INVOKE_SYSCALL_3(fn,arg1,arg2,arg3) \
-	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,arg1,arg2,arg3);
+#define __SYSCALL_3(fn,arg1,arg2,arg3) \
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,(uword_t) arg1,(uword_t) arg2,(uword_t) arg3)
 
 
 #define DECLARE_SYSCALL_2(fn,t1,t2,rt) \
-		static rt __##fn(t1, t2)
+	static rt __##fn(t1, t2)
 
 #define DEFINE_SYSCALL_2(fn,t1,p1,t2,p2,rt)  \
-		const __SYSCALL__ tch_syscall __entry__##fn = __##fn;\
-		static rt __##fn(t1 ##p1,t2 ##p2)
+	const __SYSCALL__ void* __entry__##fn = __##fn;\
+	static rt __##fn(t1 p1,t2 p2)
 
-#define INVOKE_SYSCALL_2(fn,arg1,arg2) \
-	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,arg1,arg2);
+#define __SYSCALL_2(fn,arg1,arg2) \
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,(uword_t) arg1, (uword_t) arg2,0)
+
+
+#define DECLARE_SYSCALL_1(fn,t1,rt) \
+	static rt __##fn(t1)
+
+#define DEFINE_SYSCALL_1(fn,t1,p1,rt) \
+	const __SYSCALL__ void* __entry__##fn = __##fn;\
+	static rt __##fn(t1 p1)
+
+#define __SYSCALL_1(fn,arg1)\
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,(uword_t) arg1,0,0)
+
+
+#define DECLARE_SYSCALL_0(fn,rt) \
+	static rt __##fn(void)
+
+#define DEFINE_SYSCALL_0(fn,rt) \
+	const __SYSCALL__ void* __entry__##fn = __##fn;\
+	static rt __##fn(void)
+
+#define __SYSCALL_0(fn)\
+	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,0,0,0)
 
 
 

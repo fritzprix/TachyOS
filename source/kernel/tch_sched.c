@@ -107,10 +107,10 @@ void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState next
 }
 
 
-void tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
+tchStatus tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
 	tch_thread_kheader* nth = NULL;
 	if(timeout != tchWaitForever){
-		tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
+		return tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
 	}
 	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) wq,&getThreadKHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);
@@ -121,6 +121,7 @@ void tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
 	getThreadKHeader(tch_currentThread)->t_waitQ = (cdsl_dlistNode_t*) wq;
 	tch_currentThread = nth->uthread;
 	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
+	return tchOK;
 }
 
 

@@ -101,17 +101,17 @@ SECTIONS
 	    . = ALIGN(4);
 	    _etext = .;
 	    
+	        	. = ALIGN(4);
+    	__syscall_entry = . ;
+    	*(.sysc.table) 
+    	. = ALIGN(4);
+    	__syscall_end = . ;   
+	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = .;
     } >FLASH
     
-    .kernel.syscall :
-    {
-    	. = ALIGN(4);
-    	__syscall_entry = . ;
-    	*(.sysc.table)    
-    } > FLASH
     
    
     

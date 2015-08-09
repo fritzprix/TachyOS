@@ -36,11 +36,6 @@
 
 #define MTX_ISVALID(mcb)	((((tch_mtxCb*) mcb)->status & 0xFFFF) == (((uint32_t) mcb ^ TCH_MTX_CLASS_KEY) & 0xFFFF))
 
-SYSCALL(mutex_create){
-	tch_mtxCb* mcb = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
-	tchk_mutexInit(mcb,FALSE);
-	return (tch_mtxId) mcb;
-}
 
 static tch_mtxId tch_mtx_create();
 static tchStatus tch_mtx_lock(tch_mtxId mtx,uint32_t timeout);
@@ -57,26 +52,20 @@ __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
 
 const tch_mtx_ix* Mtx = &MTX_Instance;
 
-tch_mtxId tchk_mutexCreate(){
+DECLARE_SYSCALL_0(mutex_create,tch_mtxId);
+DECLARE_SYSCALL_2(mutex_lock,tch_mtxId,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(mutex_unlock,tch_mtxId,tchStatus);
+DECLARE_SYSCALL_1(mutex_destroy,tch_mtxId,tchStatus);
+
+
+DEFINE_SYSCALL_0(mutex_create,tch_mtxId){
 	tch_mtxCb* mcb = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
 	tchk_mutexInit(mcb,FALSE);
 	return (tch_mtxId) mcb;
 }
 
 
-tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static){
-	mcb->svdPrior = Normal;
-	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
-	mcb->own = NULL;
-	mcb->__obj.__destr_fn = is_static? (tch_kobjDestr) __tch_noop_destr :  (tch_kobjDestr) tch_mtx_destroy;
-	mcb->status = 0;
-	MTX_VALIDATE(mcb);
-	return mcb;
-}
-
-
-
-tchStatus tchk_mutexLock(tch_mtxId mtx,uint32_t timeout){
+DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus){
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
 	tch_threadId tid = (tch_threadId) tch_currentThread;           // get current thread id
 	if(!MTX_ISVALID(mcb))				// check mutex object after wakeup
@@ -101,7 +90,8 @@ tchStatus tchk_mutexLock(tch_mtxId mtx,uint32_t timeout){
 	return tchOK;
 }
 
-tchStatus tchk_mutexUnlock(tch_mtxId mtx){
+
+DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus){
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
 	if(!(--tch_currentThread->kthread->lckCnt)){
 		tchk_threadSetPriority(mcb->own,mcb->svdPrior);
@@ -114,7 +104,7 @@ tchStatus tchk_mutexUnlock(tch_mtxId mtx){
 	return tchOK;
 }
 
-tchStatus tchk_mutexDestroy(tch_mtxId mtx){
+DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
@@ -127,10 +117,21 @@ tchStatus tchk_mutexDestroy(tch_mtxId mtx){
 }
 
 
+tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static){
+	mcb->svdPrior = Normal;
+	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
+	mcb->own = NULL;
+	mcb->__obj.__destr_fn = is_static? (tch_kobjDestr) __tch_noop_destr :  (tch_kobjDestr) tch_mtx_destroy;
+	mcb->status = 0;
+	MTX_VALIDATE(mcb);
+	return mcb;
+}
+
+
 static tch_mtxId tch_mtx_create(){
 	if(tch_port_isISR())
 		return NULL;
-	return tch_port_enterSv(SV_MTX_CREATE,0,0,0);
+	return (tch_mtxId) __SYSCALL_0(mutex_create);
 }
 
 static tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
@@ -141,7 +142,7 @@ static tchStatus tch_mtx_lock(tch_mtxId id,uint32_t timeout){
 		return tchErrorISR;
 	}
 	do {
-		result = tch_port_enterSv(SV_MTX_LOCK, (uword_t) id, timeout,0xf3);
+		result = (tchStatus) __SYSCALL_2(mutex_lock,id,timeout);
 		if (result == tchOK) // check if mutex is successfully locked
 			return result; // if mutex locked by current thread,return with ok, otherwise retry or return with error
 	} while (result == tchInterrupted);
@@ -154,15 +155,17 @@ static tchStatus tch_mtx_unlock(tch_mtxId id){
 		return tchErrorResource;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_MTX_UNLOCK,(uword_t) id,0,0);
+	return (tchStatus) __SYSCALL_1(mutex_unlock,id);
 }
 
 static tchStatus tch_mtx_destroy(tch_mtxId id){
 	tchStatus result = tchOK;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return tch_port_enterSv(SV_MTX_DESTROY,(uword_t)id,0,0);
+	return (tchStatus) __SYSCALL_1(mutex_destroy,id);
 }
+
+
 
 
 

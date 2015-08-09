@@ -1,14 +1,13 @@
 ##include $(CURDIR)/COMMON.mk
 
 KERNEL_SRCS=\
+		tch_lock.c\
 	    tch_mpool.c\
-	    tch_mtx.c\
 	    tch_sched.c\
 	    tch_sys.c\
 	    tch_sem.c\
 	    tch_thread.c\
 	    tch_bar.c\
-	    tch_condv.c\
 	    tch_msgq.c\
 	    tch_mailq.c\
 	    tch_time.c\

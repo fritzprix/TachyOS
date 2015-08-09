@@ -26,7 +26,7 @@ extern "C"{
 typedef struct _tch_condv_cb_t tch_condvCb;
 struct _tch_condv_cb_t {
 	tch_kobj          __obj;
-	uint32_t          state;
+	uint32_t          flags;
 	tch_mtxId         waitMtx;
 	tch_thread_queue  wq;
 };
