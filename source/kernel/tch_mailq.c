@@ -31,9 +31,9 @@ static tchEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
 static tchStatus tch_mailq_destroy(tch_mailqId qid);
 
-static void tch_mailqValidate(tch_mailqId qid);
-static void tch_mailqInvalidate(tch_mailqId qid);
-static BOOL tch_mailqIsValid(tch_mailqId qid);
+static inline void tch_mailqValidate(tch_mailqId qid);
+static inline void tch_mailqInvalidate(tch_mailqId qid);
+static inline BOOL tch_mailqIsValid(tch_mailqId qid);
 
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		.create = tch_mailq_create,
@@ -41,8 +41,6 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		.calloc = tch_mailq_calloc,
 		.put = tch_mailq_put,
 		.get = tch_mailq_get,
-		.getLength = NULL,
-		.getBlockSize = NULL,
 		.free = tch_mailq_free,
 		.destroy = tch_mailq_destroy
 };
@@ -169,16 +167,6 @@ static tchEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec){
 	return evt;
 }
 
-static uint32_t tch_mailq_getBlockSize(tch_mailqId qid){
-	tch_mailqCb* mailqcb = (tch_mailqCb*) qid;
-	return mailqcb->bsz;
-}
-
-static uint32_t tch_mailq_getLength(tch_mailqId qid){
-	tch_mailqCb* mailqcb = (tch_mailqCb*) qid;
-	return MsgQ->getLength(mailqcb->msgq);
-}
-
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) qid;
 	if(!tch_mailqIsValid(mailqcb))
@@ -244,14 +232,14 @@ tchStatus tchk_mailqDeinit(tch_mailqId qid){
 	return tchErrorParameter;
 }
 
-static void tch_mailqValidate(tch_mailqId qid){
+static inline void tch_mailqValidate(tch_mailqId qid){
 	((tch_mailqCb*) qid)->bstatus |= (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
 }
 
-static void tch_mailqInvalidate(tch_mailqId qid){
+static inline void tch_mailqInvalidate(tch_mailqId qid){
 	((tch_mailqCb*) qid)->bstatus &= ~(0xFFFF);
 }
 
-static BOOL tch_mailqIsValid(tch_mailqId qid){
+static inline BOOL tch_mailqIsValid(tch_mailqId qid){
 	return (((tch_mailqCb*) qid)->bstatus & 0xFFFF) == (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
 }

@@ -33,13 +33,6 @@ static BOOL tch_semaphoreIsValid(tch_semId sid);
 
 
 
-tchStatus semaphore_create(uint32_t  count){
-
-}
-
-
-
-
 __attribute__((section(".data"))) static tch_semaph_ix Semaphore_StaticInstance = {
 		tch_semaphore_create,
 		tch_semaphore_wait,

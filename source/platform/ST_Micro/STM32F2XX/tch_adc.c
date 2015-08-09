@@ -68,7 +68,7 @@ typedef struct tch_adc_handle_prototype {
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 static tchStatus tch_adcClose(tch_adcHandle* self);
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
 static uint32_t tch_adcChannelOccpStatus;
 
 
@@ -227,8 +227,6 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ins->pix.read = tch_adcRead;
 	ins->env = env;
 
-/*	NVIC_SetPriority(adcDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(adcDesc->irq);*/
 
 	tch_kernel_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_adcValidate(ins);
@@ -312,7 +310,7 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	return evt.value.v;
 }
 
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_mailqId q, uint32_t chnksz, uint32_t convCnt){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
 	ADC_TypeDef* adcHw = NULL;
 	tch_adc_bs* adcBs = NULL;
@@ -338,8 +336,6 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 		return result;
 
 	ins->timer->setDuty(ins->timer,adcBs->timerCh,0.5f);
-
-	uint32_t chnksz = ins->env->MailQ->getBlockSize(q);
 
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	//enable dma

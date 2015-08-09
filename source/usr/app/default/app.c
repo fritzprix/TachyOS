@@ -175,7 +175,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 
 	while(TRUE){
 //		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
-		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,1);
+		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,100,1);
 		evt = env->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);

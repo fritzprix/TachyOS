@@ -53,6 +53,32 @@ __attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
 const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
 
 
+DECLARE_SYSCALL_1(messageQ_create,uint32_t,tch_msgqId);
+DECLARE_SYSCALL_3(messageQ_put,tch_msgqId,uword_t,uint32_t,tchStatus);
+DECLARE_SYSCALL_3(messageQ_get,tch_msgqId,tchEvent*,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(messageQ_destroy,tch_msgqId,tchStatus);
+
+DEFINE_SYSCALL_1(messageQ_create,uint32_t,sz,tch_msgqId){
+
+}
+
+
+DEFINE_SYSCALL_3(messageQ_put,tch_msgqId,msgq,uword_t,msg,uint32_t,timeout,tchStatus){
+
+}
+
+DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,tchStatus){
+
+	return tchEventMessage;
+}
+
+DEFINE_SYSCALL_1(messageQ_destroy,tch_msgqId,msgq,tchStatus){
+
+}
+
+
+
+
 static tch_msgqId tch_msgq_create(uint32_t len){
 	if(!len)
 		return NULL;
@@ -241,15 +267,15 @@ void* tchk_msgqDeinit(tch_msgqId mqId){
 	return msgqCb->bp;
 }
 
-static void tch_msgqValidate(tch_msgqId mqId){
+static inline void tch_msgqValidate(tch_msgqId mqId){
 	((tch_msgq_cb*) mqId)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
 }
 
-static void tch_msgqInvalidate(tch_msgqId mqId){
+static inline void tch_msgqInvalidate(tch_msgqId mqId){
 	((tch_msgq_cb*) mqId)->status &= ~(0xFFFF);
 }
 
-static BOOL tch_msgqIsValid(tch_msgqId msgq){
+static inline BOOL tch_msgqIsValid(tch_msgqId msgq){
 	return (((tch_msgq_cb*)msgq)->status & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
 
 }
