@@ -63,6 +63,7 @@ void* kmalloc(size_t sz){
 	}
 	tch_port_atomicEnd();
 
+
 	tch_port_atomicBegin();
 	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct kobj_header));
 	tch_port_atomicEnd();

@@ -175,8 +175,8 @@ DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
 	MTX_INVALIDATE(mcb);
 	tchk_threadSetPriority(tch_currentThread,mcb->svdPrior);
 	mcb->svdPrior = Idle;
-	tchk_shmFree(mcb);
 	tchk_schedThreadResumeM(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	kfree(mcb);
 	return tchOK;
 }
 
@@ -314,22 +314,6 @@ DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
 }
 
 
-/**
- * 	tch_condvCb* condv = (tch_condvCb*) id;
-	tchStatus result = tchOK;
-	if(!tch_condvIsValid(condv))
-		return tchErrorResource;
-	if(tch_port_isISR()){
-		return tchErrorISR;
-	}else{
-		Mtx->lock(condv->waitMtx,tchWaitForever);
-		tch_condvInvalidate(condv);
-		result = tch_port_enterSv(SV_THREAD_RESUMEALL,(uword_t)&condv->wq,tchErrorResource,0);
-		Mtx->unlock(condv->waitMtx);
-		kfree(condv);
-		return result;
-	}
- */
 DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus){
 	tchStatus result = tchOK;
 	if(!id)
@@ -419,5 +403,4 @@ static tchStatus tch_condv_destroy(tch_condvId id){
 		return tchErrorISR;
 	return __SYSCALL_1(condv_destroy,id);
 }
-
 

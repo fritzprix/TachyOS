@@ -217,7 +217,7 @@ int tch_mmProcClean(tch_thread_kheader* thread){
 		KERNEL_PANIC("tch_mm.c","thread clean-up fail : null reference");
 
 	struct tch_mm* mmp = &thread->mm;
-	tchk_shmCleanUp(mmp);
+	tch_shmCleanUp();
 }
 
 

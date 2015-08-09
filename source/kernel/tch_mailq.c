@@ -6,12 +6,12 @@
  */
 
 
-#include "tch_kernel.h"
-#include "tch_ktypes.h"
-#include "tch_mailq.h"
+#include "kernel/tch_err.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_ktypes.h"
+#include "kernel/tch_mailq.h"
 
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
-
 
 typedef struct tch_mailqCb {
 	tch_kobj      __obj;
@@ -28,8 +28,6 @@ static void* tch_mailq_alloc(tch_mailqId qid,uint32_t millisec,tchStatus* result
 static void* tch_mailq_calloc(tch_mailqId qid,uint32_t millisec,tchStatus* result);
 static tchStatus tch_mailq_put(tch_mailqId qid,void* mail);
 static tchEvent tch_mailq_get(tch_mailqId qid,uint32_t millisec);
-static uint32_t tch_mailq_getBlockSize(tch_mailqId qid);
-static uint32_t tch_mailq_getLength(tch_mailqId qid);
 static tchStatus tch_mailq_free(tch_mailqId qid,void* mail);
 static tchStatus tch_mailq_destroy(tch_mailqId qid);
 
@@ -38,18 +36,35 @@ static void tch_mailqInvalidate(tch_mailqId qid);
 static BOOL tch_mailqIsValid(tch_mailqId qid);
 
 __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
-		tch_mailq_create,
-		tch_mailq_alloc,
-		tch_mailq_calloc,
-		tch_mailq_put,
-		tch_mailq_get,
-		tch_mailq_getBlockSize,
-		tch_mailq_getLength,
-		tch_mailq_free,
-		tch_mailq_destroy
+		.create = tch_mailq_create,
+		.alloc = tch_mailq_alloc,
+		.calloc = tch_mailq_calloc,
+		.put = tch_mailq_put,
+		.get = tch_mailq_get,
+		.getLength = NULL,
+		.getBlockSize = NULL,
+		.free = tch_mailq_free,
+		.destroy = tch_mailq_destroy
 };
 
 const tch_mailq_ix* MailQ = &MailQStaticInstance;
+
+
+
+DECLARE_SYSCALL_2(mailq_create,uint32_t,uint32_t,tch_mailqId);
+DECLARE_SYSCALL_3(mailq_alloc,tch_mailqId,uint32_t,tchStatus*,void*);
+DECLARE_SYSCALL_2(mailq_put,tch_mailqId,void*,tchStatus);
+DECLARE_SYSCALL_2(mailq_get,tch_mailqId,uint32_t,tchEvent);
+DECLARE_SYSCALL_2(mailq_free,tch_mailqId,void*,tchStatus);
+DECLARE_SYSCALL_1(mailq_destroy,tch_mailqId,tchStatus);
+
+
+DEFINE_SYSCALL_2(mailq_create,uint32_t,sz,uint32_t,qlen,tch_mailqId){
+	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb), TRUE);
+	if(!mailqcb)
+		KERNEL_PANIC("tch_mailq.c","can't create maiq object");
+	memset(mailqcb,0,sizeof(tch_mailqCb));
+}
 
 static tch_mailqId tch_mailq_create(uint32_t sz,uint32_t qlen){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb),TRUE);
