@@ -218,8 +218,6 @@ struct _tch_msgque_ix_t {
 	 */
 	tchEvent (*get)(tch_msgqId,uint32_t millisec);
 
-	uint32_t (*getLength)(tch_msgqId);
-
 	/*!
 	 * \brief destroy msg queue
 	 */
