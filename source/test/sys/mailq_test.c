@@ -53,10 +53,11 @@ DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = env->MailQ->calloc(testmailq_id,tchWaitForever,NULL);
+		p = env->MailQ->alloc(testmailq_id,tchWaitForever,NULL);
+		memset(p,0,sizeof(person));
 		p->age = 0;
 		p->sex = 1;
-		env->MailQ->put(testmailq_id,p);
+		env->MailQ->put(testmailq_id,p,1000);
 		cnt++;
 	}
 	return tchOK;

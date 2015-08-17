@@ -107,7 +107,7 @@ void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState next
 }
 
 
-tchStatus tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout){
+tchStatus tchk_schedWait(tch_thread_queue* wq,uint32_t timeout){
 	tch_thread_kheader* nth = NULL;
 	if(timeout != tchWaitForever){
 		return tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
@@ -149,7 +149,7 @@ int tch_schedThreadResume(tch_thread_queue* wq,tch_threadId thread,tchStatus res
 
 }
 
-BOOL tchk_schedThreadResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
+BOOL tchk_schedWake(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 	tch_thread_kheader* nth = NULL;
 	tch_thread_kheader* tpreempt = NULL;
 	if(cdsl_dlistIsEmpty(wq))

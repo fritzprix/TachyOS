@@ -75,11 +75,11 @@ DEFINE_SYSCALL_3(messageQ_put,tch_msgqId,msgq,uword_t,msg,uint32_t,timeout,tchSt
 		if (msgqCb->pidx >= msgqCb->sz)
 			msgqCb->pidx = 0;
 		msgqCb->updated++;
-		tchk_schedThreadResumeM((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchErrorNoMemory, TRUE);
+		tchk_schedWake((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchErrorNoMemory, TRUE);
 		return tchOK;
 	}
 	if(timeout)
-		tchk_schedThreadSuspend((tch_thread_queue*) &msgqCb->pwq,timeout);
+		tchk_schedWait((tch_thread_queue*) &msgqCb->pwq,timeout);
 	return tchErrorNoMemory;
 
 }
@@ -91,14 +91,14 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 	tch_msgqCb* msgqcb = (tch_msgqCb*) msgq;
 	if(msgqcb->updated == 0){
 		if(timeout)
-			tchk_schedThreadSuspend((tch_thread_queue*) &msgqcb->cwq,timeout);
+			tchk_schedWait((tch_thread_queue*) &msgqcb->cwq,timeout);
 		return eventp->status = tchErrorResource;
 	}
 	eventp->value.v = ((uword_t*) msgqcb->bp)[msgqcb->gidx++];
 	if(msgqcb->gidx >= msgqcb->sz)
 		msgqcb->gidx = 0;
 	msgqcb->updated--;
-	tchk_schedThreadResumeM((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tchk_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 	return eventp->status = tchEventMessage;
 }
 
@@ -109,8 +109,8 @@ DEFINE_SYSCALL_1(messageQ_destroy,tch_msgqId,msgq,tchStatus){
 	tch_msgqCb* msgqcb = (tch_msgqCb*) msgq;
 	msgqcb->updated = 0;
 	tch_msgqInvalidate(msgqcb);
-	tchk_schedThreadResumeM((tch_thread_queue*) &msgqcb->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	tchk_schedThreadResumeM((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tchk_schedWake((tch_thread_queue*) &msgqcb->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tchk_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	kfree(msgqcb);
 	return tchOK;
 }

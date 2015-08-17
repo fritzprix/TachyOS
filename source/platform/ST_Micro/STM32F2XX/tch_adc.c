@@ -350,7 +350,7 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_m
 		tch_dma->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
-		ins->env->MailQ->put(q,chnk);
+		ins->env->MailQ->put(q,chnk,1000);
 		if(evt.status != tchEventMessage){
 			evt.status = tchErrorIo;
 			RETURN_SAFE();

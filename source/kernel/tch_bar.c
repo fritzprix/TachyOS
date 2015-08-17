@@ -70,7 +70,7 @@ DEFINE_SYSCALL_2(bar_wait,tch_barId,bar,uint32_t,timeout,tchStatus) {
 	if(!bar || !BAR_ISVALID(bar))
 		return tchErrorParameter;
 	tch_barCb* _bar = (tch_barCb*) bar;
-	return tchk_schedThreadSuspend((tch_thread_queue*) &_bar->wq,timeout);
+	return tchk_schedWait((tch_thread_queue*) &_bar->wq,timeout);
 }
 
 DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
@@ -80,7 +80,7 @@ DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
 	if(cdsl_dlistIsEmpty(&bar->wq))
 		return tchOK;
 	if(tch_port_isISR()){
-		tchk_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tchk_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK,0);
@@ -91,7 +91,7 @@ DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
 		return tchErrorParameter;
 	tch_barCb* bar = (tch_barCb*) barId;
 	BAR_INVALIDATE(barId);
-	tchk_schedThreadResumeM((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	kfree(bar);
 	return tchOK;
 }
@@ -111,7 +111,7 @@ tchStatus tchk_barrierDeinit(tch_barCb* bar){
 	if((!bar) || (!BAR_ISVALID(bar)))
 		return tchErrorParameter;
 	BAR_INVALIDATE(bar);
-	tchk_schedThreadResumeM((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	kfree(bar);
 	return tchOK;
 }
@@ -141,7 +141,7 @@ static tchStatus tch_bar_signal(tch_barId barId,tchStatus result){
 		if(!BAR_ISVALID(bar))
 			return tchErrorParameter;
 
-		tchk_schedThreadResumeM((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tchk_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return __SYSCALL_2(bar_signal,barId,result);

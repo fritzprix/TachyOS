@@ -227,10 +227,9 @@ struct _tch_msgque_ix_t {
 
 struct _tch_mailbox_ix_t {
 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
-	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	tchStatus (*put)(tch_mailqId qid,void* mail);
-	tchEvent (*get)(tch_mailqId qid,uint32_t millisec);
+	void* (*alloc)(tch_mailqId qid,uint32_t timeout,tchStatus* result);
+	tchStatus (*put)(tch_mailqId qid,void* mail,uint32_t timeout);
+	tchEvent (*get)(tch_mailqId qid,uint32_t timeout);
 	tchStatus (*free)(tch_mailqId qid,void* mail);
 	tchStatus (*destroy)(tch_mailqId qid);
 };

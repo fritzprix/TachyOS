@@ -39,9 +39,9 @@ extern void tchk_schedThreadReady(tch_threadId thread);
 extern void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState nextState);
 extern void tchk_schedThreadTerminate(tch_threadId thread, int result);
 extern void tch_schedThreadDestroy(tch_threadId thread,int result);
-extern tchStatus tchk_schedThreadSuspend(tch_thread_queue* wq,uint32_t timeout);
+extern tchStatus tchk_schedWait(tch_thread_queue* wq,uint32_t timeout);
 extern int tch_schedThreadResume(tch_thread_queue* wq,tch_threadId thread,tchStatus res,BOOL preemt);   // resume specific thread in wait queue
-extern BOOL tchk_schedThreadResumeM(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
+extern BOOL tchk_schedWake(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt);
 
 extern BOOL tch_schedIsEmpty();
 extern void tch_schedThreadUpdate(void);
