@@ -351,8 +351,8 @@ static tchStatus tch_condv_wait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 		return tchErrorParameter;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	tchStatus result = __SYSCALL_3(condv_wait,id,lock,timeout);
-	if(result != tchInterrupted)
+	tchStatus result = tchOK;
+	if((result = __SYSCALL_3(condv_wait,id,lock,timeout)) != tchInterrupted)
 		return result;
 
 	return tch_mtx_lock(lock,timeout);			// try acquire lock again
@@ -374,10 +374,8 @@ static tchStatus tch_condv_wake(tch_condvId id){
 
 	//returned cparm has value of mutex id relevant to this condition variable
 	tchStatus result = __SYSCALL_1(condv_wake,&cparm);
-	if(result != tchOK)
-		return result;
-
-	return tch_mtx_lock((tch_mtxId) cparm.arg,tchWaitForever);
+	tch_mtx_lock((tch_mtxId) cparm.arg,tchWaitForever);
+	return result;
 }
 
 static tchStatus tch_condv_wakeAll(tch_condvId id){
@@ -391,9 +389,8 @@ static tchStatus tch_condv_wakeAll(tch_condvId id){
 	cparm.arg = NULL;
 
 	tchStatus result = __SYSCALL_1(condv_wakeAll,&cparm);
-	if(result != tchOK)
-		return result;
-	return tch_mtx_lock((tch_mtxId) cparm.arg,tchWaitForever);
+	tch_mtx_lock((tch_mtxId) cparm.arg,tchWaitForever);
+	return result;
 }
 
 static tchStatus tch_condv_destroy(tch_condvId id){

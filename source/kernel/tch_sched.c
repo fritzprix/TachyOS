@@ -111,7 +111,7 @@ tchStatus tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState
 tchStatus tchk_schedWait(tch_thread_queue* wq,uint32_t timeout){
 	tch_thread_kheader* nth = NULL;
 	if(timeout != tchWaitForever){
-		return tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
+		tchk_systimeSetTimeout(tch_currentThread,timeout,mSECOND);
 	}
 	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) wq,&getThreadKHeader(tch_currentThread)->t_waitNode,tch_schedWqRule);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);

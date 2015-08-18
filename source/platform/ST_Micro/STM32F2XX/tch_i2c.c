@@ -240,7 +240,6 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 
 	*iicDesc->_rstr |= iicDesc->rstmsk;
 	*iicDesc->_rstr &= ~iicDesc->rstmsk;
-
 	iicHw->CR1 |= I2C_CR1_SWRST;   // reset i2c peripheral
 	iicHw->CR1 &= ~I2C_CR1_SWRST;
 
@@ -297,7 +296,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		IIC_clrMaster(ins);
 		break;
 	}
-
+	iicHw->CR1 |= I2C_CR1_STOP;
 	tch_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_IICValidate(ins);
 	return (tch_iicHandle*) ins;
