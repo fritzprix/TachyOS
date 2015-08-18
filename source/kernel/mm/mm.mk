@@ -1,21 +1,25 @@
 
 KERNEL_MM_SRCS=\
-	    tch_kmem.c\
-	    tch_phym.c\
 	    wtree.c\
-	    wtmalloc.c
+	    wtmalloc.c\
+	    tch_kmalloc.c\
+	    tch_malloc.c\
+	    tch_shm.c
+	    
 	    
 	    
 KERNEL_MM_CPP_SRCS=
-KERNEL_MM_INC_DIR = $(ROOT_DIR)/include/kernel/mm
+KERNEL_MM_INC_DIR=$(ROOT_DIR)/include/kernel/mm
 KERNEL_MM_BUILD_DIR=$(GEN_DIR)/mm
-GEN_SUB_DIR+=$(KERNEL_MM_BUILD_DIR) 
+GEN_SUB_DIR +=$(KERNEL_MM_BUILD_DIR) 
 KERNEL_MM_OBJS=$(KERNEL_MM_SRCS:%.c=$(KERNEL_MM_BUILD_DIR)/%.o)
 KERNEL_MM_CPPOBJS=$(KERNEL_MM_CPP_SRCS:%.cpp=$(KERNEL_MM_BUILD_DIR)/%.o)
 
 INC += -I$(KERNEL_MM_INC_DIR)
 OBJS += $(KERNEL_MM_OBJS)
 OBJS += $(KERNEL_MM_CPPOBJS)
+
+include $(KERNEL_MM_SRC_DIR)/$(CONFIG_MMU)/Makefile
 
 $(KERNEL_MM_BUILD_DIR):
 	$(MK) $(KERNEL_MM_BUILD_DIR)

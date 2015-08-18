@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include "tch_kernel.h"
 
+
+
 void* operator new(size_t size) throw() {
 	return uMem->alloc(size);
 }
@@ -28,4 +30,3 @@ void operator delete(void* p){
 extern "C" int __aeabi_atexit(void *object,void (*)(void*),void *dso_handle){
 	return 0;
 }
-

@@ -39,22 +39,12 @@ tchStatus timer_performTest(tch* env){
 
 
 	tch_threadCfg thcfg;
-	thcfg.t_name = "Waiter1";
-	thcfg.t_routine = waiter1Run;
-	thcfg.t_priority= Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-
-
+	env->Thread->initCfg(&thcfg,waiter1Run,Normal,(1 << 9),0,"waiter1");
 	waiterThread1 = env->Thread->create(&thcfg,gptimer);
 
 
-	thcfg.t_name = "Waiter2";
-	thcfg.t_routine = waiter2Run;
-	thcfg.t_priority= Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-
+	env->Thread->initCfg(&thcfg,waiter2Run,Normal,(1 << 9),0,"waiter2");
 	waiterThread2 = env->Thread->create(&thcfg,gptimer);
-
 
 	env->Thread->start(waiterThread1);
 	env->Thread->start(waiterThread2);
@@ -86,19 +76,12 @@ tchStatus timer_performTest(tch* env){
 	}
 
 	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,tchWaitForever);
-	thcfg.t_name = "PulseDrv1";
-	thcfg.t_routine = pulsDrv1Run;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-
+	env->Thread->initCfg(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
 	waiterThread1 = env->Thread->create(&thcfg,pwmDrv);
 
 
 
-	thcfg.t_name = "pulseDrv2";
-	thcfg.t_routine = pulsDrv2Run;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
+	env->Thread->initCfg(&thcfg,pulsDrv2Run,Normal,(1 << 9),0,"pulsedrv2");
 	waiterThread2 = env->Thread->create(&thcfg,pwmDrv);
 
 	env->Thread->start(waiterThread1);
@@ -133,27 +116,15 @@ tchStatus timer_performTest(tch* env){
 	if(!capt)
 		return tchErrorOS;
 
-	thcfg.t_name = "Pgen";
-	thcfg.t_routine = pulseGenRun;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-
+	env->Thread->initCfg(&thcfg,pulseGenRun,Normal,(1 << 9),0,"pgen");
 	tch_threadId pgenThread = env->Thread->create(&thcfg,pwmDrv);
 
-	thcfg.t_name = "Pcon1";
-	thcfg.t_routine = pulseCon1Run;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-
+	env->Thread->initCfg(&thcfg,pulseCon1Run,Normal,(1 << 9),0,"pcon1");
 	tch_threadId pcon1Thread = env->Thread->create(&thcfg,capt);
 
 	uint8_t* pconStk = env->Mem->alloc(1 << 9);
 
-	thcfg.t_name = "Pcon2";
-	thcfg.t_routine = pulseCon2Run;
-	thcfg.t_memDef.stk_sz = 1 << 9;
-	thcfg.t_priority = Normal;
-
+	env->Thread->initCfg(&thcfg,pulseCon2Run,Normal,(1 << 9),0,"pcon2");
 	tch_threadId pcon2Thread = env->Thread->create(&thcfg,capt);
 
 	env->Thread->start(pgenThread);

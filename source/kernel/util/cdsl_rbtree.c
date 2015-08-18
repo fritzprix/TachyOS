@@ -81,7 +81,7 @@ rb_treeNode_t* cdsl_rbtreeLookup(rb_treeNode_t** root,int key){
 		return NULL;
 	rb_treeNode_t* current = *root;
 	while(current != RB_NIL){
-		if(key >= current->key)
+		if(key > current->key)
 			current = current->right;
 		else if(key < current->key)
 			current = current->left;
@@ -292,9 +292,9 @@ int cdsl_rbtreeSize(rb_treeNode_t** root){
 void cdsl_rbtreePrint(rb_treeNode_t** root){
 	if(!root)
 		return;
-	printf("\n");
+//	printf("\n");
 	print_r(*root,0);
-	printf("\n");
+//	printf("\n");
 }
 
 int cdsl_rbtreeMaxDepth(rb_treeNode_t** root){
@@ -310,6 +310,11 @@ int cdsl_rbtreeMaxDepth(rb_treeNode_t** root){
 		max = temp;
 	return max + 1;
 }
+
+int cdsl_rbtreeIsNIL(rb_treeNode_t* rbn){
+	return rbn == RB_NIL;
+}
+
 
 
 static rb_treeNode_t* insert_r(rb_treeNode_t* parent,rb_treeNode_t* item,uint8_t* context){
@@ -399,20 +404,20 @@ static rb_treeNode_t* rotateRight(rb_treeNode_t* rot_pivot,BOOL paint){
 }
 
 static void print_tab(int cnt){
-	while(cnt--)
-		printf("\t");
+//	while(cnt--)
+//		printf("\t");
 }
 
 
 static void print_r(rb_treeNode_t* current,int depth){
 
 	if(current == RB_NIL){
-		print_tab(depth); printf("NIL {Color : BLACK, Key: %d} @Depth %d \n",current->key,depth);
+//		print_tab(depth); printf("NIL {Color : BLACK, Key: %d} @Depth %d \n",current->key,depth);
 		return;
 	}
-	printf("\n");
+//	printf("\n");
 	print_r(current->right,depth + 1);
-	print_tab(depth); printf("{Color : %s, Key: %d} @Depth %d \n",current->color == BLACK? "BLACK" : "RED",current->key,depth);
+//	print_tab(depth); printf("{Color : %s, Key: %d} @Depth %d \n",current->color == BLACK? "BLACK" : "RED",current->key,depth);
 	print_r(current->left,depth + 1);
-	printf("\n");
+//	printf("\n");
 }

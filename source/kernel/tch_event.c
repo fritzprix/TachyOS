@@ -6,12 +6,10 @@
  */
 
 
-#include "tch_kernel.h"
-#include "tch_event.h"
+#include "kernel/tch_err.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_event.h"
 
-
-#define SIG_UPDATE_CLR         ((sig_update_t) 1)
-#define SIG_UPDATE_SET         ((sig_update_t) 2)
 
 #define EVENT_CLASS_KEY                        ((uint16_t )0xDABC)
 
@@ -25,30 +23,10 @@
 
 #define EVENT_ISVALID(ins)    ((((tch_eventCb*) ins)->status & 0xFFFF) == (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF))
 
-typedef uint8_t     sig_update_t;
-
-struct tch_eventCb {
-	tch_kobj            __obj;
-	uint32_t              status;
-	int32_t               ev_msk;
-	int32_t               ev_signal;
-	tch_thread_queue      ev_blockq;
-};
-
-
-typedef struct tch_event_sig_arg_s {
-	int32_t      ev_signal;
-	sig_update_t type;
-}tch_event_sarg_t;
-
-typedef struct tch_event_wait_arg_s {
-	int32_t      ev_sigmsk;
-	uint32_t     timeout;
-}tch_event_warg_t;
 
 static tch_eventId tch_eventCreate();
-static int32_t tch_eventSet(tch_eventId ev,int32_t signals);
-static int32_t tch_eventClear(tch_eventId ev,int32_t signals);
+static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal);
+static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal);
 static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
 static tchStatus tch_eventDestroy(tch_eventId ev);
 
@@ -65,57 +43,107 @@ __attribute__((section(".data"))) static tch_event_ix Event_StaticInstance = {
 const tch_event_ix* Event = &Event_StaticInstance;
 
 
+DECLARE_SYSCALL_0(event_create,tch_eventId);
+DECLARE_SYSCALL_2(event_set,tch_eventId,int32_t,int32_t);
+DECLARE_SYSCALL_2(event_clear,tch_eventId,int32_t,int32_t);
+DECLARE_SYSCALL_3(event_wait,tch_eventId,int32_t,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(event_destroy,tch_eventId,tchStatus);
+
+
+
+DEFINE_SYSCALL_0(event_create,tch_eventId){
+	tch_eventCb* evcb = (tch_eventCb*) kmalloc(sizeof(tch_eventCb));
+	if(!evcb)
+		KERNEL_PANIC("tch_event.c","can't create event object");
+	return (tch_eventId) tchk_eventInit(evcb,FALSE);
+}
+
+DEFINE_SYSCALL_2(event_set,tch_eventId,evid,int32_t,ev_signal,int32_t){
+	if(!evid || !EVENT_ISVALID(evid))
+		return tchErrorParameter;
+	tch_eventCb* evcb = (tch_eventCb*) evid;
+	int32_t psig = evcb->ev_signal;
+	evcb->ev_signal |= ev_signal;
+	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
+		tchk_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
+	}
+	return psig;
+}
+
+DEFINE_SYSCALL_2(event_clear,tch_eventId,evid,int32_t,ev_signal,int32_t){
+	if(!evid || !EVENT_ISVALID(evid))
+		return tchErrorParameter;
+	tch_eventCb* evcb = (tch_eventCb*) evid;
+	int32_t psig = evcb->ev_signal;
+	evcb->ev_signal &= ~ev_signal;
+	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
+		tchk_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
+	}
+	return psig;
+}
+
+
+DEFINE_SYSCALL_3(event_wait,tch_eventId,evid,int32_t,ev_signal,uint32_t,timeout,tchStatus){
+	if(!evid || !EVENT_ISVALID(evid))
+		return tchErrorParameter;
+	tch_eventCb* evcb = (tch_eventCb*) evid;
+	evcb->ev_msk = ev_signal;
+	if((evcb->ev_msk & evcb->ev_signal) != evcb->ev_msk){
+		tchk_schedWait(&evcb->ev_blockq,timeout);
+	}
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(event_destroy,tch_eventId,evid,tchStatus){
+	if(!evid || !EVENT_ISVALID(evid))
+		return tchErrorParameter;
+	tch_eventCb* evcb = (tch_eventCb*) evid;
+	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq))
+		tchk_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	return tchOK;
+}
+
+
+tch_eventId tchk_eventInit(tch_eventCb* evcb,BOOL is_static){
+	memset(evcb,0,sizeof(tch_eventCb));
+	evcb->__obj.__destr_fn =  is_static? (tch_kobjDestr) __tch_noop_destr :  (tch_kobjDestr) tch_eventDestroy;
+	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
+	EVENT_VALIDATE(evcb);
+	return evcb;
+}
+
 
 static tch_eventId tch_eventCreate(){
-	tch_eventCb* evcb = (tch_eventCb*) tch_shMemAlloc(sizeof(tch_eventCb),TRUE);
-	tch_eventCb initcb;
-	uStdLib->string->memset(&initcb,0,sizeof(tch_eventCb));
-	initcb.__obj.__destr_fn = (tch_kobjDestr) tch_eventDestroy;
-	cdsl_dlistInit((cdsl_dlistNode_t*)&initcb.ev_blockq);
-	return (tch_eventId) tch_port_enterSv(SV_EV_INIT,(uword_t) evcb,(uword_t) &initcb);
-}
-
-tch_eventId tchk_eventInit(tch_eventCb* evcb,tch_eventCb* initcb){
-	uStdLib->string->memcpy(evcb,initcb,sizeof(tch_eventCb));
-	EVENT_VALIDATE(evcb);
-	return (tch_eventId) evcb;
+	if(tch_port_isISR())
+		return NULL;
+	return (tch_eventId) __SYSCALL_0(event_create);
 }
 
 
-static int32_t tch_eventSet(tch_eventId ev,int32_t signals){
-	tch_event_sarg_t arg;
+static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal){
+	if(!ev || !ev_signal)
+		return 0;
+	if(tch_port_isISR())
+		return __event_set(ev,ev_signal);
+	else
+		return __SYSCALL_2(event_set,ev,ev_signal);
+}
+
+static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal){
 	if(!ev || !EVENT_ISVALID(ev))
 		return 0;
-	arg.ev_signal = signals;
-	arg.type = SIG_UPDATE_SET;
 	if(tch_port_isISR())
-		return tchk_eventUpdate(ev,&arg);
+		return __event_clear(ev,ev_signal);
 	else
-		return tch_port_enterSv(SV_EV_UPDATE,(uint32_t) ev,(uint32_t)&arg);
-}
-
-static int32_t tch_eventClear(tch_eventId ev,int32_t signals){
-	tch_event_sarg_t arg;
-	if(!ev || !EVENT_ISVALID(ev))
-		return 0;
-	arg.ev_signal= signals;
-	arg.type = SIG_UPDATE_CLR;
-	if(tch_port_isISR())
-		return tchk_eventUpdate(ev,&arg);
-	else
-		return tch_port_enterSv(SV_EV_UPDATE,(uint32_t) ev,(uint32_t) &arg);
+		return __SYSCALL_2(event_clear,ev,ev_signal);
 }
 
 static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
-	tch_event_warg_t warg;
 	if(!ev || !EVENT_ISVALID(ev))
 		return tchErrorParameter;
-	if(tch_port_isISR()){
+	if(tch_port_isISR())
 		return tchErrorISR;
-	}
-	warg.timeout = millisec;
-	warg.ev_sigmsk = signal_msk;
-	return tch_port_enterSv(SV_EV_WAIT,(uint32_t) ev,(uint32_t)&warg);
+	return __SYSCALL_3(event_wait,ev,signal_msk,millisec);
 }
 
 static tchStatus tch_eventDestroy(tch_eventId ev){
@@ -123,48 +151,8 @@ static tchStatus tch_eventDestroy(tch_eventId ev){
 		return tchErrorParameter;
 	if(!EVENT_ISVALID(ev))
 		return tchErrorParameter;
-	if(!tch_port_isISR()){
+	if(tch_port_isISR())
 		return tchErrorISR;
-	}
-	tch_port_enterSv(SV_EV_DEINIT,(uint32_t) ev,0);
-	tch_shMemFree(ev);
-	return tchOK;
+	return __SYSCALL_1(event_destroy,ev);
 }
-
-tchStatus tchk_eventWait(tch_eventId id,void* arg){
-	tch_event_warg_t* warg = (tch_event_warg_t*) arg;
-	tch_eventCb* evcb = (tch_eventCb*) id;
-	evcb->ev_msk = warg->ev_sigmsk;
-	if((evcb->ev_msk & evcb->ev_signal) != evcb->ev_msk){
-		tchk_schedThreadSuspend(&evcb->ev_blockq,warg->timeout);
-	}
-	return tchOK;
-}
-
-
-int32_t tchk_eventUpdate(tch_eventId id,void* arg){
-	tch_event_sarg_t* sarg = (tch_event_sarg_t*) arg;
-	tch_eventCb* evcb = (tch_eventCb*) id;
-	int32_t psig = evcb->ev_signal;
-	switch(sarg->type){
-	case SIG_UPDATE_SET:
-		evcb->ev_signal |= sarg->ev_signal;
-		break;
-	case SIG_UPDATE_CLR:
-		evcb->ev_signal &= ~sarg->ev_signal;
-		break;
-	}
-	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
-		tchk_schedThreadResumeM(&evcb->ev_blockq,1,tchOK,TRUE);
-	}
-	return psig;
-}
-
-void tchk_eventDeinit(tch_eventId id){
-	tch_eventCb* evcb = (tch_eventCb*) id;
-	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq)){
-		tchk_schedThreadResumeM(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
-	}
-}
-
 

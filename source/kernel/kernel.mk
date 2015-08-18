@@ -1,24 +1,30 @@
 ##include $(CURDIR)/COMMON.mk
 
 KERNEL_SRCS=\
+		tch_lock.c\
 	    tch_mpool.c\
-	    tch_mtx.c\
 	    tch_sched.c\
 	    tch_sys.c\
 	    tch_sem.c\
 	    tch_thread.c\
-	    tch_libsysc.c\
-	    tch_nclib.c\
 	    tch_bar.c\
-	    tch_condv.c\
 	    tch_msgq.c\
 	    tch_mailq.c\
 	    tch_time.c\
 	    tch_event.c\
-	    tch_kmm.c\
-	    tch_kdesc.c
+	    tch_kdesc.c\
+	    tch_crt0.c\
+	    tch_idle.c\
+	    tch_lwtask.c\
+	    tch_err.c\
+	    tch_loader.c\
+	    tch_init.c\
+	    tch_interrupt.c
+	    
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp
+
+
 KERNEL_BUILD_DIR=$(GEN_DIR)/kernel
 GEN_SUB_DIR+=$(KERNEL_BUILD_DIR) 
 KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(KERNEL_BUILD_DIR)/%.o)

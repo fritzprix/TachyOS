@@ -12,7 +12,7 @@
 #include "tch.h"
 
 #if defined(__cplusplus)
-extern "C"{
+extern "C" {
 #endif
 
 typedef struct tch_board_descriptor_s {
@@ -22,13 +22,13 @@ typedef struct tch_board_descriptor_s {
 	uint32_t		b_feature;	// features supported
 }* tch_board_descriptor;
 
-typedef struct tch_board_handle_s {
-	tch_board_descriptor 	bd_desc;
-	const tch_mfile_t 		bd_stdio;
-	const tch_mfile_t	 	bd_errio;
-}* tch_boardHandle;
+typedef struct tch_board_param {
+	tch_board_descriptor 	desc;
+	const struct tch_file*	default_stdiofile;
+	const struct tch_file* 	default_errfile;
+}* tch_boardParam;
 
-extern tch_boardHandle tch_boardInit(const tch* env);
+extern tch_boardParam tch_boardInit(const tch* env);
 extern tchStatus tch_boardDeinit(const tch* env);
 
 #if defined(__cplusplus)

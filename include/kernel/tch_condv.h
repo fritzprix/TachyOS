@@ -16,7 +16,7 @@
 #ifndef TCH_CONDV_H_
 #define TCH_CONDV_H_
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 
 #if defined(__cplusplus)
@@ -24,7 +24,19 @@ extern "C"{
 #endif
 
 typedef struct _tch_condv_cb_t tch_condvCb;
+struct _tch_condv_cb_t {
+	tch_kobj          __obj;
+	uint32_t          flags;
+	tch_mtxId         waitMtx;
+	tch_thread_queue  wq;
+};
+
+
 extern tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static);
+extern tchStatus tchk_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout);
+extern tchStatus tchk_condvWake(tch_condvId condv);
+extern tchStatus tchk_condvWakeAll(tch_condvId condv);
+extern tchStatus tchk_condvDestroy(tch_condvId condv);
 
 
 

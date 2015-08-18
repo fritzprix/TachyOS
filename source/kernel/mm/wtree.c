@@ -31,7 +31,7 @@ void wtreeRootInit(wtreeRoot_t* root,uint32_t ext_gap){
 	root->ext_gap = ext_gap;
 }
 
-void wtreeNodeInit(wtreeNode_t* node,uint64_t base,uint64_t span){
+void wtreeNodeInit(wtreeNode_t* node,uint32_t base,uint32_t span){
 	node->left = node->right = NULL_NODE;
 	node->base = base;
 	node->span = span;
@@ -48,10 +48,10 @@ void wtreeInsert(wtreeRoot_t* root,wtreeNode_t* item){
 	root->entry = insert_r(root->entry,item,root->ext_gap);
 }
 
-wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint64_t* span){
+wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
 	if(!root || !root->entry)
 		return NULL;
-	uint64_t nspan = *span + root->ext_gap;
+	uint32_t nspan = *span + root->ext_gap;
 	if(root->entry->span < *span)
 		return NULL;
 
@@ -62,7 +62,7 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint64_t* span){
 		root->entry = (wtreeNode_t*)(((uint8_t*) root->entry) + nspan);
 		nspan = retrived->span - nspan;
 		retrived->span = *span;
-		wtreeNodeInit(root->entry,(uint64_t)root->entry,nspan);
+		wtreeNodeInit(root->entry,(uint32_t)root->entry,nspan);
 		root->entry->left = retrived->left;
 		root->entry->right = retrived->right;
 		if((root->entry->right->span > root->entry->span) || (root->entry->left->span > root->entry->span)){
@@ -81,6 +81,27 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint64_t* span){
 	}
 	return retrived;
 }
+
+wtreeNode_t* wtreeDeleteRightMost(wtreeRoot_t*root){
+	if(!root)
+		return NULL;
+	if(root == NULL_NODE)
+		return NULL;
+	wtreeNode_t* rm;
+	wtreeNode_t ** current;
+	current = &root->entry;
+	while((*current)->right != NULL_NODE){
+		current = &(*current)->right;
+	}
+	rm = *current;
+	if(rm->left == NULL_NODE){
+		*current = NULL;
+	}else {
+		*current = rm->left;
+	}
+	return rm;
+}
+
 
 
 void wtreePrint(wtreeRoot_t* root){
@@ -129,13 +150,14 @@ static void print_r(wtreeNode_t* node,int depth){
 	if(node == NULL_NODE)
 		return;
 	print_r(node->right,depth + 1);
-	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
+//	print_tab(depth);printf("{base : %d , span : %d} @ depth %d\n",node->base,node->span,depth);
 	print_r(node->left,depth + 1);
 
 }
 
+
 static void print_tab(int k){
-	while(k--)printf("\t");
+	//while(k--)printf("\t");
 }
 
 static wtreeNode_t* rotateLeft(wtreeNode_t* rot_pivot){

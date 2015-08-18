@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 #include "tch_usart.h"
 #include "tch_spi.h"
@@ -74,15 +74,6 @@ struct tch_hal_t{
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
 
 
-typedef struct _tch_runtime_t tch;
-
-/*!
- *  tachyos kernel interface
- */
-
-
-
-
 
 struct _tch_thread_ix_t {
 	/**
@@ -98,7 +89,12 @@ struct _tch_thread_ix_t {
 	tchStatus (*yield)(uint32_t millisec);
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
-	void (*initCfg)(tch_threadCfg* cfg);
+	void (*initCfg)(tch_threadCfg* cfg,
+					tch_thread_routine entry,
+					tch_threadPrior prior,
+					uint32_t stksz,
+					uint32_t heapsz,
+					const char* name);
 	void* (*getArg)();
 };
 
@@ -222,8 +218,6 @@ struct _tch_msgque_ix_t {
 	 */
 	tchEvent (*get)(tch_msgqId,uint32_t millisec);
 
-	uint32_t (*getLength)(tch_msgqId);
-
 	/*!
 	 * \brief destroy msg queue
 	 */
@@ -233,12 +227,9 @@ struct _tch_msgque_ix_t {
 
 struct _tch_mailbox_ix_t {
 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
-	void* (*alloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	void* (*calloc)(tch_mailqId qid,uint32_t millisec,tchStatus* result);
-	tchStatus (*put)(tch_mailqId qid,void* mail);
-	tchEvent (*get)(tch_mailqId qid,uint32_t millisec);
-	uint32_t (*getBlockSize)(tch_mailqId qid);
-	uint32_t (*getLength)(tch_mailqId qid);
+	void* (*alloc)(tch_mailqId qid,uint32_t timeout,tchStatus* result);
+	tchStatus (*put)(tch_mailqId qid,void* mail,uint32_t timeout);
+	tchEvent (*get)(tch_mailqId qid,uint32_t timeout);
 	tchStatus (*free)(tch_mailqId qid,void* mail);
 	tchStatus (*destroy)(tch_mailqId qid);
 };
@@ -246,7 +237,7 @@ struct _tch_mailbox_ix_t {
 struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
-	uint32_t (*available)();
+	size_t (*available)();
 };
 
 

@@ -29,17 +29,10 @@ tchStatus mtx_performTest(tch* api){
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg thCfg;
-	api->Thread->initCfg(&thCfg);
-	thCfg.t_name = "child1_mtx";
-	thCfg.t_routine = child1Routine;
-	thCfg.t_priority = Normal;
-	thCfg.t_memDef.stk_sz = 512;
+	api->Thread->initCfg(&thCfg,child1Routine,Normal,512 , 0, "child1_mtx");
 	child1 = Thread->create(&thCfg,api);
 
-	thCfg.t_name = "child2_mtx";
-	thCfg.t_routine = child2Routine;
-	thCfg.t_memDef.stk_sz = 512;
-	thCfg.t_priority = Normal;
+	api->Thread->initCfg(&thCfg,child2Routine,Normal,512, 0 , "child2_mtx");
 	child2 = Thread->create(&thCfg,api);
 
 	mmtx = api->Mtx->create();

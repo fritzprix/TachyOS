@@ -8,7 +8,7 @@
 #ifndef MONITOR_TEST_H_
 #define MONITOR_TEST_H_
 
-#include "tch_TypeDef.h"
+#include "tch_types.h"
 
 extern tchStatus monitor_performTest(tch* api);
 

@@ -9,16 +9,6 @@
 #include "tch_kernel.h"
 #include "tch_mm.h"
 
-/*
- * 	int 			version_major;		// kernel version number
-	int		 		version_minor;
-	const char*		target_archid;
-	const char*		target_plfid;
-	size_t		 	target_memsz;
-	size_t			k_stacksz;
-	size_t			k_dynamicsz;
-	uint32_t*		k_stacktop;
- */
 
 #ifndef VER_MAJOR
 #define VER_MAJOR	0
@@ -38,12 +28,9 @@
 
 
 
-tch_kernel_descriptor kernel_descriptor = {
+const tch_kernel_descriptor kernel_descriptor = {
 		.version_major = VER_MAJOR,
 		.version_minor = VER_MINRO,
 		.arch_name = ARCH_NAME,
 		.pltf_name = PLATFORM_NAME,
-		.k_stacksz = CONFIG_KERNEL_STACKSIZE,
-		.k_dynamicsz = CONFIG_KERNEL_DYNAMICSIZE,
-		.k_stacktop = 0
 };

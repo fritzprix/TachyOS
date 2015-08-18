@@ -13,12 +13,15 @@ extern "C" {
 #endif
 
 
-typedef struct tch_eventCb tch_eventCb;
+typedef struct tch_eventCb {
+	tch_kobj            __obj;
+	uint32_t              status;
+	int32_t               ev_msk;
+	int32_t               ev_signal;
+	tch_thread_queue      ev_blockq;
+} tch_eventCb;
 
-extern tch_eventId tchk_eventInit(tch_eventCb* evcb,tch_eventCb* initcb);
-extern tchStatus tchk_eventWait(tch_eventId id,void* arg);
-extern int32_t tchk_eventUpdate(tch_eventId id,void* arg);
-extern void tchk_eventDeinit(tch_eventId id);
+extern tch_eventId tchk_eventInit(tch_eventCb* evcb,BOOL is_static);
 
 
 #if defined(__cplusplus)

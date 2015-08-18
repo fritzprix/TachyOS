@@ -70,15 +70,10 @@ tchStatus msgq_performTest(tch* api){
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg tcfg;
-	api->Thread->initCfg(&tcfg);
-	tcfg.t_name = "sender";
-	tcfg.t_routine = sender;
-	tcfg.t_priority= Normal;
-	tcfg.t_memDef.stk_sz= 1 << 9;
+	api->Thread->initCfg(&tcfg,sender,Normal,1 << 9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);
 
-	tcfg.t_name = "receiver";
-	tcfg.t_routine = receiver;
+	api->Thread->initCfg(&tcfg,receiver,Normal,1 << 9,0, "receiver");
 	receiver_id = Thread->create(&tcfg,api);
 
 	Thread->start(receiver_id);
