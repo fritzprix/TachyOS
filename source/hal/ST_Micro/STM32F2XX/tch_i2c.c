@@ -461,7 +461,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 
 	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
-	while(iicHw->SR2 & 7)__NOP();
+//	while(iicHw->SR2 & 7)__NOP();
 	iicHw->CR1 &= ~I2C_CR1_PE;
 	IIC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
