@@ -252,7 +252,7 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		/*
 		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 		NVIC_EnableIRQ(spiDesc->irq);*/
-		tch_kernel_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
+		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
 
 
@@ -425,6 +425,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	*spiDesc->_rstr |= spiDesc->rstmsk;
 	*spiDesc->_clkenr &= ~spiDesc->clkmsk;
 	*spiDesc->_lpclkenr &= ~spiDesc->lpclkmsk;
+	tch_disableInterrupt(spiDesc->irq);
 
 	spiDesc->_handle = NULL;
 	env->Condv->wakeAll(SPI_StaticInstance.condv);

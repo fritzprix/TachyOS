@@ -10,7 +10,7 @@
 
 
 
-#include "tch_ptypes.h".
+#include "tch_ptypes.h"
 
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"

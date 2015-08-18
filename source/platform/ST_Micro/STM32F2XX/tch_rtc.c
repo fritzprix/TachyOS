@@ -175,8 +175,8 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 
 //	NVIC_DisableIRQ(RTC_WKUP_IRQn);
 //	NVIC_DisableIRQ(RTC_Alarm_IRQn);
-	tch_kernel_disableInterrupt(RTC_WKUP_IRQn);
-	tch_kernel_disableInterrupt(RTC_Alarm_IRQn);
+	tch_disableInterrupt(RTC_WKUP_IRQn);
+	tch_disableInterrupt(RTC_Alarm_IRQn);
 
 	RCC->BDCR |= RCC_BDCR_BDRST;
 	RCC->BDCR &= RCC_BDCR_BDRST;
@@ -326,7 +326,7 @@ static tchStatus tch_rtcEnablePeriodicWakeup(tch_rtcHandle* self,uint16_t period
 /*
 	NVIC_SetPriority(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(RTC_WKUP_IRQn);*/
-	tch_kernel_enableInterrupt(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 
@@ -351,7 +351,7 @@ static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self){
 	ins->wkup_handler = NULL;
 
 //	NVIC_DisableIRQ(RTC_WKUP_IRQn);
-	tch_kernel_disableInterrupt(RTC_WKUP_IRQn);
+	tch_disableInterrupt(RTC_WKUP_IRQn);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 

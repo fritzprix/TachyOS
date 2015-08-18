@@ -240,7 +240,6 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 
 	*iicDesc->_rstr |= iicDesc->rstmsk;
 	*iicDesc->_rstr &= ~iicDesc->rstmsk;
-
 	iicHw->CR1 |= I2C_CR1_SWRST;   // reset i2c peripheral
 	iicHw->CR1 &= ~I2C_CR1_SWRST;
 
@@ -297,12 +296,8 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 		IIC_clrMaster(ins);
 		break;
 	}
-
-	/*
-	NVIC_SetPriority(iicDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(iicDesc->irq);
-	*/
-	tch_kernel_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
+	iicHw->CR1 |= I2C_CR1_STOP;
+	tch_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_IICValidate(ins);
 	return (tch_iicHandle*) ins;
 }
@@ -348,6 +343,7 @@ static tchStatus tch_IIC_close(tch_iicHandle* self){
 	*iicDesc->_rstr |= iicDesc->rstmsk;
 	*iicDesc->_clkenr &= ~iicDesc->clkmsk;
 	*iicDesc->_lpclkenr &= ~iicDesc->lpclkmsk;
+	tch_disableInterrupt(iicDesc->irq);
 
 
 	iicDesc->_handle = NULL;

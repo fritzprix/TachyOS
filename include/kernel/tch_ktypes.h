@@ -145,7 +145,7 @@ struct tch_thread_kheader_s {
 
 
 
-#define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
+#define SV_EXIT_FROM_SV                  ((uint32_t) 0x00)
 
 #define SV_EV_INIT						 ((uint32_t) 0x15)
 #define SV_EV_UPDATE                     ((uint32_t) 0x16)              ///< Supervisor call id for setting / clearing event flag

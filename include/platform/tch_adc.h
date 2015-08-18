@@ -74,7 +74,7 @@ struct tch_adc_cfg_t {
 struct tch_adc_handle_t {
 	tchStatus (*close)(tch_adcHandle* self);
 	uint32_t (*read)(const tch_adcHandle* self,uint8_t ch);
-	tchStatus (*readBurst)(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
+	tchStatus (*readBurst)(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qblkSz,uint32_t convCnt);
 };
 
 typedef struct tch_lld_adc_t {

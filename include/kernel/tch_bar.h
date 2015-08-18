@@ -14,7 +14,11 @@
 extern "C" {
 #endif
 
-typedef struct tch_bar_cb_t tch_barCb;
+typedef struct tch_bar_cb_t {
+	tch_kobj                 __obj;
+	uint32_t                 status;
+	cdsl_dlistNode_t         wq;
+}tch_barCb;
 
 extern tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static);
 extern tchStatus tchk_barrierDeinit(tch_barCb* bar);

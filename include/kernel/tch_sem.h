@@ -27,10 +27,6 @@ extern "C"{
  *  semaphore  types
  */
 
-//SYSCALL_1(SEMAPHORE_CREATE,semaphore_create,count,uint32_t);
-
-extern tchStatus semaphore_create(uint32_t count);
-//static  uint8_t sysc_id = (const size_t) semaphore_create_syscall_vec - (const size_t) __SYSCALL_ENTRY;
 
 
 #if defined(__cplusplus)

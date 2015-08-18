@@ -293,7 +293,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	NVIC_SetPriority(uDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(uDesc->irq);
 	*/
-	tch_kernel_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	return (tch_usartHandle) uins;
 }
@@ -355,7 +355,7 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 //	NVIC_DisableIRQ(uDesc->irq);
-	tch_kernel_disableInterrupt(uDesc->irq);
+	tch_disableInterrupt(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
 	UART_CLR_RXBUSY(ins);
 	UART_CLR_TXBUSY(ins);

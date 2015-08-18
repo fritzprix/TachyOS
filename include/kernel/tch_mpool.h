@@ -15,14 +15,18 @@
 #ifndef TCH_MPOOL_H_
 #define TCH_MPOOL_H_
 
-#include "tch_TypeDef.h"
-#include "tch_mtx.h"
+#include "tch_types.h"
 
 #if defined(__cplusplus)
 extern "C"{
 #endif
 
 
+extern tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen);
+extern void* tch_mpool_alloc(tch_mpoolId mpool);
+extern void* tch_mpool_calloc(tch_mpoolId mpool);
+extern tchStatus tch_mpool_free(tch_mpoolId mpool,void* block);
+extern tchStatus tch_mpool_destroy(tch_mpoolId mpool);
 
 
 #if defined(__cplusplus)

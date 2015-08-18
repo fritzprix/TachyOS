@@ -107,22 +107,22 @@ int main(const tch* env) {
 
 	buf[0] = MO_CTRL_REG4;
 	buf[1] = (1 << 7) | (1 << 4);
-	result = iic->write(iic,msAddr,buf,2);
+//	result = iic->write(iic,msAddr,buf,2);
 
-	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
-	result = iic->read(iic,msAddr,buf,1,tchWaitForever);
+//	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
+//	result = iic->read(iic,msAddr,buf,1,tchWaitForever);
 //	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
 
 	buf[0] = MO_CTRL_REG1;
 	buf[1] = ((1 << 3) | 7);
-	iic->write(iic,msAddr,buf,2);
+//	iic->write(iic,msAddr,buf,2);
 
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
 	int cnt = 0;
 
 	while(TRUE){
-		iic->write(iic,msAddr,&datareadAddr,1);
-		iic->read(iic,msAddr,buf,6,tchWaitForever);
+//		iic->write(iic,msAddr,&datareadAddr,1);
+//		iic->read(iic,msAddr,buf,6,tchWaitForever);
 //		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
 
 		pwm->start(pwm);
@@ -175,7 +175,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 
 	while(TRUE){
 //		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
-		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,1);
+		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,100,1);
 		evt = env->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);

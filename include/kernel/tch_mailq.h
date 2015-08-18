@@ -18,10 +18,7 @@ typedef struct _tch_mailq_karg{
 	void*    chunk;
 }tch_mailq_karg;
 
-extern tch_mailqId tch_mailqInit(tch_mailqId qdest,tch_mailqId qsrc);
-extern tchStatus tchk_mailqAlloc(tch_mailqId qid,tch_mailq_karg* arg);
-extern tchStatus tchk_mailqFree(tch_mailqId qid,tch_mailq_karg* arg);
-extern tchStatus tchk_mailqDeinit(tch_mailqId qid);
+extern tch_mailqId tchk_mailqInit(tch_mailqId qdest,tch_mailqId qsrc);
 
 
 

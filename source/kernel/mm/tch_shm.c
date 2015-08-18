@@ -22,6 +22,11 @@ static struct mem_region 	shm_init_region;
 static wt_heapRoot_t		shm_root;
 static int 					shm_init_segid;
 
+DECLARE_SYSCALL_1(shmem_alloc,size_t,void*);
+DECLARE_SYSCALL_1(shmem_free,void*,tchStatus);
+DECLARE_SYSCALL_0(shmem_avail,uint32_t);
+DECLARE_SYSCALL_0(shmem_cleanup,tchStatus);
+
 
 void tch_shm_init(int seg_id){
 	if(seg_id < 0)
@@ -37,7 +42,8 @@ void tch_shm_init(int seg_id){
 	wt_addNode(&shm_root,shm_node);
 }
 
-void* tchk_shmalloc(size_t sz){
+
+DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	if(!sz)
 		return NULL;
 	struct kobj_header* chnk;
@@ -67,30 +73,31 @@ void* tchk_shmalloc(size_t sz){
 	return &chnk[1];
 }
 
-void tchk_shmFree(void* mem){
-	if(!mem)
-		return;
-	struct kobj_header* chnk = (struct kobj_header*) mem;
+DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
+	if(!ptr)
+		return tchErrorParameter;
+	struct kobj_header* chnk = (struct kobj_header*) ptr;
 	cdsl_dlistRemove(&chnk->alc_ln);
-	if(wt_free(&shm_root,mem) == WT_ERROR)
-		tchk_schedThreadTerminate(tch_currentThread,tchErrorHeapCorruption);
+	if(wt_free(&shm_root,ptr) == WT_ERROR)
+		tchk_schedTerminate(tch_currentThread,tchErrorHeapCorruption);
+	return tchOK;
 }
 
-uint32_t tchk_shmAvail(){
+DEFINE_SYSCALL_0(shmem_avail,uint32_t){
 	return wt_available(&shm_root);
 }
 
-tchStatus tchk_shmCleanUp(struct tch_mm* owner){
-	if(!owner)
-		return tchErrorParameter;
+DEFINE_SYSCALL_0(shmem_cleanup,tchStatus){
 	struct kobj_entry* chnk;
-	while((chnk = (struct kobj_entry*)cdsl_dlistDequeue(&owner->shm_list)) != NULL){
+	while((chnk = (struct kobj_entry*) cdsl_dlistDequeue(&current_mm->shm_list)) != NULL){
 		chnk = (struct kobj_entry*) container_of(chnk,struct kobj_entry,alc_ln);
 		if(wt_free(&shm_root,chnk) == WT_ERROR){
-			// TODO : handle shmem corruption in thread termination (this function intended to be called from thread termination)
-		}else {
+			// TODO :shmem corruption in thread termination
+			KERNEL_PANIC("tch_shm.c","shmem is corrupted");
+		}else{
 			if(chnk->kobj.__destr_fn(&chnk->kobj) != tchOK){
-				// TODO : deal with destructor error
+				//TODO : deal with destructor error
+				return tchErrorResource;
 			}
 		}
 	}
@@ -98,25 +105,30 @@ tchStatus tchk_shmCleanUp(struct tch_mm* owner){
 }
 
 void* tch_shmAlloc(size_t sz){
-	if(tch_port_isISR()){
-		return tchk_shmalloc(sz);
-	}else{
-		return tch_port_enterSv(SV_SHMEM_ALLOC,sz,0,0);
-	}
+	if(tch_port_isISR())
+		return __shmem_alloc(sz);
+	else
+		return (void*) __SYSCALL_1(shmem_alloc,sz);
 }
 
-void tch_shmFree(void* mchunk){
-	if(tch_port_isISR()){
-		tchk_shmFree(mchunk);
-	}else{
-		tch_port_enterSv(SV_SHMEM_FREE,mchunk,0,0);
-	}
+tchStatus tch_shmFree(void* mchunk){
+	if(tch_port_isISR())
+		return __shmem_free(mchunk);
+	else
+		return __SYSCALL_1(shmem_free,mchunk);
 }
 
 uint32_t tch_shmAvali(){
-	if(tch_port_isISR()){
-		return tchk_shmAvail();
-	}else {
-		return tch_port_enterSv(SV_SHMEM_AVAILABLE,0,0,0);
-	}
+	if(tch_port_isISR())
+		return __shmem_avail();
+	else
+		return __SYSCALL_0(shmem_avail);
 }
+
+tchStatus tch_shmCleanUp(){
+	if(tch_port_isISR())
+		return tchErrorISR;
+	else
+		return __SYSCALL_0(shmem_cleanup);
+}
+
