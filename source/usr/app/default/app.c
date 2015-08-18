@@ -70,18 +70,10 @@ int main(const tch* env) {
 
 	tch_threadCfg thcfg;
 	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
-	env->Thread->initCfg(&thcfg);
-	thcfg.t_name = "child1";
-	thcfg.t_routine = childThreadRoutine;
-	thcfg.t_priority = Normal;
-	thcfg.t_memDef.stk_sz = 720;
+	env->Thread->initCfg(&thcfg,childThreadRoutine,Normal,720,0,"child1");
 	childId = env->Thread->create(&thcfg,spi);
 
-	env->Thread->initCfg(&thcfg);
-	thcfg.t_name = "btnHandler";
-	thcfg.t_routine = btnHandler;
-	thcfg.t_memDef.stk_sz = 720;
-	thcfg.t_priority = Normal;
+	env->Thread->initCfg(&thcfg,btnHandler,Normal,720,0,"btnHandler");
 	btnHandleThread = env->Thread->create(&thcfg,spi);
 
 	env->Thread->start(childId);
@@ -119,7 +111,7 @@ int main(const tch* env) {
 
 	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
 	result = iic->read(iic,msAddr,buf,1,tchWaitForever);
-	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
+//	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
 
 	buf[0] = MO_CTRL_REG1;
 	buf[1] = ((1 << 3) | 7);
@@ -131,17 +123,17 @@ int main(const tch* env) {
 	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,6,tchWaitForever);
-		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
+//		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
 
 		pwm->start(pwm);
 		pwm->write(pwm,1,dutyArr,10);
 		pwm->stop(pwm);
 		if((loopcnt++ % 1000) == 0){
-			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
+	//		env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
 		}
 		spi->write(spi,"Hello World,Im the main!!!",16);
 		if((loopcnt % 1000) == 500){
-			env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
+	//		env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
 		}
 		env->Thread->sleep(1);
 
@@ -157,10 +149,9 @@ static DECLARE_THREADROUTINE(btnHandler){
 
 	while(TRUE){
 		spi->write(spi,"Press Button",11);
-		env->uStdLib->stdio->iprintf("\rButton Loop\n");
+//		env->uStdLib->stdio->iprintf("\rButton Loop\n");
 		env->Thread->sleep(2);
 	}
-
 	return tchOK;
 }
 
@@ -182,15 +173,15 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,tchWaitForever);
 
 	while(TRUE){
-		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
-		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,1);
+//		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
+		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,100,1);
 		evt = env->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){
 			env->MailQ->free(adcReadQ,evt.value.p);
 		}
 
 		env->Time->getLocaltime(&ltm);
-		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
+//		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
 		env->Thread->sleep(1);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}

@@ -9,7 +9,6 @@
 #define CDSL_RBTREE_H_
 
 #include "cdsl.h"
-#include "cdsl_rbtree.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -31,6 +30,7 @@ extern rb_treeNode_t* cdsl_rbtreeLookup(rb_treeNode_t** root,int key);
 extern int cdsl_rbtreeSize(rb_treeNode_t** root);
 extern void cdsl_rbtreePrint(rb_treeNode_t** root);
 extern int cdsl_rbtreeMaxDepth(rb_treeNode_t** root);
+extern int cdsl_rbtreeIsNIL(rb_treeNode_t* rbn);
 
 
 #if defined(__cplusplus)

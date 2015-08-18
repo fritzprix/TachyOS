@@ -46,7 +46,7 @@ extern void cdsl_dlistPutTail(cdsl_dlistNode_t* lentry,cdsl_dlistNode_t* item);
 extern cdsl_dlistNode_t* cdsl_dlistGetHead(cdsl_dlistNode_t* lentry);
 extern cdsl_dlistNode_t* cdsl_dlistGetTail(cdsl_dlistNode_t* lentry);
 
-
+extern void cdsl_dlistReplace(cdsl_dlistNode_t* old,cdsl_dlistNode_t* nu);
 extern BOOL cdsl_dlistRemove(cdsl_dlistNode_t* item);
 extern int cdsl_dlistSize(cdsl_dlistNode_t* lentry);
 extern BOOL cdsl_dlistContain(cdsl_dlistNode_t* lentry,cdsl_dlistNode_t* item);

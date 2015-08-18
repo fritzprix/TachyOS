@@ -6,18 +6,9 @@
  */
 
 #include "tch_board.h"
+#include "tch_fs.h"
 
 
-
-
-static int tch_bdstd_write(const uint8_t* buf,uint32_t sz);
-static int tch_bdstd_read(uint8_t* buf,uint32_t sz);
-static void tch_bdstd_close();
-
-
-static int tch_bderr_write(const uint8_t* buf,uint32_t sz);
-static int tch_bderr_read(uint8_t* buf,uint32_t sz);
-static void tch_bderr_close();
 
 const static struct tch_board_descriptor_s bd_Descriptor = {
 		.b_name = "Port_103Z",
@@ -26,27 +17,33 @@ const static struct tch_board_descriptor_s bd_Descriptor = {
 		.b_feature = 0
 };
 
-const static struct tch_mfile_s tch_stdioFile = {
-		.close = tch_bdstd_close,
-		.read = tch_bdstd_read,
-		.write = tch_bdstd_write
+static int stdio_open(struct tch_file* filp);
+static size_t stdio_read(struct tch_file* filp,char* rdata,size_t len);
+static size_t stdio_write(struct tch_file* filp,const char* wdata,size_t len);
+static int stdio_close(struct tch_file* filp);
+static off_t stdio_seek(struct tch_file* filp,off_t offset,int whence);
+
+
+
+static struct tch_file_operations stderr_fops = {
+
 };
 
-const static struct tch_mfile_s tch_errFile = {
-		.close = tch_bderr_close,
-		.read = tch_bderr_read,
-		.write = tch_bderr_write
+
+static struct tch_file_operations stdio_fops = {
+
 };
 
-const static struct tch_board_handle_s BOARD_HANDLE = {
-		.bd_desc = &bd_Descriptor,
-		.bd_stdio = &tch_stdioFile,
-		.bd_errio = &tch_errFile
+
+const static struct tch_board_param BOARD_PARM = {
+		.desc = &bd_Descriptor,
+		.default_stdiofile = &stdio_fops,
+		.default_errfile = &stderr_fops
 };
 
 static tch_usartHandle stdio_handle;
 
-tch_boardHandle tch_boardInit(const tch* ctx){
+tch_boardParam tch_boardInit(const tch* ctx){
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
@@ -55,7 +52,7 @@ tch_boardHandle tch_boardInit(const tch* ctx){
 	ucfg.StopBit = USART_StopBit_1B;
 	stdio_handle = ctx->Device->usart->allocate(ctx,tch_USART0,&ucfg,tchWaitForever,ActOnSleep);
 
-	return &BOARD_HANDLE;
+	return &BOARD_PARM;
 }
 
 tchStatus tch_boardDeinit(const tch* env){
@@ -63,32 +60,23 @@ tchStatus tch_boardDeinit(const tch* env){
 }
 
 
-static int tch_bdstd_write(const uint8_t* buf,uint32_t sz){
-	if(stdio_handle == NULL)
-		return FALSE;
-	return (stdio_handle->write(stdio_handle,buf,sz) == tchOK);
-}
 
-static int tch_bdstd_read(uint8_t* buf,uint32_t sz){
-	if(stdio_handle == NULL)
-		return 0;
-	return stdio_handle->read(stdio_handle,buf,sz,100);
-}
-
-static void tch_bdstd_close(){
-	if(stdio_handle == NULL)
-		return;
-	stdio_handle->close(stdio_handle);
-}
-
-static int tch_bderr_write(const uint8_t* buf,uint32_t sz){
+static int stdio_open(struct tch_file* filp){
 
 }
 
-static int tch_bderr_read(uint8_t* buf,uint32_t sz){
+static size_t stdio_read(struct tch_file* filp,char* rdata,size_t len){
 
 }
 
-static void tch_bderr_close(){
+static size_t stdio_write(struct tch_file* filp,const char* wdata,size_t len){
+
+}
+
+static int stdio_close(struct tch_file* filp){
+
+}
+
+static off_t stdio_seek(struct tch_file* filp,off_t offset,int whence){
 
 }

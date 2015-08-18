@@ -11,6 +11,7 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
+#include "tch_ptypes.h"
 #include "cdsl_dlist.h"
 #include "cdsl_rbtree.h"
 
@@ -21,16 +22,16 @@ extern "C" {
 #endif
 
 
+#define __TCH_STATIC_INIT  __attribute__((section(".data")))
+
+
 typedef struct {
 	int 			version_major;		// kernel version number
 	int		 		version_minor;
 	const char*		arch_name;
 	const char*		pltf_name;
-	size_t		 	target_memsz;
-	size_t			k_stacksz;
-	size_t			k_dynamicsz;
-	uint32_t*		k_stacktop;
 } tch_kernel_descriptor;
+
 
 typedef struct {
 	const char*          hw_vendor;
@@ -67,7 +68,6 @@ typedef enum tch_thread_state_t {
 } tch_threadState;
 
 typedef void* tch_pageId;
-typedef struct tch_sys_task_t tch_sysTask;
 typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_kheader_s tch_thread_kheader;
 typedef struct tch_thread_uheader_s tch_thread_uheader;
@@ -80,72 +80,72 @@ typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
 
 typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
-typedef struct tch_errorDescriptor {
-	int            errtype;
-	int            errno;
-	tch_threadId   subj;
-}tch_errorDescriptor;
 
 struct tch_kobject_t {
 	tch_kobjDestr		__destr_fn;
 };
 
 
-struct tch_sys_task_t {
-	tch_sysTaskFn          fn;
-	tch_thread_prior       prior;
-	void*                  arg;
-	uint8_t                status;
-	int                    id;
-}__attribute__((packed));
-
-
 typedef struct tch_thread_queue{
 	cdsl_dlistNode_t             thque;
 } tch_thread_queue;
 
-
+struct tch_mm {
+	struct proc_dynamic* 	dynamic;
+	struct mem_region* 		text_region;		// ============ per thread field ==================
+	struct mem_region* 		bss_region;
+	struct mem_region* 		data_region;
+	struct mem_region* 		stk_region;
+	struct mem_region*		heap_region;
+	pgd_t* 					pgd;
+	cdsl_dlistNode_t		alc_list;
+	cdsl_dlistNode_t		shm_list;
+	paddr_t 				estk;
+};
 
 struct tch_thread_uheader_s {
-	tch_kobjDestr				t_destr;
-	tch_thread_routine          t_fn;			///<thread function pointer
-	void* 	 					t_heap;
-	uword_t                     t_kRet;			///<kernel return value
-	const char*                 t_name;			///<thread name
+	tch_kobjDestr				destr;
+	tch_thread_routine          fn;			///<thread function pointer
+	void* 	 					t_cache;
+	uword_t                     kRet;			///<kernel return value
+	const char*                 name;			///<thread name
 	void*                       t_arg;			///<thread arg field
-	tch_thread_kheader*			t_kthread;		///<pointer to kernel level thread header
+	tch_thread_kheader*			kthread;		///<pointer to kernel level thread header
+	void*						heap;
+	tch_condvId 				condv;
+	tch_mtxId 					mtx;
 #ifdef __NEWLIB__
-	struct _reent               t_reent;		///<reentrant struct used by c standard library
+	struct _reent               reent;		///<reentrant struct used by c standard library
 #endif
-	uint32_t					t_chks;			///<check-sum for determine corruption of thread header
+	uint32_t					chks;			///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
-	cdsl_dlistNode_t                 t_schedNode;	///<thread queue node to be scheduled
-	cdsl_dlistNode_t                 t_waitNode;		///<thread queue node to be blocked
-	cdsl_dlistNode_t                 t_joinQ;		///<thread queue to wait for this thread's termination
-	cdsl_dlistNode_t                 t_childLn;		///<thread queue node to iterate child thread
-	cdsl_dlistNode_t					t_siblingLn;	///<linked list entry for added into child list
-	cdsl_dlistNode_t*                t_waitQ;		///<reference to wait queue in which this thread is waiting
-	void*                       t_ctx;			///<ptr to thread saved context (stack pointer value)
-	void*						t_proc;			///<ptr to base address of process image
-	cdsl_dlistNode_t					t_palc;			///<allocation list for page
-	cdsl_dlistNode_t                 t_pshalc;		///<allocation list for shared heap
-	cdsl_dlistNode_t					t_upshalc;
-	uint32_t                    t_tslot;		///<time slot for round robin scheduling (currently not used)
-	tch_threadState             t_state;		///<thread state
-	uint8_t                     t_flag;			///<flag for dealing with attributes of thread
-	uint8_t                     t_lckCnt;		///<lock count to know whether  restore original priority
-	uint8_t                     t_prior;		///<priority
-	uint64_t					t_to;			///<timeout value for pending operation
-	tch_pageId					t_pgId;
-	tch_thread_uheader*			t_uthread;		///<pointer to user level thread header
-	tch_thread_kheader*			t_parent;
+	cdsl_dlistNode_t                t_schedNode;	///<thread queue node to be scheduled
+	cdsl_dlistNode_t                t_waitNode;		///<thread queue node to be blocked
+	cdsl_dlistNode_t                t_joinQ;		///<thread queue to wait for this thread's termination
+	cdsl_dlistNode_t                t_childLn;		///<thread queue node to iterate child thread
+	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
+	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
+	void*   	                    ctx;			///<ptr to thread saved context (stack pointer value)
+	struct tch_mm					mm;			///<ptr to per-process memory management handle
+	cdsl_dlistNode_t				t_palc;			///<allocation list for page
+	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
+	cdsl_dlistNode_t				t_upshalc;
+	uint32_t                	    tslot;		///<time slot for round robin scheduling (currently not used)
+	uint32_t						permission;
+	tch_threadState       	   		state;		///<thread state
+	uint8_t                	    	flag;			///<flag for dealing with attributes of thread
+	uint8_t                	     	lckCnt;		///<lock count to know whether  restore original priority
+	uint8_t               	 	    prior;		///<priority
+	uint64_t						to;			///<timeout value for pending operation
+	tch_thread_uheader*				uthread;		///<pointer to user level thread header
+	tch_thread_kheader*				parent;
 } __attribute__((aligned(8)));
 
 
 
-#define SV_EXIT_FROM_SV                  ((uint32_t) 0x02)
+#define SV_EXIT_FROM_SV                  ((uint32_t) 0x00)
 
 #define SV_EV_INIT						 ((uint32_t) 0x15)
 #define SV_EV_UPDATE                     ((uint32_t) 0x16)              ///< Supervisor call id for setting / clearing event flag
@@ -163,6 +163,7 @@ struct tch_thread_kheader_s {
 #define SV_THREAD_DESTROY                ((uint32_t) 0x27)
 #define SV_THREAD_SLEEP                  ((uint32_t) 0x28)               ///< Supervisor call id to put thread in low power stand-by mode
 
+#define SV_MTX_CREATE					 ((uint32_t) 0x40)
 #define SV_MTX_LOCK						 ((uint32_t) 0x29)
 #define SV_MTX_UNLOCK					 ((uint32_t) 0x2A)
 #define SV_MTX_DESTROY					 ((uint32_t) 0x2B)

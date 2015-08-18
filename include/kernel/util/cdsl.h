@@ -8,15 +8,25 @@
 #ifndef CDSL_H_
 #define CDSL_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 #ifndef TEST_SIZE
 #define TEST_SIZE 5000
 #endif
+
+#ifndef BOOL
+#define BOOL 		uint8_t
+#define TRUE		((uint8_t) 1 > 0)
+#define FALSE		!(TRUE)
+#endif
+
+
+
 
 #define VERBOSE_LOG
 
@@ -26,12 +36,6 @@ extern "C" {
 #define log(...)
 #endif
 
-
-#ifndef BOOL
-#define BOOL uint8_t
-#define FALSE ((uint8_t) 1 < 0)
-#define TRUE  ((uint8_t) 1 > 0)
-#endif
 
 typedef void (*cdsl_generic_printer_t) (void*);
 
