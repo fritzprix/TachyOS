@@ -18,7 +18,8 @@ KERNEL_SRCS=\
 	    tch_lwtask.c\
 	    tch_err.c\
 	    tch_loader.c\
-	    tch_init.c
+	    tch_init.c\
+	    tch_interrupt.c
 	    
 	    
 KERNEL_CPP_SRCS=tch_crtb.cpp

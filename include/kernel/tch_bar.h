@@ -21,6 +21,7 @@ typedef struct tch_bar_cb_t {
 }tch_barCb;
 
 extern tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static);
+extern tchStatus tchk_barrierDeinit(tch_barCb* bar);
 
 #if defined(__cplusplus)
 }

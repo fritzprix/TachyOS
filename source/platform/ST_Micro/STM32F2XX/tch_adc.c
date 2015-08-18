@@ -193,7 +193,6 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	}
 
 
-	// dma initialize
 	if(adcBs->dma != DMA_NOT_USED){
 		/// initialize dma and configure relevant register of adc
 		dmacfg.BufferType = DMA_BufferMode_Normal;
@@ -209,7 +208,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pInc = TRUE;
 		ins->dma = tch_dma->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
-		// handle dma_not_used
+		// TODO :handle dma_not_used
 	}
 
 	tch_pwmDef pwmDef;
@@ -228,7 +227,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ins->env = env;
 
 
-	tch_kernel_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_adcValidate(ins);
 	return (tch_adcHandle*) ins;
 }
@@ -269,6 +268,7 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 		return result;
 	adcDesc->_handle = NULL;
 	tch_adcChannelOccpStatus &= ins->ch_occp;
+	tch_disableInterrupt(adcDesc->irq);
 	env->Condv->wakeAll(ADC_StaticInstance.condv);
 	env->Mtx->unlock(ADC_StaticInstance.mtx);
 

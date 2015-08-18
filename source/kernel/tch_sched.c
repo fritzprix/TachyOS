@@ -63,7 +63,7 @@ void tch_schedInit(void* init_thread){
 /** Note : should not called any other program except kernel mode program
  *  @brief start thread based on its priority (thread can be started in preempted way)
  */
-extern void tchk_schedThreadStart(tch_threadId thread){
+void tchk_schedStart(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	if(tch_schedIsPreemptable(thr->kthread)){
 		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,getListNode(tch_currentThread->kthread),tch_schedReadyQRule);			///< put current thread in ready queue
@@ -91,10 +91,10 @@ void tchk_schedThreadReady(tch_threadId thread){
 /** Note : should not called any other program except kernel mode program
  *  make current thread sleep for specified amount of time (yield cpu time)
  */
-void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState nextState){
+tchStatus tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState nextState){
 	tch_thread_kheader* nth = NULL;
 	if(timeout == tchWaitForever)
-		return;
+		return tchErrorParameter;
 	tchk_systimeSetTimeout(tch_currentThread,timeout,tu);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*)&tch_readyQue);
 	if(!nth)
@@ -104,6 +104,7 @@ void tchk_schedThreadSleep(uint32_t timeout,tch_timeunit tu,tch_threadState next
 	getThreadKHeader(tch_currentThread)->state = nextState;
 	tch_currentThread = nth->uthread;
 	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,nth->uthread->kRet);
+	return tchOK;
 }
 
 
@@ -199,7 +200,7 @@ static BOOL tch_schedIsPreemptable(tch_thread_kheader* nth){
 	return (tch_schedReadyQRule(nth,getThreadKHeader(tch_currentThread)) == nth) || ((getThreadKHeader(tch_currentThread)->tslot > 10) && (nth->prior != Idle));
 }
 
-void tchk_schedThreadTerminate(tch_threadId thread, int result){
+void tchk_schedTerminate(tch_threadId thread, int result){
 	tch_thread_kheader* jth = 0;
 	tch_thread_kheader* thr = ((tch_thread_uheader*) thread)->kthread;
 	thr->state = TERMINATED;															/// change state of thread to terminated

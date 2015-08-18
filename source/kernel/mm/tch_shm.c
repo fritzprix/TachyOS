@@ -79,7 +79,7 @@ DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 	struct kobj_header* chnk = (struct kobj_header*) ptr;
 	cdsl_dlistRemove(&chnk->alc_ln);
 	if(wt_free(&shm_root,ptr) == WT_ERROR)
-		tchk_schedThreadTerminate(tch_currentThread,tchErrorHeapCorruption);
+		tchk_schedTerminate(tch_currentThread,tchErrorHeapCorruption);
 	return tchOK;
 }
 

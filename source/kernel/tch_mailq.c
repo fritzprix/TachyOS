@@ -66,8 +66,8 @@ DEFINE_SYSCALL_2(mailq_create,uint32_t,sz,uint32_t,qlen,tch_mailqId){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb));
 	if(!mailqcb)
 		KERNEL_PANIC("tch_mailq.c","can't create mailq object");
-	mailqcb->queue = kmalloc(sizeof(void*) * qlen);
 	memset(mailqcb,0,sizeof(tch_mailqCb));
+	mailqcb->queue = kmalloc(sizeof(void*) * qlen);
 	mailqcb->bpool = Mempool->create(sz,qlen);
 	if(!mailqcb->bpool || !mailqcb->queue)
 		KERNEL_PANIC("tch_mailq.c","can't created mailq object");

@@ -69,9 +69,50 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 };
 
 
-
 const tch_thread_ix* Thread = &tch_threadix;
 
+
+DECLARE_SYSCALL_2(thread_create,tch_threadCfg*,void*,tch_threadId);
+DECLARE_SYSCALL_1(thread_start,tch_threadId,tchStatus);
+DECLARE_SYSCALL_2(thread_terminate,tch_threadId,tchStatus err,tchStatus);
+DECLARE_SYSCALL_1(thread_sleep,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(thread_yield,uint32_t,tchStatus);
+DECLARE_SYSCALL_2(thread_join,tch_threadId,uint32_t,tchStatus);
+
+
+
+
+DEFINE_SYSCALL_2(thread_create,tch_threadCfg*,cfg,void*,arg,tch_threadId){
+	if(!cfg)
+		return NULL;
+	return tchk_threadCreateThread(cfg,arg,FALSE,FALSE,NULL);
+}
+
+DEFINE_SYSCALL_1(thread_start,tch_threadId,id,tchStatus){
+	tchk_schedStart(id);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_2(thread_terminate,tch_threadId,id,tchStatus,err,tchStatus){
+	tchk_schedTerminate(id,err);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(thread_sleep,uint32_t,sec_timeout,tchStatus){
+	return tchk_schedThreadSleep(sec_timeout,SECOND,SLEEP);
+}
+
+DEFINE_SYSCALL_1(thread_yield,uint32_t,ms_timeout,tchStatus){
+	return tchk_schedThreadSleep(ms_timeout,mSECOND,WAIT);
+}
+
+DEFINE_SYSCALL_2(thread_join,tch_threadId,id,uint32_t,timeout,tchStatus){
+	tch_thread_kheader* th = ((tch_thread_uheader*) id)->kthread;
+	if(th->state != TERMINATED){
+		return tchk_schedWait((tch_thread_queue*) &th->t_joinQ,timeout);
+	}
+	return tchOK;
+}
 
 tchStatus tchk_threadIsValid(tch_threadId thread){
 	if(!thread)
@@ -114,55 +155,6 @@ tch_threadPrior tchk_threadGetPriority(tch_threadId tid){
 /**
  * create new thread
  */
-/*
-tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv){
-	// allocate kernel thread header from kernel heap
-	tch_thread_kheader* kthread = (tch_thread_kheader*) tchk_kernelHeapAlloc(sizeof(tch_thread_kheader));
-	memset(kthread,0,sizeof(tch_thread_kheader));
-	if(isroot){														// if new thread will be the root thread of a process, parent will be self
-		kthread->t_parent = kthread;
-		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
-		if(cfg->t_memDef.heap_sz < TCH_CFG_HEAP_MIN_SIZE)			// guarantee minimum heap size
-			cfg->t_memDef.heap_sz = TCH_CFG_HEAP_MIN_SIZE;
-	}else if(tch_currentThread){									// new thread will be child of caller thread
-		kthread->t_parent = tch_currentThread->t_kthread->t_parent;
-		cfg->t_memDef.heap_sz = 0;
-		cdsl_dlistPutTail(&kthread->t_parent->t_childLn,&kthread->t_siblingLn);
-	}else {
-		KERNEL_PANIC("tch_thread.c","Null Running Thread");
-	}
-	if(cfg->t_memDef.stk_sz < TCH_CFG_THREAD_STACK_MIN_SIZE)		// guarantee minimum stack size
-		cfg->t_memDef.stk_sz = TCH_CFG_THREAD_STACK_MIN_SIZE;
-
-	if(tchk_userMemInit(kthread,&cfg->t_memDef,isroot) != tchOK)	// prepare memory space of new thread
-		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
-
-	kthread->t_ctx = tch_port_makeInitialContext(kthread->t_uthread,kthread->t_proc,__tch_thread_entry);
-	kthread->t_flag |= isroot? THREAD_ROOT_BIT : 0;
-	kthread->t_flag |= ispriv? THREAD_PRIV_BIT : 0;
-
-	cdsl_dlistInit(&kthread->t_palc);
-	cdsl_dlistInit(&kthread->t_pshalc);
-	cdsl_dlistInit(&kthread->t_upshalc);
-
-	kthread->t_tslot = TCH_ROUNDROBIN_TIMESLOT;
-	kthread->t_state = PENDED;
-	kthread->t_lckCnt = 0;
-	kthread->t_prior = cfg->t_priority;
-	kthread->t_to = 0;
-	if(!kthread->t_pgId)
-		KERNEL_PANIC("tch_thread.c","Can't create proccess memory space");
-
-	kthread->t_uthread->t_arg = arg;														// initialize user level thread header
-	kthread->t_uthread->t_fn = cfg->t_routine;
-	kthread->t_uthread->t_name = cfg->t_name;
-	kthread->t_uthread->t_kRet = tchOK;
-#ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
-	_REENT_INIT_PTR(&kthread->t_uthread->t_reent)
-#endif
-	kthread->t_uthread->t_chks = THREAD_CHK_PATTERN;
-	return (tch_threadId) kthread->t_uthread;
-}*/
 
 /**
  * \brief create thread
@@ -216,7 +208,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 
-	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << CONFIG_PAGE_SHIFT,__tch_thread_entry);
+	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(void*)((kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << CONFIG_PAGE_SHIFT),__tch_thread_entry);
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
@@ -236,10 +228,11 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 
 
 static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
-	uint8_t tm = 0;
+	if(!cfg)
+		return NULL;
 	if(tch_port_isISR())
 		return NULL;
-	return (tch_threadId) tch_port_enterSv(SV_THREAD_CREATE,(uword_t) cfg, (uword_t) arg,0);
+	return (tch_threadId) __SYSCALL_2(thread_create,cfg,arg);
 }
 
 
@@ -248,18 +241,16 @@ static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){                 // check current execution mode (Thread or Handler)
 		tchk_schedThreadReady(thread);    // if handler mode call, put current thread in ready queue
 		return tchOK;
-	}else{
-		return tch_port_enterSv(SV_THREAD_START,(uint32_t)thread,0,0);
 	}
+	return __SYSCALL_1(thread_start,thread);
 }
 
 
 static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 	if(tch_port_isISR()){
 		return tchErrorISR;
-	}else{
-		return tch_port_enterSv(SV_THREAD_DESTROY,(uint32_t) thread,err,0);
 	}
+	return __SYSCALL_2(thread_terminate,thread,err);
 }
 
 
@@ -269,38 +260,25 @@ static tch_threadId tch_threadSelf(){
 
 
 static tchStatus tch_threadSleep(uint32_t sec){
-	if(tch_port_isISR()){
+	if(tch_port_isISR())
 		return tchErrorISR;
-	}else{
-		return tch_port_enterSv(SV_THREAD_SLEEP,sec,0,0);
-	}
+	return __SYSCALL_1(thread_sleep,sec);
 }
 
 
 static tchStatus tch_threadYield(uint32_t millisec){
-	if(tch_port_isISR()){
+	if(tch_port_isISR())
 		return tchErrorISR;
-	}else{
-		return tch_port_enterSv(SV_THREAD_YIELD,millisec,0,0);
-	}
+	return __SYSCALL_1(thread_yield,millisec);
 }
 
 static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
-	if(tch_port_isISR()){
+	if(tch_port_isISR())
 		return tchErrorISR;					// unreachable code
-	}else{
-		return tch_port_enterSv(SV_THREAD_JOIN,(uint32_t) thread,timeout,0);
-	}
+	return __SYSCALL_3(thread_join,thread,timeout,0);
 }
 
-/**
- * void (*initCfg)(tch_threadCfg* cfg,
-					tch_thread_routine entry,
-					tch_threadPrior prior,
-					uint32_t stksz,
-					uint32_t heapsz,
-					const char* name);
- */
+
 static void tch_threadInitCfg(tch_threadCfg* cfg,
 							  tch_thread_routine entry,
 							  tch_threadPrior prior,
@@ -317,7 +295,7 @@ static void tch_threadInitCfg(tch_threadCfg* cfg,
 
 
 static void* tch_threadGetArg(){
-	return getThreadHeader(tch_currentThread)->t_arg;
+	return tch_currentThread->t_arg;
 }
 
 __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status){

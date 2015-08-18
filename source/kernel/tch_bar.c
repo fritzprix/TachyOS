@@ -89,17 +89,12 @@ DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
 DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
 	if((!barId) || (!BAR_ISVALID(barId)))
 		return tchErrorParameter;
-	tch_barCb* bar = (tch_barCb*) barId;
-	BAR_INVALIDATE(barId);
-	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	kfree(bar);
+	tchk_barrierDeinit(barId);
+	kfree(barId);
 	return tchOK;
 }
 
 tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static){
-	if(!is_static){
-		bar = (tch_barCb*) kmalloc(sizeof(tch_barCb));
-	}
 	memset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
 	cdsl_dlistInit(&bar->wq);
@@ -112,7 +107,6 @@ tchStatus tchk_barrierDeinit(tch_barCb* bar){
 		return tchErrorParameter;
 	BAR_INVALIDATE(bar);
 	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	kfree(bar);
 	return tchOK;
 }
 
@@ -120,8 +114,7 @@ tchStatus tchk_barrierDeinit(tch_barCb* bar){
 static tch_barId tch_bar_create(){
 	if(tch_port_isISR())
 		return NULL;
-
-	return __SYSCALL_0(bar_create);
+	return (tch_barId) __SYSCALL_0(bar_create);
 }
 
 static tchStatus tch_bar_wait(tch_barId bar,uint32_t timeout){

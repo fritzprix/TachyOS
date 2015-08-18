@@ -105,7 +105,7 @@ DEFINE_SYSCALL_1(event_destroy,tch_eventId,evid,tchStatus){
 
 
 tch_eventId tchk_eventInit(tch_eventCb* evcb,BOOL is_static){
-	memset(&evcb,0,sizeof(tch_eventCb));
+	memset(evcb,0,sizeof(tch_eventCb));
 	evcb->__obj.__destr_fn =  is_static? (tch_kobjDestr) __tch_noop_destr :  (tch_kobjDestr) tch_eventDestroy;
 	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
 	return evcb;

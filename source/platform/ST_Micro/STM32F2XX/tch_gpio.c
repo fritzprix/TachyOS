@@ -318,7 +318,7 @@ static tchStatus tch_gpio_handle_unregisterIoEvent(tch_GpioHandle* self,pin p){
 	uint16_t pmsk = (1 << p);
 	ioIntrDesc->io_occp = NULL;
 	api->Barrier->destroy(ioIntrDesc->evbar);
-	tch_kernel_disableInterrupt(ioIntrDesc->irq);
+	tch_disableInterrupt(ioIntrDesc->irq);
 	//NVIC_DisableIRQ(ioIntrDesc->irq);
 	SYSCFG->EXTICR[p >> 2] = 0;
 	EXTI->EMR &= ~pmsk;
@@ -412,7 +412,7 @@ static tchStatus tch_gpio_handle_configureEvent(tch_GpioHandle* self,uint8_t pin
 		return tchErrorParameter;
 	tch_ioInterrupt_descriptor* ioDesc = &IoInterrupt_HWs[pin];
 
-	tch_kernel_disableInterrupt(ioDesc->irq);
+	tch_disableInterrupt(ioDesc->irq);
 	//NVIC_DisableIRQ(ioDesc->irq);
 	EXTI->RTSR &= ~pmsk;
 	EXTI->FTSR &= ~pmsk;
@@ -436,7 +436,7 @@ static tchStatus tch_gpio_handle_configureEvent(tch_GpioHandle* self,uint8_t pin
 	NVIC_SetPriority(ioDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(ioDesc->irq);
 	*/
-	tch_kernel_enableInterrupt(ioDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(ioDesc->irq,HANDLER_NORMAL_PRIOR);
 	SYSCFG->EXTICR[pin >> 2] |= ins->idx << ((pin % 4) *4);
 	return tchOK;
 }

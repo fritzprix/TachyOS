@@ -55,7 +55,7 @@ DECLARE_SYSCALL_1(messageQ_destroy,tch_msgqId,tchStatus);
 
 DEFINE_SYSCALL_1(messageQ_create,uint32_t,sz,tch_msgqId){
 	tch_msgqCb* msgqCb = (tch_msgqCb*) kmalloc(sizeof(tch_msgqCb) + sz * sizeof(uword_t));
-	memset(msgqCb, 0, sizeof(msgqCb));
+	memset(msgqCb, 0, sizeof(tch_msgqCb));
 	msgqCb->bp = (uword_t*) &msgqCb[1];
 	msgqCb->__obj.__destr_fn = (tch_kobjDestr) tch_msgq_destroy;
 	msgqCb->sz = sz;
