@@ -14,9 +14,10 @@
  */
 
 
+#include "tch_types.h"
 #include "tch_hal.h"
-#include "tch_kernel.h"
-#include "tch_i2c.h"
+#include "kernel/tch_kernel.h"
+#include "platform/tch_i2c.h"
 
 
 #define TCH_IIC_CLASS_KEY                      ((uint16_t) 0x62D1)
@@ -230,6 +231,7 @@ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,u
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Af = iicbs->afv;
 	iocfg.Mode = GPIO_Mode_AF;
+	iocfg.Speed = GPIO_OSpeed_25M;
 	iocfg.popt = popt;
 	ins->iohandle = env->Device->gpio->allocIo(env,iicbs->port,((1 << iicbs->scl) | (1 << iicbs->sda)),&iocfg,timeout);
 
@@ -398,6 +400,7 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	ins->isr_msg = (uint32_t) &tx_req;
 
 	iicHw->CR1 &= ~I2C_CR1_STOP;
+	while(iicHw->CR1 & I2C_CR1_STOP)__NOP();
 
 	if(ins->txdma){
 		iicHw->CR2 |= I2C_CR2_DMAEN;
@@ -455,9 +458,10 @@ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const voi
 	result = tchOK;
 	SET_SAFE_RETURN();
 
-	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
+	while(iicHw->CR1 & I2C_CR1_STOP) __NOP();
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
-//	while(iicHw->SR2 & 7)__NOP();
+	while(iicHw->SR2 & 7) __NOP();
+	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	iicHw->CR1 &= ~I2C_CR1_PE;
 	IIC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
@@ -496,15 +500,16 @@ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,in
 	rx_req.isDMA = FALSE;
 	ins->isr_msg = (uint32_t) &rx_req;
 
-	iicHw->CR1 &= ~I2C_CR1_STOP;
+	while(iicHw->CR1 & I2C_CR1_STOP)__NOP();
+//	iicHw->CR1 &= ~I2C_CR1_STOP;
 	iicHw->CR1 |= (I2C_CR1_ACK | I2C_CR1_PE);
 	if(ins->rxdma){
 		rx_req.isDMA = TRUE;
 		iicHw->CR2 |= (I2C_CR2_DMAEN | I2C_CR2_LAST);
 	}
 
-	iicHw->CR1 |= I2C_CR1_START;
 	iicHw->CR2 |= I2C_CR2_ITEVTEN;
+	iicHw->CR1 |= I2C_CR1_START;
 
 	if(ins->rxdma){
 		tch_DmaReqDef rxreq;
@@ -524,7 +529,6 @@ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,in
 		sz -= tch_dma->beginXfer(ins->rxdma,&rxreq,100,&result);
 		iicHw->CR1 |= I2C_CR1_STOP;
 		iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
-
 	}else{
 		// wait data transfer complete
 		ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_RX_COMPLETE),tchWaitForever);
@@ -534,9 +538,9 @@ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,in
 	ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 	SET_SAFE_RETURN();
 
-	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
-	while(iicHw->SR2 & 7)__NOP();
+	while(iicHw->SR2 & 7) __NOP();
+	iicHw->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
 	iicHw->CR1 &= ~I2C_CR1_PE;
 	IIC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);

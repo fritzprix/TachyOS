@@ -119,12 +119,14 @@ int main(const tch* env) {
 
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
 	int cnt = 0;
-
+	int16_t x,y,z;
 	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
-		iic->read(iic,msAddr,buf,6,tchWaitForever);
+		iic->read(iic,msAddr,buf,9,tchWaitForever);
 //		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
-
+		x = (*(int16_t*)&buf[0]);
+		y = ((*(int16_t*)&buf[2]));
+		z = (*(int16_t*)&buf[4]);
 		pwm->start(pwm);
 		pwm->write(pwm,1,dutyArr,10);
 		pwm->stop(pwm);

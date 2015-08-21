@@ -75,7 +75,7 @@ DEFINE_SYSCALL_3(messageQ_put,tch_msgqId,msgq,uword_t,msg,uint32_t,timeout,tchSt
 		if (msgqCb->pidx >= msgqCb->sz)
 			msgqCb->pidx = 0;
 		msgqCb->updated++;
-		tchk_schedWake((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchErrorNoMemory, TRUE);
+		tchk_schedWake((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchInterrupted, TRUE);
 		return tchOK;
 	}
 	if(timeout)
@@ -98,7 +98,7 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 	if(msgqcb->gidx >= msgqcb->sz)
 		msgqcb->gidx = 0;
 	msgqcb->updated--;
-	tchk_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tchk_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	return eventp->status = tchEventMessage;
 }
 
@@ -138,7 +138,7 @@ static tchStatus tch_msgq_put(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 				return tchErrorTimeoutResource;
 			case tchErrorResource:
 				return tchErrorResource;
-			case tchErrorNoMemory:
+			case tchInterrupted:
 				;/*  NO OP -- retry to put */
 			}
 		}
@@ -161,7 +161,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 		__messageQ_get(mqId,&evt,0);
 		return evt;
 	}else{
-		while(__SYSCALL_3(messageQ_get,mqId,&evt,millisec) != tchEventMessage){
+		while((evt.status = __SYSCALL_3(messageQ_get,mqId,&evt,millisec)) != tchEventMessage){
 			switch (evt.status) {
 			case tchEventTimeout:        /// get opeartion expired given timeout
 				evt.status = tchErrorTimeoutResource;
@@ -170,7 +170,7 @@ static tchEvent tch_msgq_get(tch_msgqId mqId,uint32_t millisec){
 			case tchErrorResource:         /// msgq invalidated
 				evt.value.v = 0;
 				return evt;
-			case tchErrorNoMemory:
+			case tchInterrupted:
 				evt.value.v = 0;           /// wake-up from wait ( Not return )
 			}
 		}
