@@ -28,12 +28,12 @@
 
 #define ADC_setBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status |= ADC_BUSY_FLAG;\
-	tch_kernelSetBusyMark();\
+	idle_set_busy();\
 }while(0)
 
 #define ADC_clrBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status &= ~ADC_BUSY_FLAG;\
-	tch_kernelClrBusyMark();\
+	idle_clear_busy();\
 }while(0)
 
 #define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_BUSY_FLAG

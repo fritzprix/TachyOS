@@ -30,17 +30,6 @@ struct user_heap {
 
 volatile struct tch_mm*		current_mm;
 struct tch_mm				init_mm;
-/**
- *  kernel has initial mem_segment array which is declared as static variable,
- *  because there is not support of dynamic memory allocation in early kernel initialization stage.
- *
- */
-
-void tch_mmInit(struct tch_mm* mmp){
-	memset(mmp,0,sizeof(struct tch_mm));
-	cdsl_dlistInit(&mmp->alc_list);
-	cdsl_dlistInit(&mmp->shm_list);
-}
 
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz);
@@ -55,7 +44,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	tch_condvCb* condv;
 	wt_cache_t* cache;
 	struct tch_mm* mmp = &thread->mm;
-	tch_mmInit(mmp);
+	memset(mmp,0,sizeof(struct tch_mm));
 	/**
 	 *  ================= setup regions for binary images ============================
 	 *  1. dynamic program => dynamically loaded program in run time
@@ -80,21 +69,21 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			kfree(mmp->dynamic);
 			return FALSE;
 		}
+
 		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
 			mmp->data_region = proc_header->data_region;
 		}else {
-					// text/ bss / data section of static process are part of kernel binary image
-					// and static process runs in privilidged mode (trusted process)
+					// text/ bss / data section of static process are assumed to be part of kernel binary image
 			mmp->text_region = NULL;
 			mmp->bss_region = NULL;
 			mmp->data_region = NULL;
 		}
 
 		mmp->dynamic->mregions = NULL;
-		mmp->dynamic->mtx = tchk_mutexInit(mtx,FALSE);
-		mmp->dynamic->condv = tchk_condvInit(condv,FALSE);
+		mmp->dynamic->mtx = tch_mutexInit(mtx,FALSE);
+		mmp->dynamic->condv = tch_condvInit(condv,FALSE);
 	}else {
 		struct tch_mm* parent_mm = &tch_currentThread->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
@@ -107,7 +96,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			tch_port_addPageEntry(mmp->pgd, mmp->bss_region->poff,mmp->bss_region->flags);
 			tch_port_addPageEntry(mmp->pgd, mmp->data_region->poff,mmp->data_region->flags);
 		}
-		cdsl_dlistInit(&mmp->alc_list);
+		mmp->kobjs = NULL;
 	}
 
 	/**
@@ -148,7 +137,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	 */
 	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << CONFIG_PAGE_SHIFT);
 	thread->uthread = uthread;
-	thread->uthread->t_cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
+	thread->uthread->cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
 
 	/***
 	 *  ================= Prepare Process Argument in topper most area of stack =====================
@@ -190,13 +179,13 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		wt_initRoot(&proc_heap->heap_root);
 		wt_initNode(&proc_heap->heap_node,sheap,((size_t) eheap - (size_t) sheap));
 		wt_addNode(&proc_heap->heap_root,&proc_heap->heap_node);
-		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
+		wt_initCache(thread->uthread->cache,CONFIG_MAX_CACHE_SIZE);
 
 		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
 		mmp->dynamic->heap = &proc_heap->heap_root;
 	}else {
 		thread->uthread->heap = thread->parent->uthread->heap;
-		wt_initCache(thread->uthread->t_cache,CONFIG_MAX_CACHE_SIZE);
+		wt_initCache(thread->uthread->cache,CONFIG_MAX_CACHE_SIZE);
 	}
 
 	thread->uthread->heap = thread->mm.dynamic->heap;
@@ -207,6 +196,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	thread->uthread->fn = proc_header->entry;
 	thread->uthread->destr = __tch_noop_destr;
 	thread->uthread->kRet = tchOK;
+	thread->uthread->uobjs = NULL;
 
 	return TRUE;
 
@@ -215,9 +205,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 int tch_mmProcClean(tch_thread_kheader* thread){
 	if(!thread)
 		KERNEL_PANIC("tch_mm.c","thread clean-up fail : null reference");
-
 	struct tch_mm* mmp = &thread->mm;
-	tch_shmCleanUp();
 }
 
 
@@ -230,7 +218,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL)
 		KERNEL_PANIC("tch_mm.c","invalid section descriptor table");
 
-	tch_mmInit(&init_mm);
+	memset(&init_mm,0,sizeof(struct tch_mm));
 	current_mm = &init_mm;
 	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
 
@@ -253,11 +241,11 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
 	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &tch_currentThread->kthread->mm){
 		//kill thread
-		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);
+		tch_schedDestroy(tch_currentThread,tchErrorIllegalAccess);
 	}
 
 	if(!tch_port_addPageEntry(((struct tch_mm*) &tch_currentThread->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
-		tch_schedThreadDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
+		tch_schedDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
 	}
 }
 

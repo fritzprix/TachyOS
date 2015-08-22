@@ -35,7 +35,8 @@ typedef struct _tch_mtx_cb_t  {
  *  mutex  types
  */
 
-extern tch_mtxId tchk_mutexInit(tch_mtxCb* mcb,BOOL is_static);
+extern tch_mtxId tch_mutexInit(tch_mtxCb* mcb,BOOL isStatic);
+extern tchStatus tch_mutexDeinit(tch_mtxCb* mcb);
 
 #if defined(__cplusplus)
 }

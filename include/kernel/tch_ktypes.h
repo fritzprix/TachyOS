@@ -82,6 +82,7 @@ typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
 
 struct tch_kobject_t {
+	rb_treeNode_t			rbnode;					// id -> object searching
 	tch_kobjDestr		__destr_fn;
 };
 
@@ -91,22 +92,24 @@ typedef struct tch_thread_queue{
 } tch_thread_queue;
 
 struct tch_mm {
-	struct proc_dynamic* 	dynamic;
-	struct mem_region* 		text_region;		// ============ per thread field ==================
+	struct proc_dynamic* 	dynamic;			///< per process dynamic memory mangement struct
+	struct mem_region* 		text_region;		///<
 	struct mem_region* 		bss_region;
 	struct mem_region* 		data_region;
 	struct mem_region* 		stk_region;
 	struct mem_region*		heap_region;
-	pgd_t* 					pgd;
+	rb_treeNode_t*			kobjs;				///< per thread kobjects tree (red-black tree)
 	cdsl_dlistNode_t		alc_list;
 	cdsl_dlistNode_t		shm_list;
+	pgd_t* 					pgd;
 	paddr_t 				estk;
 };
 
 struct tch_thread_uheader_s {
 	tch_kobjDestr				destr;
 	tch_thread_routine          fn;			///<thread function pointer
-	void* 	 					t_cache;
+	rb_treeNode_t*			    uobjs;		///<user object tree for tracking
+	void* 	 					cache;
 	uword_t                     kRet;			///<kernel return value
 	const char*                 name;			///<thread name
 	void*                       t_arg;			///<thread arg field
@@ -124,7 +127,7 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t                t_schedNode;	///<thread queue node to be scheduled
 	cdsl_dlistNode_t                t_waitNode;		///<thread queue node to be blocked
 	cdsl_dlistNode_t                t_joinQ;		///<thread queue to wait for this thread's termination
-	cdsl_dlistNode_t                t_childLn;		///<thread queue node to iterate child thread
+	cdsl_dlistNode_t                child_list;		///<thread queue node to iterate child thread
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
 	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*   	                    ctx;			///<ptr to thread saved context (stack pointer value)

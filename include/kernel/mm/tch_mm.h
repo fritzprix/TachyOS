@@ -153,9 +153,6 @@ struct kobj_entry {
 	tch_kobj			kobj;
 };
 
-struct kobj_header {
-	cdsl_dlistNode_t		alc_ln;
-};
 
 
 struct section_descriptor {
@@ -163,7 +160,6 @@ struct section_descriptor {
 	paddr_t 		start;
 	paddr_t			end;
 }__attribute__((packed));
-
 
 typedef struct page_frame page_frame_t;
 
@@ -179,12 +175,9 @@ struct proc_dynamic {
 	tch_mtxId 				mtx;
 };
 
-
-
 extern struct tch_mm		init_mm;
 extern volatile struct tch_mm* current_mm;
 
-extern void tch_mmInit(struct tch_mm* mmp);
 extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
 extern int tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);

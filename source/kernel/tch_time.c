@@ -119,14 +119,14 @@ void tch_kernelOnWakeup() {
 	while ((!cdsl_dlistIsEmpty(&tch_lpsystimeWaitQ)) && (((tch_thread_kheader*) tch_lpsystimeWaitQ.next)->to	<= tch_sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&tch_lpsystimeWaitQ);
 		nth->to = 0;
-		tchk_schedThreadReady(nth->uthread);
+		tch_schedReady(nth->uthread);
 		tchk_kernelSetResult(nth->uthread, tchEventTimeout);
 		if (nth->t_waitQ) {
 			cdsl_dlistRemove(&nth->t_waitNode);
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedThreadUpdate();
+	tch_schedUpdate();
 }
 
 void tch_KernelOnSystick() {
@@ -136,14 +136,14 @@ void tch_KernelOnSystick() {
 	while ((!cdsl_dlistIsEmpty(&tch_systimeWaitQ)) && (((tch_thread_kheader*) tch_systimeWaitQ.next)->to <= tch_systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&tch_systimeWaitQ);
 		nth->to = 0;
-		tchk_schedThreadReady(nth->uthread);
+		tch_schedReady(nth->uthread);
 		tchk_kernelSetResult(nth->uthread, tchEventTimeout);
 		if (nth->t_waitQ) {
 			cdsl_dlistRemove(&nth->t_waitNode);
 			nth->t_waitQ = NULL;
 		}
 	}
-	tch_schedThreadUpdate();
+	tch_schedUpdate();
 }
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule) {

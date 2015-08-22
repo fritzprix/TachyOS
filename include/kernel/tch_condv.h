@@ -32,11 +32,8 @@ struct _tch_condv_cb_t {
 };
 
 
-extern tch_condvId tchk_condvInit(tch_condvCb* condv,BOOL is_static);
-extern tchStatus tchk_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout);
-extern tchStatus tchk_condvWake(tch_condvId condv);
-extern tchStatus tchk_condvWakeAll(tch_condvId condv);
-extern tchStatus tchk_condvDestroy(tch_condvId condv);
+extern tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static);
+extern tchStatus tch_condvDeint(tch_condvCb* condv);
 
 
 

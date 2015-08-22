@@ -27,8 +27,7 @@ static uint32_t		busy_cnt;
 static tch_threadId idleThread;
 
 
-void tch_idleInit(){
-
+void idle_init(){
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg,idle,Idle,CONFIG_THREAD_MIN_STACK,0,"idle");
 	idleThread = Thread->create(&thcfg,NULL);
@@ -39,22 +38,25 @@ void tch_idleInit(){
 	tch_rti->Thread->start(idleThread);
 }
 
-void tch_kernelSetBusyMark(){
+/**
+ *  @brief notify idle thread that there is ongoing hardware task and keep system power up
+ */
+void idle_set_busy(){
 	if(tch_rti->Mtx->lock(idle_lock,tchWaitForever) != tchOK)
 		return;
 	busy_cnt++;
 	tch_rti->Mtx->unlock(idle_lock);
 }
 
-void tch_kernelClrBusyMark(){
+/**
+ * @brief notify ongoing task is finished and can go lower power mode
+ */
+
+void idle_clear_busy(){
 	if(tch_rti->Mtx->lock(idle_lock,tchWaitForever) != tchOK)
 		return;
 	busy_cnt--;
 	tch_rti->Mtx->unlock(idle_lock);
-}
-
-BOOL tch_kernelIsBusy(){
-	return !busy_cnt;
 }
 
 

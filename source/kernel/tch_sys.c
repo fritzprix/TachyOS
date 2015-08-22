@@ -136,7 +136,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 			if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
 				tch_port_atomicEnd();
 			}else{
-				tch_schedThreadDestroy(tch_currentThread,arg1);
+				tch_schedDestroy(tch_currentThread,arg1);
 			}
 			if(tchk_threadIsPrivilidged(tch_currentThread))
 				tch_port_enablePrivilegedThread();
@@ -175,7 +175,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 		KERNEL_PANIC("tch_sys.c","Can't create init thread");
 
 
-	tch_idleInit();
+	idle_init();
 	Thread->start(mainThread);
 
 	while(TRUE){

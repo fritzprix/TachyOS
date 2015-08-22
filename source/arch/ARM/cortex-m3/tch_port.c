@@ -147,8 +147,7 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
-void tch_port_switch(uaddr_t nth,uaddr_t cth,tchStatus kret){
-	((tch_thread_kheader*)nth)->uthread->kRet = kret;
+void tch_port_switch(uaddr_t nth,uaddr_t cth){
 	asm volatile(
 #ifdef MFEATURE_HFLOAT
 			"vpush {s16-s31}\n"

@@ -22,10 +22,12 @@ static struct mem_region init_region;
 
 static int init_segid;
 
+struct kobj_header {
+	cdsl_dlistNode_t	alc_ln;
+};
+
 
 void tch_kmalloc_init(int segid){
-
-
 
 	init_segid = segid;
 	tch_segmentAllocRegion(segid,&init_region,CONFIG_KERNEL_DYNAMICSIZE,PERM_KERNEL_ALL | PERM_OTHER_RD);
@@ -33,9 +35,7 @@ void tch_kmalloc_init(int segid){
 
 	wt_initRoot(&kernel_heap_root);
 	wt_initNode(&init_kernel_cache,tch_getRegionBase(&init_region),tch_getRegionSize(&init_region));
-
 	wt_addNode(&kernel_heap_root,&init_kernel_cache);
-
 }
 
 void* kmalloc(size_t sz){
@@ -71,7 +71,7 @@ void* kmalloc(size_t sz){
 	if(!chunk){
 		return NULL;
 	}
-	cdsl_dlistPutHead(&current_mm->alc_list,&chunk->alc_ln);			// add alloc list
+	cdsl_dlistPutHead((cdsl_dlistNode_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
 	return (void*) ((size_t) chunk + sizeof(struct kobj_header));
 }
 

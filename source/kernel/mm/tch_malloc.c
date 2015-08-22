@@ -24,7 +24,7 @@ void* tch_malloc(size_t sz){
 	void* result;
 	if(!sz)
 		return NULL;
-	result = wt_cacheMalloc(tch_currentThread->t_cache, sz);
+	result = wt_cacheMalloc(tch_currentThread->cache, sz);
 	if (!result) {
 		tch_mtxId mtx = tch_currentThread->mtx;
 		if (Mtx->lock(mtx, tchWaitForever) != tchOK)
@@ -39,7 +39,7 @@ void tch_free(void* ptr){
 	if(!ptr)
 		return;
 	int result;
-	if(WT_OK == (result = wt_cacheFree(tch_currentThread->t_cache,ptr)))
+	if(WT_OK == (result = wt_cacheFree(tch_currentThread->cache,ptr)))
 		return;
 	if(result == WT_ERROR)
 		goto ERR_HEAP_FREE;
@@ -58,6 +58,6 @@ ERR_HEAP_FREE :
 }
 
 size_t tch_avail(){
-	return ((wt_cache_t*) tch_currentThread->t_cache)->size +
+	return ((wt_cache_t*) tch_currentThread->cache)->size +
 			((wt_heapRoot_t*) tch_currentThread->heap)->size;
 }
