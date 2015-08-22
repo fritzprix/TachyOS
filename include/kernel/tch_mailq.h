@@ -9,6 +9,9 @@
 #define TCH_MAILQ_H_
 
 
+
+#include "tch_kobj.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

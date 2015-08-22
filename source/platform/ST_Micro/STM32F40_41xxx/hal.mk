@@ -1,6 +1,5 @@
 
 HAL_SRCS=\
-	system_stm32f4xx.c\
 	tch_adc.c\
 	tch_dma.c\
 	tch_gpio.c\

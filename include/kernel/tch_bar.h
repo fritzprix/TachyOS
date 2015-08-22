@@ -8,6 +8,7 @@
 #ifndef TCH_BAR_H_
 #define TCH_BAR_H_
 
+#include "tch_kobj.h"
 #include "tch_types.h"
 
 #if defined(__cplusplus)

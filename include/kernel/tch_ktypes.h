@@ -72,19 +72,6 @@ typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
 typedef struct tch_thread_kheader_s tch_thread_kheader;
 typedef struct tch_thread_uheader_s tch_thread_uheader;
 
-typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
-/**	 Kernel Object
- *   used to critical object which should not be corrupted and released when it's not used
- *   such as : device driver object / synchronization / thread control block, etc.
- */
-
-typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
-
-
-struct tch_kobject_t {
-	rb_treeNode_t			rbnode;					// id -> object searching
-	tch_kobjDestr		__destr_fn;
-};
 
 
 typedef struct tch_thread_queue{
@@ -98,6 +85,7 @@ struct tch_mm {
 	struct mem_region* 		data_region;
 	struct mem_region* 		stk_region;
 	struct mem_region*		heap_region;
+	uint32_t 				kobj_n;
 	rb_treeNode_t*			kobjs;				///< per thread kobjects tree (red-black tree)
 	cdsl_dlistNode_t		alc_list;
 	cdsl_dlistNode_t		shm_list;
@@ -106,7 +94,6 @@ struct tch_mm {
 };
 
 struct tch_thread_uheader_s {
-	tch_kobjDestr				destr;
 	tch_thread_routine          fn;			///<thread function pointer
 	rb_treeNode_t*			    uobjs;		///<user object tree for tracking
 	void* 	 					cache;

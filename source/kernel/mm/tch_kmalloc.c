@@ -79,7 +79,8 @@ void kfree(void* p){
 	if(!p)
 		return;
 	int result;
-	struct kobj_entry* obj_entry = (struct kobj_entry*) container_of(p,struct kobj_entry,kobj);
+	struct kobj_header* obj_entry = (struct kobj_header*) p;
+	obj_entry--;
 	tch_port_atomicBegin();
 	result = wt_free(&kernel_heap_root,obj_entry);
 	tch_port_atomicEnd();
@@ -87,4 +88,5 @@ void kfree(void* p){
 		KERNEL_PANIC("tch_kmalloc.c","kernel heap corrupted");
 	cdsl_dlistRemove(&obj_entry->alc_ln);
 }
+
 

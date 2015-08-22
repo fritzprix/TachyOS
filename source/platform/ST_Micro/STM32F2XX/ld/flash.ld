@@ -101,7 +101,7 @@ SECTIONS
 	    . = ALIGN(4);
 	    _etext = .;
 	    
-	        	. = ALIGN(4);
+	    . = ALIGN(4);
     	__syscall_entry = . ;
     	*(.sysc.table) 
     	. = ALIGN(4);

@@ -8,6 +8,10 @@
 #ifndef TCH_EVENT_H_
 #define TCH_EVENT_H_
 
+
+#include "tch_kobj.h"
+
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

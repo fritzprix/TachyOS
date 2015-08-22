@@ -8,6 +8,9 @@
 #ifndef TCH_MSGQ_H_
 #define TCH_MSGQ_H_
 
+
+#include "tch_kobj.h"
+
 #if defined(__cplusplus)
 extern "C"{
 #endif

@@ -5,14 +5,14 @@
 
 
 
-### Open 407Z ###\
-ARCH = ARM\
-CPU = cortex-m4\
-FPU = HALFSOFT\
-HW_VENDOR = ST_Micro\
-HW_PLF = STM32F40_41xxx\
-BOARD_NAME=Open_407Z\
-APP_NAME = \
+### Open 407Z ###
+ARCH = ARM
+CPU = cortex-m4
+FPU = HALFSOFT
+HW_VENDOR = ST_Micro
+HW_PLF = STM32F40_41xxx
+BOARD_NAME=Open_407Z
+APP_NAME= 
 
 ### Open 427Z ###\
 ARCH = ARM\
@@ -22,13 +22,13 @@ HW_VENDOR = ST_Micro\
 HW_PLF = STM32F427_437xx\
 APP_NAME =\
 
-###
-ARCH=ARM
-CPU=cortex-m3
-FPU=SOFT
-HW_VENDOR=ST_Micro
-HW_PLF=STM32F2XX
-BOARD_NAME=Port_103Z
+###\
+ARCH=ARM\
+CPU=cortex-m3\
+FPU=SOFT\
+HW_VENDOR=ST_Micro\
+HW_PLF=STM32F2XX\
+BOARD_NAME=Port_103Z\
 APP_NAME=#iic_slaveWriter
 
 

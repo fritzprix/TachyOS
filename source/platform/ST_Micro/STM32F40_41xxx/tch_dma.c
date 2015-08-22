@@ -239,7 +239,7 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 	dmaHw->CR |= cfg->Priority << DMA_Prior_Pos;
 	dmaHw->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
 
-	tch_kernel_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
 	__DMB();
 	__ISB();
 	tch_dmaValidate(dma_desc->_handle);
@@ -290,7 +290,6 @@ static uint32_t tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_
 		}
 	}
 
-
 	SET_SAFE_RETURN();
 	ins->env->Mtx->lock(ins->mtxId,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
@@ -337,7 +336,6 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 			return result;
 	}
 	tch_dmaInvalidate(ins);
-//	api->Async->destroy(ins->dma_async);
 	env->Mtx->destroy(ins->mtxId);
 	env->MsgQ->destroy(ins->dma_mq);
 	env->Condv->destroy(ins->condv);
@@ -353,7 +351,7 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 
 	*dma_desc->_clkenr &= ~dma_desc->clkmsk;
 	*dma_desc->_lpclkenr &= ~dma_desc->lpcklmsk;
-	NVIC_DisableIRQ(dma_desc->irq);
+	tch_disableInterrupt(dma_desc->irq);
 
 	DMA_HWs[ins->dma]._handle = NULL;
 
@@ -390,12 +388,12 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 	}
 	const tch* env = handle->env;
 	if(isr & DMA_FLAG_EvTC){
-		env->MsgQ->put(handle->dma_mq,tchOK,0);
 		*dma_desc->_icr = isrclr;
+		env->MsgQ->put(handle->dma_mq,tchOK,0);
 		return TRUE;
 	}else{
-		env->MsgQ->put(handle->dma_mq,tchErrorOS,0);
 		*dma_desc->_icr = isrclr;
+		env->MsgQ->put(handle->dma_mq,tchErrorOS,0);
 		return FALSE;
 	}
 }
