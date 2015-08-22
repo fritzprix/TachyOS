@@ -40,22 +40,22 @@ static inline void tch_mpoolInvalidate(tch_mpoolId mp);
 static inline BOOL tch_mpoolIsValid(tch_mpoolId mp);
 
 __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
-		tch_mpool_create,
-		tch_mpool_alloc,
-		tch_mpool_calloc,
-		tch_mpool_free,
-		tch_mpool_destroy
+		tch_mpoolCreate,
+		tch_mpoolAlloc,
+		tch_mpoolCalloc,
+		tch_mpoolFree,
+		tch_mpoolDestroy
 };
 
 const tch_mpool_ix* Mempool = &MPoolStaticIntance;
 
-tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
+tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shmAlloc(sizeof(tch_mpoolCb) + sz * plen);
 	memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
 	mpcb->bpool = (tch_mpoolCb*) mpcb + 1;
 	mpcb->balign = sz;
 
-	mpcb->__obj.__destr_fn = (tch_kobjDestr) tch_mpool_destroy;
+	mpcb->__obj.__destr_fn = (tch_kobjDestr) tch_mpoolDestroy;
 	memset(mpcb->bpool,0,sz * plen);
 	void* next = NULL;
 	uint8_t* blk = (uint8_t*) mpcb->bpool;
@@ -76,7 +76,7 @@ tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen){
 }
 
 
-void* tch_mpool_alloc(tch_mpoolId mpool){
+void* tch_mpoolAlloc(tch_mpoolId mpool){
 	if(!tch_mpoolIsValid(mpool))
 		return NULL;
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
@@ -92,16 +92,16 @@ void* tch_mpool_alloc(tch_mpoolId mpool){
 }
 
 
-void* tch_mpool_calloc(tch_mpoolId mpool){
+void* tch_mpoolCalloc(tch_mpoolId mpool){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
-	void* free = tch_mpool_alloc(mpool);
+	void* free = tch_mpoolAlloc(mpool);
 	if(free){
 		memset(free,0,mpcb->balign);
 	}
 	return free;
 }
 
-tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
+tchStatus tch_mpoolFree(tch_mpoolId mpool,void* block){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	if((block < mpcb->bpool) || (block > mpcb->bend))
 		return tchErrorParameter;
@@ -113,7 +113,7 @@ tchStatus tch_mpool_free(tch_mpoolId mpool,void* block){
 }
 
 
-tchStatus tch_mpool_destroy(tch_mpoolId mpool){
+tchStatus tch_mpoolDestroy(tch_mpoolId mpool){
 	if(!tch_mpoolIsValid(mpool)){
 		return tchErrorParameter;
 	}

@@ -24,9 +24,10 @@ static int 					shm_init_segid;
 
 DECLARE_SYSCALL_1(shmem_alloc,size_t,void*);
 DECLARE_SYSCALL_1(shmem_free,void*,tchStatus);
-DECLARE_SYSCALL_0(shmem_avail,uint32_t);
-DECLARE_SYSCALL_0(shmem_cleanup,tchStatus);
 
+struct shmobj_header {
+	cdsl_dlistNode_t	alc_ln;
+};
 
 void tch_shm_init(int seg_id){
 	if(seg_id < 0)
@@ -46,8 +47,8 @@ void tch_shm_init(int seg_id){
 DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	if(!sz)
 		return NULL;
-	struct kobj_header* chnk;
-	size_t asz = sz + sizeof(struct kobj_header);
+	struct shmobj_header* chnk;
+	size_t asz = sz + sizeof(struct shmobj_header);
 	if(!(wt_available(&shm_root) > asz)){
 		struct mem_region* nregion = (struct mem_region*) kmalloc(sizeof(struct mem_region));
 		wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
@@ -75,32 +76,12 @@ DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 
 DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 	if(!ptr)
-		return tchErrorParameter;
-	struct kobj_header* chnk = (struct kobj_header*) ptr;
+			return tchErrorParameter;
+	struct shmobj_header* chnk = (struct shmobj_header*) ptr;
+	chnk--;
 	cdsl_dlistRemove(&chnk->alc_ln);
-	if(wt_free(&shm_root,ptr) == WT_ERROR)
-		tchk_schedTerminate(tch_currentThread,tchErrorHeapCorruption);
-	return tchOK;
-}
-
-DEFINE_SYSCALL_0(shmem_avail,uint32_t){
-	return wt_available(&shm_root);
-}
-
-DEFINE_SYSCALL_0(shmem_cleanup,tchStatus){
-	struct kobj_entry* chnk;
-	while((chnk = (struct kobj_entry*) cdsl_dlistDequeue(&current_mm->shm_list)) != NULL){
-		chnk = (struct kobj_entry*) container_of(chnk,struct kobj_entry,alc_ln);
-		if(wt_free(&shm_root,chnk) == WT_ERROR){
-			// TODO :shmem corruption in thread termination
-			KERNEL_PANIC("tch_shm.c","shmem is corrupted");
-		}else{
-			if(chnk->kobj.__destr_fn(&chnk->kobj) != tchOK){
-				//TODO : deal with destructor error
-				return tchErrorResource;
-			}
-		}
-	}
+	if (wt_free(&shm_root, ptr) == WT_ERROR)
+		tchk_schedTerminate(tch_currentThread, tchErrorHeapCorruption);
 	return tchOK;
 }
 
@@ -116,19 +97,5 @@ tchStatus tch_shmFree(void* mchunk){
 		return __shmem_free(mchunk);
 	else
 		return __SYSCALL_1(shmem_free,mchunk);
-}
-
-uint32_t tch_shmAvali(){
-	if(tch_port_isISR())
-		return __shmem_avail();
-	else
-		return __SYSCALL_0(shmem_avail);
-}
-
-tchStatus tch_shmCleanUp(){
-	if(tch_port_isISR())
-		return tchErrorISR;
-	else
-		return __SYSCALL_0(shmem_cleanup);
 }
 

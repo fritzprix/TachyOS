@@ -16,6 +16,7 @@
 #define TCHtch_port_H_
 
 #include "tch_ptypes.h"
+#include "tch_types.h"
 
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -94,7 +95,7 @@ extern BOOL tch_port_isISR();
 /** \brief switch task (or thread) context
  *
  */
-extern void tch_port_switch(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
+extern void tch_port_switch(void* nth,void* cth) __attribute__((naked,noreturn));
 
 
 

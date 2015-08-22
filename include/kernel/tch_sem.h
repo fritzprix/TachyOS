@@ -22,11 +22,19 @@
 extern "C"{
 #endif
 
-
 /***
  *  semaphore  types
  */
+typedef struct tch_semCb {
+	tch_kobj          	__obj;
+	uint32_t        	state;
+	uint32_t     	    count;
+	cdsl_dlistNode_t    wq;
+} tch_semCb;
 
+
+extern tch_semId tch_semInit(tch_semCb* scb,uint32_t count,BOOL isStatic);
+extern tchStatus tch_semDeinit(tch_semCb* scb);
 
 
 #if defined(__cplusplus)

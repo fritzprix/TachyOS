@@ -13,11 +13,21 @@ extern "C"{
 #endif
 
 
-typedef struct _tch_msgq_karg_t{
-	uword_t     msg;
-	uint32_t    timeout;
-}tch_msgq_karg;
 
+typedef struct _tch_msgq_cb {
+	tch_kobj      __obj;
+	uint32_t      status;
+	void*         bp;
+	uint32_t      sz;
+	uint32_t      pidx;
+	uint32_t      gidx;
+	cdsl_dlistNode_t   cwq;
+	cdsl_dlistNode_t   pwq;
+	uint32_t      updated;
+}tch_msgqCb;
+
+extern tch_msgqId tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic);
+extern tchStatus tch_msgqDeinit(tch_msgqCb* mq);
 
 #if defined(__cplusplus)
 }

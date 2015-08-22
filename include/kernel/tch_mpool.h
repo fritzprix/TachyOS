@@ -22,11 +22,11 @@ extern "C"{
 #endif
 
 
-extern tch_mpoolId tch_mpool_create(size_t sz,uint32_t plen);
-extern void* tch_mpool_alloc(tch_mpoolId mpool);
-extern void* tch_mpool_calloc(tch_mpoolId mpool);
-extern tchStatus tch_mpool_free(tch_mpoolId mpool,void* block);
-extern tchStatus tch_mpool_destroy(tch_mpoolId mpool);
+extern tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen);
+extern void* tch_mpoolAlloc(tch_mpoolId mpool);
+extern void* tch_mpoolCalloc(tch_mpoolId mpool);
+extern tchStatus tch_mpoolFree(tch_mpoolId mpool,void* block);
+extern tchStatus tch_mpoolDestroy(tch_mpoolId mpool);
 
 
 #if defined(__cplusplus)

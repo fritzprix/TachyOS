@@ -55,7 +55,7 @@ DEFINE_SYSCALL_0(event_create,tch_eventId){
 	tch_eventCb* evcb = (tch_eventCb*) kmalloc(sizeof(tch_eventCb));
 	if(!evcb)
 		KERNEL_PANIC("tch_event.c","can't create event object");
-	return (tch_eventId) tchk_eventInit(evcb,FALSE);
+	return (tch_eventId) tch_eventInit(evcb,FALSE);
 }
 
 DEFINE_SYSCALL_2(event_set,tch_eventId,evid,int32_t,ev_signal,int32_t){
@@ -89,27 +89,32 @@ DEFINE_SYSCALL_3(event_wait,tch_eventId,evid,int32_t,ev_signal,uint32_t,timeout,
 	tch_eventCb* evcb = (tch_eventCb*) evid;
 	evcb->ev_msk = ev_signal;
 	if((evcb->ev_msk & evcb->ev_signal) != evcb->ev_msk){
-		tchk_schedWait(&evcb->ev_blockq,timeout);
+		tch_schedWait(&evcb->ev_blockq,timeout);
 	}
 	return tchOK;
 }
 
 DEFINE_SYSCALL_1(event_destroy,tch_eventId,evid,tchStatus){
-	if(!evid || !EVENT_ISVALID(evid))
-		return tchErrorParameter;
-	tch_eventCb* evcb = (tch_eventCb*) evid;
-	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq))
-		tchk_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	return tchOK;
+	tchStatus result = tch_eventDeinit(evid);
+	kfree(evid);
+	return result;
 }
 
 
-tch_eventId tchk_eventInit(tch_eventCb* evcb,BOOL is_static){
+tch_eventId tch_eventInit(tch_eventCb* evcb,BOOL is_static){
 	memset(evcb,0,sizeof(tch_eventCb));
-	evcb->__obj.__destr_fn =  is_static? (tch_kobjDestr) __tch_noop_destr :  (tch_kobjDestr) tch_eventDestroy;
+	evcb->__obj.__destr_fn =  is_static? (tch_kobjDestr) tch_eventDeinit :  (tch_kobjDestr) tch_eventDestroy;
 	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
 	EVENT_VALIDATE(evcb);
 	return evcb;
+}
+
+tchStatus tch_eventDeinit(tch_eventCb* evcb){
+	if(!evcb || !EVENT_ISVALID(evcb))
+		return tchErrorParameter;
+	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq))
+		tchk_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	return tchOK;
 }
 
 

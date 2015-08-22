@@ -13,12 +13,28 @@
 extern "C" {
 #endif
 
+typedef struct tch_mailqCb {
+	tch_kobj     	 	__obj;
+	uint32_t      	 	bstatus;         // state
+	uint32_t      	 	bsz;
+	uint32_t	  	 	qlen;
+	uint32_t	 	 	pidx;
+	uint32_t	 	 	gidx;
+	uint32_t			qupdated;
+	cdsl_dlistNode_t 	pwq;
+	cdsl_dlistNode_t 	gwq;
+	void**				queue;
+	tch_mpoolId   		bpool;
+	cdsl_dlistNode_t  	allocwq;
+}tch_mailqCb;
+
 typedef struct _tch_mailq_karg{
 	uint32_t timeout;
 	void*    chunk;
 }tch_mailq_karg;
 
-extern tch_mailqId tchk_mailqInit(tch_mailqId qdest,tch_mailqId qsrc);
+extern tch_mailqId tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL is_static);
+extern tchStatus tch_mailqDeinit(tch_mailqCb* qcb);
 
 
 

@@ -21,7 +21,8 @@ typedef struct tch_eventCb {
 	tch_thread_queue      ev_blockq;
 } tch_eventCb;
 
-extern tch_eventId tchk_eventInit(tch_eventCb* evcb,BOOL is_static);
+extern tch_eventId tch_eventInit(tch_eventCb* evcb,BOOL is_static);
+extern tchStatus tch_eventDeinit(tch_eventCb* evcb);
 
 
 #if defined(__cplusplus)

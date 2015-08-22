@@ -89,7 +89,7 @@ DEFINE_SYSCALL_2(thread_create,tch_threadCfg*,cfg,void*,arg,tch_threadId){
 }
 
 DEFINE_SYSCALL_1(thread_start,tch_threadId,id,tchStatus){
-	tchk_schedStart(id);
+	tch_schedStart(id);
 	return tchOK;
 }
 
@@ -99,17 +99,17 @@ DEFINE_SYSCALL_2(thread_terminate,tch_threadId,id,tchStatus,err,tchStatus){
 }
 
 DEFINE_SYSCALL_1(thread_sleep,uint32_t,sec_timeout,tchStatus){
-	return tchk_schedThreadSleep(sec_timeout,SECOND,SLEEP);
+	return tch_schedYield(sec_timeout,SECOND,SLEEP);
 }
 
 DEFINE_SYSCALL_1(thread_yield,uint32_t,ms_timeout,tchStatus){
-	return tchk_schedThreadSleep(ms_timeout,mSECOND,WAIT);
+	return tch_schedYield(ms_timeout,mSECOND,WAIT);
 }
 
 DEFINE_SYSCALL_2(thread_join,tch_threadId,id,uint32_t,timeout,tchStatus){
 	tch_thread_kheader* th = ((tch_thread_uheader*) id)->kthread;
 	if(th->state != TERMINATED){
-		return tchk_schedWait((tch_thread_queue*) &th->t_joinQ,timeout);
+		return tch_schedWait((tch_thread_queue*) &th->t_joinQ,timeout);
 	}
 	return tchOK;
 }
@@ -203,7 +203,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			kfree(kthread);
 			return NULL;
 		}
-		cdsl_dlistPutTail(&kthread->parent->t_childLn,&kthread->t_siblingLn);
+		cdsl_dlistPutTail(&kthread->parent->child_list,&kthread->t_siblingLn);
 	}else {
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
@@ -239,7 +239,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){                 // check current execution mode (Thread or Handler)
-		tchk_schedThreadReady(thread);    // if handler mode call, put current thread in ready queue
+		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
 		return tchOK;
 	}
 	return __SYSCALL_1(thread_start,thread);
@@ -319,14 +319,25 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
  *  note : this function should be called from the privilidged access context
  */
 __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status){
+	if(!thread)
+		KERNEL_PANIC("tch_thread.c","invalid tid at atexit");
 	tch_thread_kheader* th_p = getThreadKHeader(thread);
 	tch_thread_kheader* ch_p = NULL;
 
-	// has a child
-	// destroy child
-	// join
-	if(th_p)
-		tch_mmProcClean(th_p);
+
+	// terminate all the child threads
+	while(!cdsl_dlistIsEmpty(&th_p->child_list)){
+		ch_p = cdsl_dlistDequeue(&th_p->child_list);
+		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
+		Thread->terminate(ch_p->uthread,status);
+		Thread->join(ch_p->uthread,tchWaitForever);
+	}
+
+	// destruct kobject
+	// destruct sh object
+
+	// clean up memory
+	tch_mmProcClean(th_p);
 	/*
 	tchk_shareableMemFreeAll(th_p);
 

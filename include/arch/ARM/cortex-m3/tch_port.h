@@ -95,7 +95,7 @@ extern BOOL tch_port_isISR();
 /** \brief switch task (or thread) context
  *
  */
-extern void tch_port_switch(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
+extern void tch_port_switch(void* nth,void* cth) __attribute__((naked,noreturn));
 
 
 

@@ -9,9 +9,9 @@
 #define TCH_IDLE_H_
 
 
-extern void tch_idleInit();
-extern void tch_kernelSetBusyMark();
-extern void ttch_kernelClrBusyMark();
-extern BOOL tch_kernelIsBusy();
+extern void idle_init();
+extern void idle_set_busy();
+extern void idle_clear_busy();
+extern BOOL idle_is_busy();
 
 #endif /* TCH_IDLE_H_ */

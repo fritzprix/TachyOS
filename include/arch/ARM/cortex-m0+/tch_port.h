@@ -16,6 +16,7 @@
 #define TCHtch_port_H_
 
 #include "tch_ptypes.h"
+#include "tch_types.h"
 
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)
@@ -94,12 +95,12 @@ extern BOOL tch_port_isISR();
 /** \brief switch task (or thread) context
  *
  */
-extern void tch_port_switch(void* nth,void* cth,tchStatus kret) __attribute__((naked,noreturn));
+extern void tch_port_switch(void* nth,void* cth) __attribute__((naked,noreturn));
 
 
 
 extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
-extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2);
+extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3);
 extern void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn);
 extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
 extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);

@@ -132,17 +132,17 @@ extern void __tchk_thread_atexit(tch_threadId thread,int res) __attribute__((nak
 /**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode
  *
  */
-extern void tch_kernelSetBusyMark();
+extern void idle_set_busy();
 
 /**\!brief Notify kernel that busy task is finished, so system can be go into sleep mode
  *
  */
-extern void tch_kernelClrBusyMark();
+extern void idle_clear_busy();
 
 /**\!brief check whether system is busy
  *
  */
-extern BOOL tch_kernelIsBusy();
+extern BOOL idle_is_busy();
 
 
 /**

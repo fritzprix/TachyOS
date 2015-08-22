@@ -11,13 +11,8 @@
 #include "tch_ktypes.h"
 
 extern void tch_shm_init(int seg_id);
-
-
-
 extern void* tch_shmAlloc(size_t sz);
 extern tchStatus tch_shmFree(void* mchunk);
-extern uint32_t tch_shmAvali();
-extern tchStatus tch_shmCleanUp();
 
 
 #endif /* TCH_SHM_H_ */
