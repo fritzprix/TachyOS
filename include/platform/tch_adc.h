@@ -57,7 +57,6 @@ typedef struct tch_adc_ch_def_t tch_adcChDef;
 typedef uint16_t adc_t;
 
 
-
 struct tch_adc_ch_def_t {
 	uint16_t chselMsk;
 	uint8_t  chcnt;
@@ -69,7 +68,6 @@ struct tch_adc_cfg_t {
 	uint32_t     SampleFreq;
 	tch_adcChDef chdef;
 };
-
 
 struct tch_adc_handle_t {
 	tchStatus (*close)(tch_adcHandle* self);

@@ -16,7 +16,7 @@ __Stack_Size = 1024 ;
 
 PROVIDE ( _Stack_Size = __Stack_Size ) ;
 
-__Stack_Init = _estack  - __Stack_Size ;
+__Stack_Init = _estack  - CONFIG_KERNEL_STACKSIZE ;
 
 /*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
 PROVIDE ( _Stack_Init = __Stack_Init ) ;
@@ -48,7 +48,7 @@ MEMORY
 }
 
 /* higher address of the user mode stack (end of 128K RAM on AHB bus)*/
-_estack = 0x20020000;
+_estack = CONFIG_KERNEL_STACKLIMIT;
 
 
 
@@ -62,6 +62,7 @@ SECTIONS
     .isr_vector :
     {
 	. = ALIGN(4);
+	_sisrv = .;
         KEEP(*(.isr_vector))            /* Startup code */
 	. = ALIGN(4);
     } >FLASH
@@ -89,6 +90,7 @@ SECTIONS
     .text :
     {
 	    . = ALIGN(4);
+	    _stext = .;
 	    
         *(.text)                   /* remaining code */
         *(.text.*)                 /* remaining code */
@@ -98,13 +100,20 @@ SECTIONS
         *(.glue_7t)
 
 	    . = ALIGN(4);
+	    _etext = .;
+	    
+       	. = ALIGN(4);
+    	__syscall_entry = . ;
+    	*(.sysc.table) 
+    	. = ALIGN(4);
+    	__syscall_end = . ;   
+	    
+	    
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = .;
     } >FLASH
     
    
-    _etext = .;
-    
     /* MEMORY_ARRAY */
     .ROarraySection :
     {
@@ -118,7 +127,7 @@ SECTIONS
     It is one task of the startup to copy the initial values from FLASH to RAM. */
     .data  : AT ( _sidata )
     {
-	    . = ALIGN(4);
+	    . = ALIGN(CONFIG_PAGE_SIZE);
         /* This is used by the startup in order to initialize the .data secion */
         _sdata = . ;
         
@@ -143,7 +152,7 @@ SECTIONS
         *(.bss.*)
         *(COMMON)
         
-	    . = ALIGN(4);
+	    . = ALIGN(CONFIG_PAGE_SIZE);
 	    /* This is used by the startup in order to initialize the .bss secion */
 	    _ebss = . ;
     } >RAM
@@ -151,49 +160,26 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
-    .kernel.syscall :
-    {
-    	*(.sysc.entry)
-    	*(.sysc.table)    
-    } > FLASH
-    
-    .kernel.stack :
-    {
-    	*(.kernel.stack)
-    } >RAM
-     
-    .kernel.dynamic :
-    {	_estack = .;
-    	. = ALIGN(PAGE_SIZE);
-    	*(.kernel.dynamic)
-    	. = ALIGN(PAGE_SIZE);
-    } >RAM
-    
 
-    
-    
-    /* 
-      Heap Section start at the end of bss      
-    */
-    .heap :
+    .kheap :
     {
-    	. = ALIGN(8);
-    	_sheap = .;
-    	*(.heap)
-    	. = ALIGN(8);
-    	_eheap = .;
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_skheap = .;
+    	. += CONFIG_KERNEL_DYNAMICSIZE;
+    	. = ALIGN(CONFIG_PAGE_SIZE);
     } >RAM
     
-    .mbarrier :
-    {
-    	. = ALIGN(8);
-    	_smb = .;
-    	*(.mbarrier)
-    	. = ALIGN(8);
-    	_emb = .;
+    .kstack __Stack_Init :
+    {	
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_ekheap = .;
+    	_sstack = .;
+	   	KEEP(*(.kernel.stack))
+    	. = . + CONFIG_KERNEL_STACKSIZE;
+    	_estack = .;
     } >RAM
     
-
+    
     
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there

@@ -327,7 +327,7 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 
 	// terminate all the child threads
 	while(!cdsl_dlistIsEmpty(&th_p->child_list)){
-		ch_p = cdsl_dlistDequeue(&th_p->child_list);
+		ch_p = cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->child_list);
 		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
 		Thread->terminate(ch_p->uthread,status);
 		Thread->join(ch_p->uthread,tchWaitForever);

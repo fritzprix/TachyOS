@@ -6,7 +6,19 @@
  */
 
 
+#include "kernel/tch_kobj.h"
 #include "kernel/tch_kernel.h"
 
 
 
+int tch_registerKobject(tch_kobj* obj){
+
+}
+
+tchStatus tch_unregisterKojbect(int id){
+
+}
+
+tch_kobj* tch_obtainKobject(int id){
+
+}
