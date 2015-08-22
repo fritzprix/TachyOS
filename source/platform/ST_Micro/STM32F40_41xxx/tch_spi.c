@@ -48,13 +48,13 @@ typedef struct tch_spi_request_s tch_spi_request;
 
 
 #define SPI_setBusy(ins)             do{\
-	tch_kernelSetBusyMark();\
+	idle_set_busy();\
 	((tch_spi_handle_prototype*) ins)->status |= TCH_SPI_BUSY_FLAG;\
 }while(0)
 
 #define SPI_clrBusy(ins)             do{\
 	((tch_spi_handle_prototype*) ins)->status &= ~TCH_SPI_BUSY_FLAG;\
-	tch_kernelClrBusyMark();\
+	idle_clear_busy();\
 }while(0)
 
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
@@ -252,7 +252,7 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		/*
 		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 		NVIC_EnableIRQ(spiDesc->irq);*/
-		tch_kernel_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
+		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
 
 
@@ -425,6 +425,7 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	*spiDesc->_rstr |= spiDesc->rstmsk;
 	*spiDesc->_clkenr &= ~spiDesc->clkmsk;
 	*spiDesc->_lpclkenr &= ~spiDesc->lpclkmsk;
+	tch_disableInterrupt(spiDesc->irq);
 
 	spiDesc->_handle = NULL;
 	env->Condv->wakeAll(SPI_StaticInstance.condv);

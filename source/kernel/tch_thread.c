@@ -334,10 +334,12 @@ __attribute__((naked)) void __tchk_thread_atexit(tch_threadId thread,int status)
 	}
 
 	// destruct kobject
+
 	// destruct sh object
 
 	// clean up memory
 	tch_mmProcClean(th_p);
+
 	/*
 	tchk_shareableMemFreeAll(th_p);
 

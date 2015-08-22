@@ -15,6 +15,7 @@
 #ifndef TCH_MTX_H_
 #define TCH_MTX_H_
 
+#include "tch_kobj.h"
 
 
 #if defined(__cplusplus)

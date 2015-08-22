@@ -20,18 +20,25 @@
 #include "tch_mm.h"
 
 
-
+/**
+ * 	void*                _hw;
+	volatile uint32_t*   _clkenr;
+	const uint32_t        clkmsk;
+	volatile uint32_t*   _lpclkenr;
+	const uint32_t        lpclkmsk;
+	uint32_t              io_ocpstate;
+ */
 __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 		{
-				GPIOA,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOAEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOALPEN,
-				0
+				._hw = GPIOA,
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIOAEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIOALPEN,
+				.io_ocpstate = 0
 		},
 		{
-				GPIOB,
+				._hw = GPIOB,
 				&RCC->AHB1ENR,
 				RCC_AHB1ENR_GPIOBEN,
 				&RCC->AHB1LPENR,

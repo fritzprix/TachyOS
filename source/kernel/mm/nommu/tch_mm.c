@@ -154,7 +154,6 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	}
 	mmp->estk = argv;
 
-
 	/****
 	 * ================= setup per process heap ====================================
 	 * 1. allocate heap region from init_segment
@@ -194,7 +193,6 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	thread->uthread = uthread;
 	thread->uthread->kthread = thread;
 	thread->uthread->fn = proc_header->entry;
-	thread->uthread->destr = __tch_noop_destr;
 	thread->uthread->kRet = tchOK;
 	thread->uthread->uobjs = NULL;
 

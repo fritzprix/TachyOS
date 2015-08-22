@@ -148,12 +148,6 @@
 
 #define get_addr_from_page(paddr)	((size_t) paddr << CONFIG_PAGE_SHIFT)
 
-struct kobj_entry {
-	cdsl_dlistNode_t 	alc_ln;
-	tch_kobj			kobj;
-};
-
-
 
 struct section_descriptor {
 	uint32_t		flags;

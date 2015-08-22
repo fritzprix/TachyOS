@@ -87,7 +87,6 @@ void tch_kernelInit(void* arg){
 	if(!tch_port_init())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
-
 	/*initialize kernel global variable*/
 	cdsl_dlistInit((cdsl_dlistNode_t*) &procList);
 
