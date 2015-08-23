@@ -25,7 +25,11 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
-///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+///////////////////////////////////////////ï¿½ï¿½ Configuration Constant Declarationsï¿½ï¿½/////////////////////////////////////////////
 /**
  *  @brief Us External Crystal, so that internal inverter is enabled for generating main clock
  */
@@ -58,7 +62,7 @@
 
 
 
-///////////////////////////////////////////¡é Configuration Block ¡é/////////////////////////////////////////////
+///////////////////////////////////////////ï¿½ï¿½ Configuration Block ï¿½ï¿½/////////////////////////////////////////////
 
 
 /**
@@ -183,6 +187,11 @@
 #define MFEATURE_ADC_Ch             (16)
 #endif
 
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 
 #include "stm32f2xx.h"

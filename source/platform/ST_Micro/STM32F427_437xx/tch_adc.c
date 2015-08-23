@@ -28,12 +28,12 @@
 
 #define ADC_setBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status |= ADC_BUSY_FLAG;\
-	tch_kernelSetBusyMark();\
+	idle_set_busy();\
 }while(0)
 
 #define ADC_clrBusy(ins)             do{\
 	((tch_adc_handle_prototype*) ins)->status &= ~ADC_BUSY_FLAG;\
-	tch_kernelClrBusyMark();\
+	idle_clear_busy();\
 }while(0)
 
 #define ADC_isBusy(ins)              ((tch_adc_handle_prototype*) ins)->status & ADC_BUSY_FLAG
@@ -68,7 +68,7 @@ typedef struct tch_adc_handle_prototype {
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 static tchStatus tch_adcClose(tch_adcHandle* self);
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt);
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
 static uint32_t tch_adcChannelOccpStatus;
 
 
@@ -84,13 +84,17 @@ static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_pr
 
 
 
-
-
 static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t order);
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-
+/*
+ * typedef struct tch_lld_adc_prototype {
+	tch_lld_adc                          pix;
+	tch_mtxId                            mtx;
+	tch_condvId                          condv;
+}tch_lld_adc_prototype;
+ */
 static tch_lld_adc_prototype ADC_StaticInstance = {
 		{
 				MFEATURE_ADC,
@@ -193,7 +197,6 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	}
 
 
-	// dma initialize
 	if(adcBs->dma != DMA_NOT_USED){
 		/// initialize dma and configure relevant register of adc
 		dmacfg.BufferType = DMA_BufferMode_Normal;
@@ -209,7 +212,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pInc = TRUE;
 		ins->dma = tch_dma->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
-		// handle dma_not_used
+		// TODO :handle dma_not_used
 	}
 
 	tch_pwmDef pwmDef;
@@ -227,10 +230,8 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ins->pix.read = tch_adcRead;
 	ins->env = env;
 
-/*	NVIC_SetPriority(adcDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(adcDesc->irq);*/
 
-	tch_kernel_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_adcValidate(ins);
 	return (tch_adcHandle*) ins;
 }
@@ -271,6 +272,7 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 		return result;
 	adcDesc->_handle = NULL;
 	tch_adcChannelOccpStatus &= ins->ch_occp;
+	tch_disableInterrupt(adcDesc->irq);
 	env->Condv->wakeAll(ADC_StaticInstance.condv);
 	env->Mtx->unlock(ADC_StaticInstance.mtx);
 
@@ -312,7 +314,7 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	return evt.value.v;
 }
 
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t convCnt){
+static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_mailqId q, uint32_t chnksz, uint32_t convCnt){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
 	ADC_TypeDef* adcHw = NULL;
 	tch_adc_bs* adcBs = NULL;
@@ -339,8 +341,6 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 
 	ins->timer->setDuty(ins->timer,adcBs->timerCh,0.5f);
 
-	uint32_t chnksz = ins->env->MailQ->getBlockSize(q);
-
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	//enable dma
 	adcHw->CR2 |= ADC_CR2_DMA;
@@ -354,7 +354,7 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_ma
 		tch_dma->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
-		ins->env->MailQ->put(q,chnk);
+		ins->env->MailQ->put(q,chnk,1000);
 		if(evt.status != tchEventMessage){
 			evt.status = tchErrorIo;
 			RETURN_SAFE();

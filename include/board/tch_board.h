@@ -10,6 +10,7 @@
 
 
 #include "tch.h"
+#include "tch_halcfg.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -30,6 +31,15 @@ typedef struct tch_board_param {
 
 extern tch_boardParam tch_boardInit(const tch* env);
 extern tchStatus tch_boardDeinit(const tch* env);
+
+
+
+extern __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO];
+extern __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER];
+extern __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI];
+extern __TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC];
+extern __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC];
+extern __TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch];
 
 #if defined(__cplusplus)
 }

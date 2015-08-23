@@ -16,6 +16,7 @@
 #include "tch_hal.h"
 #include "tch_dma.h"
 #include "tch_kernel.h"
+#include "tch_fs.h"
 
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)
@@ -53,14 +54,14 @@
 
 #define UART_SET_RXBUSY(ins)\
 	do{\
-		tch_kernelSetBusyMark();\
+		idle_set_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_RXBUSY;\
 	}while(0)
 
 #define UART_CLR_RXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_RXBUSY;\
-		tch_kernelClrBusyMark();\
+		idle_clear_busy();\
 	}while(0)
 
 #define UART_IS_RXBUSY(ins)         ((tch_usartHandlePrototype) ins)->status & UART_RXBUSY
@@ -68,14 +69,14 @@
 
 #define UART_SET_TXBUSY(ins)\
 	do{\
-		tch_kernelSetBusyMark();\
+		idle_set_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_TXBUSY;\
 	}while(0)
 
 #define UART_CLR_TXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_TXBUSY;\
-		tch_kernelClrBusyMark();\
+		idle_clear_busy();\
 	}while(0)
 
 #define UART_IS_TXBUSY(ins)          ((tch_usartHandlePrototype) ins)->status & UART_TXBUSY
@@ -87,21 +88,21 @@ typedef struct tch_usart_request_s {
 }tch_usartRequest;
 
 typedef struct tch_usart_handle_prototype_s {
-	struct tch_usart_handle_s         pix;
-	uart_t                            pno;
-	tch_DmaHandle txDma;
-	tch_DmaHandle rxDma;
-	tch_eventId                       txEvId;
-	tch_eventId                       rxEvId;
-	tch_GpioHandle*                   ioHandle;
-	tch_mtxId                         rxMtx;
-	tch_condvId                       rxCondv;
-	tch_mtxId                         txMtx;
-	tch_condvId                       txCondv;
-	uint32_t                          status;
-	tch_usartRequest*                 txreq;
-	tch_usartRequest*                 rxreq;
-	const tch*                        env;
+	struct tch_usart_handle_s        pix;
+	uart_t               	         pno;
+	tch_DmaHandle					 txDma;
+	tch_DmaHandle					 rxDma;
+	tch_eventId                      txEvId;
+	tch_eventId                      rxEvId;
+	tch_GpioHandle*                  ioHandle;
+	tch_mtxId                        rxMtx;
+	tch_condvId                      rxCondv;
+	tch_mtxId                        txMtx;
+	tch_condvId                      txCondv;
+	uint32_t                         status;
+	tch_usartRequest*                txreq;
+	tch_usartRequest*                rxreq;
+	const tch*                       env;
 }* tch_usartHandlePrototype;
 
 struct tch_usart_prototype_s {
@@ -136,6 +137,10 @@ __attribute__((section(".data"))) static struct tch_usart_prototype_s UART_Stati
 		0
 };
 
+static struct tch_file_operations uart_fops = {
+
+};
+
 tch_lld_usart* tch_usartHalInit(const tch* env){
 	if(UART_StaticInstance.mtx || UART_StaticInstance.condv)
 		return NULL;
@@ -145,6 +150,7 @@ tch_lld_usart* tch_usartHalInit(const tch* env){
 	UART_StaticInstance.lpoccp_state = 0;
 	UART_StaticInstance.mtx = env->Mtx->create();
 	UART_StaticInstance.condv = env->Condv->create();
+
 
 	return (tch_lld_usart*) &UART_StaticInstance;
 }
@@ -287,7 +293,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	NVIC_SetPriority(uDesc->irq,HANDLER_NORMAL_PRIOR);
 	NVIC_EnableIRQ(uDesc->irq);
 	*/
-	tch_kernel_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	return (tch_usartHandle) uins;
 }
@@ -349,7 +355,7 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 //	NVIC_DisableIRQ(uDesc->irq);
-	tch_kernel_disableInterrupt(uDesc->irq);
+	tch_disableInterrupt(uDesc->irq);
 	env->Condv->wakeAll(UART_StaticInstance.condv);
 	UART_CLR_RXBUSY(ins);
 	UART_CLR_TXBUSY(ins);

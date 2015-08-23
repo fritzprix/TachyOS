@@ -26,6 +26,12 @@ struct tch_kobject_t {
 	tch_kobjDestr		__destr_fn;
 };
 
+extern int tch_registerKobject(tch_kobj* obj);
+extern tchStatus tch_unregisterKojbect(int id);
+extern tch_kobj* tch_obtainKobject(int id);
+
+
+
 
 #if defined(__cplusplus)
 }

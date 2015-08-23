@@ -84,13 +84,17 @@ static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_pr
 
 
 
-
-
 static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t order);
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-
+/*
+ * typedef struct tch_lld_adc_prototype {
+	tch_lld_adc                          pix;
+	tch_mtxId                            mtx;
+	tch_condvId                          condv;
+}tch_lld_adc_prototype;
+ */
 static tch_lld_adc_prototype ADC_StaticInstance = {
 		{
 				MFEATURE_ADC,

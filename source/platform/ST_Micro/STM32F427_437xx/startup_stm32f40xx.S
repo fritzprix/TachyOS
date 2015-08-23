@@ -70,6 +70,7 @@ defined in linker script */
 .equ Heap_Size, 0x10000
 #endif
 
+
 #ifdef __MBARRIER_SIZE
 .equ mBarrier_Size, __MBARRIER_SIZE
 #else

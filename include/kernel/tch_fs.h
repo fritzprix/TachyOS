@@ -22,8 +22,8 @@ struct tch_file {
 
 struct tch_file_operations {
 	int (*open)(struct tch_file* filp);
-	size_t (*read)(struct tch_file* filp,char* rdata,size_t len);
-	size_t (*write)(struct tch_file* filp,const char* wdata,size_t len);
+	size_t (*read)(struct tch_file* filp,char* bp,size_t len);
+	size_t (*write)(struct tch_file* filp,const char* bp,size_t len);
 	int (*close)(struct tch_file* filp);
 	size_t (*seek)(struct tch_file* filp,size_t offset,int whence);
 };

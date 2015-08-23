@@ -12,11 +12,13 @@
  *      Author: innocentevil
  */
 
+
 #include "tch_gpio.h"
 #include "tch_timer.h"
 #include "tch_port.h"
 #include "tch_hal.h"
 #include "tch_kernel.h"
+#include "tch_mm.h"
 
 
 
@@ -1044,6 +1046,48 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 		break;
 	}
 }
+
+
+
+const struct section_descriptor __default_sections[] = {
+		{		// kernel dynamic section
+				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
+				.start = &_skheap,
+				.end = &_ekheap
+		},
+		{
+				// kernel text section
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
+				.start = &_stext,
+				.end = &_etext
+		},
+		{		// kernel bss section (zero filled data)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sbss,
+				.end = &_ebss
+		},
+		{		// kernel data section (initialized to specified value)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sdata,
+				.end = &_edata
+		},
+		{		// kernel stack
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
+				.start = &_sstack,
+				.end = &_estack
+		}
+};
+
+
+const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
+		&__default_sections[0],
+		&__default_sections[1],
+		&__default_sections[2],
+		&__default_sections[3],
+		&__default_sections[4],
+		NULL
+};
+
 
 void tch_hal_enterSleepMode(){
 	__DMB();
