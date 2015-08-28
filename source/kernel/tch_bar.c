@@ -33,7 +33,6 @@
 
 
 
-
 static tch_barId tch_barCreate();
 static tchStatus tch_barWait(tch_barId bar,uint32_t timeout);
 static tchStatus tch_barSignal(tch_barId bar,tchStatus result);
