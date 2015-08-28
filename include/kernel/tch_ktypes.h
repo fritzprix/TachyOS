@@ -85,8 +85,8 @@ struct tch_mm {
 	struct mem_region* 		data_region;
 	struct mem_region* 		stk_region;
 	struct mem_region*		heap_region;
-	uint32_t 				kobj_n;
-	rb_treeNode_t*			kobjs;				///< per thread kobjects tree (red-black tree)
+//	rb_treeNode_t*			kobjs;				///< per thread kobjects tree (red-black tree)
+	cdsl_dlistNode_t		kobj_list;			///< per thread kobjects list
 	cdsl_dlistNode_t		alc_list;
 	cdsl_dlistNode_t		shm_list;
 	pgd_t* 					pgd;

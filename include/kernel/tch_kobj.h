@@ -18,20 +18,18 @@
 extern "C" {
 #endif
 
+
 typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
 typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
 struct tch_kobject_t {
-	rb_treeNode_t			rbnode;					// id -> object searching
+	cdsl_dlistNode_t      lhead;		// id -> object searching
 	tch_kobjDestr		__destr_fn;
 };
 
-extern int tch_registerKobject(tch_kobj* obj);
-extern tchStatus tch_unregisterKojbect(int id);
-extern tch_kobj* tch_obtainKobject(int id);
-
-
-
+extern tchStatus tch_registerKobject(tch_kobj* obj, tch_kobjDestr destfn);
+extern tchStatus tch_unregisterKobject(tch_kobj* obj);
+extern tchStatus tch_destroyAllKobjects();
 
 #if defined(__cplusplus)
 }

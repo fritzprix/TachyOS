@@ -22,7 +22,7 @@ static struct mem_region init_region;
 
 static int init_segid;
 
-struct kobj_header {
+struct alloc_header {
 	cdsl_dlistNode_t	alc_ln;
 };
 
@@ -41,8 +41,8 @@ void tch_kmalloc_init(int segid){
 void* kmalloc(size_t sz){
 	if(!sz)
 		return NULL;
-	struct kobj_header* chunk = NULL;
-	size_t asz = sz + sizeof(struct kobj_header);
+	struct alloc_header* chunk = NULL;
+	size_t asz = sz + sizeof(struct alloc_header);
 
 	tch_port_atomicBegin();
 	if(!(wt_available(&kernel_heap_root)  > (MIN_CACHE_SIZE + asz))){
@@ -65,21 +65,21 @@ void* kmalloc(size_t sz){
 
 
 	tch_port_atomicBegin();
-	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct kobj_header));
+	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct alloc_header));
 	tch_port_atomicEnd();
 
 	if(!chunk){
 		return NULL;
 	}
 	cdsl_dlistPutHead((cdsl_dlistNode_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
-	return (void*) ((size_t) chunk + sizeof(struct kobj_header));
+	return (void*) ((size_t) chunk + sizeof(struct alloc_header));
 }
 
 void kfree(void* p){
 	if(!p)
 		return;
 	int result;
-	struct kobj_header* obj_entry = (struct kobj_header*) p;
+	struct alloc_header* obj_entry = (struct alloc_header*) p;
 	obj_entry--;
 	tch_port_atomicBegin();
 	result = wt_free(&kernel_heap_root,obj_entry);

@@ -10,6 +10,9 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_mailq.h"
+#include "kernel/tch_kobj.h"
+
+
 
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
 
@@ -227,17 +230,14 @@ tch_mailqId tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstat
 	memset(qcb,0,sizeof(tch_mailqCb));
 	qcb->queue = (void**) kmalloc(sizeof(void*) * qlen);
 	qcb->bpool = Mempool->create(sz,qlen);
-	qcb->__obj.__destr_fn = isstatic? (tch_kobjDestr) tch_mailqDeinit : (tch_kobjDestr) tch_mailqDestroy;
-
 	if(!qcb->bpool || !qcb->queue){
 		kfree(qcb->queue);
 		Mempool->destroy(qcb->bpool);
 		return NULL;
 	}
-
+	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) tch_mailqDeinit : (tch_kobjDestr) tch_mailqDestroy);
 	qcb->qlen = qlen;
 	qcb->gidx = qcb->gidx = 0;
-	qcb->__obj.__destr_fn = (tch_kobjDestr) tch_mailqDestroy;
 	qcb->bsz = sz;
 	cdsl_dlistInit(&qcb->gwq);
 	cdsl_dlistInit(&qcb->pwq);
@@ -257,6 +257,7 @@ tchStatus tch_mailqDeinit(tch_mailqCb* qid){
 	tchk_schedWake((tch_thread_queue*) &mailq->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tchk_schedWake((tch_thread_queue*) &mailq->gwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tchk_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tch_unregisterKobject(&mailq->__obj);
 	return tchOK;
 }
 

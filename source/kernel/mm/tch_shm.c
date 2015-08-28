@@ -25,7 +25,7 @@ static int 					shm_init_segid;
 DECLARE_SYSCALL_1(shmem_alloc,size_t,void*);
 DECLARE_SYSCALL_1(shmem_free,void*,tchStatus);
 
-struct shmobj_header {
+struct shmalloc_header {
 	cdsl_dlistNode_t	alc_ln;
 };
 
@@ -47,8 +47,8 @@ void tch_shm_init(int seg_id){
 DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	if(!sz)
 		return NULL;
-	struct shmobj_header* chnk;
-	size_t asz = sz + sizeof(struct shmobj_header);
+	struct shmalloc_header* chnk;
+	size_t asz = sz + sizeof(struct shmalloc_header);
 	if(!(wt_available(&shm_root) > asz)){
 		struct mem_region* nregion = (struct mem_region*) kmalloc(sizeof(struct mem_region));
 		wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
@@ -70,18 +70,18 @@ DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	}
 
 	chnk = wt_malloc(&shm_root,asz);
-	cdsl_dlistPutHead(&tch_currentThread->kthread->mm.shm_list,&chnk->alc_ln);
+	cdsl_dlistPutHead(&current->kthread->mm.shm_list,&chnk->alc_ln);
 	return &chnk[1];
 }
 
 DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 	if(!ptr)
 			return tchErrorParameter;
-	struct shmobj_header* chnk = (struct shmobj_header*) ptr;
+	struct shmalloc_header* chnk = (struct shmalloc_header*) ptr;
 	chnk--;
 	cdsl_dlistRemove(&chnk->alc_ln);
 	if (wt_free(&shm_root, ptr) == WT_ERROR)
-		tchk_schedTerminate(tch_currentThread, tchErrorHeapCorruption);
+		tchk_schedTerminate(current, tchErrorHeapCorruption);
 	return tchOK;
 }
 

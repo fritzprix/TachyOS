@@ -7,13 +7,14 @@
 
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_msgq.h"
+#include "kernel/tch_kobj.h"
+
+
 
 #define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
 #define MSGQ_VALIDATE(msgq)		do{\
 	((tch_msgq_cb*) msgq)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF);\
 }
-
-
 
 static tch_msgqId tch_msgqCreate(uint32_t len);
 static tchStatus tch_msgqPut(tch_msgqId,uint32_t msg,uint32_t millisec);
@@ -168,10 +169,10 @@ static tchStatus tch_msgqDestroy(tch_msgqId mqId){
 tch_msgqId tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic){
 	memset(mq, 0, sizeof(tch_msgqCb));
 	mq->bp = bp;
-	mq->__obj.__destr_fn = isstatic? (tch_kobjDestr) tch_msgqDeinit : (tch_kobjDestr) tch_msgqDestroy;
 	mq->sz = sz;
 	cdsl_dlistInit(&mq->cwq);
 	cdsl_dlistInit(&mq->pwq);
+	tch_registerKobject(&mq->__obj,isstatic? (tch_kobjDestr) tch_msgqDeinit : (tch_kobjDestr) tch_msgqDestroy);
 	tch_msgqValidate(mq);
 	return mq;
 }
@@ -184,6 +185,7 @@ tchStatus tch_msgqDeinit(tch_msgqCb* mq){
 	tch_msgqInvalidate(mq);
 	tchk_schedWake((tch_thread_queue*) &mq->pwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
 	tchk_schedWake((tch_thread_queue*) &mq->cwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
+	tch_unregisterKobject(&mq->__obj);
 	return tchOK;
 }
 

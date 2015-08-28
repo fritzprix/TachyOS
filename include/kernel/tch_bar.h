@@ -21,8 +21,8 @@ typedef struct tch_bar_cb_t {
 	cdsl_dlistNode_t         wq;
 }tch_barCb;
 
-extern tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static);
-extern tchStatus tchk_barrierDeinit(tch_barCb* bar);
+extern tch_barId tch_barrierInit(tch_barCb* bar,BOOL is_static);
+extern tchStatus tch_barrierDeinit(tch_barCb* bar);
 
 #if defined(__cplusplus)
 }

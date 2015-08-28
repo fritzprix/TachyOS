@@ -204,7 +204,7 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
 			"dmb\n"
 			"isb\n"
 			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3","r4" );        // return from sv interrupt and get result from register #0
-	return ((tch_thread_uheader*)tch_currentThread)->kRet;
+	return ((tch_thread_uheader*)current)->kRet;
 }
 
 

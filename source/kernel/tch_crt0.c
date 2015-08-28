@@ -148,7 +148,7 @@ void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	prev_heap_end = heap_end;
 	if ((uint32_t)heap_end + incr > ((uint32_t) LIBC_HEAP + 6000 * sizeof(char))) {
 		if(!tch_port_isISR()){
-			Thread->terminate(tch_currentThread,tchErrorNoMemory);
+			Thread->terminate(current,tchErrorNoMemory);
 		}
 		return NULL;
 	}
@@ -160,13 +160,13 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 	__FILE* fp = NULL;
 	switch(fd) {
 		case STDERR_FILENO:
-		fp = tch_currentThread->reent._stderr;
+		fp = current->reent._stderr;
 		break;
 		case STDOUT_FILENO:
-		fp = tch_currentThread->reent._stdout;
+		fp = current->reent._stdout;
 		break;
 		case STDIN_FILENO:
-		fp = tch_currentThread->reent._stdin;
+		fp = current->reent._stdin;
 		break;
 	}
 	return fp->_write(reent,fp->_cookie,buf,cnt);
@@ -176,13 +176,13 @@ int _close_r(struct _reent* reent, int fd){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->reent._stderr;
+		fp = current->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->reent._stdout;
+		fp = current->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->reent._stdin;
+		fp = current->reent._stdin;
 		break;
 	}
 	return fp->_close(reent,fp->_cookie);
@@ -192,13 +192,13 @@ off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->reent._stderr;
+		fp = current->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->reent._stdout;
+		fp = current->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->reent._stdin;
+		fp = current->reent._stdin;
 		break;
 	}
 	return fp->_seek(reent,fp->_cookie,pos,whence);
@@ -211,13 +211,13 @@ _ssize_t _read_r(struct _reent* reent,int fd, void *buf, size_t cnt){
 	__FILE* fp = NULL;
 	switch(fd){
 	case STDERR_FILENO:
-		fp = tch_currentThread->reent._stderr;
+		fp = current->reent._stderr;
 		break;
 	case STDOUT_FILENO:
-		fp = tch_currentThread->reent._stdout;
+		fp = current->reent._stdout;
 		break;
 	case STDIN_FILENO:
-		fp = tch_currentThread->reent._stdin;
+		fp = current->reent._stdin;
 		break;
 	}
 	return fp->_read(reent,fp->_cookie,buf,cnt);
@@ -254,7 +254,7 @@ int _isatty_r(struct _reent* reent, int fd){
 }
 
 void exit(int code){
-	Thread->terminate(tch_currentThread,code);
+	Thread->terminate(current,code);
 	while(TRUE);
 }
 

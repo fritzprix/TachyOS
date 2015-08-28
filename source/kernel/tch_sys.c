@@ -111,7 +111,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
-		tch_kernel_raise_error(tch_currentThread,tchErrorIllegalAccess,"Illegal System call route detected");
+		tch_kernel_raise_error(current,tchErrorIllegalAccess,"Illegal System call route detected");
 
 
 	tch_thread_kheader* cth = NULL;
@@ -121,28 +121,28 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 	if(sv_id == SV_EXIT_FROM_SV){
 		sp = (tch_exc_stack*)tch_port_getUserSP();
 			sp++;
-			cth = (tch_thread_kheader*) tch_currentThread->kthread;
+			cth = (tch_thread_kheader*) current->kthread;
 			cth->tslot = 0;
 			cth->state = RUNNING;
-			current_mm = &tch_currentThread->kthread->mm;
+			current_mm = &current->kthread->mm;
 
 	#ifdef __NEWLIB__
-			_impure_ptr = &tch_currentThread->reent;
+			_impure_ptr = &current->reent;
 	#endif
 
-			tch_port_loadPageTable(tch_currentThread->kthread->mm.pgd);/// apply page mapping
+			tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
 			tch_port_setUserSP((uint32_t)sp);
-			if((arg1 = tchk_threadIsValid(tch_currentThread)) == tchOK){
+			if((arg1 = tchk_threadIsValid(current)) == tchOK){
 				tch_port_atomicEnd();
 			}else{
-				tch_schedDestroy(tch_currentThread,arg1);
+				tch_schedDestroy(current,arg1);
 			}
-			if(tchk_threadIsPrivilidged(tch_currentThread))
+			if(tchk_threadIsPrivilidged(current))
 				tch_port_enablePrivilegedThread();
 			else
 				tch_port_disablePrivilegedThread();
 	}else{
-		tchk_kernelSetResult(tch_currentThread,(*((tch_syscall*) ((uint32_t) __syscall_table + sv_id)))(arg1,arg2,arg3));
+		tchk_kernelSetResult(current,(*((tch_syscall*) ((uint32_t) __syscall_table + sv_id)))(arg1,arg2,arg3));
 	}
 }
 

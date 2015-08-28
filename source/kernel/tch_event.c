@@ -9,6 +9,7 @@
 #include "kernel/tch_err.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_event.h"
+#include "kernel/tch_kobj.h"
 
 
 #define EVENT_CLASS_KEY                        ((uint16_t )0xDABC)
@@ -103,7 +104,7 @@ DEFINE_SYSCALL_1(event_destroy,tch_eventId,evid,tchStatus){
 
 tch_eventId tch_eventInit(tch_eventCb* evcb,BOOL is_static){
 	memset(evcb,0,sizeof(tch_eventCb));
-	evcb->__obj.__destr_fn =  is_static? (tch_kobjDestr) tch_eventDeinit :  (tch_kobjDestr) tch_eventDestroy;
+	tch_registerKobject(&evcb->__obj,is_static? (tch_kobjDestr) tch_eventDeinit :  (tch_kobjDestr) tch_eventDestroy);
 	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
 	EVENT_VALIDATE(evcb);
 	return evcb;
@@ -114,6 +115,7 @@ tchStatus tch_eventDeinit(tch_eventCb* evcb){
 		return tchErrorParameter;
 	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq))
 		tchk_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_unregisterKobject(&evcb->__obj);
 	return tchOK;
 }
 

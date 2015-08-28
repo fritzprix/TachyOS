@@ -132,7 +132,7 @@ void tch_kernelOnWakeup() {
 void tch_KernelOnSystick() {
 	tch_thread_kheader* nth = NULL;
 	tch_systimeTick++;
-	getThreadKHeader(tch_currentThread)->tslot++;
+	getThreadKHeader(current)->tslot++;
 	while ((!cdsl_dlistIsEmpty(&tch_systimeWaitQ)) && (((tch_thread_kheader*) tch_systimeWaitQ.next)->to <= tch_systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&tch_systimeWaitQ);
 		nth->to = 0;

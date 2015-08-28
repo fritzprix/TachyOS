@@ -9,8 +9,9 @@
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_err.h"
-#include "cdsl_dlist.h"
+#include "kernel/tch_kobj.h"
 #include "kernel/tch_sem.h"
+#include "kernel/util/cdsl_dlist.h"
 
 
 #define TCH_SEMAPHORE_CLASS_KEY                      ((uint16_t) 0x1A0A)
@@ -130,9 +131,9 @@ static tchStatus tch_semDestroy(tch_semId id){
 tch_semId tch_semInit(tch_semCb* scb,uint32_t count,BOOL isStatic){
 	if(!scb || !count)
 		return NULL;
-	scb->__obj.__destr_fn = isStatic? (tch_kobjDestr) tch_semDeinit : (tch_kobjDestr) tch_semDestroy;
 	scb->count = count;
 	cdsl_dlistInit(&scb->wq);
+	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) tch_semDeinit : (tch_kobjDestr) tch_semDestroy);
 	tch_semaphoreValidate(scb);
 	return scb;
 }
@@ -148,6 +149,7 @@ tchStatus tch_semDeinit(tch_semCb* scb){
 	if(!cdsl_dlistIsEmpty(&scb->wq)){
 		tchk_schedWake((tch_thread_queue*) &scb->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	}
+	tch_unregisterKobject(&scb->__obj);
 	return tchOK;
 }
 
