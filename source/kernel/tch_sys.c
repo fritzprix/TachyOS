@@ -40,30 +40,17 @@
 #warning "Kernel is not configured properly"
 #endif
 
-#define SYSTSK_ID_SLEEP             ((int) -3)
-#define SYSTSK_ID_ERR_HANDLE        ((int) -2)
-#define SYSTSK_ID_RESET             ((int) -1)
-
-typedef struct tch_busy_monitor_t {
-	tch_mtxId 	mtx;
-	uint32_t 	wrk_load;
-}tch_busy_monitor;
-
-
 
 static DECLARE_THREADROUTINE(systhreadRoutine);
 
-static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
-static tch_busy_monitor busyMonitor;
-static tch RuntimeInterface;
-static tch_threadId mainThread = NULL;
-static tch_threadId sysThread;
 
-tch_thread_queue procList;
+static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
+static tch RuntimeInterface;
+static tch_threadId mainThread;
+static tch_threadId sysThread;
+const tch* tch_rti = &RuntimeInterface;
 tch_boardParam boardHandle = NULL;
 BOOL __VALID_SYSCALL;
-
-const tch* tch_rti = &RuntimeInterface;
 
 
 /***
@@ -88,11 +75,7 @@ void tch_kernelInit(void* arg){
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
 	/*initialize kernel global variable*/
-	cdsl_dlistInit((cdsl_dlistNode_t*) &procList);
-
-
 	__VALID_SYSCALL = FALSE;
-
 	mainThread = NULL;
 	sysThread = NULL;
 
@@ -101,8 +84,8 @@ void tch_kernelInit(void* arg){
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
-
 	tch_schedInit(sysThread);
+
 	return;
 }
 
@@ -160,10 +143,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
-
-	busyMonitor.wrk_load = 0;
-	busyMonitor.mtx = env->Mtx->create();
-
 
 	tch_threadCfg threadcfg;
 	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");

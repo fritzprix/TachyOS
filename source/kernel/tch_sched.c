@@ -36,7 +36,7 @@ static DECLARE_COMPARE_FN(tch_schedWqRule);
 static inline void tch_schedStartKernelThread(tch_threadId thr)__attribute__((always_inline));
 static BOOL tch_schedIsPreemptable(tch_thread_kheader* nth);
 
-
+tch_thread_queue procList;
 static tch_thread_queue tch_readyQue;        ///< thread wait to become running state
 tch_thread_uheader* current;
 
@@ -51,7 +51,9 @@ void tch_schedInit(void* init_thread){
 	 *   - pend queue : waiting queue in which suspended thread is waiting to be re activated
 	 *
 	 */
+	cdsl_dlistInit((cdsl_dlistNode_t*) &procList);
 	cdsl_dlistInit((cdsl_dlistNode_t*)&tch_readyQue);
+
 	tch_schedStartKernelThread(init_thread);
 
 	while(TRUE){     // Unreachable Code. Ensure to protect from executing when undetected schedulr failure happens
@@ -201,7 +203,6 @@ void tch_schedDestroy(tch_threadId thread,int result){
 		tchk_threadInvalidate(thread,result);
 	}
 }
-
 
 static inline void tch_schedStartKernelThread(tch_threadId init_thr){
 	current = init_thr;

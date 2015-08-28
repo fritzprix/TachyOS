@@ -5,8 +5,8 @@
  *      Author: innocentevil
  */
 
-#include "tch_kernel.h"
-#include "tch_err.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_err.h"
 
 
 

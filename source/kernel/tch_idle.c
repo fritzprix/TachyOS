@@ -6,9 +6,9 @@
  */
 
 
-#include "tch_kernel.h"
-#include "tch_idle.h"
-#include "tch_lwtask.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_idle.h"
+#include "kernel/tch_lwtask.h"
 
 
 

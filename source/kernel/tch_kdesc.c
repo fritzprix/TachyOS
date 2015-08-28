@@ -6,8 +6,7 @@
  */
 
 
-#include "tch_kernel.h"
-#include "tch_mm.h"
+#include "kernel/tch_kernel.h"
 
 
 #ifndef VER_MAJOR
