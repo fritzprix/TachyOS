@@ -70,6 +70,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			return FALSE;
 		}
 
+		mmp->dynamic->mtx = mtx;
+		mmp->dynamic->condv = condv;
 		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
@@ -82,8 +84,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		}
 
 		mmp->dynamic->mregions = NULL;
-		mmp->dynamic->mtx = tch_mutexInit(mtx,FALSE);
-		mmp->dynamic->condv = tch_condvInit(condv,FALSE);
+		tch_mutexInit(mmp->dynamic->mtx);
+		tch_condvInit(mmp->dynamic->condv);
 	}else {
 		struct tch_mm* parent_mm = &current->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));

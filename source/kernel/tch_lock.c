@@ -67,6 +67,10 @@ static tchStatus tch_mutexLock(tch_mtxId mtx,uint32_t timeout);
 static tchStatus tch_mutexUnlock(tch_mtxId mtx);
 static tchStatus tch_mutexDestroy(tch_mtxId mtx);
 static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx);
+static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static);
+static tchStatus mutex_deinit(tch_mtxCb* mcb);
+
+
 
 
 __attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
@@ -82,6 +86,8 @@ DECLARE_SYSCALL_0(mutex_create,tch_mtxId);
 DECLARE_SYSCALL_2(mutex_lock,tch_mtxId,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(mutex_unlock,tch_mtxId,tchStatus);
 DECLARE_SYSCALL_1(mutex_destroy,tch_mtxId,tchStatus);
+DECLARE_SYSCALL_1(mutex_init,tch_mtxCb*,tchStatus);
+DECLARE_SYSCALL_1(mutex_deinit,tch_mtxCb*,tchStatus);
 
 
 /**
@@ -93,6 +99,9 @@ static tchStatus tch_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout)
 static tchStatus tch_condvWake(tch_condvId condv);
 static tchStatus tch_condvWakeAll(tch_condvId condv);
 static tchStatus tch_condvDestroy(tch_condvId condv);
+
+static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static);
+static tchStatus condv_deint(tch_condvCb* condv);
 
 struct condv_param {
 	tch_condvId id;
@@ -117,6 +126,8 @@ DECLARE_SYSCALL_3(condv_wait,tch_condvId,tch_mtxId,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(condv_wake,struct condv_param*,tchStatus);
 DECLARE_SYSCALL_1(condv_wakeAll,struct condv_param*, tchStatus);
 DECLARE_SYSCALL_1(condv_destroy,tch_condvId,tchStatus);
+DECLARE_SYSCALL_1(condv_init,tch_condvCb*,tchStatus);
+DECLARE_SYSCALL_1(condv_deinit,tch_condvCb*,tchStatus);
 
 /**
  *
@@ -124,7 +135,7 @@ DECLARE_SYSCALL_1(condv_destroy,tch_condvId,tchStatus);
 
 DEFINE_SYSCALL_0(mutex_create,tch_mtxId){
 	tch_mtxCb* mcb = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
-	tch_mutexInit(mcb,FALSE);
+	mutex_init(mcb,FALSE);
 	return (tch_mtxId) mcb;
 }
 
@@ -170,7 +181,7 @@ DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus){
 }
 
 DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
-	tchStatus result = tch_mutexDeinit(mtx);
+	tchStatus result = mutex_deinit(mtx);
 	if(result != tchOK)
 		return result;
 
@@ -178,18 +189,30 @@ DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
 	return result;
 }
 
+DEFINE_SYSCALL_1(mutex_init,tch_mtxCb*,mp,tchStatus){
+	if(!mp)
+		return tchErrorParameter;
+	mutex_init(mp,TRUE);
+	return tchOK;
+}
 
-tch_mtxId tch_mutexInit(tch_mtxCb* mcb,BOOL is_static){
+DEFINE_SYSCALL_1(mutex_deinit,tch_mtxCb*,mp,tchStatus){
+	if(!mp || !MTX_ISVALID(mp))
+		return tchErrorParameter;
+	return mutex_deinit(mp);
+}
+
+static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static){
 	mcb->svdPrior = Normal;
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
-	tch_registerKobject(&mcb->__obj,is_static? (tch_kobjDestr) tch_mutexDeinit :  (tch_kobjDestr) tch_mutexDestroy);
+	tch_registerKobject(&mcb->__obj,is_static? (tch_kobjDestr) mutex_deinit :  (tch_kobjDestr) tch_mutexDestroy);
 	mcb->status = 0;
 	MTX_VALIDATE(mcb);
 	return mcb;
 }
 
-tchStatus tch_mutexDeinit(tch_mtxCb* mcb){
+static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
 	MTX_INVALIDATE(mcb);
@@ -199,7 +222,6 @@ tchStatus tch_mutexDeinit(tch_mtxCb* mcb){
 	tch_unregisterKobject(&mcb->__obj);
 	return tchOK;
 }
-
 
 static tch_mtxId tch_mutexCreate(){
 	if(tch_port_isISR())
@@ -255,11 +277,29 @@ static tchStatus tch_mutexDestroy(tch_mtxId id){
 	return (tchStatus) __SYSCALL_1(mutex_destroy,id);
 }
 
+
+tchStatus tch_mutexInit(tch_mtxCb* mcb){
+	if(!mcb)
+		return tchErrorParameter;
+	if(tch_port_isISR() || !kernel_ready)
+		return __mutex_init(mcb);
+	return __SYSCALL_1(mutex_init,mcb);
+}
+
+tchStatus tch_mutexDeinit(tch_mtxCb* mcb){
+	if(!mcb || !MTX_ISVALID(mcb))
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __mutex_deinit(mcb);
+	return __SYSCALL_1(mutex_deinit,mcb);
+}
+
+
 DEFINE_SYSCALL_0(condv_create,tch_condvId){
 	tch_condvCb* condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb));
 	if(!condv)
 		KERNEL_PANIC("tch_condv.c","can't create condition variable object");
-	tch_condvInit(condv,FALSE);
+	condv_init(condv,FALSE);
 	return (tch_condvId) condv;
 }
 
@@ -323,21 +363,37 @@ DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
 }
 
 DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus){
-	tchStatus result = tch_condvDeint(id);
+	tchStatus result = condv_deint(id);
 	kfree(id);
 	return result;
 }
 
-tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static){
+
+DEFINE_SYSCALL_1(condv_init,tch_condvCb*,cp,tchStatus){
+	if(!cp)
+		return tchErrorParameter;
+	condv_init(cp,TRUE);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus){
+	if(!cp || !CONDV_ISVALID(cp))
+		return tchErrorParameter;
+	condv_deint(cp);
+	return tchOK;
+}
+
+
+static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static){
 	memset(condv,0,sizeof(tch_condvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	CONDV_VALIDATE(condv);
-	tch_registerKobject(&condv->__obj,is_static? (tch_kobjDestr)tch_condvDeint : (tch_kobjDestr)tch_condvDestroy);
+	tch_registerKobject(&condv->__obj,is_static? (tch_kobjDestr)condv_deint : (tch_kobjDestr)tch_condvDestroy);
 	return (tch_condvId) condv;
 }
 
-tchStatus tch_condvDeint(tch_condvCb* condv){
+static tchStatus condv_deint(tch_condvCb* condv){
 	if(!condv)
 		return tchErrorParameter;
 	if(!CONDV_ISVALID(condv))
@@ -410,5 +466,22 @@ static tchStatus tch_condvDestroy(tch_condvId id){
 	if(tch_port_isISR())
 		return tchErrorISR;
 	return __SYSCALL_1(condv_destroy,id);
+}
+
+
+tchStatus tch_condvInit(tch_condvCb* condv){
+	if(!condv)
+		return tchErrorParameter;
+	if(tch_port_isISR() || !kernel_ready)
+		return __condv_init(condv);
+	return __SYSCALL_1(condv_init,condv);
+}
+
+tchStatus tch_condvDeint(tch_condvCb* condv){
+	if(!condv)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __condv_deinit(condv);
+	return __SYSCALL_1(condv_deinit,condv);
 }
 

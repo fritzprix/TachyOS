@@ -49,6 +49,7 @@ static tch RuntimeInterface;
 static tch_threadId mainThread;
 static tch_threadId sysThread;
 const tch* tch_rti = &RuntimeInterface;
+volatile BOOL kernel_ready;
 tch_boardParam boardHandle = NULL;
 BOOL __VALID_SYSCALL;
 
@@ -59,6 +60,8 @@ BOOL __VALID_SYSCALL;
  *  2. perform cpu specific initialization
  */
 void tch_kernelInit(void* arg){
+
+	kernel_ready = FALSE;
 
 	RuntimeInterface.Thread = Thread;
 	RuntimeInterface.Mtx = Mtx;
@@ -135,6 +138,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	tch_port_enableISR();                   // interrupt enable
+	kernel_ready = TRUE;
+
 
 	RuntimeInterface.Device = tch_hal_init(&RuntimeInterface);
 	if(!RuntimeInterface.Device)
@@ -151,6 +156,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	if((!mainThread))
 		KERNEL_PANIC("tch_sys.c","Can't create init thread");
+
 
 
 	idle_init();

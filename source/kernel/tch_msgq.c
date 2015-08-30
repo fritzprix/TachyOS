@@ -20,6 +20,8 @@ static tch_msgqId tch_msgqCreate(uint32_t len);
 static tchStatus tch_msgqPut(tch_msgqId,uint32_t msg,uint32_t millisec);
 static tchEvent tch_msgqGet(tch_msgqId,uint32_t millisec);
 static tchStatus tch_msgqDestroy(tch_msgqId);
+static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic);
+static tchStatus msgq_deinit(tch_msgqCb* mq);
 
 
 static void tch_msgqValidate(tch_msgqId);
@@ -40,11 +42,12 @@ DECLARE_SYSCALL_1(messageQ_create,uint32_t,tch_msgqId);
 DECLARE_SYSCALL_3(messageQ_put,tch_msgqId,uword_t,uint32_t,tchStatus);
 DECLARE_SYSCALL_3(messageQ_get,tch_msgqId,tchEvent*,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(messageQ_destroy,tch_msgqId,tchStatus);
-
+DECLARE_SYSCALL_3(messageQ_init,tch_msgqCb*,uint32_t*,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(messageQ_deinit,tch_msgqCb*,tchStatus);
 
 DEFINE_SYSCALL_1(messageQ_create,uint32_t,sz,tch_msgqId){
 	tch_msgqCb* msgqCb = (tch_msgqCb*) kmalloc(sizeof(tch_msgqCb) + sz * sizeof(uword_t));
-	return tch_msgqInit(msgqCb,(uint32_t*) &msgqCb[1],sz,FALSE);
+	return msgq_init(msgqCb,(uint32_t*) &msgqCb[1],sz,FALSE);
 }
 
 
@@ -87,10 +90,23 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 
 DEFINE_SYSCALL_1(messageQ_destroy,tch_msgqId,msgq,tchStatus){
 	tchStatus result = tchOK;
-	if((result = tch_msgqDeinit(msgq)) != tchOK)
+	if((result = msgq_deinit(msgq)) != tchOK)
 		return result;
 	kfree(msgq);
 	return result;
+}
+
+DEFINE_SYSCALL_3(messageQ_init,tch_msgqCb*,mcb,uint32_t*,bp,uint32_t,sz,tchStatus){
+	if(!mcb || !bp || !sz)
+		return tchErrorParameter;
+	msgq_init(mcb,bp,sz,TRUE);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(messageQ_deinit,tch_msgqCb*,mcb,tchStatus){
+	if(!mcb || !tch_msgqIsValid(mcb))
+		return tchErrorParameter;
+	return msgq_deinit(mcb);
 }
 
 
@@ -166,19 +182,19 @@ static tchStatus tch_msgqDestroy(tch_msgqId mqId){
 }
 
 
-tch_msgqId tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic){
+static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic){
 	memset(mq, 0, sizeof(tch_msgqCb));
 	mq->bp = bp;
 	mq->sz = sz;
 	cdsl_dlistInit(&mq->cwq);
 	cdsl_dlistInit(&mq->pwq);
-	tch_registerKobject(&mq->__obj,isstatic? (tch_kobjDestr) tch_msgqDeinit : (tch_kobjDestr) tch_msgqDestroy);
+	tch_registerKobject(&mq->__obj,isstatic? (tch_kobjDestr) msgq_deinit : (tch_kobjDestr) tch_msgqDestroy);
 	tch_msgqValidate(mq);
 	return mq;
 }
 
 
-tchStatus tch_msgqDeinit(tch_msgqCb* mq){
+static tchStatus msgq_deinit(tch_msgqCb* mq){
 	if (!mq || !tch_msgqIsValid(mq))
 		return tchErrorParameter;
 	mq->updated = 0;
@@ -188,6 +204,24 @@ tchStatus tch_msgqDeinit(tch_msgqCb* mq){
 	tch_unregisterKobject(&mq->__obj);
 	return tchOK;
 }
+
+
+tchStatus tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz){
+	if(!mq || !bp || !sz)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __messageQ_init(mq,bp,sz);
+	return __SYSCALL_3(messageQ_init,mq,bp,sz);
+}
+
+tchStatus tch_msgqDeinit(tch_msgqCb* mq){
+	if(!mq)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __messageQ_deinit(mq);
+	return __SYSCALL_1(messageQ_deinit,mq);
+}
+
 
 static inline void tch_msgqValidate(tch_msgqId mqId){
 	((tch_msgqCb*) mqId)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);

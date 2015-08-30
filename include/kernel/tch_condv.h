@@ -33,8 +33,7 @@ struct _tch_condv_cb_t {
 	tch_thread_queue  wq;
 };
 
-
-extern tch_condvId tch_condvInit(tch_condvCb* condv,BOOL is_static);
+extern tchStatus tch_condvInit(tch_condvCb* condv);
 extern tchStatus tch_condvDeint(tch_condvCb* condv);
 
 

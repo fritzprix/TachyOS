@@ -34,7 +34,7 @@ typedef struct tch_semCb {
 } tch_semCb;
 
 
-extern tch_semId tch_semInit(tch_semCb* scb,uint32_t count,BOOL isStatic);
+extern tchStatus tch_semInit(tch_semCb* scb,uint32_t count);
 extern tchStatus tch_semDeinit(tch_semCb* scb);
 
 

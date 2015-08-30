@@ -21,12 +21,17 @@ DECLARE_SYSCALL_1(semaphore_create,uint32_t, tch_semId);
 DECLARE_SYSCALL_2(semaphore_lock,tch_semId,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(semaphore_unlock,tch_semId,tchStatus);
 DECLARE_SYSCALL_1(semaphore_destroy,tch_semId,tchStatus);
+DECLARE_SYSCALL_2(semaphore_init,tch_semCb*,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(semaphore_deinit,tch_semCb*,tchStatus);
 
 
 static tch_semId tch_semCreate(uint32_t count);
 static tchStatus tch_semLock(tch_semId id,uint32_t timeout);
 static tchStatus tch_semUnlock(tch_semId id);
 static tchStatus tch_semDestroy(tch_semId id);
+static tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic);
+static tchStatus sem_deinit(tch_semCb* scb);
+
 
 
 static void tch_semaphoreValidate(tch_semId sid);
@@ -48,7 +53,7 @@ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
 
 DEFINE_SYSCALL_1(semaphore_create,uint32_t,count,tch_semId){
 	tch_semCb* semCb = (tch_semCb*) kmalloc(sizeof(tch_semCb));
-	tch_semId id = tch_semInit(semCb,count,FALSE);
+	tch_semId id = sem_init(semCb,count,FALSE);
 	if(!id)
 		KERNEL_PANIC("tch_sem.c","can't create semaphore");
 	return id;
@@ -86,11 +91,24 @@ DEFINE_SYSCALL_1(semaphore_unlock,tch_semId,semid,tchStatus){
 }
 
 DEFINE_SYSCALL_1(semaphore_destroy,tch_semId,semid,tchStatus){
-	tchStatus result = tch_semDeinit(semid);
+	tchStatus result = sem_deinit(semid);
 	if(result != tchOK)
 		return result;
 	kfree(semid);
 	return result;
+}
+
+DEFINE_SYSCALL_2(semaphore_init,tch_semCb*,sp,uint32_t,count,tchStatus){
+	if(!sp)
+		return tchErrorParameter;
+	sem_init(sp,count,TRUE);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(semaphore_deinit,tch_semCb*,sp,tchStatus){
+	if(!sp || !tch_semaphoreIsValid(sp))
+		return tchErrorParameter;
+	return sem_deinit(sp);
 }
 
 
@@ -128,17 +146,17 @@ static tchStatus tch_semDestroy(tch_semId id){
 	return __SYSCALL_1(semaphore_destroy,id);
 }
 
-tch_semId tch_semInit(tch_semCb* scb,uint32_t count,BOOL isStatic){
+tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic){
 	if(!scb || !count)
 		return NULL;
 	scb->count = count;
 	cdsl_dlistInit(&scb->wq);
-	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) tch_semDeinit : (tch_kobjDestr) tch_semDestroy);
+	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) sem_deinit : (tch_kobjDestr) tch_semDestroy);
 	tch_semaphoreValidate(scb);
 	return scb;
 }
 
-tchStatus tch_semDeinit(tch_semCb* scb){
+tchStatus sem_deinit(tch_semCb* scb){
 	if(!scb)
 		return tchErrorParameter;
 	if(!tch_semaphoreIsValid(scb))
@@ -151,6 +169,22 @@ tchStatus tch_semDeinit(tch_semCb* scb){
 	}
 	tch_unregisterKobject(&scb->__obj);
 	return tchOK;
+}
+
+tchStatus tch_semInit(tch_semCb* scb,uint32_t count){
+	if(!scb)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __semaphore_init(scb,count);
+	return __SYSCALL_2(semaphore_init,scb,count);
+}
+
+tchStatus tch_semDeinit(tch_semCb* scb){
+	if(!scb)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __semaphore_deinit(scb);
+	return __SYSCALL_1(semaphore_deinit,scb);
 }
 
 
