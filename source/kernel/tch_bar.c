@@ -17,6 +17,7 @@
 #include "kernel/tch_bar.h"
 #include "kernel/tch_sched.h"
 #include "kernel/tch_err.h"
+#include "kernel/tch_kobj.h"
 
 
 #define TCH_BARRIER_CLASS_KEY        ((uhword_t) 0x2D03)
@@ -33,11 +34,13 @@
 
 
 
-
 static tch_barId tch_barCreate();
 static tchStatus tch_barWait(tch_barId bar,uint32_t timeout);
 static tchStatus tch_barSignal(tch_barId bar,tchStatus result);
 static tchStatus tch_barDestroy(tch_barId bar);
+
+static tch_barId bar_init(tch_barCb* bar,BOOL is_static);
+static tchStatus bar_deinit(tch_barCb* bar);
 
 
 
@@ -56,13 +59,15 @@ DECLARE_SYSCALL_0(bar_create,tch_barId);
 DECLARE_SYSCALL_2(bar_wait,tch_barId,uint32_t,tchStatus);
 DECLARE_SYSCALL_2(bar_signal,tch_barId,tchStatus,tchStatus);
 DECLARE_SYSCALL_1(bar_destroy,tch_barId,tchStatus);
+DECLARE_SYSCALL_1(bar_init,tch_barCb*,tchStatus);
+DECLARE_SYSCALL_1(bar_deinit,tch_barCb*,tchStatus);
 
 
 DEFINE_SYSCALL_0(bar_create,tch_barId) {
 	tch_barCb* bar = (tch_barCb*) kmalloc(sizeof(tch_barCb));
 	if(!bar)
 		KERNEL_PANIC("tch_bar.c","can't allocate barrier");
-	tchk_barrierInit(bar,FALSE);
+	bar_init(bar,FALSE);
 	return (tch_barId) bar;
 }
 
@@ -89,24 +94,40 @@ DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
 DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
 	if((!barId) || (!BAR_ISVALID(barId)))
 		return tchErrorParameter;
-	tchk_barrierDeinit(barId);
+	bar_deinit(barId);
 	kfree(barId);
 	return tchOK;
 }
 
-tch_barId tchk_barrierInit(tch_barCb* bar,BOOL is_static){
+DEFINE_SYSCALL_1(bar_init,tch_barCb*,bp,tchStatus){
+	if(!bp)
+		return tchErrorParameter;
+	bar_init(bp,TRUE);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(bar_deinit,tch_barCb*,bp,tchStatus){
+	if(!bp || !BAR_ISVALID(bp))
+		return tchErrorParameter;
+	bar_deinit(bp);
+	return tchOK;
+}
+
+static tch_barId bar_init(tch_barCb* bar,BOOL is_static){
 	memset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
 	cdsl_dlistInit(&bar->wq);
-	bar->__obj.__destr_fn =  is_static? (tch_kobjDestr) tchk_barrierDeinit : (tch_kobjDestr) tch_barDestroy;
+	tch_registerKobject(&bar->__obj,is_static? (tch_kobjDestr) bar_deinit : (tch_kobjDestr) tch_barDestroy);
+
 	return bar;
 }
 
-tchStatus tchk_barrierDeinit(tch_barCb* bar){
+static tchStatus bar_deinit(tch_barCb* bar){
 	if((!bar) || (!BAR_ISVALID(bar)))
 		return tchErrorParameter;
 	BAR_INVALIDATE(bar);
 	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_unregisterKobject(&bar->__obj);
 	return tchOK;
 }
 
@@ -149,3 +170,19 @@ static tchStatus tch_barDestroy(tch_barId barId){
 	return __SYSCALL_1(bar_destroy,barId);
 }
 
+
+tchStatus tch_barInit(tch_barCb* bar){
+	if(!bar)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __bar_init(bar);
+	return __SYSCALL_1(bar_init,bar);
+}
+
+tchStatus tch_barDeinit(tch_barCb* bar){
+	if(!bar)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __bar_deinit(bar);
+	return __SYSCALL_1(bar_deinit,bar);
+}

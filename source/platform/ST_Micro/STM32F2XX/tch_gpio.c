@@ -72,7 +72,7 @@ typedef struct _tch_gpio_handle_prototype {
 	uint8_t                       idx;
 	uint32_t                      state;
 	uint32_t                      pMsk;
-	tch_mtxId                     mtxId;
+	tch_mtxCb					  mutex;
 	tch_IoEventCallback_t         cb;
 	const tch*                    env;
 }tch_gpio_handle_prototype;
@@ -164,7 +164,7 @@ static tch_GpioHandle* tch_gpio_allocIo(const tch* env,const gpIo_x port,uint32_
 	ins->_pix.configure = tch_gpio_handle_configure;
 	ins->_pix.configureEvent = tch_gpio_handle_configureEvent;
 	ins->pMsk = pmsk;
-	ins->mtxId = env->Mtx->create();
+	tch_mutexInit(&ins->mutex,TRUE);
 	ins->cb = NULL;
 	ins->idx = port;
 
@@ -205,7 +205,7 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	if(!tch_gpioIsValid(ins))
 		return tchErrorResource;
 	const tch* env = ins->env;
-	if(env->Mtx->lock(ins->mtxId,tchWaitForever) != tchOK)
+	if(env->Mtx->lock(&ins->mutex,tchWaitForever) != tchOK)
 		return tchErrorTimeoutResource;
 
 	tch_gpio_descriptor* gpio = &GPIO_HWs[ins->idx];
@@ -221,7 +221,7 @@ static tchStatus tch_gpio_handle_freeIo(tch_GpioHandle* self){
 	}
 
 	tch_gpioInvalidate(ins);
-	env->Mtx->destroy(ins->mtxId);
+	tch_mutexDeinit(&ins->mutex);
 
 	env->Mtx->lock(GPIO_StaticInstance.mtxId,tchWaitForever);
 	*gpio->_clkenr &= ~gpio->clkmsk;

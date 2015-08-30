@@ -167,8 +167,11 @@ extern const tch_signal_ix* Sig;
 extern const tch_hal* Hal;
 
 
+
+
 extern const tch_kernel_descriptor kernel_descriptor;
-extern tch_thread_uheader* tch_currentThread;
+extern tch_thread_uheader* current;
+extern volatile BOOL kernel_ready;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue procList;
 extern const tch* tch_rti;

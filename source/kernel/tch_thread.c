@@ -189,7 +189,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 			return NULL;
 		}
 		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
-	}else if(tch_currentThread){									// new thread will be child of caller thread
+	}else if(current){									// new thread will be child of caller thread
 		proc = &default_prochdr;
 		proc->entry = cfg->entry;
 		proc->req_stksz = cfg->stksz;
@@ -197,7 +197,7 @@ tch_threadId tchk_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BO
 		proc->argv = arg;
 		proc->argv_sz = 0;
 		proc->flag = HEADER_CHILD_THREAD;
-		kthread->parent = tch_currentThread->kthread;
+		kthread->parent = current->kthread;
 		kthread->permission = kthread->parent->permission;		// inherit parent permission
 		if(!tch_mmProcInit(kthread, proc)){
 			kfree(kthread);
@@ -255,7 +255,7 @@ static tchStatus tch_threadTerminate(tch_threadId thread,tchStatus err){
 
 
 static tch_threadId tch_threadSelf(){
-	return (tch_threadId) tch_currentThread;
+	return (tch_threadId) current;
 }
 
 
@@ -295,7 +295,7 @@ static void tch_threadInitCfg(tch_threadCfg* cfg,
 
 
 static void* tch_threadGetArg(){
-	return tch_currentThread->t_arg;
+	return current->t_arg;
 }
 
 __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status){

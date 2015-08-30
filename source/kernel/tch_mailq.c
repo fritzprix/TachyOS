@@ -10,6 +10,9 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_mailq.h"
+#include "kernel/tch_kobj.h"
+
+
 
 #define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
 
@@ -21,6 +24,9 @@ static tchStatus tch_mailqPut(tch_mailqId qid,void* mail,uint32_t timeout);
 static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec);
 static tchStatus tch_mailqFree(tch_mailqId qid,void* mail);
 static tchStatus tch_mailqDestroy(tch_mailqId qid);
+
+static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstatic);
+static tchStatus mailq_deinit(tch_mailqCb* qid);
 
 static inline void tch_mailqValidate(tch_mailqId qid);
 static inline void tch_mailqInvalidate(tch_mailqId qid);
@@ -45,12 +51,14 @@ DECLARE_SYSCALL_2(mailq_free,tch_mailqId,void*,tchStatus);
 DECLARE_SYSCALL_3(mailq_put,tch_mailqId,void*,uint32_t,tchStatus);
 DECLARE_SYSCALL_3(mailq_get,tch_mailqId,uint32_t,tchEvent*,tchStatus);
 DECLARE_SYSCALL_1(mailq_destroy,tch_mailqId,tchStatus);
+DECLARE_SYSCALL_3(mailq_init,tch_mailqCb*,uint32_t,uint32_t,tchStatus);
+DECLARE_SYSCALL_1(mailq_deinit,tch_mailqCb*,tchStatus);
 
 
 
 DEFINE_SYSCALL_2(mailq_create,uint32_t,sz,uint32_t,qlen,tch_mailqId){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb));
-	tch_mailqId id = tch_mailqInit(mailqcb,sz,qlen,FALSE);
+	tch_mailqId id = mailq_init(mailqcb,sz,qlen,FALSE);
 	if(!id)
 		KERNEL_PANIC("tch_mailq.c","can't create  mailq object");
 	return id;
@@ -142,7 +150,7 @@ DEFINE_SYSCALL_2(mailq_free,tch_mailqId,qid,void*,block,tchStatus){
 
 DEFINE_SYSCALL_1(mailq_destroy,tch_mailqId,qid,tchStatus){
 
-	tchStatus result = tch_mailqDeinit(qid);
+	tchStatus result = mailq_deinit(qid);
 	if(result != tchOK)
 		return result;
 	tch_mailqCb* mailq = (tch_mailqCb*) qid;
@@ -152,6 +160,19 @@ DEFINE_SYSCALL_1(mailq_destroy,tch_mailqId,qid,tchStatus){
 	kfree(mailq);
 
 	return tchOK;
+}
+
+DEFINE_SYSCALL_3(mailq_init,tch_mailqCb*,mcb,uint32_t,sz,uint32_t,qlen,tchStatus){
+	if(!mcb)
+		return tchErrorParameter;
+	mailq_init(mcb,sz,qlen,TRUE);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(mailq_deinit,tch_mailqCb*,mcb,tchStatus){
+	if(!mcb || !tch_mailqIsValid(mcb))
+		return tchErrorParameter;
+	return mailq_deinit(mcb);
 }
 
 static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen){
@@ -221,23 +242,20 @@ static tchStatus tch_mailqDestroy(tch_mailqId qid){
 	return __SYSCALL_1(mailq_destroy,qid);
 }
 
-tch_mailqId tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstatic){
+static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstatic){
 	if(!qcb)
 		return NULL;
 	memset(qcb,0,sizeof(tch_mailqCb));
 	qcb->queue = (void**) kmalloc(sizeof(void*) * qlen);
 	qcb->bpool = Mempool->create(sz,qlen);
-	qcb->__obj.__destr_fn = isstatic? (tch_kobjDestr) tch_mailqDeinit : (tch_kobjDestr) tch_mailqDestroy;
-
 	if(!qcb->bpool || !qcb->queue){
 		kfree(qcb->queue);
 		Mempool->destroy(qcb->bpool);
 		return NULL;
 	}
-
+	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) mailq_deinit : (tch_kobjDestr) tch_mailqDestroy);
 	qcb->qlen = qlen;
 	qcb->gidx = qcb->gidx = 0;
-	qcb->__obj.__destr_fn = (tch_kobjDestr) tch_mailqDestroy;
 	qcb->bsz = sz;
 	cdsl_dlistInit(&qcb->gwq);
 	cdsl_dlistInit(&qcb->pwq);
@@ -247,7 +265,7 @@ tch_mailqId tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstat
 }
 
 
-tchStatus tch_mailqDeinit(tch_mailqCb* qid){
+static tchStatus mailq_deinit(tch_mailqCb* qid){
 	if(!qid)
 		return tchErrorParameter;
 	if(!tch_mailqIsValid(qid))
@@ -257,7 +275,25 @@ tchStatus tch_mailqDeinit(tch_mailqCb* qid){
 	tchk_schedWake((tch_thread_queue*) &mailq->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tchk_schedWake((tch_thread_queue*) &mailq->gwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tchk_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tch_unregisterKobject(&mailq->__obj);
 	return tchOK;
+}
+
+
+tchStatus tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen){
+	if(!qcb || !sz || !qlen)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __mailq_init(qcb,sz,qlen);
+	return __SYSCALL_3(mailq_init,qcb,sz,qlen);
+}
+
+tchStatus tch_mailqDeinit(tch_mailqCb* qcb){
+	if(!qcb)
+		return tchErrorParameter;
+	if(tch_port_isISR())
+		return __mailq_deinit(qcb);
+	return __SYSCALL_1(mailq_deinit,qcb);
 }
 
 static inline void tch_mailqValidate(tch_mailqId qid){

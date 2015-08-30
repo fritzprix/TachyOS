@@ -17,7 +17,6 @@ struct tch_file {
 	rb_treeNode_t				rbnode;
 	void*						handle;				//
 	struct tch_file_operations*	ops;
-	// something else??
 };
 
 struct tch_file_operations {

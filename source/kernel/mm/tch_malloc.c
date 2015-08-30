@@ -24,12 +24,12 @@ void* tch_malloc(size_t sz){
 	void* result;
 	if(!sz)
 		return NULL;
-	result = wt_cacheMalloc(tch_currentThread->cache, sz);
+	result = wt_cacheMalloc(current->cache, sz);
 	if (!result) {
-		tch_mtxId mtx = tch_currentThread->mtx;
+		tch_mtxId mtx = current->mtx;
 		if (Mtx->lock(mtx, tchWaitForever) != tchOK)
 			return NULL;
-		result = wt_malloc(tch_currentThread->heap, sz);
+		result = wt_malloc(current->heap, sz);
 		Mtx->unlock(mtx);
 	}
 	return result;
@@ -39,25 +39,25 @@ void tch_free(void* ptr){
 	if(!ptr)
 		return;
 	int result;
-	if(WT_OK == (result = wt_cacheFree(tch_currentThread->cache,ptr)))
+	if(WT_OK == (result = wt_cacheFree(current->cache,ptr)))
 		return;
 	if(result == WT_ERROR)
 		goto ERR_HEAP_FREE;
-	tch_mtxId mtx = tch_currentThread->mtx;
+	tch_mtxId mtx = current->mtx;
 	if(Mtx->lock(mtx,tchWaitForever) != tchOK)
 		return;
-	result = wt_free(tch_currentThread->heap,ptr);
+	result = wt_free(current->heap,ptr);
 	Mtx->unlock(mtx);
 	if(result == WT_ERROR)
 		goto ERR_HEAP_FREE;
 	return;
 
 ERR_HEAP_FREE :
-	tch_kernel_raise_error(tch_currentThread,tchErrorHeapCorruption,"heap corrupted");
+	tch_kernel_raise_error(current,tchErrorHeapCorruption,"heap corrupted");
 
 }
 
 size_t tch_avail(){
-	return ((wt_cache_t*) tch_currentThread->cache)->size +
-			((wt_heapRoot_t*) tch_currentThread->heap)->size;
+	return ((wt_cache_t*) current->cache)->size +
+			((wt_heapRoot_t*) current->heap)->size;
 }

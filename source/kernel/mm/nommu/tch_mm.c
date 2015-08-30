@@ -70,6 +70,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			return FALSE;
 		}
 
+		mmp->dynamic->mtx = mtx;
+		mmp->dynamic->condv = condv;
 		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
@@ -82,10 +84,10 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		}
 
 		mmp->dynamic->mregions = NULL;
-		mmp->dynamic->mtx = tch_mutexInit(mtx,FALSE);
-		mmp->dynamic->condv = tch_condvInit(condv,FALSE);
+		tch_mutexInit(mmp->dynamic->mtx);
+		tch_condvInit(mmp->dynamic->condv);
 	}else {
-		struct tch_mm* parent_mm = &tch_currentThread->kthread->parent->mm;
+		struct tch_mm* parent_mm = &current->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		if(!mmp->pgd)
@@ -96,7 +98,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			tch_port_addPageEntry(mmp->pgd, mmp->bss_region->poff,mmp->bss_region->flags);
 			tch_port_addPageEntry(mmp->pgd, mmp->data_region->poff,mmp->data_region->flags);
 		}
-		mmp->kobjs = NULL;
+		cdsl_dlistInit(&mmp->kobj_list);
 	}
 
 	/**
@@ -150,9 +152,9 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		memcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
 		thread->uthread->t_arg = argv;
 	}else {																		// if process argument is just pointer to another object
-		thread->uthread->t_arg = proc_header->argv;							// just copy refernece
+		thread->uthread->t_arg = proc_header->argv;				    			// just copy refernece
 	}
-	mmp->estk = argv;
+	mmp->estk = argv;			// end of stack
 
 	/****
 	 * ================= setup per process heap ====================================
@@ -237,13 +239,13 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 
 void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
-	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &tch_currentThread->kthread->mm){
+	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &current->kthread->mm){
 		//kill thread
-		tch_schedDestroy(tch_currentThread,tchErrorIllegalAccess);
+		tch_schedDestroy(current,tchErrorIllegalAccess);
 	}
 
-	if(!tch_port_addPageEntry(((struct tch_mm*) &tch_currentThread->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
-		tch_schedDestroy(tch_currentThread,tchErrorIllegalAccess);																// already in table?
+	if(!tch_port_addPageEntry(((struct tch_mm*) &current->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
+		tch_schedDestroy(current,tchErrorIllegalAccess);																// already in table?
 	}
 }
 

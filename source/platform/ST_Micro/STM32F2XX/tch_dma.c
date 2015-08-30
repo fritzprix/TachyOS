@@ -118,8 +118,8 @@ typedef struct tch_dma_handle_prototype_t{
 	const tch*                  env;
 	dma_t                       dma;
 	uint8_t                     ch;
-	tch_mtxId                   mtxId;
-	tch_condvId                 condv;
+	tch_mtxCb					mutex;
+	tch_condvCb					condvb;
 	tch_dma_eventListener       listener;
 	uint32_t                    status;
 	tch_msgqId                  dma_mq;
@@ -224,8 +224,8 @@ static tch_DmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg
 	ins->ch = cfg->Ch;
 	ins->dma = dma;
 	ins->status = 0;
-	ins->mtxId = env->Mtx->create();
-	ins->condv = env->Condv->create();
+	tch_mutexInit(&ins->mutex,TRUE);
+	tch_condvInit(&ins->condvb,TRUE);
 	ins->dma_mq = env->MsgQ->create(1);
 	ins->listener = NULL;
 
@@ -265,14 +265,14 @@ static uint32_t tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_
 	tchStatus lresult = tchOK;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 
-	if((*result = ins->env->Mtx->lock(ins->mtxId,timeout)) != tchOK)
+	if((*result = ins->env->Mtx->lock(&ins->mutex,timeout)) != tchOK)
 		return -1;
 	while(DMA_IS_BUSY(ins)){
-		if((*result = ins->env->Condv->wait(ins->condv,ins->mtxId,timeout)) != tchOK)
+		if((*result = ins->env->Condv->wait(&ins->condvb,&ins->mutex,timeout)) != tchOK)
 			return -1;
 	}
 	DMA_SET_BUSY(ins);
-	ins->env->Mtx->unlock(ins->mtxId);
+	ins->env->Mtx->unlock(&ins->mutex);
 	if(!result)
 		result = &lresult;
 
@@ -291,10 +291,10 @@ static uint32_t tch_dma_beginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_
 	}
 
 	SET_SAFE_RETURN();
-	ins->env->Mtx->lock(ins->mtxId,timeout);   // lock mutex for condition variable operation
+	ins->env->Mtx->lock(&ins->mutex,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
-	ins->env->Condv->wakeAll(ins->condv);
-	ins->env->Mtx->unlock(ins->mtxId); // unlock mutex
+	ins->env->Condv->wakeAll(&ins->condvb);
+	ins->env->Mtx->unlock(&ins->mutex); // unlock mutex
 
 	return 0;
 }
@@ -329,16 +329,18 @@ static tchStatus tch_dma_close(tch_DmaHandle self){
 	const tch* env = ins->env;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) DMA_HWs[ins->dma]._hw;
 	// wait until dma is busy
-	if((result = env->Mtx->lock(ins->mtxId,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&ins->mutex,tchWaitForever)) != tchOK)
 		return result;
 	while(DMA_IS_BUSY(ins)){
-		if((result = env->Condv->wait(ins->condv,ins->mtxId,tchWaitForever)) != tchOK)
+		if((result = env->Condv->wait(&ins->condvb,&ins->mutex,tchWaitForever)) != tchOK)
 			return result;
 	}
 	tch_dmaInvalidate(ins);
-	env->Mtx->destroy(ins->mtxId);
+	tch_mutexDeinit(&ins->mutex);
+	tch_condvDeint(&ins->condvb);
+	env->Mtx->destroy(&ins->mutex);
 	env->MsgQ->destroy(ins->dma_mq);
-	env->Condv->destroy(ins->condv);
+	env->Condv->destroy(ins->condvb);
 
 
 	if((result = env->Mtx->lock(DMA_StaticInstance.mtxId,tchWaitForever)) != tchOK)

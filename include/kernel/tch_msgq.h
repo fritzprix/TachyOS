@@ -29,7 +29,7 @@ typedef struct _tch_msgq_cb {
 	uint32_t      updated;
 }tch_msgqCb;
 
-extern tch_msgqId tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic);
+extern tchStatus tch_msgqInit(tch_msgqCb* mq,uint32_t* bp,uint32_t sz);
 extern tchStatus tch_msgqDeinit(tch_msgqCb* mq);
 
 #if defined(__cplusplus)
