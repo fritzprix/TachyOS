@@ -85,7 +85,7 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
 wtreeNode_t* wtreeDeleteRightMost(wtreeRoot_t*root){
 	if(!root)
 		return NULL;
-	if(root == NULL_NODE)
+	if(root->entry == NULL_NODE)
 		return NULL;
 	wtreeNode_t* rm;
 	wtreeNode_t ** current;

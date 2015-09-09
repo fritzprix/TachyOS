@@ -125,6 +125,19 @@ typedef struct _tch_adc_descriptor {
 }tch_adc_descriptor;
 
 
+typedef struct _tch_sdio_descriptor {
+	void*				_sdio;
+	void*				_handle;
+	volatile uint32_t*	_clkenr;
+	const uint32_t		clkmsk;
+	volatile uint32_t*	_lpclkenr;
+	const uint32_t		lpclkmsk;
+	volatile uint32_t*	_rstr;
+	const uint32_t		rstmsk;
+	IRQn_Type			irq;
+} tch_sdio_descriptor;
+
+
 typedef struct _tch_rtc_descriptor {
 	void*               _hw;
 	void*               _handle;
@@ -133,8 +146,6 @@ typedef struct _tch_rtc_descriptor {
 	IRQn_Type            irq_0;
 	IRQn_Type            irq_1;
 }tch_rtc_descriptor;
-
-
 
 /////////////////////////////  Platform specific mapping  ////////////////////////////
 
@@ -205,6 +216,17 @@ typedef struct _tch_adc_ch_bs_t {
 	uint8_t       occp;
 }tch_adc_channel_bs;
 
+typedef struct _tch_sdio_bs_t {
+	dma_t		rx_dma;
+	dma_t		tx_dma;
+	uint8_t		rx_ch;
+	uint8_t		tx_ch;
+	gpIo_x		port;			// gpio port
+	uint8_t 	clk;			// clock pin
+	uint8_t		cmd;			// cmd pin
+	uint8_t		d[8];			// data pin
+	uint8_t 	afv;
+};
 
 
 extern __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO];
@@ -215,6 +237,7 @@ extern __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER];
 extern __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI];
 extern __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC];
 extern __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC];
+extern __TCH_STATIC_INIT tch_sdio_descriptor SDIO_HWs[MFEATURE_SDIO];
 
 
 

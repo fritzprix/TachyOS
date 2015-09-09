@@ -208,6 +208,7 @@ typedef struct _tch_adc_ch_bs_t {
 
 
 
+
 extern __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO];
 extern __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[MFEATURE_PINCOUNT_pPORT];
 extern __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[MFEATURE_DMA];

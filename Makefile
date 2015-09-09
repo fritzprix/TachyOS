@@ -137,5 +137,4 @@ $(TARGET_SIZE): $(TARGET)
 	@echo ' '
 
 clean:
-	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY)
-	rmdir $(GEN_SUB_DIR) 
+	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) $(GEN_SUB_DIR)

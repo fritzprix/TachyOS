@@ -86,6 +86,7 @@ SECTIONS
     } > FLASH
     __exidx_end = .;
     /* the program code is stored in the .text section, which goes to Flash */
+    
     .text :
     {
 	    . = ALIGN(4);
@@ -104,22 +105,20 @@ SECTIONS
 	    . = ALIGN(4);
     	__syscall_entry = . ;
     	*(.sysc.table) 
-    	. = ALIGN(4);
+    	. = ALIGN(4); 
     	__syscall_end = . ;   
 	    
-	    
 	    /* This is used by the startup in order to initialize the .data secion */
-	    _sidata = .;
+	    . = ALIGN(4);
+	    _sidata = . ;
     } >FLASH
     
-    
-   
     
     
     /* MEMORY_ARRAY */
     .ROarraySection :
     {
-            *(.ROarraySection)                          
+          *(.ROarraySection)                          
     } >MEMORY_ARRAY
      
 
@@ -140,7 +139,6 @@ SECTIONS
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _edata = . ;
     } >RAM
-    
     
 
     /* This is the uninitialized data section */

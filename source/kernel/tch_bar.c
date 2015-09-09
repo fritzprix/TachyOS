@@ -44,11 +44,11 @@ static tchStatus bar_deinit(tch_barCb* bar);
 
 
 
-__attribute__((section(".data"))) static tch_bar_ix Barrier_StaticInstance = {
-		tch_barCreate,
-		tch_barWait,
-		tch_barSignal,
-		tch_barDestroy
+static tch_bar_ix Barrier_StaticInstance = {
+		.create = tch_barCreate,
+		.wait = tch_barWait,
+		.signal = tch_barSignal,
+		.destroy = tch_barDestroy
 };
 
 const tch_bar_ix* Barrier = &Barrier_StaticInstance;
@@ -85,7 +85,7 @@ DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
 	if(cdsl_dlistIsEmpty(&bar->wq))
 		return tchOK;
 	if(tch_port_isISR()){
-		tchk_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK,0);
@@ -126,7 +126,7 @@ static tchStatus bar_deinit(tch_barCb* bar){
 	if((!bar) || (!BAR_ISVALID(bar)))
 		return tchErrorParameter;
 	BAR_INVALIDATE(bar);
-	tchk_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedWake((tch_thread_queue*) &bar->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tch_unregisterKobject(&bar->__obj);
 	return tchOK;
 }
@@ -155,7 +155,7 @@ static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
 		if(!BAR_ISVALID(bar))
 			return tchErrorParameter;
 
-		tchk_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+		tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
 		return tchOK;
 	}
 	return __SYSCALL_2(bar_signal,barId,result);

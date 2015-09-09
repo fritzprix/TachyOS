@@ -70,12 +70,14 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			return FALSE;
 		}
 
+		mmp->flags |= ROOT;
 		mmp->dynamic->mtx = mtx;
 		mmp->dynamic->condv = condv;
 		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
 			mmp->data_region = proc_header->data_region;
+			mmp->flags |= DYN;
 		}else {
 					// text/ bss / data section of static process are assumed to be part of kernel binary image
 			mmp->text_region = NULL;
@@ -89,16 +91,18 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	}else {
 		struct tch_mm* parent_mm = &current->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
+		mmp->flags = 0;
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		if(!mmp->pgd)
 			return FALSE;
 		mmp->dynamic = parent_mm->dynamic;
-		if(mmp->text_region && mmp->bss_region && mmp->data_region){
-			tch_port_addPageEntry(mmp->pgd, mmp->text_region->poff,mmp->text_region->flags);
-			tch_port_addPageEntry(mmp->pgd, mmp->bss_region->poff,mmp->bss_region->flags);
-			tch_port_addPageEntry(mmp->pgd, mmp->data_region->poff,mmp->data_region->flags);
-		}
 		cdsl_dlistInit(&mmp->kobj_list);
+	}
+
+	if(mmp->text_region && mmp->bss_region && mmp->data_region){
+		tch_port_addPageEntry(mmp->pgd, mmp->text_region->poff, mmp->text_region->flags);
+		tch_port_addPageEntry(mmp->pgd, mmp->bss_region->poff, mmp->bss_region->flags);
+		tch_port_addPageEntry(mmp->pgd, mmp->data_region->poff, mmp->data_region->flags);
 	}
 
 	/**
@@ -114,6 +118,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 
 	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz)){
 		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD){
+			tch_condvDeint(condv);
+			tch_mutexDeinit(mtx);
 			kfree(condv);
 			kfree(mtx);
 		}
@@ -202,10 +208,29 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 
 }
 
-int tch_mmProcClean(tch_thread_kheader* thread){
+BOOL tch_mmProcClean(tch_thread_kheader* thread){
 	if(!thread)
 		KERNEL_PANIC("tch_mm.c","thread clean-up fail : null reference");
 	struct tch_mm* mmp = &thread->mm;
+	// @ERROR : awef
+	wt_cacheFlush(thread->uthread->heap,thread->uthread->cache);
+	tch_segmentFreeRegion(mmp->stk_region);
+	if((mmp->flags & ROOT) == ROOT){
+		// release heap memory area
+		tch_segmentFreeRegion(mmp->heap_region);
+		Mtx->destroy(mmp->dynamic->mtx);
+		Condv->destroy(mmp->dynamic->condv);
+		kfree(mmp->dynamic);
+	}
+	if((mmp->flags & DYN) == DYN) {
+		tch_segmentFreeRegion(mmp->bss_region);
+		tch_segmentFreeRegion(mmp->data_region);
+		tch_segmentFreeRegion(mmp->text_region);
+	}
+	kfree(mmp->heap_region);
+	kfree(mmp->pgd);
+
+	return TRUE;
 }
 
 
@@ -241,11 +266,11 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
 	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &current->kthread->mm){
 		//kill thread
-		tch_schedDestroy(current,tchErrorIllegalAccess);
+		tch_threadExit(current,tchErrorIllegalAccess);
 	}
 
 	if(!tch_port_addPageEntry(((struct tch_mm*) &current->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
-		tch_schedDestroy(current,tchErrorIllegalAccess);																// already in table?
+		tch_threadExit(current,tchErrorIllegalAccess);																// already in table?
 	}
 }
 

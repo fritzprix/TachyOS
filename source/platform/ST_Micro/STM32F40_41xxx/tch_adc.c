@@ -64,7 +64,6 @@ typedef struct tch_adc_handle_prototype {
 }tch_adc_handle_prototype;
 
 
-
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 static tchStatus tch_adcClose(tch_adcHandle* self);
 static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
@@ -82,19 +81,9 @@ static void tch_adcInvalidata(tch_adc_handle_prototype* ins);
 static BOOL tch_adcIsValid(tch_adc_handle_prototype* ins);
 static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins);
 
-
-
 static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t order);
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
-
-/*
- * typedef struct tch_lld_adc_prototype {
-	tch_lld_adc                          pix;
-	tch_mtxId                            mtx;
-	tch_condvId                          condv;
-}tch_lld_adc_prototype;
- */
 static tch_lld_adc_prototype ADC_StaticInstance = {
 		{
 				MFEATURE_ADC,

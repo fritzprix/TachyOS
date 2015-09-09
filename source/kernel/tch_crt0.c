@@ -130,12 +130,6 @@ tch_ustdlib_ix* tch_initCrt0(struct crt_param* param){
 }
 
 
-
-void crt0(){
-
-}
-
-
 /**
  * libc system call stub
  */
@@ -148,7 +142,7 @@ void* _sbrk_r(struct _reent* reent,ptrdiff_t incr){
 	prev_heap_end = heap_end;
 	if ((uint32_t)heap_end + incr > ((uint32_t) LIBC_HEAP + 6000 * sizeof(char))) {
 		if(!tch_port_isISR()){
-			Thread->terminate(current,tchErrorNoMemory);
+			tch_threadExit(current,tchErrorNoMemory);
 		}
 		return NULL;
 	}
@@ -169,7 +163,7 @@ _ssize_t _write_r(struct _reent * reent, int fd, const void * buf, size_t cnt){
 		fp = current->reent._stdin;
 		break;
 	}
-	return fp->_write(reent,fp->_cookie,buf,cnt);
+	return fp->_write(reent,fp,buf,cnt);
 }
 
 int _close_r(struct _reent* reent, int fd){
@@ -185,7 +179,7 @@ int _close_r(struct _reent* reent, int fd){
 		fp = current->reent._stdin;
 		break;
 	}
-	return fp->_close(reent,fp->_cookie);
+	return fp->_close(reent,fp);
 }
 
 off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
@@ -201,7 +195,7 @@ off_t _lseek_r(struct _reent* reent,int fd, off_t pos, int whence){
 		fp = current->reent._stdin;
 		break;
 	}
-	return fp->_seek(reent,fp->_cookie,pos,whence);
+	return fp->_seek(reent,fp,pos,whence);
 }
 
 /**	tchStatus (*getc)(tch_usartHandle handle,uint8_t* rc,uint32_t timeout);
@@ -254,7 +248,7 @@ int _isatty_r(struct _reent* reent, int fd){
 }
 
 void exit(int code){
-	Thread->terminate(current,code);
+	tch_threadExit(current,code);
 	while(TRUE);
 }
 

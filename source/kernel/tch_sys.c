@@ -86,7 +86,7 @@ void tch_kernelInit(void* arg){
 
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
-	sysThread = tchk_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
+	sysThread = tch_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 	tch_schedInit(sysThread);
 
 	return;
@@ -118,12 +118,12 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 
 			tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
 			tch_port_setUserSP((uint32_t)sp);
-			if((arg1 = tchk_threadIsValid(current)) == tchOK){
+			if((arg1 = tch_threadIsValid(current)) == tchOK){
 				tch_port_atomicEnd();
 			}else{
-				tch_schedDestroy(current,arg1);
+				tch_threadExit(current,arg1);
 			}
-			if(tchk_threadIsPrivilidged(current))
+			if(tch_threadIsPrivilidged(current))
 				tch_port_enablePrivilegedThread();
 			else
 				tch_port_disablePrivilegedThread();
@@ -151,7 +151,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	tch_threadCfg threadcfg;
 	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");
-	mainThread = tchk_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE,NULL);
+	mainThread = tch_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE,NULL);
 
 
 	if((!mainThread))
