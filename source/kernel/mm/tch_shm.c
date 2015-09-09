@@ -24,6 +24,7 @@ static int 					shm_init_segid;
 
 DECLARE_SYSCALL_1(shmem_alloc,size_t,void*);
 DECLARE_SYSCALL_1(shmem_free,void*,tchStatus);
+DECLARE_SYSCALL_1(shmem_cleanup,tch_threadId,tchStatus);
 
 struct shmalloc_header {
 	cdsl_dlistNode_t	alc_ln;
@@ -80,22 +81,41 @@ DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 	struct shmalloc_header* chnk = (struct shmalloc_header*) ptr;
 	chnk--;
 	cdsl_dlistRemove(&chnk->alc_ln);
-	if (wt_free(&shm_root, ptr) == WT_ERROR)
-		tchk_schedTerminate(current, tchErrorHeapCorruption);
+	if (wt_free(&shm_root, chnk) == WT_ERROR)
+		tch_schedTerminate(current, tchErrorHeapCorruption);
+	return tchOK;
+}
+
+DEFINE_SYSCALL_1(shmem_cleanup,tch_threadId,tid,tchStatus){
+	tch_thread_kheader* kth = getThreadKHeader(tid);
+	cdsl_dlistNode_t* shm_alc = &kth->mm.shm_list;
+	struct shmalloc_header* chnk = NULL;
+	while(!cdsl_dlistIsEmpty(shm_alc)){
+		 chnk = cdsl_dlistDequeue(shm_alc);
+		 if(!chnk)
+			 return tchErrorHeapCorruption;
+		 if(wt_free(&shm_root,chnk) == WT_ERROR)
+			 return tchErrorHeapCorruption;
+	}
 	return tchOK;
 }
 
 void* tch_shmAlloc(size_t sz){
 	if(tch_port_isISR())
 		return __shmem_alloc(sz);
-	else
-		return (void*) __SYSCALL_1(shmem_alloc,sz);
+	return (void*) __SYSCALL_1(shmem_alloc,sz);
 }
 
 tchStatus tch_shmFree(void* mchunk){
 	if(tch_port_isISR())
 		return __shmem_free(mchunk);
-	else
-		return __SYSCALL_1(shmem_free,mchunk);
+	return __SYSCALL_1(shmem_free,mchunk);
 }
+
+tchStatus tch_shmCleanup(tch_threadId tid){
+	if(tch_port_isISR())
+		return __shmem_cleanup(tid);
+	return __SYSCALL_1(shmem_cleanup,tid);
+}
+
 

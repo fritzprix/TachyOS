@@ -107,6 +107,11 @@ SECTIONS
     	*(.sysc.table) 
     	. = ALIGN(4);
     	__syscall_end = . ;   
+    	
+    	/* user executable kernel code */
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	*(.utext)
+    	. = ALIGN(CONFIG_PAGE_SIZE);    
 	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */

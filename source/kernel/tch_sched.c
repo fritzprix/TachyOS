@@ -129,7 +129,7 @@ tchStatus tch_schedWait(tch_thread_queue* wq,uint32_t timeout){
 }
 
 
-BOOL tchk_schedWake(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
+BOOL tch_schedWake(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
 	tch_thread_kheader* nth = NULL;
 	tch_thread_kheader* tpreempt = NULL;
 	if(cdsl_dlistIsEmpty(wq))
@@ -180,7 +180,7 @@ static BOOL tch_schedIsPreemptable(tch_thread_kheader* nth){
 	return (tch_schedReadyQRule(nth,getThreadKHeader(current)) == nth) || ((getThreadKHeader(current)->tslot > 10) && (nth->prior != Idle));
 }
 
-void tchk_schedTerminate(tch_threadId thread, int result){
+void tch_schedTerminate(tch_threadId thread, int result){
 	tch_thread_kheader* jth = 0;
 	tch_thread_kheader* thr = ((tch_thread_uheader*) thread)->kthread;
 	thr->state = TERMINATED;															/// change state of thread to terminated
@@ -191,18 +191,10 @@ void tchk_schedTerminate(tch_threadId thread, int result){
 		tchk_kernelSetResult(jth,result);
 	}
 	jth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);									/// get new thread from readyque
+	current = jth->uthread;
 	tch_port_enterPrivThread(tch_port_switch,(uint32_t)jth,(uint32_t)thr,0);
 }
 
-void tch_schedDestroy(tch_threadId thread,int result){
-	/// manipulated exc stack to return atexit
-	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
-	if(thread == current){
-		tch_port_enterPrivThread(__tchk_thread_atexit,(uint32_t)thread,result,0);
-	}else{
-		tchk_threadInvalidate(thread,result);
-	}
-}
 
 static inline void tch_schedStartKernelThread(tch_threadId init_thr){
 	current = init_thr;

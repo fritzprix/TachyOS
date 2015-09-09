@@ -99,7 +99,7 @@ void* wt_malloc(wt_heapRoot_t* heap,uint32_t sz){
 
 int wt_free(wt_heapRoot_t* heap,void* ptr){
 	if(!heap || !ptr)
-		return WT_FAIL;
+		return WT_ERROR;
 	if(heap->hnodes == NULL_CACHE)
 		return WT_ERROR;
 	uint32_t sz = 0;
@@ -137,9 +137,9 @@ void* wt_cacheMalloc(wt_cache_t* cache,uint32_t sz){
 
 int wt_cacheFree(wt_cache_t* cache,void* ptr){
 	if(!ptr)
-		return WT_FAIL;
+		return WT_ERROR;
 	if(cache->size_limit >= cache->size)
-		return WT_FAIL;
+		return WT_ERROR;
 
 	struct heapHeader* chdr,* nhdr;
 	chdr = (struct heapHeader* ) container_of(ptr,struct heapHeader,wtree_node);
@@ -283,7 +283,7 @@ static int node_free(wt_heapNode_t* alloc,void* ptr,uint32_t* freesz){
 	}
 	if(!ptr){
 		*freesz = 0;
-		return WT_FAIL;
+		return WT_ERROR;
 	}
 
 	struct heapHeader* chdr,*nhdr;

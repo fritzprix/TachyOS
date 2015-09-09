@@ -72,7 +72,7 @@ DEFINE_SYSCALL_2(event_set,tch_eventId,evid,int32_t,ev_signal,int32_t){
 	int32_t psig = evcb->ev_signal;
 	evcb->ev_signal |= ev_signal;
 	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
-		tchk_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
+		tch_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
 	}
 	return psig;
 }
@@ -84,7 +84,7 @@ DEFINE_SYSCALL_2(event_clear,tch_eventId,evid,int32_t,ev_signal,int32_t){
 	int32_t psig = evcb->ev_signal;
 	evcb->ev_signal &= ~ev_signal;
 	if(((evcb->ev_msk & evcb->ev_signal) == evcb->ev_msk) && (!cdsl_dlistIsEmpty(&evcb->ev_blockq))){
-		tchk_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
+		tch_schedWake(&evcb->ev_blockq,1,tchOK,TRUE);
 	}
 	return psig;
 }
@@ -133,7 +133,7 @@ tchStatus event_deinit(tch_eventCb* evcb){
 	if(!evcb || !EVENT_ISVALID(evcb))
 		return tchErrorParameter;
 	if(!cdsl_dlistIsEmpty(&evcb->ev_blockq))
-		tchk_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+		tch_schedWake(&evcb->ev_blockq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tch_unregisterKobject(&evcb->__obj);
 	return tchOK;
 }

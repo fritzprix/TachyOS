@@ -156,9 +156,9 @@ DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus){
 				return (tchStatus) tchOK;
 			}
 		}else{
-			tch_threadPrior prior = tchk_threadGetPriority(tid);
-			if(tchk_threadGetPriority(mcb->own) < prior)
-				tchk_threadSetPriority((tch_threadId)mcb->own,prior);
+			tch_threadPrior prior = tch_threadGetPriority(tid);
+			if(tch_threadGetPriority(mcb->own) < prior)
+				tch_threadSetPriority((tch_threadId)mcb->own,prior);
 			tch_schedWait(&mcb->que,timeout);
 		}
 	}
@@ -171,12 +171,12 @@ DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus){
 	if(!tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) current,(uword_t)NULL))
 		return tchErrorResource;
 	if(!(--current->kthread->lckCnt)){
-		tchk_threadSetPriority(mcb->own,mcb->svdPrior);
+		tch_threadSetPriority(mcb->own,mcb->svdPrior);
 		mcb->svdPrior = Idle;
 	}
 
 	if(!cdsl_dlistIsEmpty(&mcb->que))
-		tchk_schedWake(&mcb->que,1,tchInterrupted,TRUE);
+		tch_schedWake(&mcb->que,1,tchInterrupted,TRUE);
 	return tchOK;
 }
 
@@ -216,9 +216,9 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
 	MTX_INVALIDATE(mcb);
-	tchk_threadSetPriority(current,mcb->svdPrior);
+	tch_threadSetPriority(current,mcb->svdPrior);
 	mcb->svdPrior = Idle;
-	tchk_schedWake(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedWake(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tch_unregisterKobject(&mcb->__obj);
 	return tchOK;
 }
@@ -261,11 +261,11 @@ static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx){
 		return tchErrorParameter;			// current thread is not owner of mutex lock
 
 	if(!(--current->kthread->lckCnt)){
-		tchk_threadSetPriority(lock->own,lock->svdPrior);
+		tch_threadSetPriority(lock->own,lock->svdPrior);
 		lock->svdPrior = Idle;
 	}
 	if(!cdsl_dlistIsEmpty(&lock->que))		// if valid owner , move waiting thread from mutex wait queue to ready queue not preemptive way
-		tchk_schedWake(&lock->que,1,tchInterrupted,FALSE);
+		tch_schedWake(&lock->que,1,tchInterrupted,FALSE);
 	return tchOK;
 }
 
@@ -338,7 +338,7 @@ DEFINE_SYSCALL_1(condv_wake,struct condv_param*,cparm,tchStatus){
 	if((result = tch_mutexUnlockFromCondv(condv->waitMtx)) != tchOK)
 		return result;
 	tch_condvClrWait(condv);
-	tchk_schedWake(&condv->wq,1,tchInterrupted,TRUE);			// wake thread from condv block queue with allowance of preemption
+	tch_schedWake(&condv->wq,1,tchInterrupted,TRUE);			// wake thread from condv block queue with allowance of preemption
 	cparm->arg = condv->waitMtx;
 
 	return tchOK;
@@ -356,7 +356,7 @@ DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
 	if((result = tch_mutexUnlockFromCondv(condv->waitMtx)) != tchOK)
 		return result;
 	tch_condvClrWait(condv);
-	tchk_schedWake(&condv->wq,SCHED_THREAD_ALL,tchInterrupted,TRUE);			// wake thread from condv block queue with allowance of preemption
+	tch_schedWake(&condv->wq,SCHED_THREAD_ALL,tchInterrupted,TRUE);			// wake thread from condv block queue with allowance of preemption
 	cparm->arg = condv->waitMtx;
 
 	return tchOK;
@@ -399,7 +399,7 @@ static tchStatus condv_deint(tch_condvCb* condv){
 	if(!CONDV_ISVALID(condv))
 		return tchErrorResource;
 	tch_unregisterKobject(&condv->__obj);
-	return tchk_schedWake(&condv->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	return tch_schedWake(&condv->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 }
 
 static tch_condvId tch_condvCreate(){

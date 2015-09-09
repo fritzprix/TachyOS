@@ -49,6 +49,7 @@
  *  syscall definition
  */
 #define __SYSCALL__	__attribute__((section(".sysc.table")))
+#define __USER_API__	__attribute__((section(".utext")))
 
 typedef uword_t (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
 extern uint32_t __syscall_entry;
@@ -127,7 +128,7 @@ extern tchStatus tch_kernelDisableInterrupt(IRQn_Type irq);
 
 
 extern tchStatus __tch_noop_destr(tch_kobj* obj);
-extern void __tchk_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
+extern void __tch_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
 
 
 /**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode

@@ -60,7 +60,7 @@ DEFINE_SYSCALL_3(messageQ_put,tch_msgqId,msgq,uword_t,msg,uint32_t,timeout,tchSt
 		if (msgqCb->pidx >= msgqCb->sz)
 			msgqCb->pidx = 0;
 		msgqCb->updated++;
-		tchk_schedWake((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchInterrupted, TRUE);
+		tch_schedWake((tch_thread_queue*) &msgqCb->cwq,SCHED_THREAD_ALL, tchInterrupted, TRUE);
 		return tchOK;
 	}
 	if(timeout)
@@ -83,7 +83,7 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 	if(msgqcb->gidx >= msgqcb->sz)
 		msgqcb->gidx = 0;
 	msgqcb->updated--;
-	tchk_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
+	tch_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	return eventp->status = tchEventMessage;
 }
 
@@ -199,8 +199,8 @@ static tchStatus msgq_deinit(tch_msgqCb* mq){
 		return tchErrorParameter;
 	mq->updated = 0;
 	tch_msgqInvalidate(mq);
-	tchk_schedWake((tch_thread_queue*) &mq->pwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
-	tchk_schedWake((tch_thread_queue*) &mq->cwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
+	tch_schedWake((tch_thread_queue*) &mq->pwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
+	tch_schedWake((tch_thread_queue*) &mq->cwq, SCHED_THREAD_ALL,tchErrorResource, FALSE);
 	tch_unregisterKobject(&mq->__obj);
 	return tchOK;
 }

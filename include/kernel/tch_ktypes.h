@@ -58,12 +58,12 @@ typedef struct tch_dynamic_bin_header_t {
 typedef enum {mSECOND = 0,SECOND = 1} tch_timeunit;
 
 typedef enum tch_thread_state_t {
-	PENDED =  ((int8_t) 1),                              // state in which thread is created but not started yet (waiting in ready queue)
-	RUNNING = ((int8_t) 2),                             // state in which thread occupies cpu
+	PENDED =  ((int8_t) 1),                            // state in which thread is created but not started yet (waiting in ready queue)
+	RUNNING = ((int8_t) 2),                            // state in which thread occupies cpu
 	READY =   ((int8_t) 3),
-	WAIT =    ((int8_t) 4),                                // state in which thread wait for event (wake)
-	SLEEP =   ((int8_t) 5),                               // state in which thread is yield cpu for given amount of time
-	DESTROYED =  ((int8_t) 6),                           // state in which thread is about to be destroyed (sheduler detected this and route thread to destroy routine)
+	WAIT =    ((int8_t) 4),                            // state in which thread wait for event (wake)
+	SLEEP =   ((int8_t) 5),                            // state in which thread is yield cpu for given amount of time
+	DESTROYED =  ((int8_t) 6),                         // state in which thread is about to be destroyed (sheduler detected this and route thread to destroy routine)
 	TERMINATED = ((int8_t) -1)                         // state in which thread has finished its task
 } tch_threadState;
 
@@ -80,55 +80,57 @@ typedef struct tch_thread_queue{
 
 struct tch_mm {
 	struct proc_dynamic* 	dynamic;			///< per process dynamic memory mangement struct
-	struct mem_region* 		text_region;		///<
-	struct mem_region* 		bss_region;
-	struct mem_region* 		data_region;
-	struct mem_region* 		stk_region;
-	struct mem_region*		heap_region;
-//	rb_treeNode_t*			kobjs;				///< per thread kobjects tree (red-black tree)
+	struct mem_region* 		text_region;		///< per process memory region where text section is stored
+	struct mem_region* 		bss_region;			///< per process memory region where bss section is stored
+	struct mem_region* 		data_region;		///< per process memory region where data section is stored
+	struct mem_region* 		stk_region;			///< per process memory region to be used as stack
+	struct mem_region*		heap_region;		///< per process memory region to be used as heap
 	cdsl_dlistNode_t		kobj_list;			///< per thread kobjects list
 	cdsl_dlistNode_t		alc_list;
 	cdsl_dlistNode_t		shm_list;
 	pgd_t* 					pgd;
 	paddr_t 				estk;
+#define ROOT				((uint32_t) 1)
+#define DYN					((uint32_t) 2)
+	uint32_t				flags;
 };
 
 struct tch_thread_uheader_s {
-	tch_thread_routine          fn;			///<thread function pointer
-	rb_treeNode_t*			    uobjs;		///<user object tree for tracking
-	void* 	 					cache;
-	uword_t                     kRet;			///<kernel return value
-	const char*                 name;			///<thread name
-	void*                       t_arg;			///<thread arg field
-	tch_thread_kheader*			kthread;		///<pointer to kernel level thread header
+	tch_thread_routine			fn;					///<thread function pointer
+	rb_treeNode_t*				uobjs;				///<user object tree for tracking
+	void*						cache;
+	uword_t						kRet;				///<kernel return value
+	const char*					name;				///<thread name
+	void*						t_arg;				///<thread arg field
+	tch_thread_kheader*			kthread;			///<pointer to kernel level thread header
 	void*						heap;
 	tch_condvId 				condv;
-	tch_mtxId 					mtx;
-#ifdef __NEWLIB__
-	struct _reent               reent;		///<reentrant struct used by c standard library
+	tch_mtxId					mtx;
+#ifdef __NEWLIB__									///<@NOTE : NEWLIBC will be replaced by tch_libc which is more suitable for low-cost embedded system
+	struct _reent				reent;				///<reentrant struct used by LIBC
 #endif
-	uint32_t					chks;			///<check-sum for determine corruption of thread header
+	uint32_t					chks;				///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
-	cdsl_dlistNode_t                t_schedNode;	///<thread queue node to be scheduled
-	cdsl_dlistNode_t                t_waitNode;		///<thread queue node to be blocked
-	cdsl_dlistNode_t                t_joinQ;		///<thread queue to wait for this thread's termination
-	cdsl_dlistNode_t                child_list;		///<thread queue node to iterate child thread
+	cdsl_dlistNode_t				t_schedNode;	///<thread queue node to be scheduled
+	cdsl_dlistNode_t				t_waitNode;		///<thread queue node to be blocked
+	cdsl_dlistNode_t				t_joinQ;		///<thread queue to wait for this thread's termination
+	cdsl_dlistNode_t				child_list;		///<thread queue node to iterate child thread
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
-	cdsl_dlistNode_t*               t_waitQ;		///<reference to wait queue in which this thread is waiting
-	void*   	                    ctx;			///<ptr to thread saved context (stack pointer value)
-	struct tch_mm					mm;			///<ptr to per-process memory management handle
+	cdsl_dlistNode_t*				t_waitQ;		///<reference to wait queue in which this thread is waiting
+	void*							ctx;			///<ptr to thread saved context (stack pointer value)
+	struct tch_mm					mm;				///<embedded memory management handle struct
 	cdsl_dlistNode_t				t_palc;			///<allocation list for page
-	cdsl_dlistNode_t                t_pshalc;		///<allocation list for shared heap
+	cdsl_dlistNode_t				t_pshalc;		///<allocation list for shared heap
 	cdsl_dlistNode_t				t_upshalc;
-	uint32_t                	    tslot;		///<time slot for round robin scheduling (currently not used)
+	uint32_t						tslot;			///<time slot for round robin scheduling (currently not used)
 	uint32_t						permission;
-	tch_threadState       	   		state;		///<thread state
-	uint8_t                	    	flag;			///<flag for dealing with attributes of thread
-	uint8_t                	     	lckCnt;		///<lock count to know whether  restore original priority
-	uint8_t               	 	    prior;		///<priority
-	uint64_t						to;			///<timeout value for pending operation
+	tch_threadState					state;			///<thread state
+	uint8_t							flag;			///<flag for dealing with attributes of thread
+	uint8_t							lckCnt;			///<lock count to know whether  restore original priority
+	uint8_t							prior;			///<priority
+	uint64_t						to;				///<timeout value for pending operation
 	tch_thread_uheader*				uthread;		///<pointer to user level thread header
 	tch_thread_kheader*				parent;
 } __attribute__((aligned(8)));
@@ -164,9 +166,9 @@ struct tch_thread_kheader_s {
 #define SV_CONDV_DEINIT					 ((uint32_t) 0x2F)
 
 #define SV_MSGQ_INIT					 ((uint32_t) 0x30)
-#define SV_MSGQ_PUT                      ((uint32_t) 0x31)               ///< Supervisor call id to put msg to msgq
-#define SV_MSGQ_GET                      ((uint32_t) 0x32)               ///< Supervisor call id to get msg from msgq
-#define SV_MSGQ_DEINIT                  ((uint32_t) 0x33)               ///< Supervisro call id to destoy msgq
+#define SV_MSGQ_PUT                      ((uint32_t) 0x31)              ///< Supervisor call id to put msg to msgq
+#define SV_MSGQ_GET                      ((uint32_t) 0x32)              ///< Supervisor call id to get msg from msgq
+#define SV_MSGQ_DEINIT                   ((uint32_t) 0x33)              ///< Supervisro call id to destoy msgq
 
 #define SV_MEMP_ALLOC                    ((uint32_t) 0x34)               ///< Supervisor call id to allocate memory chunk form mem pool
 #define SV_MEMP_FREE                     ((uint32_t) 0x35)               ///< Supervisor call id to free memory chunk into mem pool

@@ -173,7 +173,7 @@ extern struct tch_mm		init_mm;
 extern volatile struct tch_mm* current_mm;
 
 extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
-extern int tch_mmProcClean(tch_thread_kheader* thread);
+extern BOOL tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
 

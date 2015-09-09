@@ -32,6 +32,7 @@ extern "C" {
 #include "tch_adc.h"
 #include "tch_timer.h"
 #include "tch_gpio.h"
+#include "tch_sdio.h"
 
 
 struct tch_hal_t{
@@ -84,11 +85,11 @@ struct _tch_thread_ix_t {
 	 *  Start New Thread
 	 */
 	tchStatus (*start)(tch_threadId thread);
-	tchStatus (*terminate)(tch_threadId thread,tchStatus err);
 	tch_threadId (*self)();
 	tchStatus (*yield)(uint32_t millisec);
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
+	tchStatus (*terminate)(tch_threadId thread,tchStatus res);
 	void (*initCfg)(tch_threadCfg* cfg,
 					tch_thread_routine entry,
 					tch_threadPrior prior,

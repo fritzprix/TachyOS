@@ -85,7 +85,7 @@ DEFINE_SYSCALL_1(semaphore_unlock,tch_semId,semid,tchStatus){
 	tch_semCb* sem = (tch_semCb*) semid;
 	sem->count++;
 	if(!cdsl_dlistIsEmpty(&sem->wq)){
-		tchk_schedWake((tch_thread_queue*) &sem->wq, SCHED_THREAD_ALL,tchInterrupted,TRUE);
+		tch_schedWake((tch_thread_queue*) &sem->wq, SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	}
 	return tchOK;
 }
@@ -165,7 +165,7 @@ tchStatus sem_deinit(tch_semCb* scb){
 	scb->count = 0;
 	tch_semaphoreInvalidate(scb);
 	if(!cdsl_dlistIsEmpty(&scb->wq)){
-		tchk_schedWake((tch_thread_queue*) &scb->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+		tch_schedWake((tch_thread_queue*) &scb->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	}
 	tch_unregisterKobject(&scb->__obj);
 	return tchOK;

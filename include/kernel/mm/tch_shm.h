@@ -13,6 +13,7 @@
 extern void tch_shm_init(int seg_id);
 extern void* tch_shmAlloc(size_t sz);
 extern tchStatus tch_shmFree(void* mchunk);
+extern tchStatus tch_shmCleanup(tch_threadId tid);
 
 
 #endif /* TCH_SHM_H_ */

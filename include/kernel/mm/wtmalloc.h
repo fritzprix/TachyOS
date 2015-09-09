@@ -12,7 +12,6 @@
 #include "wtree.h"
 
 #define WT_ERROR	((int) -1)
-#define WT_FAIL		((int) 0)
 #define WT_OK		((int) 1)
 
 

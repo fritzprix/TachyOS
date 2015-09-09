@@ -107,7 +107,7 @@ DEFINE_SYSCALL_3(mailq_put,tch_mailqId,qid,void*,block,uint32_t,timeout,tchStatu
 	if(mailq->pidx >= mailq->qlen)
 		mailq->pidx = 0;
 	if(!cdsl_dlistIsEmpty(&mailq->gwq)){
-		tchk_schedWake((tch_thread_queue* ) &mailq->gwq,1,tchInterrupted,TRUE);
+		tch_schedWake((tch_thread_queue* ) &mailq->gwq,1,tchInterrupted,TRUE);
 	}
 	return tchOK;
 }
@@ -131,7 +131,7 @@ DEFINE_SYSCALL_3(mailq_get,tch_mailqId,qid,uint32_t,timeout,tchEvent*,evp,tchSta
 	if(mailq->gidx >= mailq->qlen)
 		mailq->gidx = 0;
 	if(!cdsl_dlistIsEmpty(&mailq->gwq)){
-		tchk_schedWake((tch_thread_queue*) &mailq->pwq,1,tchInterrupted,TRUE);
+		tch_schedWake((tch_thread_queue*) &mailq->pwq,1,tchInterrupted,TRUE);
 	}
 	return evp->status;
 }
@@ -144,7 +144,7 @@ DEFINE_SYSCALL_2(mailq_free,tch_mailqId,qid,void*,block,tchStatus){
 	tch_mailqCb* mailq = (tch_mailqCb*) qid;
 	if(Mempool->free(mailq->bpool,block) != tchOK)
 		return tchErrorParameter;
-	tchk_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tch_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
 	return tchOK;
 }
 
@@ -272,9 +272,9 @@ static tchStatus mailq_deinit(tch_mailqCb* qid){
 		return tchErrorResource;
 	tch_mailqCb* mailq = (tch_mailqCb*) qid;
 	tch_mailqInvalidate(qid);
-	tchk_schedWake((tch_thread_queue*) &mailq->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	tchk_schedWake((tch_thread_queue*) &mailq->gwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
-	tchk_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
+	tch_schedWake((tch_thread_queue*) &mailq->pwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedWake((tch_thread_queue*) &mailq->gwq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorResource,TRUE);
 	tch_unregisterKobject(&mailq->__obj);
 	return tchOK;
 }

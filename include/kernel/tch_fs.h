@@ -8,24 +8,31 @@
 #ifndef TCH_FS_H_
 #define TCH_FS_H_
 
+#include "tch_ktypes.h"
 #include "cdsl_rbtree.h"
 
 struct tch_file_operations;
+
+
+struct tch_dentry {
+
+};
+
 struct tch_file {
-	uint32_t					flag;
-	uint32_t					status;
-	rb_treeNode_t				rbnode;
-	void*						handle;				//
+	void*						data;				//
 	struct tch_file_operations*	ops;
 };
 
 struct tch_file_operations {
 	int (*open)(struct tch_file* filp);
-	size_t (*read)(struct tch_file* filp,char* bp,size_t len);
-	size_t (*write)(struct tch_file* filp,const char* bp,size_t len);
+	ssize_t (*read)(struct tch_file* filp,char* bp,size_t len);
+	ssize_t (*write)(struct tch_file* filp,const char* bp,size_t len);
 	int (*close)(struct tch_file* filp);
-	size_t (*seek)(struct tch_file* filp,size_t offset,int whence);
+	ssize_t (*seek)(struct tch_file* filp,size_t offset,int whence);
 };
+
+
+
 
 
 #endif /* TCH_FS_H_ */
