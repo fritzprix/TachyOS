@@ -120,7 +120,7 @@ int main(const tch* env) {
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
 	int cnt = 0;
 	int16_t x,y,z;
-	while(0){
+	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,9,tchWaitForever);
 //		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
@@ -148,7 +148,7 @@ static DECLARE_THREADROUTINE(btnHandler){
 	tch_spiHandle* spi = (tch_spiHandle*) env->Thread->getArg();
 	char c;
 
-	while(0){
+	while(TRUE){
 		spi->write(spi,"Press Button",11);
 //		env->uStdLib->stdio->iprintf("\rButton Loop\n");
 		env->Thread->sleep(2);

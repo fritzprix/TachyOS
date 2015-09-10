@@ -122,7 +122,11 @@ DEFINE_SYSCALL_2(thread_terminate,tch_threadId,tid,tchStatus,err,tchStatus){
 		return tchErrorParameter;
 
 	tch_schedTerminate(tid,err);
+	if(tch_threadIsRoot(tid)){
+		cdsl_dlistRemove(&getThreadKHeader(tid)->t_siblingLn);
+	}
 	tch_mmProcClean(getThreadKHeader(tid));
+	kfree(getThreadKHeader(tid));
 	return tchOK;
 }
 
@@ -264,8 +268,8 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 
 static tchStatus tch_threadStart(tch_threadId thread){
-	if(tch_port_isISR()){                 // check current execution mode (Thread or Handler)
-		tch_schedReady(thread);    // if handler mode call, put current thread in ready queue
+	if(tch_port_isISR()){			// check current execution mode (Thread or Handler)
+		tch_schedReady(thread);		// if handler mode call, put current thread in ready queue
 		return tchOK;
 	}
 	return __SYSCALL_1(thread_start,thread);
@@ -277,7 +281,6 @@ tchStatus tch_threadExit(tch_threadId thread,tchStatus result){
 	}
 	return __SYSCALL_2(thread_exit, thread,result);
 }
-
 
 
 static tch_threadId tch_threadSelf(){

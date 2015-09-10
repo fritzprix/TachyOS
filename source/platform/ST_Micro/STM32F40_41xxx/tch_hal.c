@@ -776,7 +776,9 @@ void tch_hal_enterSleepMode(){
 }
 
 void tch_hal_pauseSysClock(){
-
+	/**
+	 * STM32F4/2x handles main clock suspension when system enter sleep mode
+	 */
 }
 
 void tch_hal_resumeSysClock(){

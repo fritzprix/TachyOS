@@ -3,6 +3,11 @@
  *
  *  Created on: Jun 13, 2015
  *      Author: innocentevil
+ *
+ *
+ *      WTree is devised for memory management for low cost system in which rich hardware support could not be expected.
+ *      WTree is special kind of binary tree which has a little difference in insertion and deletion of node.
+ *      1. insert new node
  */
 
 #include "tch_ktypes.h"
@@ -40,7 +45,6 @@ void wtreeNodeInit(wtreeNode_t* node,uint32_t base,uint32_t span){
 size_t wtreeTotalSpan(wtreeRoot_t* root){
 	return span_r(root->entry);
 }
-
 
 void wtreeInsert(wtreeRoot_t* root,wtreeNode_t* item){
 	if(!root)
