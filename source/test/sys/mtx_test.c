@@ -63,23 +63,23 @@ static void race(tch* api){
 
 static DECLARE_THREADROUTINE(child1Routine){
 	tchStatus result = tchOK;
-	if((result = env->Mtx->lock(mmtx,10)) != tchErrorTimeoutResource)    // Timeout expected
+	if((result = ctx->Mtx->lock(mmtx,10)) != tchErrorTimeoutResource)    // Timeout expected
 		return tchErrorOS;
-	if((result = env->Mtx->unlock(mmtx)) != tchErrorResource)
+	if((result = ctx->Mtx->unlock(mmtx)) != tchErrorResource)
 		return tchErrorOS;
-	if((result = env->Mtx->lock(mmtx,tchWaitForever)) != tchOK)
+	if((result = ctx->Mtx->lock(mmtx,tchWaitForever)) != tchOK)
 		return tchErrorOS;
-	env->Thread->start(child2);
-	race(env);
-	env->Mtx->destroy(mmtx);
-	return env->Thread->join(child2,tchWaitForever);
+	ctx->Thread->start(child2);
+	race(ctx);
+	ctx->Mtx->destroy(mmtx);
+	return ctx->Thread->join(child2,tchWaitForever);
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
-	race(env);
+	race(ctx);
 	tchStatus result = tchOK;
-	env->Thread->yield(50);
-	if((result = env->Mtx->lock(mmtx,tchWaitForever)) == tchErrorResource)
+	ctx->Thread->yield(50);
+	if((result = ctx->Mtx->lock(mmtx,tchWaitForever)) == tchErrorResource)
 		return tchOK;
 	return tchErrorOS;
 }

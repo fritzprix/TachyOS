@@ -105,8 +105,7 @@ int wt_free(wt_heapRoot_t* heap,void* ptr){
 	uint32_t sz = 0;
 	int result = WT_OK;
 	heap->hnodes = free_node_r(heap->hnodes,ptr,&sz,&result);
-	if(sz != 0)
-		heap->free_sz += sz;
+	heap->free_sz += sz;
 	return result;
 }
 
@@ -159,18 +158,6 @@ void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache){
 	while((wtn = wtreeDeleteRightMost(&cache->entry)) != NULL) {
 		wt_free(heap,wtn);
 	}
-}
-
-uint32_t wt_size(wt_heapRoot_t* heap){
-	if(!heap)
-		return 0;
-	return heap->size;
-}
-
-uint32_t wt_available(wt_heapRoot_t* heap){
-	if(!heap)
-		return 0;
-	return heap->free_sz;
 }
 
 

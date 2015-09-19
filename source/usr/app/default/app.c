@@ -56,7 +56,7 @@ static DECLARE_THREADROUTINE(btnHandler);
 tch_threadId btnHandleThread;
 tch_threadId childId;
 
-int main(const tch* env) {
+int main(const tch* ctx) {
 
 
 	tch_spiCfg spicfg;
@@ -66,18 +66,18 @@ int main(const tch* env) {
 	spicfg.FrmFormat = SPI_FRM_FORMAT_8B;
 	spicfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
 
-	tch_spiHandle* spi = env->Device->spi->allocSpi(env,tch_spi0,&spicfg,tchWaitForever,ActOnSleep);
+	tch_spiHandle* spi = ctx->Device->spi->allocSpi(ctx,tch_spi0,&spicfg,tchWaitForever,ActOnSleep);
 
 	tch_threadCfg thcfg;
-	env->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
-	env->Thread->initCfg(&thcfg,childThreadRoutine,Normal,720,0,"child1");
-	childId = env->Thread->create(&thcfg,spi);
+	ctx->uStdLib->string->memset(&thcfg,0,sizeof(tch_threadCfg));
+	ctx->Thread->initCfg(&thcfg,childThreadRoutine,Normal,720,0,"child1");
+	childId = ctx->Thread->create(&thcfg,spi);
 
-	env->Thread->initCfg(&thcfg,btnHandler,Normal,720,0,"btnHandler");
-	btnHandleThread = env->Thread->create(&thcfg,spi);
+	ctx->Thread->initCfg(&thcfg,btnHandler,Normal,720,0,"btnHandler");
+	btnHandleThread = ctx->Thread->create(&thcfg,spi);
 
-	env->Thread->start(childId);
-	env->Thread->start(btnHandleThread);
+	ctx->Thread->start(childId);
+	ctx->Thread->start(btnHandleThread);
 
 
 	tch_pwmDef pwmDef;
@@ -85,11 +85,11 @@ int main(const tch* env) {
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.PeriodInUnitTime = 1000;
 
-	tch_pwmHandle* pwm = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,tchWaitForever);
+	tch_pwmHandle* pwm = ctx->Device->timer->openPWM(ctx,tch_TIMER2,&pwmDef,tchWaitForever);
 	pwm->setOutputEnable(pwm,1,TRUE,tchWaitForever);
 
 	tch_iicCfg iicCfg;
-	env->Device->i2c->initCfg(&iicCfg);
+	ctx->Device->i2c->initCfg(&iicCfg);
 	iicCfg.Addr = 0xD2;
 	iicCfg.AddrMode = IIC_ADDRMODE_7B;
 	iicCfg.Baudrate = IIC_BAUDRATE_HIGH;
@@ -98,11 +98,11 @@ int main(const tch* env) {
 	iicCfg.OpMode = IIC_OPMODE_FAST;
 
 
-	tch_iicHandle* iic = env->Device->i2c->allocIIC(env,IIc2,&iicCfg,tchWaitForever,ActOnSleep);
+	tch_iicHandle* iic = ctx->Device->i2c->allocIIC(ctx,IIc2,&iicCfg,tchWaitForever,ActOnSleep);
 
 	uint32_t loopcnt = 0;
 	uint8_t buf[10];
-	env->uStdLib->string->memset(buf,0,sizeof(uint8_t) * 10);
+	ctx->uStdLib->string->memset(buf,0,sizeof(uint8_t) * 10);
 	tchStatus result = tchOK;
 
 	buf[0] = MO_CTRL_REG4;
@@ -111,7 +111,7 @@ int main(const tch* env) {
 
 	iic->write(iic,msAddr,&MO_CTRL_REG4,1);
 	result = iic->read(iic,msAddr,buf,1,tchWaitForever);
-//	env->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
+//	ctx->uStdLib->stdio->iprintf("\rRead Value : %d\n",buf[0]);
 
 	buf[0] = MO_CTRL_REG1;
 	buf[1] = ((1 << 3) | 7);
@@ -120,10 +120,10 @@ int main(const tch* env) {
 	uint8_t datareadAddr = (MO_OUT_X_L | 128);
 	int cnt = 0;
 	int16_t x,y,z;
-	while(0){
+	while(TRUE){
 		iic->write(iic,msAddr,&datareadAddr,1);
 		iic->read(iic,msAddr,buf,9,tchWaitForever);
-//		env->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
+//		ctx->uStdLib->stdio->iprintf("\rMotion X  : %d, Y  : %d, Z  : %d\n",(*(int16_t*)&buf[0]),(*(int16_t*)&buf[2]),(*(int16_t*)&buf[4]));
 		x = (*(int16_t*)&buf[0]);
 		y = ((*(int16_t*)&buf[2]));
 		z = (*(int16_t*)&buf[4]);
@@ -131,13 +131,13 @@ int main(const tch* env) {
 		pwm->write(pwm,1,dutyArr,10);
 		pwm->stop(pwm);
 		if((loopcnt++ % 1000) == 0){
-	//		env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
+	//		ctx->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",ctx->Mem->available());
 		}
 		spi->write(spi,"Hello World,Im the main!!!",16);
 		if((loopcnt % 1000) == 500){
-	//		env->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",env->Mem->available());
+	//		ctx->uStdLib->stdio->iprintf("\r\nHeap Available Sizes : %d bytes\n",ctx->Mem->available());
 		}
-		env->Thread->sleep(1);
+		ctx->Thread->sleep(1);
 	}
 	return tchOK;
 }
@@ -145,45 +145,45 @@ int main(const tch* env) {
 
 static DECLARE_THREADROUTINE(btnHandler){
 
-	tch_spiHandle* spi = (tch_spiHandle*) env->Thread->getArg();
+	tch_spiHandle* spi = (tch_spiHandle*) ctx->Thread->getArg();
 	char c;
 
-	while(0){
+	while(TRUE){
 		spi->write(spi,"Press Button",11);
-//		env->uStdLib->stdio->iprintf("\rButton Loop\n");
-		env->Thread->sleep(2);
+//		ctx->uStdLib->stdio->iprintf("\rButton Loop\n");
+		ctx->Thread->sleep(2);
 	}
 	return tchOK;
 }
 
 
 static DECLARE_THREADROUTINE(childThreadRoutine){
-	tch_spiHandle* spi = (tch_spiHandle*)  env->Thread->getArg();
-	tch_mailqId adcReadQ = env->MailQ->create(100,2);
+	tch_spiHandle* spi = (tch_spiHandle*)  ctx->Thread->getArg();
+	tch_mailqId adcReadQ = ctx->MailQ->create(100,2);
 	struct tm ltm;
 	tchEvent evt;
-	env->uStdLib->string->memset(&evt,0,sizeof(tchEvent));
+	ctx->uStdLib->string->memset(&evt,0,sizeof(tchEvent));
 	tch_adcCfg adccfg;
-	env->Device->adc->initCfg(&adccfg);
+	ctx->Device->adc->initCfg(&adccfg);
 	adccfg.Precision = ADC_Precision_10B;
 	adccfg.SampleFreq = 10000;
 	adccfg.SampleHold = ADC_SampleHold_Short;
-	env->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch5);
+	ctx->Device->adc->addChannel(&adccfg.chdef,tch_ADC_Ch5);
 
 
-	tch_adcHandle* adc = env->Device->adc->open(env,tch_ADC1,&adccfg,ActOnSleep,tchWaitForever);
+	tch_adcHandle* adc = ctx->Device->adc->open(ctx,tch_ADC1,&adccfg,ActOnSleep,tchWaitForever);
 
 	while(TRUE){
-//		env->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
+//		ctx->uStdLib->stdio->iprintf("\rRead Analog Value : %d \n",adc->read(adc,tch_ADC_Ch5));
 		adc->readBurst(adc,tch_ADC_Ch5,adcReadQ,100,1);
-		evt = env->MailQ->get(adcReadQ,tchWaitForever);
+		evt = ctx->MailQ->get(adcReadQ,tchWaitForever);
 		if(evt.status == tchEventMail){
-			env->MailQ->free(adcReadQ,evt.value.p);
+			ctx->MailQ->free(adcReadQ,evt.value.p);
 		}
 
-		env->Time->getLocaltime(&ltm);
-//		env->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
-		env->Thread->sleep(1);
+		ctx->Time->getLocaltime(&ltm);
+//		ctx->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
+		ctx->Thread->sleep(1);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
 	}
 	return tchOK;

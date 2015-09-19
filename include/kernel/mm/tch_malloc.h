@@ -13,7 +13,8 @@
 
 extern void* tch_malloc(size_t sz);
 extern void tch_free(void* ptr);
-extern size_t tch_avail();
+extern void tch_mstat(mstat* statp);
+extern size_t tch_avail(void);
 
 
 #endif /* TCH_MALLOC_H_ */

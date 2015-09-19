@@ -25,12 +25,13 @@ static int 					shm_init_segid;
 DECLARE_SYSCALL_1(shmem_alloc,size_t,void*);
 DECLARE_SYSCALL_1(shmem_free,void*,tchStatus);
 DECLARE_SYSCALL_1(shmem_cleanup,tch_threadId,tchStatus);
+DECLARE_SYSCALL_1(shmem_statm,mstat*,tchStatus);
 
 struct shmalloc_header {
 	cdsl_dlistNode_t	alc_ln;
 };
 
-void tch_shm_init(int seg_id){
+void tch_shmInit(int seg_id){
 	if(seg_id < 0)
 		KERNEL_PANIC("tch_shm.c","Segment given in initialization is not valid");
 
@@ -50,7 +51,7 @@ DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 		return NULL;
 	struct shmalloc_header* chnk;
 	size_t asz = sz + sizeof(struct shmalloc_header);
-	if(!(wt_available(&shm_root) > asz)){
+	if(!(shm_root.free_sz > asz)){
 		struct mem_region* nregion = (struct mem_region*) kmalloc(sizeof(struct mem_region));
 		wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
 
@@ -100,11 +101,23 @@ DEFINE_SYSCALL_1(shmem_cleanup,tch_threadId,tid,tchStatus){
 	return tchOK;
 }
 
+
+DEFINE_SYSCALL_1(shmem_statm,mstat*,statp,tchStatus){
+	if(!statp)
+		return tchErrorParameter;
+	statp->total = shm_root.size;
+	statp->used = shm_root.size - shm_root.free_sz;
+	statp->cached = 0;
+	return tchOK;
+}
+
+
 void* tch_shmAlloc(size_t sz){
 	if(tch_port_isISR())
 		return __shmem_alloc(sz);
 	return (void*) __SYSCALL_1(shmem_alloc,sz);
 }
+
 
 tchStatus tch_shmFree(void* mchunk){
 	if(tch_port_isISR())
@@ -112,10 +125,17 @@ tchStatus tch_shmFree(void* mchunk){
 	return __SYSCALL_1(shmem_free,mchunk);
 }
 
-tchStatus tch_shmCleanup(tch_threadId tid){
+
+void tch_shmStat(mstat* stat) {
+	if(tch_port_isISR())
+		__shmem_statm(stat);
+	__SYSCALL_1(shmem_statm,stat);
+}
+
+
+tchStatus tch_shmCleanup(tch_threadId tid) {
 	if(tch_port_isISR())
 		return __shmem_cleanup(tid);
 	return __SYSCALL_1(shmem_cleanup,tid);
 }
-
 

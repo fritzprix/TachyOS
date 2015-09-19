@@ -98,16 +98,16 @@ tchStatus msgq_performTest(tch* api){
 static DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	while(cnt < 50){
-		env->MsgQ->put(mid,0xFF,tchWaitForever);
+		ctx->MsgQ->put(mid,0xFF,tchWaitForever);
 		out->out(out,1 << 2,bClear);
-		env->Thread->yield(1);
+		ctx->Thread->yield(1);
 		out->out(out,1 << 2,bSet);
-		env->Thread->yield(1);
+		ctx->Thread->yield(1);
 		cnt++;
 	}
-	env->Barrier->wait(mBar,tchWaitForever);
-	env->Thread->yield(10);
-	env->MsgQ->destroy(mid);
+	ctx->Barrier->wait(mBar,tchWaitForever);
+	ctx->Thread->yield(10);
+	ctx->MsgQ->destroy(mid);
 	return tchOK;
 }
 
@@ -117,7 +117,7 @@ static DECLARE_THREADROUTINE(receiver){
 	uint32_t mval = 0;
 	uint32_t totalMsgcnt = 0;
 	while(cnt < 100){
-		evt = env->MsgQ->get(mid,tchWaitForever);
+		evt = ctx->MsgQ->get(mid,tchWaitForever);
 		totalMsgcnt++;
 		if(evt.status == tchEventMessage){
 			cnt++;
@@ -131,11 +131,11 @@ static DECLARE_THREADROUTINE(receiver){
 			}
 		}
 	}
-	evt = env->MsgQ->get(mid,10);
+	evt = ctx->MsgQ->get(mid,10);
 	if(evt.status != tchErrorTimeoutResource)
 		return tchErrorOS;
-	env->Barrier->signal(mBar,tchOK);
-	evt = env->MsgQ->get(mid,tchWaitForever);
+	ctx->Barrier->signal(mBar,tchOK);
+	evt = ctx->MsgQ->get(mid,tchWaitForever);
 	if(evt.status != tchErrorResource)
 		return tchErrorResource;
 	return tchOK;

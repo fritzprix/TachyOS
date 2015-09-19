@@ -14,6 +14,7 @@ extern void tch_kmalloc_init(int segid);
 
 extern void* kmalloc(size_t sz);
 extern void kfree(void* );
+extern void kmstat(mstat* sp);
 
 
 #endif /* TCH_KMALLOC_H_ */

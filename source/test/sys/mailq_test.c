@@ -53,11 +53,11 @@ DECLARE_THREADROUTINE(sender){
 	uint32_t cnt = 0;
 	person* p = NULL;
 	while(cnt < 100){
-		p = env->MailQ->alloc(testmailq_id,tchWaitForever,NULL);
+		p = ctx->MailQ->alloc(testmailq_id,tchWaitForever,NULL);
 		memset(p,0,sizeof(person));
 		p->age = 0;
 		p->sex = 1;
-		env->MailQ->put(testmailq_id,p,1000);
+		ctx->MailQ->put(testmailq_id,p,1000);
 		cnt++;
 	}
 	return tchOK;
@@ -67,8 +67,8 @@ DECLARE_THREADROUTINE(receiver){
 	uint32_t cnt = 0;
 	tchEvent evt;
 	while(cnt < 100){
-		evt = env->MailQ->get(testmailq_id,tchWaitForever);
-		env->MailQ->free(testmailq_id,(void*)evt.value.v);
+		evt = ctx->MailQ->get(testmailq_id,tchWaitForever);
+		ctx->MailQ->free(testmailq_id,(void*)evt.value.v);
 		if(evt.status == tchEventMail)
 			cnt++;
 	}

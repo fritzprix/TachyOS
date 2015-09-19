@@ -72,8 +72,7 @@ struct tch_hal_t{
 
 #define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
-#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* env)
-
+#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* ctx)
 
 
 struct _tch_thread_ix_t {
@@ -99,6 +98,7 @@ struct _tch_thread_ix_t {
 	void* (*getArg)();
 };
 
+
 struct _tch_mutex_ix_t {
 	tch_mtxId (*create)();
 	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
@@ -114,6 +114,7 @@ struct _tch_semaph_ix_t {
 	tchStatus (*destroy)(tch_semId sid);
 };
 
+
 struct _tch_bar_ix_t {
 	tch_barId (*create)();
 	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
@@ -128,8 +129,6 @@ struct _tch_systime_ix_t {
 	uint64_t (*getCurrentTimeMills)();
 	uint64_t (*uptimeMills)();
 };
-
-
 
 
 /*!
@@ -238,12 +237,11 @@ struct _tch_mailbox_ix_t {
 struct _tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
-	size_t (*available)();
+	void (*mstat)(mstat* statp);
 };
 
 
 #include "tch_nclib.h"
-
 extern DECLARE_THREADROUTINE(main);
 
 

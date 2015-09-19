@@ -61,19 +61,19 @@ tchStatus semaphore_performTest(tch* api){
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(env->Sem->lock(ts,10) != tchErrorTimeoutResource)
+	if(ctx->Sem->lock(ts,10) != tchErrorTimeoutResource)
 		return tchErrorOS;
-	env->Sem->unlock(ts);
-	if(env->Sem->lock(ts,tchWaitForever) != tchOK)
+	ctx->Sem->unlock(ts);
+	if(ctx->Sem->lock(ts,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	env->Sem->unlock(ts);
-	env->Thread->start(ch2Id);
-	env->Thread->start(ch3Id);
+	ctx->Sem->unlock(ts);
+	ctx->Thread->start(ch2Id);
+	ctx->Thread->start(ch3Id);
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
-		race(env);
-	env->Thread->yield(5);
-	env->Sem->destroy(ts);
+		race(ctx);
+	ctx->Thread->yield(5);
+	ctx->Sem->destroy(ts);
 	spin = FALSE;
 
 	return tchOK;
@@ -82,9 +82,9 @@ static DECLARE_THREADROUTINE(child1Routine){
 static DECLARE_THREADROUTINE(child2Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
-		race(env);
-	while(spin) env->Thread->yield(0);
-	if(env->Sem->lock(ts,tchWaitForever) != tchErrorResource)
+		race(ctx);
+	while(spin) ctx->Thread->yield(0);
+	if(ctx->Sem->lock(ts,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 	return tchOK;
 }
@@ -92,7 +92,7 @@ static DECLARE_THREADROUTINE(child2Routine){
 static DECLARE_THREADROUTINE(child3Routine){
 	uint8_t cnt = 0;
 	for(;cnt < TEST_CNT;cnt++)
-		race(env);
+		race(ctx);
 	return tchOK;
 }
 

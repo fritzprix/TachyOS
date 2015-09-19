@@ -4,7 +4,8 @@ SYS_TEST_SRC = mailq_test.c\
                mtx_test.c\
                semaphore_test.c\
                bar_test.c\
-               monitor_test.c
+               monitor_test.c\
+               thread_test.c
               
 SYS_TEST_BUILD_DIR=$(GEN_DIR)/test/sys
 GEN_SUB_DIR+=$(SYS_TEST_BUILD_DIR) 

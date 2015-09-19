@@ -24,6 +24,16 @@ ifeq ($(MK),)
 	MK=mkdir
 endif
 
+ifeq ($(GIT_MOVIE_GEN_DIR),)
+	GIT_MOVIE_GEN_DIR = Z:/movie/tachyos
+	GIT_MOVIE_TARGET = $(GIT_MOVIE_GEN_DIR)/tachyos.mp4
+	GIT_MOVIE_OBJ = $(GIT_MOVIE_GEN_DIR)/tachyos.ppm
+	GIT_MOVIE_RENDERER = gource
+	GIT_MOVIE_CONV = ffmpeg
+endif
+
+
+
 # target directory to put binary file 
 ifeq ($(GEN_DIR),)
 	GEN_DIR=$(ROOT_DIR)/$(BUILD)
@@ -110,6 +120,8 @@ TARGET_BINARY = $(TARGET:%.elf=%.bin)
 
 all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
 
+
+
 $(GEN_DIR): 
 	$(MK) $(GEN_DIR)
 
@@ -135,6 +147,28 @@ $(TARGET_SIZE): $(TARGET)
 	$(SIZEPRINT) --format=berkeley $<
 	@echo 'Finished building: $@'
 	@echo ' '
-
+	
+	
 clean:
 	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) $(GEN_SUB_DIR)
+	
+	
+gource : $(GIT_MOVIE_TARGET)
+	
+$(GIT_MOVIE_TARGET): $(GIT_MOVIE_OBJ)
+	@echo "Generating Movie"
+	$(GIT_MOVIE_CONV) -y -r 30 -f image2pipe -vcodec ppm -i $< -vcodec libx264 -preset ultrafast -crf 1 -threads 0 -bf 0 $@
+	@echo ' '
+
+$(GIT_MOVIE_OBJ):$(GIT_MOVIE_GEN_DIR)
+	@echo "Rendering Movie"
+	$(GIT_MOVIE_RENDERER) -a 0.01 -c 3.8 -e 0.5 --start-position 0.5 --stop-position 1.0 --seconds-per-day 0.5 --max-user-speed 80 -640x480 -r 30 -o $@
+	@echo ' ' 
+	
+$(GIT_MOVIE_GEN_DIR) :
+	$(MK) $@
+	
+gource-clean : 
+	rm -rf $(GIT_MOVIE_OBJ) $(GIT_MOVIE_TARGET) 
+	rmdir $(GIT_MOVIE_GEN_DIR) 
+
