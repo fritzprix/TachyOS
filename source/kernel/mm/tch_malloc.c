@@ -14,11 +14,10 @@
 const tch_mem_ix UserHeapInterface = {
 		.alloc = tch_malloc,
 		.free = tch_free,
-		.available = tch_avail
+		.mstat = tch_mstat
 };
 
 const tch_mem_ix* uMem = &UserHeapInterface;
-
 
 void* tch_malloc(size_t sz){
 	void* result;
@@ -54,10 +53,16 @@ void tch_free(void* ptr){
 
 ERR_HEAP_FREE :
 	tch_kernel_raise_error(current,tchErrorHeapCorruption,"heap corrupted");
-
 }
 
-size_t tch_avail(){
-	return ((wt_cache_t*) current->cache)->size +
-			((wt_heapRoot_t*) current->heap)->size;
+
+void tch_mstat(mstat* statp){
+	if(!statp)
+		return;
+
+	wt_heapRoot_t* uheap = (wt_heapRoot_t*) current->heap;
+
+	statp->total = uheap->size;
+	statp->used = uheap->size - uheap->free_sz;
+	statp->cached = ((wt_cache_t* ) current->cache)->size;
 }

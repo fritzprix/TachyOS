@@ -145,7 +145,11 @@ typedef enum {
 }tch_timezone;
 
 
-
+typedef struct mstat_t {
+	size_t total;
+	size_t used;
+	size_t cached;
+} mstat;
 
 typedef struct  {
   tchStatus                 status;     ///< status code: event or error information

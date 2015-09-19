@@ -152,7 +152,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	 *  Argument Type 1 : Null Terminated strings which is meant for command line argument from shell execution
 	 *  Argument Type 2 : Pointer referencing to an object is meant for typical thread execution
 	 */
-	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) >> CONFIG_PAGE_SHIFT);
+	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) << CONFIG_PAGE_SHIFT);
 	argv = argv - proc_header->argv_sz;
 	if (proc_header->argv_sz > 0) {												// if process argument is null terminated strings,
 		memcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
@@ -285,7 +285,5 @@ static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregio
 	return (uint32_t*) (stkregion->poff << CONFIG_PAGE_SHIFT);
 }
 
-
-tchStatus __tch_noop_destr(tch_kobj* obj){return tchOK; }
 
 

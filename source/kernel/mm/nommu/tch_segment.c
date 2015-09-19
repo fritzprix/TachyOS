@@ -68,7 +68,7 @@ void tch_initSegment(struct section_descriptor* init_section){
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
 	tch_kmalloc_init(init_segid);
-	tch_shm_init(init_segid);
+	tch_shmInit(init_segid);
 	init_mm.pgd = tch_port_allocPageDirectory(kmalloc);
 }
 
@@ -138,7 +138,9 @@ size_t tch_segmentGetFreeSize(int seg_id){
 	return segment->pfree_cnt;
 }
 
-
+/**
+ * \brief associate whole segment to specific thread
+ */
 void tch_mapSegment(struct tch_mm* mm,int seg_id){
 	if(!mm || (seg_id < 0))
 		return;
@@ -156,6 +158,9 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 
 }
 
+/**
+ * \brief deassociate whole segment from specific thread
+ */
 void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 	if(!mm || (seg_id < 0))
 		return;
@@ -186,7 +191,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 		return 0;
 	}
 	struct mem_segment* segment;
-	segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
+	segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id); 		// find segment by id
 	if(!segment)
 		return 0;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -196,25 +201,24 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 	if(segment->pfree_cnt < pcount)
 		return 0;
 
-	cdsl_dlistNode_t* phead = segment->pfree_list.next;
-	struct page_frame *cframe,*nframe;
-	while(phead !=  NULL){
-		cframe = (struct page_frame*) phead;
-		if(cframe->fhdr.contig_pcount >= pcount){ 										// find contiguos page region
-			initRegion(mreg, segment, cframe->fhdr.offset, pcount,permission);
+	struct page_frame* frame = (struct page_frame*) (container_of(segment->pfree_list.next,struct page_free_header,lhead));
+	struct page_frame *nframe;
+	while(frame){
+		if(frame->fhdr.contig_pcount >= pcount){ 										// find contiguos page region
+			initRegion(mreg, segment, frame->fhdr.offset, pcount,permission);
 			segment->pfree_cnt -= mreg->psz;
 
 			if((mreg->poff + mreg->psz) == (segment->poff + segment->psize)){			// if the segment is empty, no frame header added
-				cdsl_dlistRemove(&cframe->fhdr.lhead);
+				cdsl_dlistRemove(&frame->fhdr.lhead);
 				return pcount;
 			}
 																						// otherwise, add new frame header after allocated region
-			nframe = &cframe[pcount];
-			nframe->fhdr.contig_pcount = cframe->fhdr.contig_pcount - pcount;			// set new contiguos free region
-			cdsl_dlistReplace(&cframe->fhdr.lhead,&nframe->fhdr.lhead);
+			nframe = &frame[pcount];
+			nframe->fhdr.contig_pcount = frame->fhdr.contig_pcount - pcount;			// set new contiguos free region
+			cdsl_dlistReplace(&frame->fhdr.lhead,&nframe->fhdr.lhead);
 			return pcount;
 		}
-		phead = phead->next;
+		frame = container_of(frame->fhdr.lhead.next,struct page_free_header,lhead);		// move to next frame
 	}
 	return 0;
 }
@@ -230,28 +234,43 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 	if((mreg->poff >= segment->psize) && (mreg->psz > (segment->psize - mreg->poff)))			// may mregion is not valid
 		return;
 
+	if(cdsl_rbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn)										// delete memory region structure from allocation tree
+		KERNEL_PANIC("tch_segment.c","region mapping broken");
+
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
-	page_frame_t* pages = (page_frame_t*) (segment->poff >> CONFIG_PAGE_SHIFT);
-	struct page_frame* rframe,* cframe;
-	rframe = &pages[mreg->poff];
-	rframe->fhdr.offset = mreg->poff;
-	rframe->fhdr.contig_pcount = mreg->psz;
-	// if page offset of freed region is larger than first node of free region list
+	page_frame_t* frame = (page_frame_t*) (mreg->poff << CONFIG_PAGE_SHIFT); /*15.09.18 : poff shift */
+	page_frame_t* cframe;
+	frame->fhdr.offset = mreg->poff;
+	frame->fhdr.contig_pcount = mreg->psz;
+
+	/**
+	 * find position on the list where freed page region inserted
+	 */
 	do {
 		cframe = (struct page_frame*) container_of(phead,struct page_free_header,lhead);
 		phead = phead->next;
-	} while((cframe->fhdr.offset < rframe->fhdr.offset));
+	} while((cframe->fhdr.offset < frame->fhdr.offset));
 
-	cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.prev,struct page_free_header,lhead);
-	cdsl_dlistInsertAfter(&cframe->fhdr.lhead,&rframe->fhdr.lhead);
-	segment->pfree_cnt += mreg->psz;
+
+	cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.prev,struct page_free_header,lhead);		// step backward
+	cdsl_dlistInsertAfter(&cframe->fhdr.lhead,&frame->fhdr.lhead);											// insert freed page region after found frame
+	segment->pfree_cnt += mreg->psz;																		// update segment free size
+
+
+
+	/**
+	 *  begining of merge operation of region
+	 */
 	if(cframe == (struct page_frame*) &segment->pfree_list)
 		cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
 
+	/**
+	 * find mergable region
+	 */
 	while(cframe->fhdr.contig_pcount + cframe->fhdr.offset == ((struct page_free_header*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead))->offset){
-		rframe = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
-		cframe->fhdr.contig_pcount += rframe->fhdr.contig_pcount;		// merge into bigger chunk
-		cdsl_dlistRemove(&rframe->fhdr.lhead);
+		frame = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
+		cframe->fhdr.contig_pcount += frame->fhdr.contig_pcount;		// merge into bigger chunk
+		cdsl_dlistRemove(&frame->fhdr.lhead);
 	}
 }
 
@@ -261,7 +280,7 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 
 	uint32_t i;
 	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> CONFIG_PAGE_SHIFT;				// calculate page index of segment's begining from section base address
-	size_t section_limit = ((size_t) section->end)  >> CONFIG_PAGE_SHIFT; // calculate page index of segment's ending from sectioni size
+	size_t section_limit = ((size_t) section->end)  >> CONFIG_PAGE_SHIFT; 					// calculate page index of segment's ending from sectioni size
 	seg->psize = section_limit - seg->poff;													// segment size in pages
 	page_frame_t* pages = (page_frame_t*) (seg->poff << CONFIG_PAGE_SHIFT);
 
@@ -274,21 +293,23 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 
 	switch(seg->flags & SEGMENT_MSK){
 	case SEGMENT_KERNEL:
-		seg->pfree_cnt = 0;							// marked as segment has no free page for kernel section & keep its memory content
-		set_permission(seg->flags,PERM_KERNEL_ALL);	// kernel is only accessible privilidge level
+		seg->pfree_cnt = 0;											// marked as segment has no free page for kernel section & keep its memory content
+		set_permission(seg->flags,PERM_KERNEL_ALL);					// kernel is only accessible privilidge level
 		break;
 	case SEGMENT_NORMAL:
-		seg->pfree_cnt = seg->psize;
-		for(i = 0; i < seg->psize ;i++){
+		seg->pfree_cnt = seg->psize;								// set free page count as its total page count
+		for(i = 0; i < seg->psize ;i++){							// initialize all the page frame header structure within a segment
 			pages[i].fhdr.offset = seg->poff + i;
 			pages[i].fhdr.contig_pcount = 0;
 			cdsl_dlistInit(&pages[i].fhdr.lhead);
 		}
-		pages[0].fhdr.contig_pcount = seg->psize;
+
+		pages[0].fhdr.contig_pcount = seg->psize;					// initialize first page frame header
 		cdsl_dlistPutHead(&seg->pfree_list,&pages[0].fhdr.lhead);
 		set_permission(seg->flags,PERM_KERNEL_ALL | PERM_OTHER_RD);	// normal default permission (kernel_all | public read)
 		break;
 	case SEGMENT_DEVICE:
+		// TODO : make decision whether implement device segment or leave it to be accessed by priviledged context
 		break;
 	}
 
@@ -385,4 +406,15 @@ void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	cdsl_rbtreeDelete(&mm->dynamic->mregions,mreg->poff);
 }
 
+
+int tch_regionGetSize(struct mem_region* mreg){
+	if(!mreg)
+		return 0;
+	return (mreg->psz << CONFIG_PAGE_SHIFT);
+}
+
+int tch_regionGetFreeSize(struct mem_region* mreg){
+	if(!mreg)
+		return 0;
+}
 

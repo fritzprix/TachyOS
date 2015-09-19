@@ -51,10 +51,6 @@ extern int wt_free(wt_heapRoot_t* heap,void* ptr);
 extern void* wt_cacheMalloc(wt_cache_t* cache,uint32_t sz);
 extern int wt_cacheFree(wt_cache_t* cache,void* ptr);
 extern void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache);
-
-extern uint32_t wt_size(wt_heapRoot_t* heap);
-extern uint32_t wt_available(wt_heapRoot_t* heap);
-
 extern void wt_print(wt_heapRoot_t* heap);
 
 

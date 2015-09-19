@@ -14,7 +14,7 @@
 #include "tch_mm.h"
 
 #define  MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
-
+#define available(heap) 			(((wt_heapRoot_t*) heap)->free_sz)
 
 static wt_heapRoot_t kernel_heap_root;
 static wt_heapNode_t init_kernel_cache;
@@ -45,24 +45,23 @@ void* kmalloc(size_t sz){
 	size_t asz = sz + sizeof(struct alloc_header);
 
 	tch_port_atomicBegin();
-	if(!(wt_available(&kernel_heap_root)  > (MIN_CACHE_SIZE + asz))){
+	if(!(available(&kernel_heap_root)  > (MIN_CACHE_SIZE + asz))){
 		// try to allocate new memory region and add it to kernel heap
 		struct mem_region *nregion = wt_malloc(&kernel_heap_root,sizeof(struct mem_region));
 		wt_heapNode_t	*alloc = wt_malloc(&kernel_heap_root,sizeof(wt_heapNode_t));
 		size_t rsz = tch_segmentGetFreeSize(init_segid);
-		if(rsz < sz){
+		if((rsz * PAGE_SIZE) < sz){
 			tch_port_atomicEnd();
 			return NULL;		// not able to satisfies memory request
 								// otherwise, allocate new region and add it to kernel heap
 		}
 
-		rsz = (rsz * PAGE_SIZE) > CONFIG_KERNEL_DYNAMICSIZE? (rsz * PAGE_SIZE) : CONFIG_KERNEL_DYNAMICSIZE;
+		rsz = ((rsz * PAGE_SIZE) > CONFIG_KERNEL_DYNAMICSIZE) ? (rsz * PAGE_SIZE) : CONFIG_KERNEL_DYNAMICSIZE;
 		tch_segmentAllocRegion(init_segid,nregion,rsz,PERM_KERNEL_ALL | PERM_OTHER_RD);
 		wt_initNode(&init_kernel_cache,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
 		wt_addNode(&kernel_heap_root,&init_kernel_cache);
 	}
 	tch_port_atomicEnd();
-
 
 	tch_port_atomicBegin();
 	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct alloc_header));
@@ -87,7 +86,17 @@ void kfree(void* p){
 	tch_port_atomicEnd();
 	if(result == WT_ERROR)
 		KERNEL_PANIC("tch_kmalloc.c","kernel heap corrupted");
-
 }
+
+void kmstat(mstat* sp){
+	if(!sp)
+		return;
+	sp->cached = 0;
+	sp->total = kernel_heap_root.size;
+	sp->used = kernel_heap_root.size - kernel_heap_root.free_sz;
+}
+
+
+
 
 

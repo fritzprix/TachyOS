@@ -23,7 +23,7 @@ static float fvs[1000];
 static uint32_t ffvs[1000];
 static uint32_t ffvs1[1000];
 
-tchStatus timer_performTest(tch* env){
+tchStatus timer_performTest(tch* ctx){
 
 	tchStatus result = tchOK;
 
@@ -32,25 +32,25 @@ tchStatus timer_performTest(tch* env){
 	gptDef.UnitTime = TIMER_UNITTIME_mSEC;
 	gptDef.pwrOpt = ActOnSleep;
 
-	tch_gptimerHandle* gptimer = env->Device->timer->openGpTimer(env,tch_TIMER0,&gptDef,tchWaitForever);
+	tch_gptimerHandle* gptimer = ctx->Device->timer->openGpTimer(ctx,tch_TIMER0,&gptDef,tchWaitForever);
 
 	tch_threadId waiterThread1;
 	tch_threadId waiterThread2;
 
 
 	tch_threadCfg thcfg;
-	env->Thread->initCfg(&thcfg,waiter1Run,Normal,(1 << 9),0,"waiter1");
-	waiterThread1 = env->Thread->create(&thcfg,gptimer);
+	ctx->Thread->initCfg(&thcfg,waiter1Run,Normal,(1 << 9),0,"waiter1");
+	waiterThread1 = ctx->Thread->create(&thcfg,gptimer);
 
 
-	env->Thread->initCfg(&thcfg,waiter2Run,Normal,(1 << 9),0,"waiter2");
-	waiterThread2 = env->Thread->create(&thcfg,gptimer);
+	ctx->Thread->initCfg(&thcfg,waiter2Run,Normal,(1 << 9),0,"waiter2");
+	waiterThread2 = ctx->Thread->create(&thcfg,gptimer);
 
-	env->Thread->start(waiterThread1);
-	env->Thread->start(waiterThread2);
+	ctx->Thread->start(waiterThread1);
+	ctx->Thread->start(waiterThread2);
 
-	result = env->Thread->join(waiterThread1,tchWaitForever);
-	result = env->Thread->join(waiterThread2,tchWaitForever);
+	result = ctx->Thread->join(waiterThread1,tchWaitForever);
+	result = ctx->Thread->join(waiterThread2,tchWaitForever);
 
 	gptimer->close(gptimer);   // gptimer test complete
 
@@ -70,25 +70,25 @@ tchStatus timer_performTest(tch* env){
 	int cnt = 100000;
 	tch_pwmHandle* pwmDrv = NULL;
 	while(cnt--){
-		pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,tchWaitForever);
+		pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
 		if(pwmDrv)
 			pwmDrv->close(pwmDrv);
 	}
 
-	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER0,&pwmDef,tchWaitForever);
-	env->Thread->initCfg(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
-	waiterThread1 = env->Thread->create(&thcfg,pwmDrv);
+	pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
+	ctx->Thread->initCfg(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
+	waiterThread1 = ctx->Thread->create(&thcfg,pwmDrv);
 
 
 
-	env->Thread->initCfg(&thcfg,pulsDrv2Run,Normal,(1 << 9),0,"pulsedrv2");
-	waiterThread2 = env->Thread->create(&thcfg,pwmDrv);
+	ctx->Thread->initCfg(&thcfg,pulsDrv2Run,Normal,(1 << 9),0,"pulsedrv2");
+	waiterThread2 = ctx->Thread->create(&thcfg,pwmDrv);
 
-	env->Thread->start(waiterThread1);
-	env->Thread->start(waiterThread2);
+	ctx->Thread->start(waiterThread1);
+	ctx->Thread->start(waiterThread2);
 
-	result = env->Thread->join(waiterThread1,tchWaitForever);
-	result = env->Thread->join(waiterThread2,tchWaitForever);
+	result = ctx->Thread->join(waiterThread1,tchWaitForever);
+	result = ctx->Thread->join(waiterThread2,tchWaitForever);
 
 
 
@@ -102,7 +102,7 @@ tchStatus timer_performTest(tch* env){
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
 
-	pwmDrv = env->Device->timer->openPWM(env,tch_TIMER2,&pwmDef,tchWaitForever);
+	pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER2,&pwmDef,tchWaitForever);
 	if(!pwmDrv)
 		return tchErrorOS;
 
@@ -112,30 +112,30 @@ tchStatus timer_performTest(tch* env){
 	captDef.periodInUnitTime = 1000;
 	captDef.pwrOpt = ActOnSleep;
 
-	tch_tcaptHandle* capt = env->Device->timer->openTimerCapture(env,tch_TIMER0,&captDef,tchWaitForever);
+	tch_tcaptHandle* capt = ctx->Device->timer->openTimerCapture(ctx,tch_TIMER0,&captDef,tchWaitForever);
 	if(!capt)
 		return tchErrorOS;
 
-	env->Thread->initCfg(&thcfg,pulseGenRun,Normal,(1 << 9),0,"pgen");
-	tch_threadId pgenThread = env->Thread->create(&thcfg,pwmDrv);
+	ctx->Thread->initCfg(&thcfg,pulseGenRun,Normal,(1 << 9),0,"pgen");
+	tch_threadId pgenThread = ctx->Thread->create(&thcfg,pwmDrv);
 
-	env->Thread->initCfg(&thcfg,pulseCon1Run,Normal,(1 << 9),0,"pcon1");
-	tch_threadId pcon1Thread = env->Thread->create(&thcfg,capt);
+	ctx->Thread->initCfg(&thcfg,pulseCon1Run,Normal,(1 << 9),0,"pcon1");
+	tch_threadId pcon1Thread = ctx->Thread->create(&thcfg,capt);
 
-	uint8_t* pconStk = env->Mem->alloc(1 << 9);
+	uint8_t* pconStk = ctx->Mem->alloc(1 << 9);
 
-	env->Thread->initCfg(&thcfg,pulseCon2Run,Normal,(1 << 9),0,"pcon2");
-	tch_threadId pcon2Thread = env->Thread->create(&thcfg,capt);
+	ctx->Thread->initCfg(&thcfg,pulseCon2Run,Normal,(1 << 9),0,"pcon2");
+	tch_threadId pcon2Thread = ctx->Thread->create(&thcfg,capt);
 
-	env->Thread->start(pgenThread);
-	env->Thread->start(pcon1Thread);
-	env->Thread->start(pcon2Thread);
+	ctx->Thread->start(pgenThread);
+	ctx->Thread->start(pcon1Thread);
+	ctx->Thread->start(pcon2Thread);
 
-	env->Thread->join(pgenThread,tchWaitForever);
-	env->Thread->join(pcon1Thread,tchWaitForever);
-	env->Thread->join(pcon2Thread,tchWaitForever);
+	ctx->Thread->join(pgenThread,tchWaitForever);
+	ctx->Thread->join(pcon1Thread,tchWaitForever);
+	ctx->Thread->join(pcon2Thread,tchWaitForever);
 
-	env->Mem->free(pconStk);
+	ctx->Mem->free(pconStk);
 
 	capt->close(capt);
 	pwmDrv->close(pwmDrv);
@@ -149,7 +149,7 @@ tchStatus timer_performTest(tch* env){
 
 
 static DECLARE_THREADROUTINE(waiter1Run){
-	tch_gptimerHandle* gptimer = (tch_gptimerHandle*)env->Thread->getArg();
+	tch_gptimerHandle* gptimer = (tch_gptimerHandle*)ctx->Thread->getArg();
 	int cnt = 1000;
 	while(cnt--)
 		gptimer->wait(gptimer,10);
@@ -158,7 +158,7 @@ static DECLARE_THREADROUTINE(waiter1Run){
 }
 
 static DECLARE_THREADROUTINE(waiter2Run){
-	tch_gptimerHandle* gptimer = (tch_gptimerHandle*)env->Thread->getArg();
+	tch_gptimerHandle* gptimer = (tch_gptimerHandle*)ctx->Thread->getArg();
 	int cnt = 1000;
 	while(cnt--)
 		gptimer->wait(gptimer,10);
@@ -167,23 +167,23 @@ static DECLARE_THREADROUTINE(waiter2Run){
 
 
 static DECLARE_THREADROUTINE(pulsDrv1Run){
-	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) env->Thread->getArg();
+	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) ctx->Thread->getArg();
 	int cnt = 1000;
 	float a = 0.f;
 	while(cnt--){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
-		env->Thread->yield(1);
+		ctx->Thread->yield(1);
 	}
 	cnt = 0;
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulsDrv2Run){
-	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) env->Thread->getArg();
+	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) ctx->Thread->getArg();
 	int cnt = 1000;
 	while(cnt--){
 		pwmDrv->setDuty(pwmDrv,1,cnt / 1000.f);
-		env->Thread->yield(1);
+		ctx->Thread->yield(1);
 	}
 	cnt = 0;
 	do{
@@ -196,20 +196,20 @@ static DECLARE_THREADROUTINE(pulsDrv2Run){
 
 
 static DECLARE_THREADROUTINE(pulseGenRun){
-	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) env->Thread->getArg();
+	tch_pwmHandle* pwmDrv = (tch_pwmHandle*) ctx->Thread->getArg();
 	pwmDrv->setDuty(pwmDrv,2,0.5);
 	pwmDrv->write(pwmDrv,0,fvs,1000);
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulseCon1Run){
-	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
+	tch_tcaptHandle* capt = (tch_tcaptHandle*) ctx->Thread->getArg();
 	capt->read(capt,0,ffvs,1000,tchWaitForever);
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(pulseCon2Run){
-	tch_tcaptHandle* capt = (tch_tcaptHandle*) env->Thread->getArg();
+	tch_tcaptHandle* capt = (tch_tcaptHandle*) ctx->Thread->getArg();
 	capt->read(capt,2,ffvs1,1000,tchWaitForever);
 	return tchOK;
 }

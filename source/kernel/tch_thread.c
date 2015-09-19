@@ -115,18 +115,19 @@ DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,err,tchStatus){
 	return tchOK;
 }
 
-DEFINE_SYSCALL_2(thread_terminate,tch_threadId,tid,tchStatus,err,tchStatus){
+DEFINE_SYSCALL_2(thread_terminate,tch_threadId,tid,tchStatus,res,tchStatus){
 	if(!tid)
 		return tchErrorParameter;
 	if(tch_threadIsValid(tid) != tchOK)
 		return tchErrorParameter;
 
-	tch_schedTerminate(tid,err);
+	tch_schedTerminate(tid,res);
+	tch_thread_kheader* kth = getThreadKHeader(tid);
 	if(tch_threadIsRoot(tid)){
-		cdsl_dlistRemove(&getThreadKHeader(tid)->t_siblingLn);
+		cdsl_dlistRemove(&kth->t_siblingLn);
 	}
-	tch_mmProcClean(getThreadKHeader(tid));
-	kfree(getThreadKHeader(tid));
+	tch_mmProcClean(kth);
+	kfree(kth);
 	return tchOK;
 }
 

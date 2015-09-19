@@ -99,13 +99,13 @@ struct tch_thread_uheader_s {
 	tch_thread_routine			fn;					///<thread function pointer
 	rb_treeNode_t*				uobjs;				///<user object tree for tracking
 	void*						cache;
-	uword_t						kRet;				///<kernel return value
 	const char*					name;				///<thread name
 	void*						t_arg;				///<thread arg field
 	tch_thread_kheader*			kthread;			///<pointer to kernel level thread header
 	void*						heap;
 	tch_condvId 				condv;
 	tch_mtxId					mtx;
+	uword_t						kRet;				///<kernel return value
 #ifdef __NEWLIB__									///<@NOTE : NEWLIBC will be replaced by tch_libc which is more suitable for low-cost embedded system
 	struct _reent				reent;				///<reentrant struct used by LIBC
 #endif

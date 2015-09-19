@@ -151,9 +151,11 @@
 
 struct section_descriptor {
 	uint32_t		flags;
-	paddr_t 		start;
-	paddr_t			end;
+	paddr_t 		start;				///< start address of section in bytes
+	paddr_t			end;				///< end address of section in bytes
 }__attribute__((packed));
+
+
 
 typedef struct page_frame page_frame_t;
 
@@ -169,7 +171,8 @@ struct proc_dynamic {
 	tch_mtxId 				mtx;
 };
 
-extern struct tch_mm		init_mm;
+
+extern struct tch_mm			init_mm;
 extern volatile struct tch_mm* current_mm;
 
 extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);

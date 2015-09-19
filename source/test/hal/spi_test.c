@@ -8,7 +8,7 @@
 #include "tch.h"
 #include "spi_test.h"
 
-tchStatus spi_performTest(tch* env){
+tchStatus spi_performTest(tch* ctx){
 	tch_spiHandle* spihandle = NULL;
 	uaddr_t faddr = 0;
 	tch_spiCfg spiCfg;
@@ -24,17 +24,17 @@ tchStatus spi_performTest(tch* env){
 
 
 	do{
-		spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
+		spihandle = ctx->Device->spi->allocSpi(ctx,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
 		spihandle->close(spihandle);
 	}while(leakTestcnt--);
 
 
 
-	spihandle = env->Device->spi->allocSpi(env,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
+	spihandle = ctx->Device->spi->allocSpi(ctx,tch_spi0,&spiCfg,tchWaitForever,ActOnSleep);
 	leakTestcnt = 0;
 
 	const char* str = "Hello World!! This is SPI";
-	int len = env->uStdLib->string->strlen(str);
+	int len = ctx->uStdLib->string->strlen(str);
 	while(1){
 		spihandle->write(spihandle,str,len);
 	}

@@ -73,25 +73,25 @@ tchStatus barrier_performTest(tch* ctx){
 
 
 static DECLARE_THREADROUTINE(child1Routine){
-	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
+	if(ctx->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(env->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
+	if(ctx->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child2Routine){
-	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
+	if(ctx->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(env->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
+	if(ctx->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
 		return tchErrorOS;
 	return tchOK;
 }
 
 static DECLARE_THREADROUTINE(child3Routine){
-	if(env->Barrier->wait(bid,tchWaitForever) != tchOK)
+	if(ctx->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	env->Thread->yield(20);
-	env->Barrier->destroy(bid);
+	ctx->Thread->yield(20);
+	ctx->Barrier->destroy(bid);
 	return tchOK;
 }

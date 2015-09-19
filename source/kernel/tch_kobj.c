@@ -43,3 +43,6 @@ tchStatus tch_destroyAllKobjects(){
 	}
 	return tchOK;
 }
+
+
+tchStatus __tch_noop_destr(tch_kobj* obj){return tchOK; }
