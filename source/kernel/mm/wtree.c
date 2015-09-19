@@ -1,13 +1,31 @@
 /*
  * wtree.c
  *
+ *  Copyright (C) 2014 doowoong,lee
+ *  All rights reserved.
+ *
+ *  This software may be modified and distributed under the terms
+ *  of the LGPL v3 license.  See the LICENSE file for details.
+ *
  *  Created on: Jun 13, 2015
  *      Author: innocentevil
  *
+ *      ==================================== wwtree (width-weighted tree) =========================================
+ *      dynamic memory allocation has been widely supported in various systems while only a few light weight system
+ *      don't support it to achieve strict real time performance or cost efficiency.
+ *      in rich featured architecture, like ARM Cortex-A Series which supports MMU hardware. fragmentation due to
+ *      dynamic memory allocation is relatively low cost than MMU-less hardware, because MMU provides address mapping
+ *      efficiently. application doesn't actually notice the seam between discrete memory chunck in physical memory
+ *      address space.
  *
- *      WTree is devised for memory management for low cost system in which rich hardware support could not be expected.
- *      WTree is special kind of binary tree which has a little difference in insertion and deletion of node.
- *      1. insert new node
+ *      in MMU-less hardware, software should take care of dynamic memory request from application without compromise of
+ *      performance while managing fragmentation issue.
+ *      I devised wwtree for this application in mind. wwtree lookup avaiable chunk at O(1) performance while efficiently
+ *      merge fragmented chunk with best-effort strategy at free operation which is performance of O(logn).
+ *      this is very suitable to MMU-less hardware based time critical system which has been target of many RTOS.
+ *
+ *
+ *
  */
 
 #include "tch_ktypes.h"

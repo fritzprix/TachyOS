@@ -1,7 +1,6 @@
 /*
  * tch_crtb.cpp
  *
- *
  *  Copyright (C) 2014 doowoong,lee
  *  All rights reserved.
  *
