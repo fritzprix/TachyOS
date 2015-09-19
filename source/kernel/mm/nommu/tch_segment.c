@@ -3,6 +3,8 @@
  *
  *  Created on: 2015. 7. 5.
  *      Author: innocentevil
+ *
+ *  \defgroup Segment Kernel
  */
 
 #include "tch_kernel.h"
@@ -159,7 +161,9 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 }
 
 /**
- * \brief deassociate whole segment from specific thread
+ * \brief unmap segment from calling thread
+ *  unmap segment which has been mapped to given mm node
+ * \param[in]
  */
 void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 	if(!mm || (seg_id < 0))
@@ -181,7 +185,14 @@ void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 }
 
 
-
+/**
+ *	\brief allocation region
+ *	 allocate contiguous memory region from segment (Normal).
+ *	\param[in] seg_id id of segment from which region is allocated
+ *	\param[in] mreg memory region struct which allocation information is written to
+ *	\param[in] access permission to the region
+ *	\return if region is allocated successfully,size of region in page size will be returned, otherwise 0.
+ */
 uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint32_t permission){
 	if(seg_id < 0)
 		return 0;
@@ -194,7 +205,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 	segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id); 		// find segment by id
 	if(!segment)
 		return 0;
-	segment = container_of(segment,struct mem_segment,id_rbn);
+	segment = container_of(segment,struct mem_segment,id_rbn);					// get actual segment struct pointer
 	uint32_t pcount = sz / PAGE_SIZE;
 	if(sz % PAGE_SIZE)
 		pcount++;
@@ -218,7 +229,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 			cdsl_dlistReplace(&frame->fhdr.lhead,&nframe->fhdr.lhead);
 			return pcount;
 		}
-		frame = container_of(frame->fhdr.lhead.next,struct page_free_header,lhead);		// move to next frame
+		frame = (struct page_frame*) container_of(frame->fhdr.lhead.next,struct page_free_header,lhead);		// move to next frame
 	}
 	return 0;
 }

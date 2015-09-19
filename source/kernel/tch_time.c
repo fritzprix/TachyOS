@@ -1,5 +1,5 @@
 /*
- * tch_vtimer.c
+ * tch_timer.c
  *
  *  Copyright (C) 2014 doowoong,lee
  *  All rights reserved.
