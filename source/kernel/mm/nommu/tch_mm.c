@@ -216,8 +216,10 @@ BOOL tch_mmProcClean(tch_thread_kheader* thread){
 	tch_segmentFreeRegion(mmp->stk_region);								// return user stack region
 	if((mmp->flags & ROOT) == ROOT){									// if current thread is root thread in thread group
 		tch_segmentFreeRegion(mmp->heap_region);						// free heap region
-		Mtx->destroy(mmp->dynamic->mtx);								// destroy per thread mutex / condition variable
-		Condv->destroy(mmp->dynamic->condv);
+		tch_mutexDeinit(mmp->dynamic->mtx);
+		tch_condvDeint(mmp->dynamic->condv);
+		kfree(mmp->dynamic->mtx);
+		kfree(mmp->dynamic->condv);
 		kfree(mmp->dynamic);											// free memory area for dynamic struct
 	}
 
