@@ -76,6 +76,7 @@ void* kmalloc(size_t sz){
 	if(!chunk){
 		return NULL;
 	}
+	cdsl_dlistInit(&chunk->alc_ln);
 	cdsl_dlistPutHead((cdsl_dlistNode_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
 	return (void*) ((size_t) chunk + sizeof(struct alloc_header));
 }

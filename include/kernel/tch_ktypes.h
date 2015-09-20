@@ -139,57 +139,6 @@ struct tch_thread_kheader_s {
 
 #define SV_EXIT_FROM_SV                  ((uint32_t) 0x00)
 
-#define SV_EV_INIT						 ((uint32_t) 0x15)
-#define SV_EV_UPDATE                     ((uint32_t) 0x16)              ///< Supervisor call id for setting / clearing event flag
-#define SV_EV_WAIT                       ((uint32_t) 0x17)              ///< Supervisor call id for blocking to wait event
-#define SV_EV_DEINIT                     ((uint32_t) 0x18)              ///< Supervisor call id for destroying event node
-
-#define SV_THREAD_CREATE				 ((uint32_t) 0x1A)				///< Supervisor call id for creating thread
-#define SV_THREAD_START                  ((uint32_t) 0x20)              ///< Supervisor call id for starting thread
-#define SV_THREAD_TERMINATE              ((uint32_t) 0x21)              ///< Supervisor call id for terminate thread      /* Not Implemented here */
-#define SV_THREAD_YIELD                  ((uint32_t) 0x22)              ///< Supervisor call id for yeild cpu for specific  amount of time
-#define SV_THREAD_JOIN                   ((uint32_t) 0x23)              ///< Supervisor call id for wait another thread is terminated
-#define SV_THREAD_SUSPEND                ((uint32_t) 0x24)
-#define SV_THREAD_RESUME                 ((uint32_t) 0x25)
-#define SV_THREAD_RESUMEALL              ((uint32_t) 0x26)
-#define SV_THREAD_DESTROY                ((uint32_t) 0x27)
-#define SV_THREAD_SLEEP                  ((uint32_t) 0x28)               ///< Supervisor call id to put thread in low power stand-by mode
-
-#define SV_MTX_CREATE					 ((uint32_t) 0x40)
-#define SV_MTX_LOCK						 ((uint32_t) 0x29)
-#define SV_MTX_UNLOCK					 ((uint32_t) 0x2A)
-#define SV_MTX_DESTROY					 ((uint32_t) 0x2B)
-
-#define SV_CONDV_INIT					 ((uint32_t) 0x2C)
-#define SV_CONDV_WAIT					 ((uint32_t) 0x2D)
-#define SV_CONDV_WAKE					 ((uint32_t) 0x2E)
-#define SV_CONDV_DEINIT					 ((uint32_t) 0x2F)
-
-#define SV_MSGQ_INIT					 ((uint32_t) 0x30)
-#define SV_MSGQ_PUT                      ((uint32_t) 0x31)              ///< Supervisor call id to put msg to msgq
-#define SV_MSGQ_GET                      ((uint32_t) 0x32)              ///< Supervisor call id to get msg from msgq
-#define SV_MSGQ_DEINIT                   ((uint32_t) 0x33)              ///< Supervisro call id to destoy msgq
-
-#define SV_MEMP_ALLOC                    ((uint32_t) 0x34)               ///< Supervisor call id to allocate memory chunk form mem pool
-#define SV_MEMP_FREE                     ((uint32_t) 0x35)               ///< Supervisor call id to free memory chunk into mem pool
-
-#define SV_MAILQ_INIT					 ((uint32_t) 0x36)
-#define SV_MAILQ_ALLOC                   ((uint32_t) 0x37)               ///< Supervisor call id to allocate mail
-#define SV_MAILQ_FREE                    ((uint32_t) 0x38)               ///< Supervisor call id to free mail
-#define SV_MAILQ_DEINIT                  ((uint32_t) 0x39)               ///< Supervisor call id to destroy mailq
-
-#define SV_BAR_INIT 	                 ((uint32_t) 0x3A)               ///< Supervisor call id to post Async Kernel Task
-#define SV_BAR_DEINIT   	             ((uint32_t) 0x3B)               ///< Supervisor call id to notify completion of async kernel task
-
-#define SV_SHMEM_ALLOC				 	 ((uint32_t) 0x3C)
-#define SV_SHMEM_FREE				  	 ((uint32_t) 0x3D)
-#define SV_SHMEM_AVAILABLE			 	 ((uint32_t) 0x3E)
-
-#define SV_HAL_ENABLE_ISR                ((uint32_t) 0xFD)
-#define SV_HAL_DISABLE_ISR               ((uint32_t) 0xFC)
-
-
-
 
 #ifdef __cplusplus
 }

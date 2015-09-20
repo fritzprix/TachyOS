@@ -12,9 +12,12 @@
  */
 
 
-
-
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_fs.h"
+
+// mount file system
+// open directory
+// release directory
+//
 
 

@@ -58,16 +58,12 @@ tchStatus monitor_performTest(tch* api){
 	uint8_t* prod2stk = NULL;
 
 
-	tch_assert(api,cons1stk && cons2stk && prod1stk && prod2stk,tchErrorOS);
-
 	tch_threadCfg thcfg;
 	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
 	consumer1Thread = api->Thread->create(&thcfg,api);
 
 	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
 	consumer2Thread = api->Thread->create(&thcfg,api);
-
-
 
 
 	api->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer1");
