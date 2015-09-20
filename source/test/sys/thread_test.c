@@ -22,10 +22,30 @@ tchStatus thread_performTest(tch* ctx){
 
 	kmstat(&init_mstat);
 
+	/**
+	 *  Memory Leakage Test
+	 *  create & destroy root thread
+	 */
+
 	while(cnt--){
 		threadStarted = FALSE;
 		ctx->Thread->initCfg(&tcfg,run,Normal,0,0,"test_run");
 		child = (tch_threadId) tch_threadCreateThread(&tcfg,bar,TRUE,TRUE,NULL);
+		ctx->Thread->start(child);
+		ctx->Barrier->wait(bar,tchWaitForever);
+		ctx->Thread->join(child,tchWaitForever);
+	}
+	kmstat(&fin_mstat);
+	if(fin_mstat.used != init_mstat.used)
+		return tchErrorOS;
+
+
+	kmstat(&init_mstat);
+
+	while(cnt--){
+		threadStarted = FALSE;
+		ctx->Thread->initCfg(&tcfg,run,Normal,0,0,"test_run");
+		child = (tch_threadId) tch_threadCreateThread(&tcfg,bar,FALSE,TRUE,NULL);
 		ctx->Thread->start(child);
 		ctx->Barrier->wait(bar,tchWaitForever);
 		ctx->Thread->join(child,tchWaitForever);

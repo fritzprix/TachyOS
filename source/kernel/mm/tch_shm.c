@@ -78,6 +78,7 @@ DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	}
 
 	chnk = wt_malloc(&shm_root,asz);
+	cdsl_dlistInit(&chnk->alc_ln);
 	cdsl_dlistPutHead(&current->kthread->mm.shm_list,&chnk->alc_ln);
 	return &chnk[1];
 }
@@ -98,9 +99,10 @@ DEFINE_SYSCALL_1(shmem_cleanup,tch_threadId,tid,tchStatus){
 	cdsl_dlistNode_t* shm_alc = &kth->mm.shm_list;
 	struct shmalloc_header* chnk = NULL;
 	while(!cdsl_dlistIsEmpty(shm_alc)){
-		 chnk = cdsl_dlistDequeue(shm_alc);
+		 chnk = (struct shmalloc_header*) cdsl_dlistDequeue(shm_alc);
 		 if(!chnk)
 			 return tchErrorHeapCorruption;
+		 chnk = container_of(chnk,struct shmalloc_header,alc_ln);
 		 if(wt_free(&shm_root,chnk) == WT_ERROR)
 			 return tchErrorHeapCorruption;
 	}

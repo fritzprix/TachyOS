@@ -97,6 +97,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 			return FALSE;
 		mmp->dynamic = parent_mm->dynamic;
 		cdsl_dlistInit(&mmp->kobj_list);
+		cdsl_dlistInit(&mmp->alc_list);
+		cdsl_dlistInit(&mmp->shm_list);
 	}
 
 	if(mmp->text_region && mmp->bss_region && mmp->data_region){

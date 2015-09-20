@@ -70,7 +70,7 @@ tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 		blk = (uint8_t*) next;
 	}
 
-	*((void**) blk) = 0;
+	*((void**) blk) = 0;				// null indicate end of mem pool
 	tch_mpoolValidate(mpcb);
 	return (tch_mpoolId) mpcb;
 }

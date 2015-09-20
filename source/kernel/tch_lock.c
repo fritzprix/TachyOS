@@ -222,8 +222,10 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
 	MTX_INVALIDATE(mcb);
-	tch_threadSetPriority(current,mcb->svdPrior);
-	mcb->svdPrior = Idle;
+	if(!(--current->kthread->lckCnt)){
+		tch_threadSetPriority(mcb->own,mcb->svdPrior);
+		mcb->svdPrior = Idle;
+	}
 	tch_schedWake(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tch_unregisterKobject(&mcb->__obj);
 	return tchOK;

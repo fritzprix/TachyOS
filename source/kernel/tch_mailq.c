@@ -136,7 +136,7 @@ DEFINE_SYSCALL_3(mailq_get,tch_mailqId,qid,uint32_t,timeout,tchEvent*,evp,tchSta
 	mailq->qupdated--;
 	if(mailq->gidx >= mailq->qlen)
 		mailq->gidx = 0;
-	if(!cdsl_dlistIsEmpty(&mailq->gwq)){
+	if(!cdsl_dlistIsEmpty(&mailq->pwq)){
 		tch_schedWake((tch_thread_queue*) &mailq->pwq,1,tchInterrupted,TRUE);
 	}
 	return evp->status;
@@ -150,7 +150,7 @@ DEFINE_SYSCALL_2(mailq_free,tch_mailqId,qid,void*,block,tchStatus){
 	tch_mailqCb* mailq = (tch_mailqCb*) qid;
 	if(Mempool->free(mailq->bpool,block) != tchOK)
 		return tchErrorParameter;
-	tch_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchErrorNoMemory,TRUE);
+	tch_schedWake((tch_thread_queue*) &mailq->allocwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	return tchOK;
 }
 
@@ -201,8 +201,8 @@ static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result){
 	if(tch_port_isISR())
 		return __mailq_alloc(qid,0,result);
 	do{
-		block = (void*) __SYSCALL_3(mailq_alloc,qid,timeout,&result);
-	}while(*result == tchInterrupted);
+		block = (void*) __SYSCALL_3(mailq_alloc,qid,timeout,result);
+	}while(*result == tchErrorNoMemory);
 
 	return block;
 }
