@@ -15,6 +15,7 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_idle.h"
 #include "kernel/tch_lwtask.h"
+#include "kernel/tch_err.h"
 
 
 
@@ -30,13 +31,15 @@ struct idle_parameter {
 
 static tch_mtxId	idle_lock;
 static uint32_t		busy_cnt;
+
 static tch_threadId idleThread;
+static tch_threadId mainThread;
 
 
 void idle_init(){
 	tch_threadCfg thcfg;
 	Thread->initCfg(&thcfg,idle,Idle,CONFIG_THREAD_MIN_STACK,0,"idle");
-	idleThread = Thread->create(&thcfg,NULL);
+	idleThread = (tch_threadId) tch_threadCreateThread(&thcfg,NULL,FALSE,TRUE,NULL);
 
 	busy_cnt = 0;
 	idle_lock = tch_rti->Mtx->create();
@@ -71,6 +74,17 @@ static DECLARE_THREADROUTINE(idle){
 	int idle_tskid = tch_lwtsk_registerTask(idleTaskHandler,TSK_PRIOR_NORMAL);
 	tch_rtcHandle* rtc_handle = tch_rti->Thread->getArg();
 	struct idle_parameter parm;
+
+
+	tch_threadCfg threadcfg;
+	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");
+	mainThread = (tch_threadId) tch_threadCreateThread(&threadcfg,ctx,TRUE,TRUE,NULL);
+
+
+	if((!mainThread))
+		KERNEL_PANIC("tch_sys.c","Can't create init thread");
+
+	Thread->start(mainThread);
 
 	while(TRUE){
 		// some function entering sleep mode

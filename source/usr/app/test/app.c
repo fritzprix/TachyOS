@@ -13,7 +13,6 @@ int main(const tch* ctx){
 	mstat init_mstat;
 	mstat fin_mstat;
 
-//	ctx->Thread->yield(100);
 
 	kmstat(&init_mstat);
 

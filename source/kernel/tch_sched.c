@@ -67,13 +67,14 @@ void tch_schedInit(void* init_thread){
  */
 void tch_schedStart(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
+	tch_thread_kheader* kth = thr->kthread;
 	if(tch_schedIsPreemptable(thr->kthread)){
 		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,getListNode(current->kthread),tch_schedReadyQRule);			///< put current thread in ready queue
-		getListNode(thr->kthread)->prev = (cdsl_dlistNode_t*) current->kthread; 	                                                            ///< set new thread as current thread
+		getListNode(kth)->prev = (cdsl_dlistNode_t*) current->kthread; 	                                                            ///< set new thread as current thread
 		current = thr;
-		((tch_thread_kheader*)getListNode(current->kthread)->prev)->state = READY;
+		((tch_thread_kheader*)getListNode(kth)->prev)->state = READY;
 		tchk_kernelSetResult(thread,tchOK);
-		tch_port_enterPrivThread((uaddr_t) tch_port_switch,(uword_t)thread,(uword_t) getListNode(thread)->prev,0);
+		tch_port_enterPrivThread((uaddr_t) tch_port_switch,(uword_t)kth,(uword_t) getListNode(kth)->prev,0);
 	}else{
 		thr->kthread->state = READY;
 		tchk_kernelSetResult(current,tchOK);
