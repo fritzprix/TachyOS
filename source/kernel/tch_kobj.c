@@ -42,8 +42,6 @@ tchStatus tch_unregisterKobject(tch_kobj* obj){
 tchStatus tch_destroyAllKobjects(){
 	while(!cdsl_dlistIsEmpty(&current_mm->kobj_list)){
 		tch_kobj* obj = cdsl_dlistDequeue(&current_mm->kobj_list);
-		if(!obj)
-			return tchOK;
 		obj = container_of(obj,tch_kobj,lhead);
 		obj->__destr_fn(obj);
 	}

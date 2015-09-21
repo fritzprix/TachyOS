@@ -71,7 +71,7 @@ struct tch_hal_t{
 
 
 #define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
-#define tch_assert(api,b,err) if(!b){api->Thread->terminate(api->Thread->self(),err);}
+#define tch_assert(api,b,err) if(!b){api->Thread->exit(api->Thread->self(),err);}
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* ctx)
 
 
@@ -88,7 +88,7 @@ struct _tch_thread_ix_t {
 	tchStatus (*yield)(uint32_t millisec);
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
-	tchStatus (*terminate)(tch_threadId thread,tchStatus res);
+	tchStatus (*exit)(tch_threadId thread,tchStatus res);
 	void (*initCfg)(tch_threadCfg* cfg,
 					tch_thread_routine entry,
 					tch_threadPrior prior,

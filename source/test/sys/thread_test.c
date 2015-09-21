@@ -12,6 +12,7 @@
 static DECLARE_THREADROUTINE(run);
 
 tchStatus thread_performTest(tch* ctx){
+
 	mstat init_mstat;
 	mstat fin_mstat;
 	BOOL threadStarted = FALSE;
@@ -24,7 +25,7 @@ tchStatus thread_performTest(tch* ctx){
 
 	/**
 	 *  Memory Leakage Test
-	 *  create & destroy root thread
+	 *  create & destroy root mode thread
 	 */
 
 	while(cnt--){
@@ -40,12 +41,13 @@ tchStatus thread_performTest(tch* ctx){
 		return tchErrorOS;
 
 
+
 	kmstat(&init_mstat);
 
 	while(cnt--){
 		threadStarted = FALSE;
 		ctx->Thread->initCfg(&tcfg,run,Normal,0,0,"test_run");
-		child = (tch_threadId) tch_threadCreateThread(&tcfg,bar,FALSE,TRUE,NULL);
+		child = ctx->Thread->create(&tcfg,bar);
 		ctx->Thread->start(child);
 		ctx->Barrier->wait(bar,tchWaitForever);
 		ctx->Thread->join(child,tchWaitForever);

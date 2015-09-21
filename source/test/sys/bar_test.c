@@ -28,12 +28,17 @@ static DECLARE_THREADROUTINE(child3Routine);
 static tch_threadId child1Id;
 static tch_threadId child2Id;
 static tch_threadId child3Id;
-static tch_threadId mainId;
 
 static tch_barId bid;
 
 tchStatus barrier_performTest(tch* ctx){
-	mainId = ctx->Thread->self();
+
+	mstat init_mstat;
+	mstat fin_mstat;
+	mstat mid_mstat;
+
+	kmstat(&init_mstat);
+
 
 
 	tch_threadCfg tcfg;
@@ -55,7 +60,6 @@ tchStatus barrier_performTest(tch* ctx){
 	ctx->Thread->start(child2Id);
 	ctx->Thread->start(child3Id);
 
-
 	ctx->Thread->yield(10);
 	ctx->Barrier->signal(bid,tchOK);
 	if(ctx->Barrier->wait(bid,tchWaitForever) != tchErrorResource)
@@ -66,6 +70,11 @@ tchStatus barrier_performTest(tch* ctx){
 	if(ctx->Thread->join(child2Id,tchWaitForever) != tchOK)
 		return tchErrorOS;
 	if(ctx->Thread->join(child3Id,tchWaitForever) != tchOK)
+		return tchErrorOS;
+
+	kmstat(&fin_mstat);
+
+	if(init_mstat.used != fin_mstat.used)
 		return tchErrorOS;
 
 	return tchOK;
@@ -92,6 +101,7 @@ static DECLARE_THREADROUTINE(child3Routine){
 	if(ctx->Barrier->wait(bid,tchWaitForever) != tchOK)
 		return tchErrorOS;
 	ctx->Thread->yield(20);
+	mstat bfor_stat,after_stat;
 	ctx->Barrier->destroy(bid);
 	return tchOK;
 }
