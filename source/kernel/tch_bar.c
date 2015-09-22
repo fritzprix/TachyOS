@@ -90,11 +90,8 @@ DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
 		return tchErrorParameter;
 	if(cdsl_dlistIsEmpty(&bar->wq))
 		return tchOK;
-	if(tch_port_isISR()){
-		tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
-		return tchOK;
-	}
-	return tch_port_enterSv(SV_THREAD_RESUMEALL,(uint32_t)&bar->wq,tchOK,0);
+	tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+	return tchOK;
 }
 
 DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
@@ -157,12 +154,7 @@ static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
 	if(!bar)
 		return tchErrorParameter;
 	if(tch_port_isISR()){
-
-		if(!BAR_ISVALID(bar))
-			return tchErrorParameter;
-
-		tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
-		return tchOK;
+		return __bar_signal(barId,result);
 	}
 	return __SYSCALL_2(bar_signal,barId,result);
 }
@@ -172,7 +164,6 @@ static tchStatus tch_barDestroy(tch_barId barId){
 		return tchErrorParameter;
 	if(tch_port_isISR())
 		return tchErrorISR;
-
 	return __SYSCALL_1(bar_destroy,barId);
 }
 

@@ -46,7 +46,6 @@ static DECLARE_THREADROUTINE(systhreadRoutine);
 
 static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
 static tch RuntimeInterface;
-static tch_threadId mainThread;
 static tch_threadId sysThread;
 const tch* tch_rti = &RuntimeInterface;
 volatile BOOL kernel_ready;
@@ -79,7 +78,6 @@ void tch_kernelInit(void* arg){
 
 	/*initialize kernel global variable*/
 	__VALID_SYSCALL = FALSE;
-	mainThread = NULL;
 	sysThread = NULL;
 
 	tch_port_atomicBegin();
@@ -148,19 +146,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
-
-	tch_threadCfg threadcfg;
-	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");
-	mainThread = tch_threadCreateThread(&threadcfg,&RuntimeInterface,TRUE,TRUE,NULL);
-
-
-	if((!mainThread))
-		KERNEL_PANIC("tch_sys.c","Can't create init thread");
-
-
-
 	idle_init();
-	Thread->start(mainThread);
 
 	while(TRUE){
 		__lwtsk_start_loop();			// start loop lwtask handler

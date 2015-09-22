@@ -67,9 +67,6 @@ void* kmalloc(size_t sz){
 		wt_initNode(&init_kernel_cache,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
 		wt_addNode(&kernel_heap_root,&init_kernel_cache);
 	}
-	tch_port_atomicEnd();
-
-	tch_port_atomicBegin();
 	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct alloc_header));
 	tch_port_atomicEnd();
 
