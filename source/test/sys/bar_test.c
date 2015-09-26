@@ -33,13 +33,10 @@ static tch_barId bid;
 
 tchStatus barrier_performTest(tch* ctx){
 
-	mstat init_mstat;
-	mstat fin_mstat;
-	mstat mid_mstat;
+
+	mstat init_mstat,fin_mstat;
 
 	kmstat(&init_mstat);
-
-
 
 	tch_threadCfg tcfg;
 	ctx->Thread->initCfg(&tcfg,child1Routine,Normal,512, 0 ,"child1");
@@ -73,10 +70,8 @@ tchStatus barrier_performTest(tch* ctx){
 		return tchErrorOS;
 
 	kmstat(&fin_mstat);
-
 	if(init_mstat.used != fin_mstat.used)
-		return tchErrorOS;
-
+		return tchErrorMemoryLeaked;
 	return tchOK;
 }
 

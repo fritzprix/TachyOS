@@ -30,12 +30,13 @@ tchStatus tch_registerKobject(tch_kobj* obj, tch_kobjDestr destfn){
 tchStatus tch_unregisterKobject(tch_kobj* obj){
 	if(!obj)
 		return tchErrorParameter;
-	if(cdsl_dlistIsEmpty(&obj->lhead))
-		return tchErrorParameter;			// unregistered object
+
+	if(!obj->lhead.next && !obj->lhead.prev)
+		return tchErrorParameter;
 
 	cdsl_dlistRemove(&obj->lhead);
 	obj->lhead.next = obj->lhead.prev = NULL;
-	return obj->__destr_fn(obj);
+	return tchOK;
 }
 
 

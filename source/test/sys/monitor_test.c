@@ -43,67 +43,69 @@ static tch_threadId producer1Thread;
 static tch_threadId producer2Thread;
 
 
-tchStatus monitor_performTest(tch* api){
+tchStatus monitor_performTest(tch* ctx){
+	mstat init_mstat,fin_mstat;
+
+	kmstat(&init_mstat);
 	tstBuf.size = 256;
 	tstBuf.updated = 0;
 
-	mtid = api->Mtx->create();
-	condP = api->Condv->create();
-	condC = api->Condv->create();
-
-	uint8_t* cons1stk = NULL;
-	uint8_t* cons2stk = NULL;
-
-	uint8_t* prod1stk = NULL;
-	uint8_t* prod2stk = NULL;
+	mtid = ctx->Mtx->create();
+	condP = ctx->Condv->create();
+	condC = ctx->Condv->create();
 
 
 	tch_threadCfg thcfg;
-	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
-	consumer1Thread = api->Thread->create(&thcfg,api);
+	ctx->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
+	consumer1Thread = ctx->Thread->create(&thcfg,ctx);
 
-	api->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
-	consumer2Thread = api->Thread->create(&thcfg,api);
-
-
-	api->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer1");
-	producer1Thread = api->Thread->create(&thcfg,api);
-
-	api->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer2");
-	producer2Thread = api->Thread->create(&thcfg,api);
+	ctx->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
+	consumer2Thread = ctx->Thread->create(&thcfg,ctx);
 
 
-	api->Thread->start(producer1Thread);
-	api->Thread->start(producer2Thread);
+	ctx->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer1");
+	producer1Thread = ctx->Thread->create(&thcfg,ctx);
 
-	api->Thread->start(consumer1Thread);
-	api->Thread->start(consumer2Thread);
-
-
+	ctx->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer2");
+	producer2Thread = ctx->Thread->create(&thcfg,ctx);
 
 
-	if(api->Thread->join(producer1Thread,tchWaitForever) != tchOK)
+	ctx->Thread->start(producer1Thread);
+	ctx->Thread->start(producer2Thread);
+
+	ctx->Thread->start(consumer1Thread);
+	ctx->Thread->start(consumer2Thread);
+
+
+
+
+	if(ctx->Thread->join(producer1Thread,tchWaitForever) != tchOK)
 		return tchErrorOS;
-	if(api->Thread->join(producer2Thread,tchWaitForever) != tchOK)
-		return tchErrorOS;
-
-
-	api->Mtx->destroy(mtid);
-	api->Condv->destroy(condP);
-	api->Condv->destroy(condC);
-
-
-	if(api->Thread->join(consumer1Thread,tchWaitForever) != tchOK)
-		return tchErrorOS;
-	if(api->Thread->join(consumer2Thread,tchWaitForever) != tchOK)
+	if(ctx->Thread->join(producer2Thread,tchWaitForever) != tchOK)
 		return tchErrorOS;
 
 
-	api->Condv->destroy(condP);
-	api->Condv->destroy(condC);
+	ctx->Mtx->destroy(mtid);
+	ctx->Condv->destroy(condP);
+	ctx->Condv->destroy(condC);
 
+
+	if(ctx->Thread->join(consumer1Thread,tchWaitForever) != tchOK)
+		return tchErrorOS;
+	if(ctx->Thread->join(consumer2Thread,tchWaitForever) != tchOK)
+		return tchErrorOS;
+
+
+	ctx->Condv->destroy(condP);
+	ctx->Condv->destroy(condC);
+
+	kmstat(&fin_mstat);
+
+	if(init_mstat.used != fin_mstat.used)
+		return tchErrorMemoryLeaked;
 	if(tstBuf.updated == 0)
 		return tchOK;
+
 	return tchErrorOS;
 
 }
