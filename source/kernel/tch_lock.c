@@ -221,6 +221,7 @@ static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static){
 static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
+
 	MTX_INVALIDATE(mcb);
 	if(!(--current->kthread->lckCnt)){
 		tch_threadSetPriority(mcb->own,mcb->svdPrior);
@@ -372,6 +373,8 @@ DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
 
 DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus){
 	tchStatus result = condv_deint(id);
+	if(result != tchOK)
+		return result;
 	kfree(id);
 	return result;
 }
@@ -406,8 +409,10 @@ static tchStatus condv_deint(tch_condvCb* condv){
 		return tchErrorParameter;
 	if(!CONDV_ISVALID(condv))
 		return tchErrorResource;
+	CONDV_INVALIDATE(condv);
 	tch_unregisterKobject(&condv->__obj);
-	return tch_schedWake(&condv->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_schedWake(&condv->wq,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	return tchOK;
 }
 
 static tch_condvId tch_condvCreate(){

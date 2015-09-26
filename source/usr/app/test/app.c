@@ -10,26 +10,25 @@
 #include "mailq_test.h"
 
 int main(const tch* ctx){
-	mstat init_mstat;
-	mstat fin_mstat;
+	tchStatus testResult = tchOK;
+	if((testResult = barrier_performTest((tch*) ctx)) != tchOK)
+		return testResult;
 
+	if((testResult = thread_performTest((tch*) ctx)) != tchOK)
+		return testResult;
 
-	kmstat(&init_mstat);
+	if((testResult = mailq_performTest((tch*) ctx)) != tchOK)
+		return testResult;
 
+	if((testResult = monitor_performTest((tch*) ctx)) != tchOK)
+		return testResult;
 
-	barrier_performTest((tch*) ctx);
-	thread_performTest((tch*) ctx);
-	mailq_performTest((tch*) ctx);
-
-	monitor_performTest((tch*) ctx);
 	semaphore_performTest((tch*) ctx);
-	kmstat(&fin_mstat);
-
-
 
 	while(TRUE){
 		ctx->Thread->sleep(1);
 	}
+
 }
 
 

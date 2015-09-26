@@ -54,7 +54,7 @@ tchStatus thread_performTest(tch* ctx){
 	}
 	kmstat(&fin_mstat);
 	if(fin_mstat.used != init_mstat.used)
-		return tchErrorOS;
+		return tchErrorMemoryLeaked;
 	return tchOK;
 }
 

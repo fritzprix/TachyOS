@@ -30,6 +30,11 @@ static tch_threadId receiver_id;
 tch_mailqId testmailq_id;
 
 tchStatus mailq_performTest(tch* api){
+
+	mstat init_mstat,fin_mstat;
+
+	kmstat(&init_mstat);
+
 	testmailq_id = api->MailQ->create(sizeof(person),10);
 
 	const tch_thread_ix* Thread = api->Thread;
@@ -46,6 +51,13 @@ tchStatus mailq_performTest(tch* api){
 
 	api->MailQ->destroy(testmailq_id);
 
+	if(result != tchOK)
+		return result;
+
+	kmstat(&fin_mstat);
+
+	if(init_mstat.used != fin_mstat.used)
+		result = tchErrorMemoryLeaked;
 	return result;
 }
 
