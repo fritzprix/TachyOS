@@ -13,8 +13,6 @@
 #include "tch_segment.h"
 #include "tch_kmalloc.h"
 
-
-
 #define ptr_to_pgidx(ptr)		(((size_t) ptr) >> CONFIG_PAGE_SHIFT)
 
 

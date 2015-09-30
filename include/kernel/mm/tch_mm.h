@@ -8,8 +8,6 @@
 #ifndef TCH_MM_H_
 #define TCH_MM_H_
 
-
-
 #include "tch_ptypes.h"
 
 #include "kernel/tch_ktypes.h"
@@ -19,6 +17,9 @@
 #include "kernel/util/cdsl_rbtree.h"
 #include "kernel/util/cdsl_slist.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * tachyos aims to allowing multiple program to run simultaneously without any interference between processes
@@ -63,67 +64,42 @@
  *
  */
 
-
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
-
-#define SEGMENT_NORMAL			((uint32_t) 1)
-#define SEGMENT_KERNEL			((uint32_t) 2)		//	memory section for kernel instruction code
+#define SEGMENT_NORMAL			((uint32_t) 0)
+#define SEGMENT_KERNEL			((uint32_t) 1)		//	memory section for kernel instruction code#define SEGMENT_UACCESS			((uint32_t) 2)
 #define SEGMENT_DEVICE			((uint32_t) 3)
 
-#define SEGMENT_MSK				(SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE)
+#define SEGMENT_MSK				(SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE | SEGMENT_UACCESS)
 
-#define SECTION_TEXT			((uint32_t) 4)
-#define SECTION_DATA			((uint32_t) 8)
-#define SECTION_STACK			((uint32_t) 12)
-#define SECTION_DYNAMIC			((uint32_t) 0)
+#define SECTION_UTEXT			((uint32_t) 0 << 3)
+#define SECTION_URODATA			((uint32_t) 1 << 3)
+#define SECTION_TEXT			((uint32_t) 2 << 3)
+#define SECTION_DATA			((uint32_t) 3 << 3)
+#define SECTION_STACK			((uint32_t) 4 << 3)
+#define SECTION_DYNAMIC			((uint32_t) 5 << 3)
 
-#define SECTION_MSK				(SECTION_DATA | SECTION_STACK | SECTION_TEXT)
+#define SECTION_MSK				((uint32_t) 7 << 3)
 
+#define get_section(flag)		(flag & SECTION_MSK)
 
-#define get_section(flag)		(flag & SEGMENT_MSK)
+#define CACHE_WRITE_THROUGH				((uint32_t) 1 << 6)
+#define CACHE_WRITE_BACK_WA				((uint32_t) 2 << 6)			// write back (write allocate)#define CACHE_WRITE_BACK_NWA			((uint32_t) 3 << 6)			// write back (no write allocate)#define CACHE_BYPASS					((uint32_t) 4 << 6)
 
-#define CACHE_WRITE_THROUGH				((uint32_t) 32)
-#define CACHE_WRITE_BACK_WA				((uint32_t) 64)			// write back (write allocate)
-#define CACHE_WRITE_BACK_NWA			((uint32_t) 128)		// write back (no write allocate)
-#define CACHE_BYPASS					((uint32_t) 256)
-
-#define CACHE_POLICY_MSK				(CACHE_WRITE_THROUGH | \
-										 CACHE_WRITE_BACK_WA | \
-										 CACHE_WRITE_BACK_NWA | \
-										 CACHE_BYPASS)
-
-
+#define CACHE_POLICY_MSK				(CACHE_WRITE_THROUGH | CACHE_WRITE_BACK_WA | CACHE_WRITE_BACK_NWA | CACHE_BYPASS)
 #define get_cachepol(flag)				(flag & CACHE_POLICY_MSK)
 
-#define SHAREABLE_MSK					((uint32_t) CACHE_BYPASS <<  1)
+
+#define SHAREABLE_MSK					((uint32_t) 1 << 9 )
 #define get_shareability(flag)			(flag & SHAREABLE_MSK)
 
 
+#define PERM_BASE				((uint32_t) SHAREABLE_MSK << 1)
+#define PERM_KERNEL_RD			((uint32_t) PERM_BASE << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)#define PERM_KERNEL_WR			((uint32_t) PERM_BASE << 1)		// allows kernel process to write access#define PERM_KERNEL_XC			((uint32_t) PERM_BASE << 2)		// allows kernel process to execute access#define PERM_KERNEL_ALL			(PERM_KERNEL_RD | PERM_KERNEL_WR | PERM_KERNEL_XC)	// allows kernel process to all access type
+#define PERM_OWNER_RD			((uint32_t) PERM_BASE << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)#define PERM_OWNER_WR			((uint32_t) PERM_BASE << 4)		// allows owner process to write access#define PERM_OWNER_XC			((uint32_t) PERM_BASE << 5)		// allows owner process to execute aceess#define PERM_OWNER_ALL			(PERM_OWNER_RD | PERM_OWNER_WR | PERM_OWNER_XC)
 
-
-#define PERM_KERNEL_RD			((uint32_t) (SHAREABLE_MSK + 1) << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)
-#define PERM_KERNEL_WR			((uint32_t) (SHAREABLE_MSK + 1) << 1)		// allows kernel process to write access
-#define PERM_KERNEL_XC			((uint32_t) (SHAREABLE_MSK + 1) << 2)		// allows kernel process to execute access
-#define PERM_KERNEL_ALL			(PERM_KERNEL_RD |\
-								PERM_KERNEL_WR |\
-								PERM_KERNEL_XC)	// allows kernel process to all access type
-
-#define PERM_OWNER_RD			((uint32_t) (SHAREABLE_MSK + 1) << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)
-#define PERM_OWNER_WR			((uint32_t) (SHAREABLE_MSK + 1) << 4)		// allows owner process to write access
-#define PERM_OWNER_XC			((uint32_t) (SHAREABLE_MSK + 1) << 5)		// allows owner process to execute aceess
-#define PERM_OWNER_ALL			(PERM_OWNER_RD |\
-								PERM_OWNER_WR |\
-								PERM_OWNER_XC)
-
-#define PERM_OTHER_RD			((uint32_t) (SHAREABLE_MSK + 1) << 6)		// allows other process to read access
-#define PERM_OTHER_WR			((uint32_t) (SHAREABLE_MSK + 1) << 7)	// allows other process to write access
-#define PERM_OTHER_XC			((uint32_t) (SHAREABLE_MSK + 1) << 8)	// allows other process to execute access
-#define PERM_OTHER_ALL			(PERM_OTHER_RD |\
-								PERM_OTHER_WR |\
-								PERM_OTHER_XC)
-
+#define PERM_OTHER_RD			((uint32_t) PERM_BASE << 6)		// allows other process to read access#define PERM_OTHER_WR			((uint32_t) PERM_BASE << 7)	// allows other process to write access#define PERM_OTHER_XC			((uint32_t) PERM_BASE << 8)	// allows other process to execute access#define PERM_OTHER_ALL			(PERM_OTHER_RD | PERM_OTHER_WR | PERM_OTHER_XC)
 
 #define PERM_MSK				(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
 
@@ -138,7 +114,7 @@
 	flag |= perm;\
 }while(0)
 
-#define MEMTYPE_INROM 			((uint32_t) PERM_MSK + 1)
+#define MEMTYPE_INROM 			((uint32_t) PERM_MSK + PERM_BASE)
 #define MEMTYPE_EXROM			((uint32_t) MEMTYPE_INROM * 2)
 #define MEMTYPE_INRAM			((uint32_t) MEMTYPE_INROM * 3)
 #define MEMTYPE_EXRAM			((uint32_t) MEMTYPE_INROM * 4)
@@ -148,14 +124,11 @@
 
 #define get_addr_from_page(paddr)	((size_t) paddr << CONFIG_PAGE_SHIFT)
 
-
 struct section_descriptor {
-	uint32_t		flags;
-	paddr_t 		start;				///< start address of section in bytes
-	paddr_t			end;				///< end address of section in bytes
+	uint32_t flags;
+	paddr_t start;				///< start address of section in bytes
+	paddr_t end;				///< end address of section in bytes
 }__attribute__((packed));
-
-
 
 typedef struct page_frame page_frame_t;
 
@@ -164,21 +137,24 @@ typedef struct page_frame page_frame_t;
  */
 
 struct proc_dynamic {
-	rb_treeNode_t*			mregions;			// region mapping node
-	void*					heap;
-	void*					shmem;
-	tch_condvId 			condv;
-	tch_mtxId 				mtx;
+	rb_treeNode_t* mregions;			// region mapping node
+	void* heap;
+	void* shmem;
+	tch_condvId condv;
+	tch_mtxId mtx;
 };
 
-
-extern struct tch_mm			init_mm;
+extern struct tch_mm init_mm;
 extern volatile struct tch_mm* current_mm;
 
-extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
+extern BOOL tch_mmProcInit(tch_thread_kheader* thread,
+		struct proc_header* proc);
 extern BOOL tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 
 
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* TCH_MM_H_ */

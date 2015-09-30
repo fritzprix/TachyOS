@@ -734,6 +734,16 @@ const struct section_descriptor __default_sections[] = {
 				.end = &_ekheap
 		},
 		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_UTEXT),
+				.start = &_utext_begin,
+				.end = &_utext_end
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_URODATA),
+				.start = &_surox,
+				.end = &_eurox
+		},
+		{
 				// kernel text section
 				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
 				.start = &_stext,
@@ -763,6 +773,8 @@ const struct __attribute__((section(".data"))) section_descriptor* const default
 		&__default_sections[2],
 		&__default_sections[3],
 		&__default_sections[4],
+		&__default_sections[5],
+		&__default_sections[6],
 		NULL
 };
 

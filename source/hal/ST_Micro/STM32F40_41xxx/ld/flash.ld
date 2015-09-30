@@ -100,18 +100,24 @@ SECTIONS
         *(.glue_7t)
 
 	    . = ALIGN(4);
-	    _etext = .;
-	    
-       	. = ALIGN(4);
     	__syscall_entry = . ;
     	*(.sysc.table) 
     	. = ALIGN(4);
     	__syscall_end = . ;   
+	    _etext = . ;
+	    
     	
-    	/* user executable kernel code */
+    	/* user executable part of kernel binary */
     	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_surox = .;
+    	*(.urodata)
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_eurox = .;
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_utext_begin = . ;
     	*(.utext)
-    	. = ALIGN(CONFIG_PAGE_SIZE);    
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_utext_end = . ;    
 	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
@@ -165,7 +171,6 @@ SECTIONS
     PROVIDE ( end = _ebss );
     PROVIDE ( _end = _ebss );
     
-
     .kheap :
     {
     	. = ALIGN(CONFIG_PAGE_SIZE);

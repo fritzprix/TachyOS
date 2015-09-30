@@ -50,14 +50,14 @@ static tchStatus bar_deinit(tch_barCb* bar);
 
 
 
-static tch_bar_ix Barrier_StaticInstance = {
+__USER_RODATA__ tch_bar_ix Barrier_StaticInstance = {
 		.create = tch_barCreate,
 		.wait = tch_barWait,
 		.signal = tch_barSignal,
 		.destroy = tch_barDestroy
 };
 
-const tch_bar_ix* Barrier = &Barrier_StaticInstance;
+__USER_RODATA__ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
 
 
 
@@ -135,13 +135,13 @@ static tchStatus bar_deinit(tch_barCb* bar){
 }
 
 
-static tch_barId tch_barCreate(){
+__USER_API__ static tch_barId tch_barCreate(){
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_barId) __SYSCALL_0(bar_create);
 }
 
-static tchStatus tch_barWait(tch_barId bar,uint32_t timeout){
+__USER_API__ static tchStatus tch_barWait(tch_barId bar,uint32_t timeout){
 	if(!bar)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -149,7 +149,7 @@ static tchStatus tch_barWait(tch_barId bar,uint32_t timeout){
 	return __SYSCALL_2(bar_wait,bar,timeout);
 }
 
-static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
+__USER_API__ static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
 	tch_barCb* bar = (tch_barCb*) barId;
 	if(!bar)
 		return tchErrorParameter;
@@ -159,7 +159,7 @@ static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
 	return __SYSCALL_2(bar_signal,barId,result);
 }
 
-static tchStatus tch_barDestroy(tch_barId barId){
+__USER_API__ static tchStatus tch_barDestroy(tch_barId barId){
 	if(!barId)
 		return tchErrorParameter;
 	if(tch_port_isISR())

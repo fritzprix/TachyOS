@@ -257,7 +257,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	do {
 		seg_id = tch_segmentRegister(*section);
 		tch_mapSegment(&init_mm,seg_id);
-		if(((*section)->flags & SECTION_MSK) == SECTION_STACK)
+		if(((*section)->flags & SECTION_MSK) == SECTION_STACK)			// find kernel stack end (initial kernel stack pointer)
 			ekstk = (*section)->end;
 		section++;
 	} while (*section);
