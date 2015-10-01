@@ -31,10 +31,10 @@ DECLARE_SYSCALL_2(semaphore_init,tch_semCb*,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(semaphore_deinit,tch_semCb*,tchStatus);
 
 
-static tch_semId tch_semCreate(uint32_t count);
-static tchStatus tch_semLock(tch_semId id,uint32_t timeout);
-static tchStatus tch_semUnlock(tch_semId id);
-static tchStatus tch_semDestroy(tch_semId id);
+__USER_API__ static tch_semId tch_semCreate(uint32_t count);
+__USER_API__ static tchStatus tch_semLock(tch_semId id,uint32_t timeout);
+__USER_API__ static tchStatus tch_semUnlock(tch_semId id);
+__USER_API__ static tchStatus tch_semDestroy(tch_semId id);
 static tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic);
 static tchStatus sem_deinit(tch_semCb* scb);
 
@@ -48,14 +48,14 @@ static BOOL tch_semaphoreIsValid(tch_semId sid);
 
 
 
-__attribute__((section(".data"))) static tch_semaph_ix Semaphore_StaticInstance = {
+__USER_RODATA__ tch_semaph_ix Semaphore_IX = {
 		.create = tch_semCreate,
 		.lock = tch_semLock,
 		.unlock = tch_semUnlock,
 		.destroy = tch_semDestroy
 };
 
-const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_StaticInstance;
+__USER_RODATA__ const tch_semaph_ix* Sem = (const tch_semaph_ix*) &Semaphore_IX;
 
 DEFINE_SYSCALL_1(semaphore_create,uint32_t,count,tch_semId){
 	tch_semCb* semCb = (tch_semCb*) kmalloc(sizeof(tch_semCb));
@@ -118,7 +118,7 @@ DEFINE_SYSCALL_1(semaphore_deinit,tch_semCb*,sp,tchStatus){
 }
 
 
-static tch_semId tch_semCreate(uint32_t count){
+__USER_API__ static tch_semId tch_semCreate(uint32_t count){
 	if(!count)
 		return NULL;		// count value should be larger than zero
 	if(tch_port_isISR())
@@ -126,7 +126,7 @@ static tch_semId tch_semCreate(uint32_t count){
 	return (tch_semId) __SYSCALL_1(semaphore_create,count);
 }
 
-static tchStatus tch_semLock(tch_semId id,uint32_t timeout){
+__USER_API__ static tchStatus tch_semLock(tch_semId id,uint32_t timeout){
 	if(!id)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -138,7 +138,7 @@ static tchStatus tch_semLock(tch_semId id,uint32_t timeout){
 	return result;
  }
 
-static tchStatus tch_semUnlock(tch_semId id){
+__USER_API__ static tchStatus tch_semUnlock(tch_semId id){
 	if(!tch_semaphoreIsValid(id))
 		return tchErrorResource;
 	if(tch_port_isISR())
@@ -146,7 +146,7 @@ static tchStatus tch_semUnlock(tch_semId id){
 	return __SYSCALL_1(semaphore_unlock,id);
 }
 
-static tchStatus tch_semDestroy(tch_semId id){
+__USER_API__ static tchStatus tch_semDestroy(tch_semId id){
 	if(tch_port_isISR())
 		return __semaphore_destroy(id);
 	return __SYSCALL_1(semaphore_destroy,id);

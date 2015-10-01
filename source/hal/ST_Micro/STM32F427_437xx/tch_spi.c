@@ -13,6 +13,7 @@
  */
 
 #include "tch_hal.h"
+#include "tch_gpio.h"
 #include "tch_spi.h"
 #include "tch_kernel.h"
 
@@ -60,14 +61,14 @@ typedef struct tch_spi_request_s tch_spi_request;
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
 
 
-static void tch_spiInitCfg(tch_spiCfg* cfg);
-static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static void tch_spiInitCfg(tch_spiCfg* cfg);
+__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 
-static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz);
-static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
-static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
-static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
-static tchStatus tch_spiClose(tch_spiHandle* self);
+__USER_API__ static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz);
+__USER_API__ static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
+__USER_API__ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_spiClose(tch_spiHandle* self);
 
 static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc);
 static void tch_spiValidate(tch_spi_handle_prototype* ins);
@@ -81,12 +82,6 @@ struct tch_spi_request_s {
 	uint8_t*       rxb;
 	uint8_t*       txb;
 	uint32_t       align;
-};
-
-struct tch_lld_spi_prototype {
-	tch_lld_spi               pix;
-	tch_mtxId                 mtx;
-	tch_condvId               condv;
 };
 
 struct tch_spi_handle_prototype {
@@ -107,31 +102,25 @@ struct tch_spi_handle_prototype {
 	tch_spi_request*          req;
 };
 
-/**
- */
-__attribute__((section(".data"))) static tch_lld_spi_prototype SPI_StaticInstance = {
-		{
-				MFEATURE_SPI,
-				tch_spiInitCfg,
-				tch_spiOpen
-		},
-		NULL,
-		NULL
 
+__USER_RODATA__ tch_lld_spi SPI_Ops = {
+		.count = MFEATURE_SPI,
+		.initCfg = tch_spiInitCfg,
+		.allocSpi = tch_spiOpen
 };
 
+static tch_mtxCb 	lock;
+static tch_condvCb  condv;
 
 tch_lld_spi* tch_spiHalInit(const tch* env){
-	if(SPI_StaticInstance.mtx || SPI_StaticInstance.condv)
-		return NULL;
 	if(!env)
 		return NULL;
-	SPI_StaticInstance.mtx = env->Mtx->create();
-	SPI_StaticInstance.condv = env->Condv->create();
-	return (tch_lld_spi*) &SPI_StaticInstance;
+	tch_mutexInit(&lock);
+	tch_condvInit(&condv);
+	return &SPI_Ops;
 }
 
-static void tch_spiInitCfg(tch_spiCfg* cfg){
+__USER_API__ static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->Baudrate = SPI_BAUDRATE_NORMAL;
 	cfg->ClkMode = SPI_CLKMODE_0;
 	cfg->FrmFormat = SPI_FRM_FORMAT_8B;
@@ -139,7 +128,7 @@ static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->Role = SPI_ROLE_MASTER;
 }
 
-static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 
 	tch_spi_bs* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
@@ -148,15 +137,15 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	tch_GpioCfg iocfg;
 	tch_DmaCfg dmaCfg;
 
-	if(env->Mtx->lock(SPI_StaticInstance.mtx,timeout) != tchOK)
+	if(env->Mtx->lock(&lock,timeout) != tchOK)
 		return NULL;
 	while(spiDesc->_handle){
-		if(env->Condv->wait(SPI_StaticInstance.mtx,SPI_StaticInstance.condv,timeout) != tchOK)
+		if(env->Condv->wait(&lock,&condv,timeout) != tchOK)
 			return NULL;
 	}
 
 	spiDesc->_handle = ins = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
-	if(env->Mtx->unlock(SPI_StaticInstance.mtx) != tchOK){
+	if(env->Mtx->unlock(&lock) != tchOK){
 		return NULL;
 	}
 
@@ -187,16 +176,16 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		dmaCfg.mInc = TRUE;
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
-		ins->rxCh.dma = tch_dma->allocate(env,spibs->rxdma,&dmaCfg,timeout,popt);
+		ins->rxCh.dma = DMA_IX->allocate(env,spibs->rxdma,&dmaCfg,timeout,popt);
 
 		dmaCfg.Ch = spibs->txch;
 		dmaCfg.Dir = DMA_Dir_MemToPeriph;
-		ins->txCh.dma = tch_dma->allocate(env,spibs->txdma,&dmaCfg,timeout,popt);
+		ins->txCh.dma = DMA_IX->allocate(env,spibs->txdma,&dmaCfg,timeout,popt);
 	}
 
 	if(!ins->rxCh.dma || !ins->txCh.dma){
-		tch_dma->freeDma(ins->rxCh.dma);
-		tch_dma->freeDma(ins->txCh.dma);
+		DMA_IX->freeDma(ins->rxCh.dma);
+		DMA_IX->freeDma(ins->txCh.dma);
 	}
 
 	// all required resources are obtained successfully
@@ -249,9 +238,6 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 		spiHw->CR2 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 	else{
 		spiHw->CR2 |= SPI_CR2_ERRIE;
-		/*
-		NVIC_SetPriority(spiDesc->irq,HANDLER_NORMAL_PRIOR);
-		NVIC_EnableIRQ(spiDesc->irq);*/
 		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
 
@@ -260,21 +246,21 @@ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint3
 	return (tch_spiHandle*) ins;
 }
 
-static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz){
+__USER_API__ static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spiIsValid(ins))
 		return tchErrorResource;
 	return ins->pix.transceive(self,wb,NULL,sz,tchWaitForever);
 }
 
-static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout){
+__USER_API__ static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spiIsValid(ins))
 		return tchErrorResource;
 	return ins->pix.transceive(self,NULL,rb,sz,timeout);
 }
 
-static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
+__USER_API__ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	void* twb = (void*) wb;
 	if(!ins)
@@ -334,7 +320,7 @@ static tchStatus tch_spiTransceive(tch_spiHandle* self,const void* wb,void* rb,s
 	return result;
 }
 
-static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
+__USER_API__ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!ins)
 		return tchErrorParameter;
@@ -365,7 +351,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(tch_dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
+	if(DMA_IX->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -375,7 +361,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
 	dmaReq.PeriphInc = FALSE;
 	dmaReq.size = sz;
-	if(tch_dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
+	if(DMA_IX->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -391,7 +377,7 @@ static tchStatus tch_spiTransceiveDma(tch_spiHandle* self,const void* wb,void* r
 }
 
 
-static tchStatus tch_spiClose(tch_spiHandle* self){
+__USER_API__ static tchStatus tch_spiClose(tch_spiHandle* self){
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	tch_spi_descriptor* spiDesc = NULL;
 	SPI_TypeDef* spiHw = NULL;
@@ -415,12 +401,12 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	env->Condv->destroy(ins->condv);
 	env->Event->destroy(ins->evId);
 
-	tch_dma->freeDma(ins->rxCh.dma);
-	tch_dma->freeDma(ins->txCh.dma);
+	DMA_IX->freeDma(ins->rxCh.dma);
+	DMA_IX->freeDma(ins->txCh.dma);
 
 	ins->iohandle->close(ins->iohandle);
 
-	env->Mtx->lock(SPI_StaticInstance.mtx,tchWaitForever);
+	env->Mtx->lock(&lock,tchWaitForever);
 
 	*spiDesc->_rstr |= spiDesc->rstmsk;
 	*spiDesc->_clkenr &= ~spiDesc->clkmsk;
@@ -428,8 +414,8 @@ static tchStatus tch_spiClose(tch_spiHandle* self){
 	tch_disableInterrupt(spiDesc->irq);
 
 	spiDesc->_handle = NULL;
-	env->Condv->wakeAll(SPI_StaticInstance.condv);
-	env->Mtx->unlock(SPI_StaticInstance.mtx);
+	env->Condv->wakeAll(&condv);
+	env->Mtx->unlock(&lock);
 
 	env->Mem->free(ins);
 

@@ -24,6 +24,14 @@
 #include "tch_hal.h"
 #include "tch_port.h"
 
+#include "kernel/tch_thread.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
+#include "kernel/tch_bar.h"
+#include "kernel/tch_sem.h"
+#include "kernel/tch_mpool.h"
+#include "kernel/mm/tch_malloc.h"
+#include "kernel/tch_event.h"
 #include "kernel/tch_err.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mailq.h"
@@ -45,9 +53,21 @@ static DECLARE_THREADROUTINE(systhreadRoutine);
 
 
 static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
-static tch RuntimeInterface;
+static tch RuntimeInterface = {
+		.Thread = &Thread_IX,
+		.Mtx = &Mutex_IX,
+		.Sem = &Semaphore_IX,
+		.Condv = &CondVar_IX,
+		.Barrier = &Barrier_IX,
+		.Mempool = &MPool_IX,
+		.MailQ = &MailQ_IX,
+		.MsgQ = &MsgQ_IX,
+		.Mem = &UMem_IX,
+		.Event = &Event_IX
+};
+__USER_RODATA__ const tch* tch_rti = &RuntimeInterface;
+
 static tch_threadId sysThread;
-const tch* tch_rti = &RuntimeInterface;
 volatile BOOL kernel_ready;
 tch_boardParam boardHandle = NULL;
 BOOL __VALID_SYSCALL;
@@ -61,17 +81,6 @@ BOOL __VALID_SYSCALL;
 void tch_kernelInit(void* arg){
 
 	kernel_ready = FALSE;
-
-	RuntimeInterface.Thread = Thread;
-	RuntimeInterface.Mtx = Mtx;
-	RuntimeInterface.Sem = Sem;
-	RuntimeInterface.Condv = Condv;
-	RuntimeInterface.Barrier = Barrier;
-	RuntimeInterface.Mempool = Mempool;
-	RuntimeInterface.MailQ = MailQ;
-	RuntimeInterface.MsgQ = MsgQ;
-	RuntimeInterface.Mem = uMem;
-	RuntimeInterface.Event = Event;
 
 	if(!tch_port_init())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");

@@ -19,6 +19,7 @@
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mm.h"
+#include "kernel/tch_err.h"
 
 
 
@@ -667,63 +668,9 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 
 
-tch_hal tch_hal_instance;
-tch_lld_rtc* tch_rtc;
-tch_lld_dma* tch_dma;
-
-const tch_hal* tch_hal_init(const tch* env){
-	/***
-	 *  initialize clock subsystem
-	 */
-
-	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
-	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
-
-	tch_rtc = tch_rtcHalInit(env);
-	tch_dma = tch_dmaHalInit(env);
-	/***
-	 *  bind hal interface
-	 */
-	tch_hal_instance.adc = tch_adcHalInit(env);
-	tch_hal_instance.gpio  = tch_gpioHalInit(env);
-	tch_hal_instance.timer = tch_timerHalInit(env);
-	tch_hal_instance.usart = tch_usartHalInit(env);
-	tch_hal_instance.spi = tch_spiHalInit(env);
-	tch_hal_instance.i2c = tch_iicHalInit(env);
-
-	return &tch_hal_instance;
-}
-
-
-void tch_hal_enableSystick(){
-	SysTick_Config(SYS_CLK / 1000);
-	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
-	NVIC_EnableIRQ(SysTick_IRQn);
-}
-
-void tch_hal_disableSystick(){
-	NVIC_DisableIRQ(SysTick_IRQn);
-	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
-}
-
-
-void tch_hal_setSleepMode(tch_lplvl lplvl){
-	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
-	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
-	switch(lplvl){
-	case LP_LEVEL0:
-		break;
-	case LP_LEVEL1:
-		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-		PWR->CR |= PWR_CR_LPDS;
-		break;
-	case LP_LEVEL2:
-		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-		PWR->CR |= (PWR_CR_LPDS | PWR_CR_FPDS);
-		break;
-	}
-}
+tch_hal* HAL_IX;
+tch_lld_rtc* RTC_IX;
+tch_lld_dma* DMA_IX;
 
 
 
@@ -777,6 +724,64 @@ const struct __attribute__((section(".data"))) section_descriptor* const default
 		&__default_sections[6],
 		NULL
 };
+
+const tch_hal* tch_hal_init(const tch* env){
+	/***
+	 *  initialize clock subsystem
+	 */
+
+	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
+	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
+
+	RTC_IX = tch_rtcHalInit(env);
+	DMA_IX = tch_dmaHalInit(env);
+	/***
+	 *  bind hal interface
+	 */
+
+	HAL_IX = tch_shmAlloc(sizeof(tch_hal));
+	if(!HAL_IX)
+		KERNEL_PANIC("tch_hal.c","Can't create HAL interface stubs");
+	HAL_IX->adc = tch_adcHalInit(env);
+	HAL_IX->gpio  = tch_gpioHalInit(env);
+	HAL_IX->timer = tch_timerHalInit(env);
+	HAL_IX->usart = tch_usartHalInit(env);
+	HAL_IX->spi = tch_spiHalInit(env);
+	HAL_IX->i2c = tch_iicHalInit(env);
+
+	return HAL_IX;
+}
+
+
+void tch_hal_enableSystick(){
+	SysTick_Config(SYS_CLK / 1000);
+	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
+	NVIC_EnableIRQ(SysTick_IRQn);
+}
+
+void tch_hal_disableSystick(){
+	NVIC_DisableIRQ(SysTick_IRQn);
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+}
+
+
+void tch_hal_setSleepMode(tch_lplvl lplvl){
+	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
+	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
+	switch(lplvl){
+	case LP_LEVEL0:
+		break;
+	case LP_LEVEL1:
+		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+		PWR->CR |= PWR_CR_LPDS;
+		break;
+	case LP_LEVEL2:
+		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+		PWR->CR |= (PWR_CR_LPDS | PWR_CR_FPDS);
+		break;
+	}
+}
 
 
 void tch_hal_enterSleepMode(){

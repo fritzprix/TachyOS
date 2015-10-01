@@ -25,6 +25,7 @@ typedef struct tch_eventCb {
 	tch_thread_queue      ev_blockq;
 } tch_eventCb;
 
+extern tch_event_ix Event_IX;
 extern tchStatus tch_eventInit(tch_eventCb* evcb);
 extern tchStatus tch_eventDeinit(tch_eventCb* evcb);
 

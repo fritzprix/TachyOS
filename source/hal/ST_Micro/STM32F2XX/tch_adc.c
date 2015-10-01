@@ -13,8 +13,10 @@
  */
 
 #include "tch_hal.h"
+#include "tch_gpio.h"
 #include "tch_adc.h"
-#include "tch_kernel.h"
+#include "tch_timer.h"
+#include "kernel/tch_kernel.h"
 
 #define SET_SAFE_EXIT();      RETURN_EXIT:
 #define RETURN_SAFE()         goto RETURN_EXIT
@@ -40,13 +42,6 @@
 
 
 
-typedef struct tch_lld_adc_prototype {
-	tch_lld_adc                          pix;
-	tch_mtxId                            mtx;
-	tch_condvId                          condv;
-}tch_lld_adc_prototype;
-
-
 typedef struct tch_adc_handle_prototype {
 	tch_adcHandle                        pix;
 	const tch*                           env;
@@ -64,59 +59,51 @@ typedef struct tch_adc_handle_prototype {
 }tch_adc_handle_prototype;
 
 
-
-static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
-static tchStatus tch_adcClose(tch_adcHandle* self);
-static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
+__USER_API__ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
+__USER_API__ static tchStatus tch_adcClose(tch_adcHandle* self);
+__USER_API__ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
+__USER_API__ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
 static uint32_t tch_adcChannelOccpStatus;
 
 
-static void tch_adcCfgInit(tch_adcCfg* cfg);
-static void tch_adcAddChannel(tch_adcChDef* chdef,uint8_t ch);
-static void tch_adcRemoveChannel(tch_adcChDef* chdef,uint8_t ch);
-static BOOL tch_adcAvailable(adc_t adc);
+__USER_API__ static void tch_adcCfgInit(tch_adcCfg* cfg);
+__USER_API__ static void tch_adcAddChannel(tch_adcChDef* chdef,uint8_t ch);
+__USER_API__ static void tch_adcRemoveChannel(tch_adcChDef* chdef,uint8_t ch);
+__USER_API__ static BOOL tch_adcAvailable(adc_t adc);
 
 static void tch_adcValidate(tch_adc_handle_prototype* ins);
 static void tch_adcInvalidata(tch_adc_handle_prototype* ins);
 static BOOL tch_adcIsValid(tch_adc_handle_prototype* ins);
 static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins);
 
-
-
-
-
 static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t order);
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-
-static tch_lld_adc_prototype ADC_StaticInstance = {
-		{
-				MFEATURE_ADC,
-				12,
-				6,
-				tch_adcCfgInit,
-				tch_adcAddChannel,
-				tch_adcRemoveChannel,
-				tch_adcOpen,
-				tch_adcAvailable
-		},
-		NULL,
-		NULL
+__USER_RODATA__ tch_lld_adc ADC_IX = {
+		.ADC_COUNT = MFEATURE_ADC,
+		.ADC_MAX_PRECISION = 12,
+		.ADC_MIN_PRECISION = 6,
+		.initCfg = tch_adcCfgInit,
+		.addChannel = tch_adcAddChannel,
+		.removeChannel = tch_adcRemoveChannel,
+		.open = tch_adcOpen,
+		.available = tch_adcAvailable
 };
 
+static tch_mtxCb ADC_Mutex;
+static tch_condvCb ADC_Condv;
+
+
 tch_lld_adc* tch_adcHalInit(const tch* env){
-	if(ADC_StaticInstance.mtx || ADC_StaticInstance.condv)
-		return NULL;
 	if(!env)
 		return NULL;
 	if(!MFEATURE_ADC)
 		return NULL;
 	tch_adcChannelOccpStatus = 0;
-	ADC_StaticInstance.mtx = env->Mtx->create();
-	ADC_StaticInstance.condv = env->Condv->create();
-	return (tch_lld_adc*) &ADC_StaticInstance;
+	tch_mutexInit(&ADC_Mutex);
+	tch_condvInit(&ADC_Condv);
+	return (tch_lld_adc*) &ADC_IX;
 }
 
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout){
@@ -134,16 +121,16 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	ADC_TypeDef* adcHw = adcDesc->_hw;
 	uint8_t smphld = 0;
 
-	if(env->Mtx->lock(ADC_StaticInstance.mtx,timeout) != tchOK)
+	if(env->Mtx->lock(&ADC_Mutex,timeout) != tchOK)
 		return NULL;
 	while(adcDesc->_handle && (cfg->chdef.chselMsk& tch_adcChannelOccpStatus)){
-		if(env->Condv->wait(ADC_StaticInstance.condv,ADC_StaticInstance.mtx,timeout) != tchOK)
+		if(env->Condv->wait(&ADC_Condv,&ADC_Mutex,timeout) != tchOK)
 			return NULL;
 	}
 	ins = adcDesc->_handle = env->Mem->alloc(sizeof(tch_adc_handle_prototype));
 	env->uStdLib->string->memset(ins,0,sizeof(tch_adc_handle_prototype));
 	tch_adcChannelOccpStatus |= (ins->ch_occp = cfg->chdef.chselMsk);
-	if(env->Mtx->unlock(ADC_StaticInstance.mtx) != tchOK)
+	if(env->Mtx->unlock(&ADC_Mutex) != tchOK)
 		return NULL;
 
 	ins->io_handle = (tch_GpioHandle**) env->Mem->alloc(sizeof(tch_GpioHandle*) * cfg->chdef.chcnt);
@@ -206,7 +193,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pAlign = DMA_DataAlign_Hword;
 		dmacfg.pBurstSize = DMA_Burst_Single;
 		dmacfg.pInc = TRUE;
-		ins->dma = tch_dma->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
+		ins->dma = DMA_IX->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
 		// TODO :handle dma_not_used
 	}
@@ -261,16 +248,16 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 		ins->io_handle[ins->chcnt]->close(ins->io_handle[ins->chcnt]);
 	}
 	env->Mem->free(ins->io_handle);
-	tch_dma->freeDma(ins->dma);
+	DMA_IX->freeDma(ins->dma);
 	ins->timer->close(ins->timer);
 
-	if((result = env->Mtx->lock(ADC_StaticInstance.mtx,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&ADC_Mutex,tchWaitForever)) != tchOK)
 		return result;
 	adcDesc->_handle = NULL;
 	tch_adcChannelOccpStatus &= ins->ch_occp;
 	tch_disableInterrupt(adcDesc->irq);
-	env->Condv->wakeAll(ADC_StaticInstance.condv);
-	env->Mtx->unlock(ADC_StaticInstance.mtx);
+	env->Condv->wakeAll(&ADC_Condv);
+	env->Mtx->unlock(&ADC_Mutex);
 
 	env->Mem->free(ins);
 	return tchOK;
@@ -345,9 +332,9 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_m
 	uint16_t* chnk = NULL;
 	while(convCnt--){
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,tchWaitForever,NULL);
-		tch_dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
+		DMA_IX->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
 		ins->timer->start(ins->timer);
-		tch_dma->beginXfer(ins->dma,&dmaReq,0,&result);
+		DMA_IX->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk,1000);

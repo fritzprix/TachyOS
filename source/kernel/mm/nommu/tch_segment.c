@@ -19,7 +19,7 @@
 /**
  * when region is freed first page of region has header for region information
  */
-struct page_free_header {
+struct free_page_header {
 	cdsl_dlistNode_t 	lhead;
 	uint32_t 			contig_pcount;
 	uint32_t 			offset;
@@ -29,7 +29,7 @@ struct page_free_header {
 struct page_frame {
 	union {
 		uint8_t __dummy[PAGE_SIZE];
-		struct page_free_header fhdr;
+		struct free_page_header fhdr;
 	};
 };
 
@@ -210,7 +210,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 	if(segment->pfree_cnt < pcount)
 		return 0;
 
-	struct page_frame* frame = (struct page_frame*) (container_of(segment->pfree_list.next,struct page_free_header,lhead));
+	struct page_frame* frame = (struct page_frame*) (container_of(segment->pfree_list.next,struct free_page_header,lhead));
 	struct page_frame *nframe;
 	while(frame){
 		if(frame->fhdr.contig_pcount >= pcount){ 										// find contiguos page region
@@ -227,7 +227,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 			cdsl_dlistReplace(&frame->fhdr.lhead,&nframe->fhdr.lhead);
 			return pcount;
 		}
-		frame = (struct page_frame*) container_of(frame->fhdr.lhead.next,struct page_free_header,lhead);		// move to next frame
+		frame = (struct page_frame*) container_of(frame->fhdr.lhead.next,struct free_page_header,lhead);		// move to next frame
 	}
 	return 0;
 }
@@ -256,12 +256,12 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 	 * find position on the list where freed page region inserted
 	 */
 	do {
-		cframe = (struct page_frame*) container_of(phead,struct page_free_header,lhead);
+		cframe = (struct page_frame*) container_of(phead,struct free_page_header,lhead);
 		phead = phead->next;
 	} while((cframe->fhdr.offset < frame->fhdr.offset));
 
 
-	cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.prev,struct page_free_header,lhead);		// step backward
+	cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.prev,struct free_page_header,lhead);		// step backward
 	cdsl_dlistInsertAfter(&cframe->fhdr.lhead,&frame->fhdr.lhead);											// insert freed page region after found frame
 	segment->pfree_cnt += mreg->psz;																		// update segment free size
 
@@ -271,13 +271,13 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 	 *  begining of merge operation of region
 	 */
 	if(cframe == (struct page_frame*) &segment->pfree_list)
-		cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
+		cframe = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct free_page_header,lhead);
 
 	/**
 	 * find mergable region
 	 */
-	while(cframe->fhdr.contig_pcount + cframe->fhdr.offset == ((struct page_free_header*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead))->offset){
-		frame = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct page_free_header,lhead);
+	while(cframe->fhdr.contig_pcount + cframe->fhdr.offset == ((struct free_page_header*) container_of(cframe->fhdr.lhead.next,struct free_page_header,lhead))->offset){
+		frame = (struct page_frame*) container_of(cframe->fhdr.lhead.next,struct free_page_header,lhead);
 		cframe->fhdr.contig_pcount += frame->fhdr.contig_pcount;		// merge into bigger chunk
 		cdsl_dlistRemove(&frame->fhdr.lhead);
 	}
@@ -303,7 +303,13 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	switch(seg->flags & SEGMENT_MSK){
 	case SEGMENT_KERNEL:
 		seg->pfree_cnt = 0;											// marked as segment has no free page for kernel section & keep its memory content
-		set_permission(seg->flags,PERM_KERNEL_ALL);					// kernel is only accessible privilidge level
+		uint32_t sec_type = get_section(seg->flags);
+
+		if(sec_type == SECTION_URODATA || sec_type == SECTION_UTEXT){
+			set_permission(seg->flags,PERM_OTHER_RD | PERM_KERNEL_XC | PERM_KERNEL_ALL);
+		} else {
+			set_permission(seg->flags,PERM_KERNEL_ALL);					// kernel is only accessible privilidge level
+		}
 		break;
 	case SEGMENT_NORMAL:
 		seg->pfree_cnt = seg->psize;								// set free page count as its total page count
@@ -420,10 +426,5 @@ int tch_regionGetSize(struct mem_region* mreg){
 	if(!mreg)
 		return 0;
 	return (mreg->psz << CONFIG_PAGE_SHIFT);
-}
-
-int tch_regionGetFreeSize(struct mem_region* mreg){
-	if(!mreg)
-		return 0;
 }
 

@@ -188,7 +188,7 @@ struct tch_gpio_handle {
 
 
 typedef struct tch_lld_gpio {
-	const uint16_t FEATURE_COUNT;
+	const uint16_t count;
 	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout);
 	void (*initCfg)(tch_GpioCfg* cfg);
 	void (*initEvCfg)(tch_GpioEvCfg* evcfg);

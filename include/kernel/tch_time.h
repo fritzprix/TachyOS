@@ -23,7 +23,7 @@ extern "C"{
 typedef void (*tch_wkup_handler)(void);
 
 extern tch_systime_ix* tchk_systimeInit(const tch* env,time_t itm,tch_timezone itz);
-extern tchStatus tchk_systimeSetTimeout(tch_threadId thread,uint32_t timeout,tch_timeunit tu);
+extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout,tch_timeunit tu);
 extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
 extern BOOL tch_systimeIsPendingEmpty();
 

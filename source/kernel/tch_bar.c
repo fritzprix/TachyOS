@@ -50,14 +50,14 @@ static tchStatus bar_deinit(tch_barCb* bar);
 
 
 
-__USER_RODATA__ tch_bar_ix Barrier_StaticInstance = {
+__USER_RODATA__ tch_bar_ix Barrier_IX = {
 		.create = tch_barCreate,
 		.wait = tch_barWait,
 		.signal = tch_barSignal,
 		.destroy = tch_barDestroy
 };
 
-__USER_RODATA__ const tch_bar_ix* Barrier = &Barrier_StaticInstance;
+__USER_RODATA__ const tch_bar_ix* Barrier = &Barrier_IX;
 
 
 

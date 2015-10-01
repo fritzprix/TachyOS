@@ -39,7 +39,7 @@ static inline void tch_mpoolValidate(tch_mpoolId mp);
 static inline void tch_mpoolInvalidate(tch_mpoolId mp);
 static inline BOOL tch_mpoolIsValid(tch_mpoolId mp);
 
-__attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
+__USER_RODATA__ tch_mpool_ix MPool_IX = {
 		tch_mpoolCreate,
 		tch_mpoolAlloc,
 		tch_mpoolCalloc,
@@ -47,9 +47,9 @@ __attribute__((section(".data"))) static tch_mpool_ix MPoolStaticIntance = {
 		tch_mpoolDestroy
 };
 
-const tch_mpool_ix* Mempool = &MPoolStaticIntance;
+__USER_RODATA__ const tch_mpool_ix* Mempool = &MPool_IX;
 
-tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
+__USER_API__ tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shmAlloc(sizeof(tch_mpoolCb) + sz * plen);
 	memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
 	mpcb->bpool = (tch_mpoolCb*) mpcb + 1;
@@ -76,7 +76,7 @@ tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 }
 
 
-void* tch_mpoolAlloc(tch_mpoolId mpool){
+__USER_API__ void* tch_mpoolAlloc(tch_mpoolId mpool){
 	if(!tch_mpoolIsValid(mpool))
 		return NULL;
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
@@ -92,7 +92,7 @@ void* tch_mpoolAlloc(tch_mpoolId mpool){
 }
 
 
-void* tch_mpoolCalloc(tch_mpoolId mpool){
+__USER_API__ void* tch_mpoolCalloc(tch_mpoolId mpool){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	void* free = tch_mpoolAlloc(mpool);
 	if(free){
@@ -101,7 +101,7 @@ void* tch_mpoolCalloc(tch_mpoolId mpool){
 	return free;
 }
 
-tchStatus tch_mpoolFree(tch_mpoolId mpool,void* block){
+__USER_API__ tchStatus tch_mpoolFree(tch_mpoolId mpool,void* block){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	if((block < mpcb->bpool) || (block > mpcb->bend))
 		return tchErrorParameter;
@@ -113,7 +113,7 @@ tchStatus tch_mpoolFree(tch_mpoolId mpool,void* block){
 }
 
 
-tchStatus tch_mpoolDestroy(tch_mpoolId mpool){
+__USER_API__ tchStatus tch_mpoolDestroy(tch_mpoolId mpool){
 	if(!tch_mpoolIsValid(mpool)){
 		return tchErrorParameter;
 	}

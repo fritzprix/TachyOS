@@ -69,7 +69,7 @@ struct tch_spi_handle_t {
 };
 
 typedef struct tch_lld_spi {
-	const uint16_t SPI_COUNT;
+	const uint16_t count;
 	void (*initCfg)(tch_spiCfg* cfg);
 	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_spi;

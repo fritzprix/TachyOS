@@ -40,7 +40,7 @@
 #define PE_DYNAMIC					((uint8_t) 3)
 
 
-#define NR_PAGE_ENTRY				8
+#define NR_PAGE_ENTRY				((uint8_t) 8)
 
 
 

@@ -990,8 +990,8 @@ __TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 
 
 tch_hal tch_hal_instance;
-tch_lld_rtc* tch_rtc;
-tch_lld_dma* tch_dma;
+tch_lld_rtc* RTC_IX;
+tch_lld_dma* DMA_IX;
 
 const tch_hal* tch_hal_init(const tch* env){
 	/***
@@ -1002,8 +1002,8 @@ const tch_hal* tch_hal_init(const tch* env){
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
 	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
 
-	tch_rtc = tch_rtcHalInit(env);
-	tch_dma = tch_dmaHalInit(env);
+	RTC_IX = tch_rtcHalInit(env);
+	DMA_IX = tch_dmaHalInit(env);
 	/***
 	 *  bind hal interface
 	 */

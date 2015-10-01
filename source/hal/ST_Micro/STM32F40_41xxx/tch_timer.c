@@ -12,8 +12,11 @@
  */
 
 #include "tch_hal.h"
-#include "tch_kernel.h"
+#include "tch_gpio.h"
 #include "tch_timer.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 
 
 
@@ -94,13 +97,6 @@
 
 
 
-typedef struct tch_timer_mgr_t {
-	tch_lld_timer                     pix;
-	tch_mtxId                         mtx;
-	tch_condvId                       condv;
-} tch_timer_manager;
-
-
 struct tch_gptimer_req_t {
 	uint32_t utick;
 	void* ins;
@@ -138,83 +134,78 @@ typedef struct tch_tcapt_handle_proto_t{
 
 
 ///////            Timer Manager Function               ///////
-static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
-static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
-static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
-static uint32_t tch_timer_getChannelCount(tch_timer timer);
-static uint8_t tch_timer_getPrecision(tch_timer timer);
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
+__USER_API__ static uint32_t tch_timer_getChannelCount(tch_timer timer);
+__USER_API__ static uint8_t tch_timer_getPrecision(tch_timer timer);
+
+
+//////         General Purpose Timer Function           ///////
+__USER_API__ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
+__USER_API__ static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
+__USER_API__ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
+__USER_API__ static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_descriptor* desc);
+__USER_API__ static BOOL tch_timer_handle_tcaptInterrupt(tch_tcapt_handle_proto* ins, tch_timer_descriptor* desc);
+
+
+//////            PWM fucntion                        //////
+__USER_API__ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty);
+__USER_API__ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
+__USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
+__USER_API__ static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch);
+__USER_API__ static tchStatus tch_pwm_close(tch_pwmHandle* self);
+__USER_API__ static tchStatus tch_pwm_start(tch_pwmHandle* self);
+__USER_API__ static tchStatus tch_pwm_stop(tch_pwmHandle* self);
+
+
+/////             Pulse Capture Function                /////
+__USER_API__ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
+__USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
+__USER_API__ static tchStatus tch_tcapt_close(tch_tcaptHandle* self);
+
+
 static void tch_timer_handleInterrupt(tch_timer timer);
 
 
 
-
-//////         General Purpose Timer Function           ///////
-static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick);
-static tchStatus tch_gptimer_close(tch_gptimerHandle* self);
-static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_timer_descriptor* desc);
-static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_descriptor* desc);
-static BOOL tch_timer_handle_tcaptInterrupt(tch_tcapt_handle_proto* ins, tch_timer_descriptor* desc);
-
-
-
-//////            PWM fucntion                        //////
-static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty);
-static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz);
-static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
-static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch);
-static tchStatus tch_pwm_close(tch_pwmHandle* self);
-static tchStatus tch_pwm_start(tch_pwmHandle* self);
-static tchStatus tch_pwm_stop(tch_pwmHandle* self);
-
-
-/////             Pulse Capture Function                /////
-static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout);
-static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL enable,uint32_t timeout);
-static tchStatus tch_tcapt_close(tch_tcaptHandle* self);
-
-
-
-
-__attribute__((section(".data")))  static tch_timer_manager TIMER_StaticInstance = {
-		{
-				MFEATURE_TIMER,
-				tch_timer_allocGptimerUnit,
-				tch_timer_allocPWMUnit,
-				tch_timer_allocCaptureUnit,
-				tch_timer_getChannelCount,
-				tch_timer_getPrecision
-		},
-		NULL,
-		NULL
+__USER_RODATA__ tch_lld_timer TIMER_Ops = {
+		.count = MFEATURE_TIMER,
+		.openGpTimer = tch_timer_allocGptimerUnit,
+		.openPWM = tch_timer_allocPWMUnit,
+		.openTimerCapture = tch_timer_allocCaptureUnit,
+		.getChannelCount = tch_timer_getChannelCount,
+		.getPrecision = tch_timer_getPrecision
 };
+
+static tch_mtxCb	lock;
+static tch_condvCb  condv;
 
 
 tch_lld_timer* tch_timerHalInit(const tch* env){
-	if(TIMER_StaticInstance.mtx || TIMER_StaticInstance.condv)
-		return NULL;
 	if(!env)
 		return NULL;
-	TIMER_StaticInstance.mtx = env->Mtx->create();
-	TIMER_StaticInstance.condv = env->Condv->create();
-	return (tch_lld_timer* )&TIMER_StaticInstance;
+	tch_mutexInit(&lock);
+	tch_condvInit(&condv);
+	return &TIMER_Ops;
 }
 
 ///////            Timer Manager Function               ///////
-static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_gptimer_handle_proto* ins = NULL;
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
-	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != tchOK){
+	if(env->Mtx->lock(&lock,timeout) != tchOK){
 		return NULL;
 	}
 	while(timDesc->_handle){
-		if(env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout) != tchOK){
+		if(env->Condv->wait(&condv,&lock,timeout) != tchOK){
 			return NULL;
 		}
 	}
 	timDesc->_handle = ins = env->Mem->alloc(sizeof(tch_gptimer_handle_proto));
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Mtx->unlock(&lock);
 
 	env->uStdLib->string->memset(ins,0,sizeof(tch_gptimer_handle_proto));
 
@@ -327,16 +318,12 @@ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer ti
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
-/*
-	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(timDesc->irq);*/
-
 	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	return (tch_gptimerHandle*) ins;
 }
 
-static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout){
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_pwm_handle_proto* ins = NULL;
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
@@ -344,18 +331,18 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
-	if(env->Mtx->lock(TIMER_StaticInstance.mtx,timeout) != tchOK){
+	if(env->Mtx->lock(&lock,timeout) != tchOK){
 		env->Mem->free(ins);
 		return NULL;
 	}
 	while(timDesc->_handle){
-		if(env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout) != tchOK){
+		if(env->Condv->wait(&condv,&lock,timeout) != tchOK){
 			env->Mem->free(ins);
 			return NULL;
 		}
 	}
 	timDesc->_handle = ins = (tch_pwm_handle_proto*) env->Mem->alloc(sizeof(tch_pwm_handle_proto));
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Mtx->unlock(&lock);
 
 	env->uStdLib->string->memset(ins,0,sizeof(tch_pwm_handle_proto));
 
@@ -489,9 +476,6 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 		timerHw->CCER = tmpccer;
 		timerHw->CCR4 = 0;
 	}
-/*
-	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(timDesc->irq);*/
 	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
 
 	timerHw->ARR = tdef->PeriodInUnitTime;
@@ -504,7 +488,7 @@ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_
 /*!
  *
  */
-static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout){
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout){
 	tchStatus result = tchOK;
 	uint16_t pmsk = 0;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) env->Mem->alloc(sizeof(tch_tcapt_handle_proto));
@@ -533,19 +517,19 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		return NULL;
 	}
 
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,timeout)) != tchOK){
+	if((result = env->Mtx->lock(&lock,timeout)) != tchOK){
 		env->Mem->free(ins);
 		return NULL;
 	}
 	while(timDesc->_handle){
-		if((result = env->Condv->wait(TIMER_StaticInstance.condv,TIMER_StaticInstance.mtx,timeout)) != tchOK){
+		if((result = env->Condv->wait(&condv,&lock,timeout)) != tchOK){
 			env->Mem->free(ins);
 			return NULL;
 		}
 	}
 	timDesc->_handle = ins;
 	timDesc->ch_occp = 0;
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Mtx->unlock(&lock);
 
 	ins->_pix.close = tch_tcapt_close;
 	ins->_pix.read = tch_tcapt_read;
@@ -623,24 +607,18 @@ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer time
 		timerHw->CCER |= (TIM_CCER_CC3E | TIM_CCER_CC4E);
 		timerHw->DIER |= TIM_DIER_CC3IE;
 	}
-
-/*
-	NVIC_SetPriority(timDesc->irq,HANDLER_NORMAL_PRIOR);
-	NVIC_EnableIRQ(timDesc->irq);
-*/
 	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
-
 	timerHw->CNT = 0;
 	timerHw->CR1 = TIM_CR1_CEN;
 
 	return (tch_tcaptHandle*) ins;
 }
 
-static uint32_t tch_timer_getChannelCount(tch_timer timer){
+__USER_API__ static uint32_t tch_timer_getChannelCount(tch_timer timer){
 	return TIMER_HWs[timer].channelCnt;
 }
 
-static uint8_t tch_timer_getPrecision(tch_timer timer){
+__USER_API__ static uint8_t tch_timer_getPrecision(tch_timer timer){
 	return TIMER_HWs[timer].precision;
 }
 
@@ -652,7 +630,7 @@ static uint8_t tch_timer_getPrecision(tch_timer timer){
 /*
 */
 
-static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
+__USER_API__ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
 	if(!self)
 		return FALSE;
@@ -698,7 +676,7 @@ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick){
 	return FALSE;   // couldn't find available timer channel ( all occupied)
 }
 
-static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
+__USER_API__ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	tch_gptimer_handle_proto* ins = (tch_gptimer_handle_proto*) self;
 	int chIdx = 0;
 	if(!self)
@@ -713,16 +691,15 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	timerHw->SR = 0;
 	timerHw->CNT = 0;
 	timerHw->DIER = 0;
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&lock,tchWaitForever)) != tchOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
 	timDesc->_handle = NULL;
-//	NVIC_DisableIRQ(timDesc->irq);
 	tch_disableInterrupt(timDesc->irq);
 
-	env->Condv->wakeAll(TIMER_StaticInstance.condv);
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Condv->wakeAll(&condv);
+	env->Mtx->unlock(&lock);
 
 
 	while(chIdx < timDesc->channelCnt){
@@ -736,7 +713,7 @@ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 
 //////            PWM fucntion                        //////
 
-static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
+__USER_API__ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)TIMER_HWs[ins->timer]._hw;
 	if(!self)
@@ -764,7 +741,7 @@ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float duty){
 	return FALSE;
 }
 
-static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz){
+__USER_API__ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size_t sz){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_descriptor* timDesc = (tch_timer_descriptor*) &TIMER_HWs[ins->timer];
 	tchStatus result = tchOK;
@@ -799,7 +776,6 @@ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size
 		*ccr = (uint32_t) (*(fduty++) * dutyd);
 		if(sz){
 			result = ins->env->Barrier->wait(ins->uev_bar,tchWaitForever);
-	//		result = ins->env->Sem->lock(ins->uev_sem,tchWaitForever);
 		}
 	}
 	TimerHw->DIER &= ~TIM_DIER_UIE;
@@ -808,7 +784,7 @@ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,float* fduty,size
 }
 
 
-static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout){
+__USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL enable,uint32_t timeout){
 	if(!self)
 		return tchErrorParameter;
 	if(!tch_timer_PWMIsValid(self))
@@ -834,7 +810,7 @@ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_t ch,BOOL ena
 }
 
 
-static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
+__USER_API__ static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	float tmparr, tmpccr = 0.f;
 	if(!tch_timer_PWMIsValid(ins))
@@ -858,7 +834,7 @@ static float tch_pwm_getDuty(tch_pwmHandle* self,uint32_t ch){
 	return tmpccr / tmparr;
 }
 
-static tchStatus tch_pwm_start(tch_pwmHandle* self){
+__USER_API__ static tchStatus tch_pwm_start(tch_pwmHandle* self){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	TIM_TypeDef* timHw = NULL;
 	if(!ins)
@@ -873,7 +849,7 @@ static tchStatus tch_pwm_start(tch_pwmHandle* self){
 	return tchOK;
 }
 
-static tchStatus tch_pwm_stop(tch_pwmHandle* self){
+__USER_API__ static tchStatus tch_pwm_stop(tch_pwmHandle* self){
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	TIM_TypeDef* timHw = NULL;
 	if(!ins)
@@ -888,7 +864,7 @@ static tchStatus tch_pwm_stop(tch_pwmHandle* self){
 	return tchOK;
 }
 
-static tchStatus tch_pwm_close(tch_pwmHandle* self){
+__USER_API__ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	if(!self)
 		return tchErrorParameter;
 	if(!tch_timer_PWMIsValid(self))
@@ -910,15 +886,14 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 			ins->iohandle[chcnt]->close(ins->iohandle[chcnt]);
 	}
 	env->Mem->free(ins->iohandle);
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&lock,tchWaitForever)) != tchOK)
 		return result;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-//	NVIC_DisableIRQ(timDesc->irq);
 	tch_disableInterrupt(timDesc->irq);
 	timDesc->_handle = NULL;
-	env->Condv->wakeAll(TIMER_StaticInstance.condv);
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Condv->wakeAll(&condv);
+	env->Mtx->unlock(&lock);
 	env->Mem->free(ins);
 	return tchOK;
 
@@ -926,7 +901,7 @@ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 
 
 /////             Pulse Capture Function                /////
-static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout){
+__USER_API__ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,size_t size,uint32_t timeout){
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
 	if(!ins)
 		return tchErrorParameter;
@@ -979,7 +954,7 @@ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,uint32_t* buf,s
 	return evt.status;
 }
 
-static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL enable,uint32_t timeout){
+__USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL enable,uint32_t timeout){
 	if(!self)
 		return tchErrorParameter;
 	if(!tch_timer_PWMIsValid(self))
@@ -1005,7 +980,7 @@ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uint8_t ch,BOOL 
 }
 
 
-static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
+__USER_API__ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
 	tchStatus result = tchOK;
 	if(!ins)
@@ -1035,19 +1010,18 @@ static tchStatus tch_tcapt_close(tch_tcaptHandle* self){
 	}
 	env->Mem->free(ins->iohandle);
 
-	if((result = env->Mtx->lock(TIMER_StaticInstance.mtx,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&lock,tchWaitForever)) != tchOK)
 		return result;
 	timDesc->_handle = NULL;
 
 	*timDesc->rstr &= ~timDesc->rstmsk;
 	*timDesc->_clkenr &= ~timDesc->clkmsk;
 	*timDesc->_lpclkenr &= ~timDesc->lpclkmsk;
-//	NVIC_DisableIRQ(timDesc->irq);
 	tch_disableInterrupt(timDesc->irq);
 
 
-	env->Condv->wakeAll(TIMER_StaticInstance.condv);
-	env->Mtx->unlock(TIMER_StaticInstance.mtx);
+	env->Condv->wakeAll(&condv);
+	env->Mtx->unlock(&lock);
 	env->Mem->free(ins);
 
 	return result;

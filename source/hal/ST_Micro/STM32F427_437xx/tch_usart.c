@@ -15,6 +15,8 @@
 
 #include "tch_hal.h"
 #include "tch_dma.h"
+#include "tch_gpio.h"
+#include "tch_usart.h"
 #include "tch_kernel.h"
 #include "tch_fs.h"
 
@@ -126,6 +128,7 @@ static inline void tch_usartValidate(tch_usartHandlePrototype _handle);
 static inline void tch_usartInvalidate(tch_usartHandlePrototype _handle);
 static inline BOOL tch_usartIsValid(tch_usartHandlePrototype _handle);
 
+/*
 __attribute__((section(".data"))) static struct tch_usart_prototype_s UART_StaticInstance = {
 		{
 				MFEATURE_UART,
@@ -135,24 +138,30 @@ __attribute__((section(".data"))) static struct tch_usart_prototype_s UART_Stati
 		NULL,
 		0,
 		0
+};*/
+
+__USER_RODATA__ struct tch_lld_usart UART_Ops = {
+		.count = MFEATURE_UART,
+		.allocate = tch_usartOpen
 };
 
-static struct tch_file_operations uart_fops = {
+static tch_mtxCb 		mtx;
+static tch_condvCb 		condv;
+static uint16_t			occp_state;
+static uint16_t			lpoccp_state;
 
-};
 
 tch_lld_usart* tch_usartHalInit(const tch* env){
-	if(UART_StaticInstance.mtx || UART_StaticInstance.condv)
-		return NULL;
 	if(!env)
 		return NULL;
-	UART_StaticInstance.occp_state = 0;
-	UART_StaticInstance.lpoccp_state = 0;
-	UART_StaticInstance.mtx = env->Mtx->create();
-	UART_StaticInstance.condv = env->Condv->create();
+	occp_state = 0;
+	lpoccp_state = 0;
+
+	tch_mutexInit(&mtx);
+	tch_condvInit(&condv);
 
 
-	return (tch_lld_usart*) &UART_StaticInstance;
+	return &UART_Ops;
 }
 
 
@@ -167,14 +176,14 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	if(tch_port_isISR())
 		return NULL;
 
-	if(env->Mtx->lock(UART_StaticInstance.mtx,timeout) != tchOK)
+	if(env->Mtx->lock(&mtx,timeout) != tchOK)
 		return NULL;
-	while(UART_StaticInstance.occp_state & umskb){
-		if(env->Condv->wait(UART_StaticInstance.condv,UART_StaticInstance.mtx,timeout) != tchOK)
+	while(occp_state & umskb){
+		if(env->Condv->wait(&condv,&mtx,timeout) != tchOK)
 			return NULL;
 	}
-	UART_StaticInstance.occp_state |= umskb;   // mark as occupied
-	env->Mtx->unlock(UART_StaticInstance.mtx); // exit critical section
+	occp_state |= umskb;   // mark as occupied
+	env->Mtx->unlock(&mtx); // exit critical section
 	tch_uart_descriptor* uDesc = &UART_HWs[port];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
 	tch_uart_bs* ubs = &UART_BD_CFGs[port];
@@ -257,7 +266,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->txDma = tch_dma->allocate(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
+		uins->txDma = DMA_IX->allocate(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
 	}
 
 	if(ubs->rxdma != DMA_NOT_USED){ // setup rx dma
@@ -273,7 +282,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->rxDma = tch_dma->allocate(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
+		uins->rxDma = DMA_IX->allocate(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
 	}
 
 
@@ -339,29 +348,29 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	env->Event->destroy(ins->txEvId);
 
 	if(ins->txDma){
-		tch_dma->freeDma(ins->txDma);
+		DMA_IX->freeDma(ins->txDma);
 	}
 	if(ins->rxDma){
-		tch_dma->freeDma(ins->rxDma);
+		DMA_IX->freeDma(ins->rxDma);
 	}
 	ins->ioHandle->close(ins->ioHandle);
-	if(env->Mtx->lock(UART_StaticInstance.mtx,tchWaitForever) != tchOK){
+	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK){
 		return FALSE;
 	}
-	UART_StaticInstance.occp_state &= ~(1 << ins->pno); // clear Occupation flag
-	UART_StaticInstance.lpoccp_state &= ~(1 << ins->pno);
+	occp_state &= ~(1 << ins->pno); // clear Occupation flag
+	lpoccp_state &= ~(1 << ins->pno);
 
 	*uDesc->_rstr |= uDesc->rstmsk;
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
 //	NVIC_DisableIRQ(uDesc->irq);
 	tch_disableInterrupt(uDesc->irq);
-	env->Condv->wakeAll(UART_StaticInstance.condv);
+	env->Condv->wakeAll(&condv);
 	UART_CLR_RXBUSY(ins);
 	UART_CLR_TXBUSY(ins);
 	env->Mem->free(handle);
 	uDesc->_handle = NULL;
-	return env->Mtx->unlock(UART_StaticInstance.mtx);
+	return env->Mtx->unlock(&mtx);
 }
 
 
@@ -424,12 +433,12 @@ static tchStatus tch_usartWrite(tch_usartHandle handle,const uint8_t* bp,uint32_
 	} else {
 		uhw->CR3 |= USART_CR3_DMAT;
 		tch_DmaReqDef req;
-		tch_dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
+		DMA_IX->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
 		uhw->SR &= ~USART_SR_TC;    // clear tc
-		if(tch_dma->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
+		if(DMA_IX->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
 			result = tchErrorIo;
 			RETURN_SAFELY();
 		}
@@ -490,10 +499,10 @@ static uint32_t tch_usartRead(tch_usartHandle handle,uint8_t* bp, uint32_t sz,ui
 	} else {
 		uhw->CR3 |= USART_CR3_DMAR;
 		tch_DmaReqDef req;
-		tch_dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
+		DMA_IX->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
-		sz -= tch_dma->beginXfer(ins->rxDma,&req,timeout,NULL);
+		sz -= DMA_IX->beginXfer(ins->rxDma,&req,timeout,NULL);
 	}
 
 	env->Mtx->lock(ins->rxMtx,timeout);

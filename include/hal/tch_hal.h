@@ -58,8 +58,8 @@ typedef enum {
  *  it's been recommended that DMA is accessed by another HAL Interface
  */
 
-extern tch_lld_rtc* tch_rtc; /**<RTC HAL Object  */
-extern tch_lld_dma* tch_dma; /**<DMA HAL Object  */
+extern tch_lld_rtc* RTC_IX; /**<RTC HAL Object  */
+extern tch_lld_dma* DMA_IX; /**<DMA HAL Object  */
 
 extern int _stext;
 extern int _etext;

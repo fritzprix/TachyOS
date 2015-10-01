@@ -67,9 +67,10 @@ extern "C" {
 #define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
-#define SEGMENT_NORMAL			((uint32_t) 0)
-#define SEGMENT_KERNEL			((uint32_t) 1)		//	memory section for kernel instruction code#define SEGMENT_UACCESS			((uint32_t) 2)
-#define SEGMENT_DEVICE			((uint32_t) 3)
+#define SEGMENT_NORMAL				((uint32_t) 0)
+#define SEGMENT_KERNEL				((uint32_t) 1)
+#define SEGMENT_UACCESS				((uint32_t) 2)
+#define SEGMENT_DEVICE				((uint32_t) 3)
 
 #define SEGMENT_MSK				(SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE | SEGMENT_UACCESS)
 
@@ -85,21 +86,31 @@ extern "C" {
 #define get_section(flag)		(flag & SECTION_MSK)
 
 #define CACHE_WRITE_THROUGH				((uint32_t) 1 << 6)
-#define CACHE_WRITE_BACK_WA				((uint32_t) 2 << 6)			// write back (write allocate)#define CACHE_WRITE_BACK_NWA			((uint32_t) 3 << 6)			// write back (no write allocate)#define CACHE_BYPASS					((uint32_t) 4 << 6)
+#define CACHE_WRITE_BACK_WA				((uint32_t) 2 << 6)
+#define CACHE_WRITE_BACK_NWA			((uint32_t) 3 << 6)
+#define CACHE_BYPASS					((uint32_t) 4 << 6)
 
 #define CACHE_POLICY_MSK				(CACHE_WRITE_THROUGH | CACHE_WRITE_BACK_WA | CACHE_WRITE_BACK_NWA | CACHE_BYPASS)
 #define get_cachepol(flag)				(flag & CACHE_POLICY_MSK)
 
-
 #define SHAREABLE_MSK					((uint32_t) 1 << 9 )
 #define get_shareability(flag)			(flag & SHAREABLE_MSK)
 
-
 #define PERM_BASE				((uint32_t) SHAREABLE_MSK << 1)
-#define PERM_KERNEL_RD			((uint32_t) PERM_BASE << 0)		// allows kernel process to read access		(all addresses are accessible from kernel in some implementation)#define PERM_KERNEL_WR			((uint32_t) PERM_BASE << 1)		// allows kernel process to write access#define PERM_KERNEL_XC			((uint32_t) PERM_BASE << 2)		// allows kernel process to execute access#define PERM_KERNEL_ALL			(PERM_KERNEL_RD | PERM_KERNEL_WR | PERM_KERNEL_XC)	// allows kernel process to all access type
-#define PERM_OWNER_RD			((uint32_t) PERM_BASE << 3)		// allows owner process to read access		(owner means process that initialy allocate the region)#define PERM_OWNER_WR			((uint32_t) PERM_BASE << 4)		// allows owner process to write access#define PERM_OWNER_XC			((uint32_t) PERM_BASE << 5)		// allows owner process to execute aceess#define PERM_OWNER_ALL			(PERM_OWNER_RD | PERM_OWNER_WR | PERM_OWNER_XC)
+#define PERM_KERNEL_RD			((uint32_t) PERM_BASE << 0)
+#define PERM_KERNEL_WR			((uint32_t) PERM_BASE << 1)
+#define PERM_KERNEL_XC			((uint32_t) PERM_BASE << 2)
+#define PERM_KERNEL_ALL			(PERM_KERNEL_RD | PERM_KERNEL_WR | PERM_KERNEL_XC)
 
-#define PERM_OTHER_RD			((uint32_t) PERM_BASE << 6)		// allows other process to read access#define PERM_OTHER_WR			((uint32_t) PERM_BASE << 7)	// allows other process to write access#define PERM_OTHER_XC			((uint32_t) PERM_BASE << 8)	// allows other process to execute access#define PERM_OTHER_ALL			(PERM_OTHER_RD | PERM_OTHER_WR | PERM_OTHER_XC)
+#define PERM_OWNER_RD			((uint32_t) PERM_BASE << 3)
+#define PERM_OWNER_WR			((uint32_t) PERM_BASE << 4)
+#define PERM_OWNER_XC			((uint32_t) PERM_BASE << 5)
+#define PERM_OWNER_ALL			(PERM_OWNER_RD | PERM_OWNER_WR | PERM_OWNER_XC)
+
+#define PERM_OTHER_RD			((uint32_t) PERM_BASE << 6)
+#define PERM_OTHER_WR			((uint32_t) PERM_BASE << 7)
+#define PERM_OTHER_XC			((uint32_t) PERM_BASE << 8)
+#define PERM_OTHER_ALL			(PERM_OTHER_RD | PERM_OTHER_WR | PERM_OTHER_XC)
 
 #define PERM_MSK				(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
 
@@ -151,7 +162,6 @@ extern BOOL tch_mmProcInit(tch_thread_kheader* thread,
 		struct proc_header* proc);
 extern BOOL tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
-
 
 #if defined(__cplusplus)
 }

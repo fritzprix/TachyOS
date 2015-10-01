@@ -22,10 +22,11 @@
 	((tch_msgq_cb*) msgq)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF);\
 }
 
-static tch_msgqId tch_msgqCreate(uint32_t len);
-static tchStatus tch_msgqPut(tch_msgqId,uint32_t msg,uint32_t millisec);
-static tchEvent tch_msgqGet(tch_msgqId,uint32_t millisec);
-static tchStatus tch_msgqDestroy(tch_msgqId);
+__USER_API__ static tch_msgqId tch_msgqCreate(uint32_t len);
+__USER_API__ static tchStatus tch_msgqPut(tch_msgqId,uint32_t msg,uint32_t millisec);
+__USER_API__ static tchEvent tch_msgqGet(tch_msgqId,uint32_t millisec);
+__USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId);
+
 static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic);
 static tchStatus msgq_deinit(tch_msgqCb* mq);
 
@@ -35,13 +36,14 @@ static void tch_msgqInvalidate(tch_msgqId);
 static BOOL tch_msgqIsValid(tch_msgqId);
 
 
-__attribute__((section(".data"))) static tch_msgq_ix MsgQStaticInstance = {
+__USER_RODATA__ tch_msgq_ix MsgQ_IX = {
 		tch_msgqCreate,
 		tch_msgqPut,
 		tch_msgqGet,
 		tch_msgqDestroy
 };
-const tch_msgq_ix* MsgQ = &MsgQStaticInstance;
+
+__USER_RODATA__ const tch_msgq_ix* MsgQ = &MsgQ_IX;
 
 
 DECLARE_SYSCALL_1(messageQ_create,uint32_t,tch_msgqId);
@@ -116,7 +118,7 @@ DEFINE_SYSCALL_1(messageQ_deinit,tch_msgqCb*,mcb,tchStatus){
 }
 
 
-static tch_msgqId tch_msgqCreate(uint32_t len){
+__USER_API__ static tch_msgqId tch_msgqCreate(uint32_t len){
 	if(!len)
 		return NULL;
 	if(tch_port_isISR())
@@ -125,7 +127,7 @@ static tch_msgqId tch_msgqCreate(uint32_t len){
 }
 
 
-static tchStatus tch_msgqPut(tch_msgqId mqId, uword_t msg,uint32_t millisec){
+__USER_API__ static tchStatus tch_msgqPut(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 	tchStatus result = tchOK;
 	if(!mqId)
 		return tchErrorResource;
@@ -147,7 +149,7 @@ static tchStatus tch_msgqPut(tch_msgqId mqId, uword_t msg,uint32_t millisec){
 }
 
 
-static tchEvent tch_msgqGet(tch_msgqId mqId,uint32_t millisec){
+__USER_API__ static tchEvent tch_msgqGet(tch_msgqId mqId,uint32_t millisec){
 	tch_msgqCb* msgqCb = (tch_msgqCb*) mqId;
 	tchEvent evt;
 	evt.def = mqId;
@@ -180,7 +182,7 @@ static tchEvent tch_msgqGet(tch_msgqId mqId,uint32_t millisec){
 
 
 
-static tchStatus tch_msgqDestroy(tch_msgqId mqId){
+__USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId mqId){
 	tch_thread_uheader* nth = NULL;
 	if(tch_port_isISR())
 		return tchErrorISR;

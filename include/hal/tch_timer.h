@@ -103,7 +103,7 @@ struct _tch_tcapt_def_t {
 };
 
 typedef struct tch_lld_timer {
-	const uint16_t TIMER_COUNT;
+	const uint16_t count;
 	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
 	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
 	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
