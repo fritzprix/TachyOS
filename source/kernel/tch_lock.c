@@ -68,10 +68,11 @@
  * Declaration for mutex api
  */
 
-static tch_mtxId tch_mutexCreate();
-static tchStatus tch_mutexLock(tch_mtxId mtx,uint32_t timeout);
-static tchStatus tch_mutexUnlock(tch_mtxId mtx);
-static tchStatus tch_mutexDestroy(tch_mtxId mtx);
+__USER_API__ static tch_mtxId tch_mutexCreate();
+__USER_API__ static tchStatus tch_mutexLock(tch_mtxId mtx,uint32_t timeout);
+__USER_API__ static tchStatus tch_mutexUnlock(tch_mtxId mtx);
+__USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId mtx);
+
 static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx);
 static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static);
 static tchStatus mutex_deinit(tch_mtxCb* mcb);
@@ -79,14 +80,14 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb);
 
 
 
-__attribute__((section(".data"))) static tch_mtx_ix MTX_Instance = {
+__USER_RODATA__ tch_mtx_ix Mutex_IX = {
 		tch_mutexCreate,
 		tch_mutexLock,
 		tch_mutexUnlock,
 		tch_mutexDestroy,
 };
 
-const tch_mtx_ix* Mtx = &MTX_Instance;
+__USER_RODATA__ const tch_mtx_ix* Mtx = &Mutex_IX;
 
 DECLARE_SYSCALL_0(mutex_create,tch_mtxId);
 DECLARE_SYSCALL_2(mutex_lock,tch_mtxId,uint32_t,tchStatus);
@@ -100,11 +101,11 @@ DECLARE_SYSCALL_1(mutex_deinit,tch_mtxCb*,tchStatus);
  * Declaration for condv api
  */
 
-static tch_condvId tch_condvCreate();
-static tchStatus tch_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout);
-static tchStatus tch_condvWake(tch_condvId condv);
-static tchStatus tch_condvWakeAll(tch_condvId condv);
-static tchStatus tch_condvDestroy(tch_condvId condv);
+__USER_API__ static tch_condvId tch_condvCreate();
+__USER_API__ static tchStatus tch_condvWait(tch_condvId condv,tch_mtxId mtx,uint32_t timeout);
+__USER_API__ static tchStatus tch_condvWake(tch_condvId condv);
+__USER_API__ static tchStatus tch_condvWakeAll(tch_condvId condv);
+__USER_API__ static tchStatus tch_condvDestroy(tch_condvId condv);
 
 static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static);
 static tchStatus condv_deint(tch_condvCb* condv);
@@ -114,7 +115,7 @@ struct condv_param {
 	void*		arg;
 };
 
-__attribute__((section(".data"))) static tch_condv_ix CondVar_StaticInstance = {
+__USER_RODATA__ tch_condv_ix CondVar_IX = {
 		.create = tch_condvCreate,
 		.wait = tch_condvWait,
 		.wake = tch_condvWake,
@@ -123,7 +124,7 @@ __attribute__((section(".data"))) static tch_condv_ix CondVar_StaticInstance = {
 };
 
 
-const tch_condv_ix* Condv = &CondVar_StaticInstance;
+__USER_RODATA__ const tch_condv_ix* Condv = &CondVar_IX;
 
 
 
@@ -232,13 +233,13 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	return tchOK;
 }
 
-static tch_mtxId tch_mutexCreate(){
+__USER_API__ static tch_mtxId tch_mutexCreate(){
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_mtxId) __SYSCALL_0(mutex_create);
 }
 
-static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout){
+__USER_API__ static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout){
 	tchStatus result = tchOK;
 	if(!id)
 		return tchErrorParameter;
@@ -253,7 +254,7 @@ static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout){
 	return result;
 }
 
-static tchStatus tch_mutexUnlock(tch_mtxId id){
+__USER_API__ static tchStatus tch_mutexUnlock(tch_mtxId id){
 	if(!id || !MTX_ISVALID(id))
 		return tchErrorResource;
 	if(tch_port_isISR())
@@ -279,7 +280,7 @@ static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx){
 }
 
 
-static tchStatus tch_mutexDestroy(tch_mtxId id){
+__USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId id){
 	tchStatus result = tchOK;
 	if(tch_port_isISR())
 		return tchErrorISR;
@@ -415,7 +416,7 @@ static tchStatus condv_deint(tch_condvCb* condv){
 	return tchOK;
 }
 
-static tch_condvId tch_condvCreate(){
+__USER_API__ static tch_condvId tch_condvCreate(){
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_condvId)__SYSCALL_0(condv_create);
@@ -426,7 +427,7 @@ static tch_condvId tch_condvCreate(){
  *  \
  *
  */
-static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
+__USER_API__ static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 	if(!id || !lock)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -441,7 +442,7 @@ static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
 /*!
  * \brief posix condition variable signal
  */
-static tchStatus tch_condvWake(tch_condvId id){
+__USER_API__ static tchStatus tch_condvWake(tch_condvId id){
 	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!id)
 		return tchErrorParameter;
@@ -458,7 +459,7 @@ static tchStatus tch_condvWake(tch_condvId id){
 	return result;
 }
 
-static tchStatus tch_condvWakeAll(tch_condvId id){
+__USER_API__ static tchStatus tch_condvWakeAll(tch_condvId id){
 	if(!id)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -473,7 +474,7 @@ static tchStatus tch_condvWakeAll(tch_condvId id){
 	return result;
 }
 
-static tchStatus tch_condvDestroy(tch_condvId id){
+__USER_API__ static tchStatus tch_condvDestroy(tch_condvId id){
 	if(!id)
 		return tchErrorParameter;
 	if(tch_port_isISR())

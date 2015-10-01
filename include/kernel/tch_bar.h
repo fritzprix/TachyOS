@@ -21,6 +21,7 @@ typedef struct tch_bar_cb_t {
 	cdsl_dlistNode_t         wq;
 }tch_barCb;
 
+extern tch_bar_ix Barrier_IX;
 extern tchStatus tch_barInit(tch_barCb* bar);
 extern tchStatus tch_barDeinit(tch_barCb* bar);
 

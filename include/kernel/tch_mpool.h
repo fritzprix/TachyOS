@@ -21,7 +21,7 @@
 extern "C"{
 #endif
 
-
+extern tch_mpool_ix MPool_IX;
 extern tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen);
 extern void* tch_mpoolAlloc(tch_mpoolId mpool);
 extern void* tch_mpoolCalloc(tch_mpoolId mpool);

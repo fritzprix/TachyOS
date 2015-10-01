@@ -66,7 +66,6 @@ extern struct mem_region* tch_segmentGetRegionFromPtr(void* ptr);
 extern void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg);
 extern void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg);
 extern int tch_regionGetSize(struct mem_region* mreg);
-extern int tch_regionGetFreeSize(struct mem_region* mreg);
 
 
 

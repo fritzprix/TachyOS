@@ -105,6 +105,7 @@ struct tch_thread_uheader_s {
 	void*						heap;
 	tch_condvId 				condv;
 	tch_mtxId					mtx;
+	tch 						ctx;
 	uword_t						kRet;				///<kernel return value
 #ifdef __NEWLIB__									///<@NOTE : NEWLIBC will be replaced by tch_libc which is more suitable for low-cost embedded system
 	struct _reent				reent;				///<reentrant struct used by LIBC
@@ -137,7 +138,7 @@ struct tch_thread_kheader_s {
 
 
 
-#define SV_EXIT_FROM_SV                  ((uint32_t) 0x00)
+#define SV_EXIT_FROM_SV                  ((uint32_t) -1)
 
 
 #ifdef __cplusplus

@@ -17,6 +17,7 @@
 
 
 #include "tch_types.h"
+#include "tch_loader.h"
 
 #if defined(__cplusplus)
 extern "C"{
@@ -32,6 +33,7 @@ extern "C"{
  * \param[in] root whether new thread is root or not
  *
  */
+extern tch_thread_ix Thread_IX;
 extern tch_threadId tch_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc);
 extern tchStatus tch_threadIsValid(tch_threadId thread);
 extern BOOL tch_threadIsPrivilidged(tch_threadId thread);

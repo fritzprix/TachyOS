@@ -49,7 +49,14 @@
  *  syscall definition
  */
 #define __SYSCALL__	__attribute__((section(".sysc.table")))
+
+/**
+ *  user api text attribute
+ */
+
 #define __USER_API__	__attribute__((section(".utext")))
+#define __USER_RODATA__	__attribute__((section(".urodata")))
+
 
 typedef uword_t (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);
 extern uint32_t __syscall_entry;

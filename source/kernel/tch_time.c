@@ -46,7 +46,7 @@ tch_systime_ix* tchk_systimeInit(const tch* env, time_t init_tm,
 	tch_systimeTick = 0;
 	tch_sysUpTimeSec = 0;
 
-	rtcHandle = tch_rtc->open(env, init_tm, init_tz);
+	rtcHandle = RTC_IX->open(env, init_tm, init_tz);
 	rtcHandle->enablePeriodicWakeup(rtcHandle, 1, tch_kernelOnWakeup);
 
 	tch_hal_enableSystick();
@@ -54,7 +54,7 @@ tch_systime_ix* tchk_systimeInit(const tch* env, time_t init_tm,
 	return &TIMER_StaticInstance;
 }
 
-tchStatus tchk_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
+tchStatus tch_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 		tch_timeunit tu) {
 	if ((timeout == tchWaitForever) || !thread)
 		return tchErrorParameter;

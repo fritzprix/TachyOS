@@ -42,7 +42,7 @@ static tchStatus event_deinit(tch_eventCb* evcb);
 
 
 
-__attribute__((section(".data"))) static tch_event_ix Event_StaticInstance = {
+__USER_RODATA__ tch_event_ix Event_IX = {
 		tch_eventCreate,
 		tch_eventSet,
 		tch_eventClear,
@@ -51,7 +51,7 @@ __attribute__((section(".data"))) static tch_event_ix Event_StaticInstance = {
 };
 
 
-const tch_event_ix* Event = &Event_StaticInstance;
+__USER_RODATA__ const tch_event_ix* Event = &Event_IX;
 
 
 DECLARE_SYSCALL_0(event_create,tch_eventId);
@@ -145,14 +145,14 @@ tchStatus event_deinit(tch_eventCb* evcb){
 }
 
 
-static tch_eventId tch_eventCreate(){
+__USER_API__ static tch_eventId tch_eventCreate(){
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_eventId) __SYSCALL_0(event_create);
 }
 
 
-static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal){
+__USER_API__ static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal){
 	if(!ev || !ev_signal)
 		return 0;
 	if(tch_port_isISR())
@@ -161,7 +161,7 @@ static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal){
 		return __SYSCALL_2(event_set,ev,ev_signal);
 }
 
-static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal){
+__USER_API__ static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal){
 	if(!ev || !EVENT_ISVALID(ev))
 		return 0;
 	if(tch_port_isISR())
@@ -170,7 +170,7 @@ static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal){
 		return __SYSCALL_2(event_clear,ev,ev_signal);
 }
 
-static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
+__USER_API__ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec){
 	if(!ev || !EVENT_ISVALID(ev))
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -178,7 +178,7 @@ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millis
 	return __SYSCALL_3(event_wait,ev,signal_msk,millisec);
 }
 
-static tchStatus tch_eventDestroy(tch_eventId ev){
+__USER_API__ static tchStatus tch_eventDestroy(tch_eventId ev){
 	if(!ev)
 		return tchErrorParameter;
 	if(!EVENT_ISVALID(ev))

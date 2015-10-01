@@ -24,12 +24,12 @@
 
 
 
-static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen);
-static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result);
-static tchStatus tch_mailqPut(tch_mailqId qid,void* mail,uint32_t timeout);
-static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec);
-static tchStatus tch_mailqFree(tch_mailqId qid,void* mail);
-static tchStatus tch_mailqDestroy(tch_mailqId qid);
+__USER_API__ static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen);
+__USER_API__ static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result);
+__USER_API__ static tchStatus tch_mailqPut(tch_mailqId qid,void* mail,uint32_t timeout);
+__USER_API__ static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec);
+__USER_API__ static tchStatus tch_mailqFree(tch_mailqId qid,void* mail);
+__USER_API__ static tchStatus tch_mailqDestroy(tch_mailqId qid);
 
 static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstatic);
 static tchStatus mailq_deinit(tch_mailqCb* qid);
@@ -38,7 +38,7 @@ static inline void tch_mailqValidate(tch_mailqId qid);
 static inline void tch_mailqInvalidate(tch_mailqId qid);
 static inline BOOL tch_mailqIsValid(tch_mailqId qid);
 
-__attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
+__USER_RODATA__ tch_mailq_ix MailQ_IX = {
 		.create = tch_mailqCreate,
 		.alloc = tch_mailqAlloc,
 		.put = tch_mailqPut,
@@ -47,7 +47,7 @@ __attribute__((section(".data"))) static tch_mailq_ix MailQStaticInstance = {
 		.destroy = tch_mailqDestroy
 };
 
-const tch_mailq_ix* MailQ = &MailQStaticInstance;
+__USER_RODATA__  const tch_mailq_ix* MailQ = &MailQ_IX;
 
 
 
@@ -181,7 +181,7 @@ DEFINE_SYSCALL_1(mailq_deinit,tch_mailqCb*,mcb,tchStatus){
 	return mailq_deinit(mcb);
 }
 
-static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen){
+__USER_API__ static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen){
 	if(!sz || !qlen)
 		return NULL;
 	if(tch_port_isISR())
@@ -190,7 +190,7 @@ static tch_mailqId tch_mailqCreate(uint32_t sz,uint32_t qlen){
 }
 
 
-static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result){
+__USER_API__ static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) qid;
 	tchStatus lresult;
 	void* block = NULL;
@@ -208,7 +208,7 @@ static void* tch_mailqAlloc(tch_mailqId qid,uint32_t timeout,tchStatus* result){
 }
 
 
-static tchStatus tch_mailqPut(tch_mailqId qid, void* mail, uint32_t timeout){
+__USER_API__ static tchStatus tch_mailqPut(tch_mailqId qid, void* mail, uint32_t timeout){
 	if(tch_port_isISR())
 		return __mailq_put(qid,mail,0);
 	tchStatus result;
@@ -218,7 +218,7 @@ static tchStatus tch_mailqPut(tch_mailqId qid, void* mail, uint32_t timeout){
 }
 
 
-static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec){
+__USER_API__ static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec){
 	tchEvent evt;
 	if(tch_port_isISR()){
 		__mailq_get(qid,0,&evt);
@@ -230,7 +230,7 @@ static tchEvent tch_mailqGet(tch_mailqId qid,uint32_t millisec){
 	return evt;
 }
 
-static tchStatus tch_mailqFree(tch_mailqId qid,void* mail){
+__USER_API__ static tchStatus tch_mailqFree(tch_mailqId qid,void* mail){
 	if(!mail)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -240,7 +240,7 @@ static tchStatus tch_mailqFree(tch_mailqId qid,void* mail){
 	return __SYSCALL_2(mailq_free,qid,mail);
 }
 
-static tchStatus tch_mailqDestroy(tch_mailqId qid){
+__USER_API__ static tchStatus tch_mailqDestroy(tch_mailqId qid){
 	if(!qid)
 		return tchErrorParameter;
 	if(tch_port_isISR())

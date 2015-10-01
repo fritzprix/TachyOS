@@ -17,15 +17,15 @@
 #include "tch_kernel.h"
 #include "tch_malloc.h"
 
-const tch_mem_ix UserHeapInterface = {
+__USER_RODATA__ tch_mem_ix UMem_IX = {
 		.alloc = tch_malloc,
 		.free = tch_free,
 		.mstat = tch_mstat
 };
 
-const tch_mem_ix* uMem = &UserHeapInterface;
+__USER_RODATA__ const tch_mem_ix* uMem = &UMem_IX;
 
-void* tch_malloc(size_t sz){
+__USER_API__ void* tch_malloc(size_t sz){
 	void* result;
 	if(!sz)
 		return NULL;
@@ -40,7 +40,7 @@ void* tch_malloc(size_t sz){
 	return result;
 }
 
-void tch_free(void* ptr){
+__USER_API__ void tch_free(void* ptr){
 	if(!ptr)
 		return;
 	int result;
@@ -62,7 +62,7 @@ ERR_HEAP_FREE :
 }
 
 
-void tch_mstat(mstat* statp){
+__USER_API__ void tch_mstat(mstat* statp){
 	if(!statp)
 		return;
 

@@ -39,27 +39,27 @@
  *     -> LR point Entry Routine of Thread
  *
  */
-static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
-static tchStatus tch_threadStart(tch_threadId thread);
-static tch_threadId tch_threadSelf();
-static tchStatus tch_threadSleep(uint32_t sec);
-static tchStatus tch_threadYield(uint32_t millisec);
-static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
+__USER_API__ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg);
+__USER_API__ static tchStatus tch_threadStart(tch_threadId thread);
+__USER_API__ static tch_threadId tch_threadSelf();
+__USER_API__ static tchStatus tch_threadSleep(uint32_t sec);
+__USER_API__ static tchStatus tch_threadYield(uint32_t millisec);
+__USER_API__ tchStatus tch_threadExit(tch_threadId thread,tchStatus result);
+__USER_API__ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout);
+__USER_API__ static void tch_threadInitCfg(tch_threadCfg* cfg,
+											tch_thread_routine entry,
+											tch_threadPrior prior,
+											uint32_t req_stksz,
+											uint32_t req_heapsz,
+											const char* name);
+__USER_API__ static void* tch_threadGetArg();
 
+static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status) __attribute__((naked));
+static void tch_threadValidate(tch_threadId thread);
 static void tch_threadInvalidate(tch_threadId thread,tchStatus reason);
 
 
-static void tch_threadInitCfg(tch_threadCfg* cfg,
-							  tch_thread_routine entry,
-							  tch_threadPrior prior,
-							  uint32_t req_stksz,
-							  uint32_t req_heapsz,
-							  const char* name);
-static void* tch_threadGetArg();
-static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status) __attribute__((naked));
-
-
-__attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
+__USER_RODATA__ tch_thread_ix Thread_IX = {
 		.create = tch_threadCreate,
 		.start = tch_threadStart,
 		.self = tch_threadSelf,
@@ -72,7 +72,7 @@ __attribute__((section(".data"))) static tch_thread_ix tch_threadix = {
 };
 
 
-const tch_thread_ix* Thread = &tch_threadix;
+__USER_RODATA__ const tch_thread_ix* Thread = &Thread_IX;
 
 
 DECLARE_SYSCALL_2(thread_create,tch_threadCfg*,void*,tch_threadId);
@@ -164,6 +164,12 @@ BOOL tch_threadIsPrivilidged(tch_threadId thread){
 	return ((getThreadKHeader(thread)->flag & THREAD_PRIV_BIT) > 0);
 }
 
+static void tch_threadValidate(tch_threadId thread){
+	if(!thread)
+		return;
+	getThreadHeader(thread)->chks = ((uint32_t) THREAD_CHK_PATTERN);
+	getThreadKHeader(thread)->flag = 0;
+}
 
 
 static void tch_threadInvalidate(tch_threadId thread,tchStatus reason){
@@ -238,7 +244,7 @@ tch_threadId tch_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOO
 	}else {
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
-
+	tch_threadValidate(kthread->uthread);
 	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(void*)((kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << CONFIG_PAGE_SHIFT),__tch_thread_entry);
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
@@ -252,13 +258,13 @@ tch_threadId tch_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOO
 #ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
 	_REENT_INIT_PTR(&kthread->uthread->reent)
 #endif
-	kthread->uthread->chks = THREAD_CHK_PATTERN;
 	kthread->uthread->name = cfg->name;
+	memcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
 	return (tch_threadId) kthread->uthread;
 }
 
 
-static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
+__USER_API__ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 	if(!cfg)
 		return NULL;
 	if(tch_port_isISR())
@@ -268,7 +274,7 @@ static tch_threadId tch_threadCreate(tch_threadCfg* cfg,void* arg){
 
 
 
-static tchStatus tch_threadStart(tch_threadId thread){
+__USER_API__ static tchStatus tch_threadStart(tch_threadId thread){
 	if(tch_port_isISR()){			// check current execution mode (Thread or Handler)
 		tch_schedReady(thread);		// if handler mode call, put current thread in ready queue
 		return tchOK;
@@ -276,7 +282,7 @@ static tchStatus tch_threadStart(tch_threadId thread){
 	return __SYSCALL_1(thread_start,thread);
 }
 
-tchStatus tch_threadExit(tch_threadId thread,tchStatus result){
+__USER_API__ tchStatus tch_threadExit(tch_threadId thread,tchStatus result){
 	if (tch_port_isISR()) {
 		return __thread_exit(thread, result);
 	}
@@ -284,32 +290,32 @@ tchStatus tch_threadExit(tch_threadId thread,tchStatus result){
 }
 
 
-static tch_threadId tch_threadSelf(){
+__USER_API__ static tch_threadId tch_threadSelf(){
 	return (tch_threadId) current;
 }
 
 
-static tchStatus tch_threadSleep(uint32_t sec){
+__USER_API__ static tchStatus tch_threadSleep(uint32_t sec){
 	if(tch_port_isISR())
 		return tchErrorISR;
 	return __SYSCALL_1(thread_sleep,sec);
 }
 
 
-static tchStatus tch_threadYield(uint32_t millisec){
+__USER_API__ static tchStatus tch_threadYield(uint32_t millisec){
 	if(tch_port_isISR())
 		return tchErrorISR;
 	return __SYSCALL_1(thread_yield,millisec);
 }
 
-static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
+__USER_API__ static tchStatus tch_threadJoin(tch_threadId thread,uint32_t timeout){
 	if(tch_port_isISR())
 		return tchErrorISR;					// unreachable code
 	return __SYSCALL_3(thread_join,thread,timeout,0);
 }
 
 
-static void tch_threadInitCfg(tch_threadCfg* cfg,
+__USER_API__ static void tch_threadInitCfg(tch_threadCfg* cfg,
 							  tch_thread_routine entry,
 							  tch_threadPrior prior,
 							  uint32_t req_stksz,
@@ -324,7 +330,7 @@ static void tch_threadInitCfg(tch_threadCfg* cfg,
 }
 
 
-static void* tch_threadGetArg(){
+__USER_API__ static void* tch_threadGetArg(){
 	return current->t_arg;
 }
 
@@ -334,7 +340,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;
 #endif
-	tchStatus res = thr_p->fn(tch_rti);
+	tchStatus res = thr_p->fn(&thr_p->ctx);
 	__SYSCALL_2(thread_exit,thr_p,res);
 }
 
