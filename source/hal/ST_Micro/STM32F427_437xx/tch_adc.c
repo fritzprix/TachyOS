@@ -16,6 +16,8 @@
 #include "tch_gpio.h"
 #include "tch_adc.h"
 #include "tch_timer.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
 
 #define SET_SAFE_EXIT();      RETURN_EXIT:
@@ -80,7 +82,7 @@ static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t ord
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-__USER_RODATA__ tch_lld_adc ADC_IX = {
+__USER_RODATA__ tch_lld_adc ADC_Ops = {
 		.ADC_COUNT = MFEATURE_ADC,
 		.ADC_MAX_PRECISION = 12,
 		.ADC_MIN_PRECISION = 6,
@@ -103,7 +105,7 @@ tch_lld_adc* tch_adcHalInit(const tch* env){
 	tch_adcChannelOccpStatus = 0;
 	tch_mutexInit(&ADC_Mutex);
 	tch_condvInit(&ADC_Condv);
-	return (tch_lld_adc*) &ADC_IX;
+	return  &ADC_Ops;
 }
 
 static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout){

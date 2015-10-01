@@ -16,8 +16,10 @@
 #include <stdlib.h>
 #include "tch_gpio.h"
 #include "tch_hal.h"
-#include "tch_ktypes.h"
-#include "tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
+#include "kernel/tch_ktypes.h"
+#include "kernel/tch_kernel.h"
 
 
 
@@ -113,29 +115,7 @@ static inline void tch_gpioValidate(tch_gpio_handle_prototype* _handle);
 static inline void tch_gpioInvalidate(tch_gpio_handle_prototype* _handle);
 static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
 
-/*
-__attribute__((section(".data"))) static tch_gpio_manager GPIO_StaticInstance = {
-
-		{
-				MFEATURE_GPIO,
-				tch_gpioAlloc,
-				tch_gpioInitCfg,
-				tch_gpioInitEvCfg,
-		},
-		NULL,
-		NULL,
-		MFEATURE_GPIO,
-		MFEATURE_PINCOUNT_pPORT
-};*/
-
-
-/*
- * 	const uint16_t FEATURE_COUNT;
-	tch_GpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout);
-	void (*initCfg)(tch_GpioCfg* cfg);
-	void (*initEvCfg)(tch_GpioEvCfg* evcfg);
- */
-__USER_RODATA__ tch_lld_gpio GPIO_IX = {
+__USER_RODATA__ tch_lld_gpio GPIO_Ops = {
 		.count = MFEATURE_GPIO,
 		.allocIo = tch_gpioAlloc,
 		.initCfg = tch_gpioInitCfg,
@@ -150,7 +130,7 @@ tch_lld_gpio* tch_gpioHalInit(const tch* env){
 		return NULL;
 	tch_mutexInit(&lock);
 	tch_condvInit(&condv);
-	return &GPIO_IX;
+	return &GPIO_Ops;
 }
 
 

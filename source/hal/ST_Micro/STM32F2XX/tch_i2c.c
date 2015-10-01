@@ -16,9 +16,11 @@
 
 #include "tch_types.h"
 #include "tch_hal.h"
-#include "kernel/tch_kernel.h"
 #include "hal/tch_i2c.h"
 #include "hal/tch_gpio.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 
 
 #define TCH_IIC_CLASS_KEY                      ((uint16_t) 0x62D1)

@@ -16,7 +16,9 @@
 
 #include "tch_rtc.h"
 #include "tch_hal.h"
-#include "tch_kernel.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 
 #define RTC_CLASS_KEY               ((uint16_t) 0xAB5D)
 #define RTC_LPMODE_Msk              ((uint32_t) 0x30000)
@@ -44,12 +46,6 @@
 
 #define tch_rtcIsValid(ins)         (((tch_rtc_handle_prototype*) ins)->status & 0xFFFF) == (((uint32_t) ins ^ RTC_CLASS_KEY) & 0xFFFF)
 
-typedef struct tch_lld_rtc_prototype {
-	tch_lld_rtc                           pix;
-	void*                                 _handle;
-	tch_mtxId                             mtx;
-	tch_condvId                           condv;
-} tch_lld_rtc_prototype;
 
 typedef struct tch_rtc_handle_prototype_t {
 	tch_rtcHandle                         pix;
@@ -76,40 +72,37 @@ static tchStatus tch_rtcDisablePeriodicWakeup(tch_rtcHandle* self);
 
 
 
-__attribute__((section(".data"))) static tch_lld_rtc_prototype RTC_StaticInstance = {
-		{
-				tch_rtcOpen
-		},
-		NULL,
-		NULL,
-		NULL
+__USER_RODATA__ tch_lld_rtc RTC_Ops = {
+		.open = tch_rtcOpen
 };
+
+static void* _handle;
+static tch_mtxCb mtx;
+static tch_condvCb condv;
 
 
 tch_lld_rtc* tch_rtcHalInit(const tch* env){
-	if(RTC_StaticInstance.mtx || RTC_StaticInstance.condv)
-		return NULL;
 	if(!env)
 		return NULL;
-	RTC_StaticInstance.mtx = env->Mtx->create();
-	RTC_StaticInstance.condv = env->Condv->create();
-	return (tch_lld_rtc*) &RTC_StaticInstance;
+	tch_mutexInit(&mtx);
+	tch_condvInit(&condv);
+	return &RTC_Ops;
 }
 
 
 static tch_rtcHandle* tch_rtcOpen(const tch* env,time_t gmt_epoch,tch_timezone tz){
 	tch_rtc_handle_prototype* ins = NULL;
 
-	if(env->Mtx->lock(RTC_StaticInstance.mtx,tchWaitForever) != tchOK)
+	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK)
 		return NULL;
 
-	while(RTC_StaticInstance._handle){
-		if(env->Condv->wait(RTC_StaticInstance.condv,RTC_StaticInstance.mtx,tchWaitForever) != tchOK)
+	while(_handle){
+		if(env->Condv->wait(&condv,&mtx,tchWaitForever) != tchOK)
 			return NULL;
 	}
 
-	RTC_StaticInstance._handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
-	if(env->Mtx->unlock(RTC_StaticInstance.mtx) != tchOK)
+	_handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
+	if(env->Mtx->unlock(&mtx) != tchOK)
 		return NULL;
 	env->uStdLib->string->memset(ins,0,sizeof(tch_rtc_handle_prototype));
 
@@ -170,7 +163,7 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	tch_rtcInvalidate(ins);
 	ins->env->Mtx->destroy(ins->mtx);
 
-	if(ins->env->Mtx->lock(RTC_StaticInstance.mtx,tchWaitForever) != tchOK)
+	if(ins->env->Mtx->lock(&mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 
 //	NVIC_DisableIRQ(RTC_WKUP_IRQn);
@@ -185,9 +178,9 @@ static tchStatus tch_rtcClose(tch_rtcHandle* self){
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
 	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
 	RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
-	RTC_StaticInstance._handle = 0;
-	ins->env->Condv->wakeAll(RTC_StaticInstance.condv);
-	ins->env->Mtx->unlock(RTC_StaticInstance.mtx);
+	_handle = 0;
+	ins->env->Condv->wakeAll(&condv);
+	ins->env->Mtx->unlock(&mtx);
 	ins->env->Mem->free(ins);
 	return tchOK;
 }
@@ -363,7 +356,7 @@ void RTC_Alarm_IRQHandler(){
 }
 
 void RTC_WKUP_IRQHandler(){
-	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*)RTC_StaticInstance._handle;
+	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*)_handle;
 	if(!ins)
 		return;
 	if(!tch_rtcIsValid(ins))

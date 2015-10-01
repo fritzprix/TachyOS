@@ -673,17 +673,67 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 
 
-
-tch_hal tch_hal_instance;
+tch_hal* HAL_IX;
 tch_lld_rtc* RTC_IX;
 tch_lld_dma* DMA_IX;
 
-const tch_hal* tch_hal_init(const tch* env){
 
+
+const struct section_descriptor __default_sections[] = {
+		{		// kernel dynamic section
+				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
+				.start = &_skheap,
+				.end = &_ekheap
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_UTEXT),
+				.start = &_utext_begin,
+				.end = &_utext_end
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_URODATA),
+				.start = &_surox,
+				.end = &_eurox
+		},
+		{
+				// kernel text section
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
+				.start = &_stext,
+				.end = &_etext
+		},
+		{		// kernel bss section (zero filled data)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sbss,
+				.end = &_ebss
+		},
+		{		// kernel data section (initialized to specified value)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sdata,
+				.end = &_edata
+		},
+		{		// kernel stack
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
+				.start = &_sstack,
+				.end = &_estack
+		}
+};
+
+
+const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
+		&__default_sections[0],
+		&__default_sections[1],
+		&__default_sections[2],
+		&__default_sections[3],
+		&__default_sections[4],
+		&__default_sections[5],
+		&__default_sections[6],
+		NULL
+};
+
+const tch_hal* tch_hal_init(const tch* env){
 	/***
 	 *  initialize clock subsystem
 	 */
-
 
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
@@ -694,14 +744,18 @@ const tch_hal* tch_hal_init(const tch* env){
 	/***
 	 *  bind hal interface
 	 */
-	tch_hal_instance.adc = tch_adcHalInit(env);
-	tch_hal_instance.gpio  = tch_gpioHalInit(env);
-	tch_hal_instance.timer = tch_timerHalInit(env);
-	tch_hal_instance.usart = tch_usartHalInit(env);
-	tch_hal_instance.spi = tch_spiHalInit(env);
-	tch_hal_instance.i2c = tch_iicHalInit(env);
 
-	return &tch_hal_instance;
+	HAL_IX = tch_shmAlloc(sizeof(tch_hal));
+	if(!HAL_IX)
+		KERNEL_PANIC("tch_hal.c","Can't create HAL interface stubs");
+	HAL_IX->adc = tch_adcHalInit(env);
+	HAL_IX->gpio  = tch_gpioHalInit(env);
+	HAL_IX->timer = tch_timerHalInit(env);
+	HAL_IX->usart = tch_usartHalInit(env);
+	HAL_IX->spi = tch_spiHalInit(env);
+	HAL_IX->i2c = tch_iicHalInit(env);
+
+	return HAL_IX;
 }
 
 
@@ -735,44 +789,6 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 }
 
 
-const struct section_descriptor __default_sections[] = {
-		{		// kernel dynamic section
-				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
-				.start = &_skheap,
-				.end = &_ekheap
-		},
-		{
-				// kernel text section
-				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
-				.start = &_stext,
-				.end = &_etext
-		},
-		{		// kernel bss section (zero filled data)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
-				.start = &_sbss,
-				.end = &_ebss
-		},
-		{		// kernel data section (initialized to specified value)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
-				.start = &_sdata,
-				.end = &_edata
-		},
-		{		// kernel stack
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
-				.start = &_sstack,
-				.end = &_estack
-		}
-};
-
-const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
-		&__default_sections[0],
-		&__default_sections[1],
-		&__default_sections[2],
-		&__default_sections[3],
-		&__default_sections[4],
-		NULL
-};
-
 void tch_hal_enterSleepMode(){
 	__DMB();
 	__ISB();
@@ -783,8 +799,7 @@ void tch_hal_enterSleepMode(){
 
 void tch_hal_pauseSysClock(){
 	/**
-	 *  it's handled by hardware in ARMv7m.
-	 *  thus blank stub
+	 * STM32F4/2x handles main clock suspension when system enter sleep mode
 	 */
 }
 
@@ -805,6 +820,7 @@ void tch_hal_resumeSysClock(){
 	while((RCC->CFGR & RCC_CFGR_SWS_PLL) != RCC_CFGR_SWS_PLL)
 		__NOP();
 }
+
 
 void SysTick_Handler(void){
 	tch_KernelOnSystick();

@@ -13,8 +13,10 @@
 
 #include "tch_hal.h"
 #include "tch_gpio.h"
-#include "tch_kernel.h"
 #include "tch_timer.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 
 
 

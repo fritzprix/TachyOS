@@ -17,8 +17,10 @@
 #include "tch_dma.h"
 #include "tch_gpio.h"
 #include "tch_usart.h"
-#include "tch_kernel.h"
-#include "tch_fs.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
+
 
 
 #define TCH_UART_CLASS_KEY     ((uint16_t) 0x3D02)
@@ -128,17 +130,6 @@ static inline void tch_usartValidate(tch_usartHandlePrototype _handle);
 static inline void tch_usartInvalidate(tch_usartHandlePrototype _handle);
 static inline BOOL tch_usartIsValid(tch_usartHandlePrototype _handle);
 
-/*
-__attribute__((section(".data"))) static struct tch_usart_prototype_s UART_StaticInstance = {
-		{
-				MFEATURE_UART,
-				tch_usartOpen
-		},
-		NULL,
-		NULL,
-		0,
-		0
-};*/
 
 __USER_RODATA__ struct tch_lld_usart UART_Ops = {
 		.count = MFEATURE_UART,
@@ -363,7 +354,6 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	*uDesc->_rstr |= uDesc->rstmsk;
 	*uDesc->_clkenr &= ~uDesc->clkmsk;
 	*uDesc->_lpclkenr &= ~uDesc->lpclkmsk;
-//	NVIC_DisableIRQ(uDesc->irq);
 	tch_disableInterrupt(uDesc->irq);
 	env->Condv->wakeAll(&condv);
 	UART_CLR_RXBUSY(ins);

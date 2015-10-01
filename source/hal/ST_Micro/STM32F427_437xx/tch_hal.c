@@ -19,6 +19,7 @@
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mm.h"
+#include "kernel/tch_err.h"
 
 
 
@@ -667,331 +668,62 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 
 
-__TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
-		{
-//				DMA_Str15,
-				DMA_NOT_USED,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				9,
-				10,
-				11,
-				12,
-				7
-		},
-		{
-				DMA_Str6,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				2,
-				3,
-				0,
-				1,
-				7
-		},
-		{
-				DMA_Str4,
-				DMA_NOT_USED,
-				DMA_Ch7,
-				DMA_Ch4,
-				tch_gpio1,
-				10,
-				11,
-				13,
-				14,
-				7
-		},
-		{
-				DMA_Str4,
-				DMA_NOT_USED,
-				DMA_Ch4,
-				DMA_Ch4,
-				tch_gpio0,
-				0,
-				1,
-				-1,
-				-1,
-				8
-		}
-};
-
-/**
- * 	gpIo_x         port;
-	uint8_t        ch1p;
-	uint8_t        ch2p;
-	uint8_t        ch3p;
-	uint8_t        ch4p;
-	uint8_t        afv;
- */
-
-__TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
-		{// TIM2
-				tch_gpio0,
-				{
-						0,
-						1,
-						2,
-						3
-				},
-				1
-		},
-		{// TIM3
-				tch_gpio1,
-				{
-						4,
-						5,
-						0,
-						1
-				},
-				2
-		},
-		{// TIM4
-				tch_gpio1,
-				{
-						6,
-						7,
-						8,
-						9
-				},
-				2
-		},
-		{// TIM5
-				tch_gpio7,
-				{
-						10,
-						11,
-						12,
-						-1
-				},
-				2
-		},
-		{// TIM9
-				tch_gpio4,
-				{
-						5,
-						6,
-						-1,
-						-1
-				},
-				3
-		},
-		{// TIM10
-				tch_gpio1,
-				{
-						8,
-						-1,
-						-1,
-						-1
-				},
-				3
-		},
-		{// TIM11
-				tch_gpio1,
-				{
-						9,
-						-1,
-						-1,
-						-1
-				},
-				3
-		},
-		{// TIM12
-				tch_gpio1,
-				{
-						14,
-						15,
-						-1,
-						-1
-				},
-				9
-		},
-		{// TIM13
-				tch_gpio5,
-				{
-						8,
-						-1,
-						-1,
-						-1
-				},
-				9
-		},
-		{// TIM14
-				tch_gpio5,
-				{
-						9,
-						-1,
-						-1,
-						-1
-				},
-				9
-		}
-};
-
-/**
- * 	spi_t          spi;
-	dma_t          txdma;
-	dma_t          rxdma;
-	gpIo_x         port;
-	uint8_t        mosi;
-	uint8_t        miso;
-	uint8_t        sck;
- */
-
-__TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
-		{
-
-//				DMA_Str13,    //dma2_stream5
-//				DMA_Str10,    //dma2_stream2
-				DMA_NOT_USED,
-				DMA_NOT_USED,
-				3,            //dma channel 3
-				3,            //dma channel 3
-				0,            // port A (0)
-				7,            // pin  7
-				6,            // pin  6
-				5,            // pin  5
-				5             // af5
-		},
-		{
-				DMA_Str4,     //dma1_stream4
-				DMA_Str3,     //dma1_stream3
-				0,
-				0,
-				1,            // port B (1)
-				15,           // pin  15
-				14,           // pin  14
-				13,           // pin  13
-				5             // af5
-		},
-		{
-				DMA_Str7,     //dma1_stream7
-				DMA_Str2,     //dma1_stream2
-				0,
-				0,
-				2,            // port C (2)
-				12,           // pin  12
-				11,           // pin  11
-				10,           // pin  10
-				6
-		}
-};
-/**
- * 	dma_t         txdma;
-	dma_t         rxdma;
-	uint8_t       txch;
-	uint8_t       rxch;
-	gpIo_x        port;
-	uint8_t       scl;
-	uint8_t       sda;
-	uint8_t       afv;
- */
-
-__TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = {
-		{      // IIC 1
-				DMA_Str6,    // dma1_stream 6
-				DMA_Str5,    // dma1_stream 5
-				1,           // dma channel 1
-				1,           // dma channel 1
-				1,           // port B(1)
-				6,           // pin 6
-				7,           // pin 7
-				4            // afv
-		},
-		{
-				DMA_Str7,   // dma1_stream 2
-				DMA_Str2,   // dma1_stream 7
-				7,          // dma channel 7
-				7,          // dma channel 7
-				1,          // port B(1)
-				10,          // pin 10
-				11,          // pin 11
-				4           // afv
-		},
-		{
-				DMA_Str2,   // dma1 stream 2
-				DMA_Str4,   // dma1 stream 4
-				3,          // dma channel 3
-				3,          // dma channel 3
-				7,          // port H(7)
-				7,          // pin 7
-				8,          // pin 8
-				4           // afv
-		}
-};
-
-/**
- * typedef struct _tch_adc_bs_t {
-	dma_t         dma;
-	uint8_t       dmach;
-	uint8_t       afv;
-}tch_adc_bs;
-
-typedef struct _tch_adc_com_bs_t{
-	tch_port ports[MFEATURE_ADC_Ch];
-	uint32_t occp_status;
-};
- */
-
-
-__TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
-		{
-				DMA_Str12,
-				DMA_Ch0,
-				tch_TIMER0,  // TIM2
-				2,         // CH2
-				3      // Timer 2 CC2 Event
-		},
-		{
-				DMA_Str10,
-				DMA_Ch1,
-				tch_TIMER1,
-				1,
-				7     // Timer 3 CC1 Event
-		},
-		{
-				DMA_Str8,
-				DMA_Ch0,
-				tch_TIMER2,
-				4,
-				9     // Timer 4 CC4 Event
-		}
-};
-
-/**
- *
- * 	tch_port      port;
-	uint8_t       adc_routemsk;
-	uint8_t       occp;
- */
-__TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
-		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch0
-		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch1
-		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch2
-		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch3
-		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},// ch4
-		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0},// ch5
-		{{tch_gpio0,6},(ADC1_Bit | ADC2_Bit),0},// ch6
-		{{tch_gpio0,7},(ADC1_Bit | ADC2_Bit),0},// ch7
-		{{tch_gpio1,0},(ADC1_Bit | ADC2_Bit),0},// ch8
-		{{tch_gpio1,1},(ADC1_Bit | ADC2_Bit),0},// ch9
-		{{tch_gpio2,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch10
-		{{tch_gpio2,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch11
-		{{tch_gpio2,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch12
-		{{tch_gpio2,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch13
-		{{tch_gpio2,4},(ADC1_Bit | ADC2_Bit),0},
-		{{tch_gpio2,5},(ADC1_Bit | ADC2_Bit),0}
-};
-
-
-
-
-tch_hal tch_hal_instance;
+tch_hal* HAL_IX;
 tch_lld_rtc* RTC_IX;
 tch_lld_dma* DMA_IX;
+
+
+
+const struct section_descriptor __default_sections[] = {
+		{		// kernel dynamic section
+				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
+				.start = &_skheap,
+				.end = &_ekheap
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_UTEXT),
+				.start = &_utext_begin,
+				.end = &_utext_end
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_URODATA),
+				.start = &_surox,
+				.end = &_eurox
+		},
+		{
+				// kernel text section
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
+				.start = &_stext,
+				.end = &_etext
+		},
+		{		// kernel bss section (zero filled data)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sbss,
+				.end = &_ebss
+		},
+		{		// kernel data section (initialized to specified value)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sdata,
+				.end = &_edata
+		},
+		{		// kernel stack
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
+				.start = &_sstack,
+				.end = &_estack
+		}
+};
+
+
+const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
+		&__default_sections[0],
+		&__default_sections[1],
+		&__default_sections[2],
+		&__default_sections[3],
+		&__default_sections[4],
+		&__default_sections[5],
+		&__default_sections[6],
+		NULL
+};
 
 const tch_hal* tch_hal_init(const tch* env){
 	/***
@@ -1007,14 +739,18 @@ const tch_hal* tch_hal_init(const tch* env){
 	/***
 	 *  bind hal interface
 	 */
-	tch_hal_instance.adc = tch_adcHalInit(env);
-	tch_hal_instance.gpio  = tch_gpioHalInit(env);
-	tch_hal_instance.timer = tch_timerHalInit(env);
-	tch_hal_instance.usart = tch_usartHalInit(env);
-	tch_hal_instance.spi = tch_spiHalInit(env);
-	tch_hal_instance.i2c = tch_iicHalInit(env);
 
-	return &tch_hal_instance;
+	HAL_IX = tch_shmAlloc(sizeof(tch_hal));
+	if(!HAL_IX)
+		KERNEL_PANIC("tch_hal.c","Can't create HAL interface stubs");
+	HAL_IX->adc = tch_adcHalInit(env);
+	HAL_IX->gpio  = tch_gpioHalInit(env);
+	HAL_IX->timer = tch_timerHalInit(env);
+	HAL_IX->usart = tch_usartHalInit(env);
+	HAL_IX->spi = tch_spiHalInit(env);
+	HAL_IX->i2c = tch_iicHalInit(env);
+
+	return HAL_IX;
 }
 
 
@@ -1048,47 +784,6 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 }
 
 
-
-const struct section_descriptor __default_sections[] = {
-		{		// kernel dynamic section
-				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
-				.start = &_skheap,
-				.end = &_ekheap
-		},
-		{
-				// kernel text section
-				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
-				.start = &_stext,
-				.end = &_etext
-		},
-		{		// kernel bss section (zero filled data)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
-				.start = &_sbss,
-				.end = &_ebss
-		},
-		{		// kernel data section (initialized to specified value)
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
-				.start = &_sdata,
-				.end = &_edata
-		},
-		{		// kernel stack
-				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
-				.start = &_sstack,
-				.end = &_estack
-		}
-};
-
-
-const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
-		&__default_sections[0],
-		&__default_sections[1],
-		&__default_sections[2],
-		&__default_sections[3],
-		&__default_sections[4],
-		NULL
-};
-
-
 void tch_hal_enterSleepMode(){
 	__DMB();
 	__ISB();
@@ -1098,7 +793,9 @@ void tch_hal_enterSleepMode(){
 }
 
 void tch_hal_pauseSysClock(){
-
+	/**
+	 * STM32F4/2x handles main clock suspension when system enter sleep mode
+	 */
 }
 
 void tch_hal_resumeSysClock(){

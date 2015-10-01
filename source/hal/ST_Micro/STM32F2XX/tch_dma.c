@@ -146,7 +146,7 @@ static BOOL tch_dmaSetDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 	uint32_t (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_DmaHandle handle);
  */
-__USER_RODATA__ tch_lld_dma DMA_IX = {
+__USER_RODATA__ tch_lld_dma DMA_Ops = {
 	.count = MFEATURE_DMA,
 	.initCfg = tch_dmaInitCfg,
 	.initReq = tch_dmaInitReq,
@@ -164,7 +164,7 @@ static uint16_t lpoccp_state = 0;
 tch_lld_dma* tch_dmaHalInit(const tch* env){
 	tch_mutexInit(&mutex);
 	tch_condvInit(&condvb);
-	return &DMA_IX;
+	return &DMA_Ops;
 }
 
 __USER_API__ static void tch_dmaInitCfg(tch_DmaCfg* cfg){

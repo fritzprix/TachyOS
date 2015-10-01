@@ -15,7 +15,9 @@
 #include "tch_hal.h"
 #include "tch_gpio.h"
 #include "tch_spi.h"
-#include "tch_kernel.h"
+#include "kernel/tch_kernel.h"
+#include "kernel/tch_mtx.h"
+#include "kernel/tch_condv.h"
 
 typedef struct tch_lld_spi_prototype tch_lld_spi_prototype;
 typedef struct tch_spi_handle_prototype tch_spi_handle_prototype;
