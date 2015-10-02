@@ -31,6 +31,9 @@ tchStatus semaphore_performTest(tch* api){
 	shVar = 0;
 	spin = TRUE;
 
+	mstat init_mstat,fin_mstat;
+
+	kmstat(&init_mstat);
 
 	tch_threadCfg thcfg;
 	api->Thread->initCfg(&thcfg,child1Routine,Normal,512 , 0, "child1");
@@ -54,6 +57,10 @@ tchStatus semaphore_performTest(tch* api){
 		return tchErrorOS;
 	if(api->Thread->join(ch1Id,tchWaitForever) != tchOK)
 		return tchErrorOS;
+
+	kmstat(&fin_mstat);
+	if(init_mstat.used != fin_mstat.used)
+		return tchErrorMemoryLeaked;
 
 	return tchOK;
 }

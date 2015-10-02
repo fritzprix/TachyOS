@@ -141,8 +141,8 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 
 
 static DECLARE_THREADROUTINE(systhreadRoutine){
-	// perform runtime initialization
 
+	/** perform runtime initialization **/
 	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
 	tch_port_enableISR();                   // interrupt enable
 	kernel_ready = TRUE;
@@ -160,7 +160,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	while(TRUE){
 		__lwtsk_start_loop();			// start loop lwtask handler
 	}
-	return tchOK;    // unreachable point
+	return tchOK;    					// unreachable point
 }
 
 

@@ -45,17 +45,15 @@
 #endif
 
 
-/**
- *  syscall definition
- */
 #define __SYSCALL__	__attribute__((section(".sysc.table")))
 
-/**
- *  user api text attribute
- */
+
+
+#define __UACESS					///< used to inform the variable or parameter assigned must be user accessible
 
 #define __USER_API__	__attribute__((section(".utext")))
 #define __USER_RODATA__	__attribute__((section(".urodata")))
+#define __USER_DATA		__attribute__((section(".udata")))
 
 
 typedef uword_t (*tch_syscall)(uint32_t arg1,uint32_t arg2,uint32_t arg3);

@@ -73,7 +73,6 @@ DEFINE_SYSCALL_2(semaphore_lock,tch_semId, semid,uint32_t,timeout,tchStatus){
 		return tchErrorResource;
 
 	tch_semCb* sem = (tch_semCb*) semid;
-	tchStatus result = tchOK;
 	if(!tch_port_exclusiveCompareDecrement((int*)&sem->count,0)){
 		if(!timeout)
 			return tchErrorResource;
@@ -156,6 +155,7 @@ tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic){
 	if(!scb || !count)
 		return NULL;
 	scb->count = count;
+	scb->state = 0;
 	cdsl_dlistInit(&scb->wq);
 	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) sem_deinit : (tch_kobjDestr) tch_semDestroy);
 	tch_semaphoreValidate(scb);
