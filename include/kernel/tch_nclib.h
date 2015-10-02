@@ -122,7 +122,6 @@ typedef struct _tch_ustdl_ix_t {
 }tch_ulib_ix;
 
 extern tch_ustdlib_ix* tch_initCrt0(struct crt_param* param);
-extern void crt0();
 
 #if defined(__cplusplus)
 }

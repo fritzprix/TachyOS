@@ -122,6 +122,7 @@ SECTIONS
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = .;
+	    _usidata = _sidata + SIZEOF(.data);
     } >FLASH
     
    
@@ -168,8 +169,14 @@ SECTIONS
 	    _ebss = . ;
     } >RAM
     
-    PROVIDE ( end = _ebss );
-    PROVIDE ( _end = _ebss );
+    .udata : AT ( _usidata )
+    {
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_sudata = .;
+    	*(.udata)
+    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	_eudata = .;
+    } >RAM 
     
     .kheap :
     {

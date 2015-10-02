@@ -147,33 +147,38 @@ DEFINE_SYSCALL_0(mutex_create,tch_mtxId){
 }
 
 
-DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus){
+DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus)
+{
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
-	tch_threadId tid = (tch_threadId) current;           // get current thread id
-	if(!MTX_ISVALID(mcb))				// check mutex object after wakeup
+	tch_threadId tid = (tch_threadId) current;			// get current thread id
+	if(!MTX_ISVALID(mcb))								// check mutex object after wakeup
 		return tchErrorResource;
 	if(mcb->own == tid)
-		return tchOK;                         // if this mutex is locked by current thread, return 'ok'
-	else{
-		if(tch_port_exclusiveCompareUpdate((uaddr_t)&mcb->own,0,(uword_t)tid)){
-			if(current)
-			{
-				current->kthread->lckCnt++;
-				mcb->svdPrior = current->kthread->prior;
-				return (tchStatus) tchOK;
-			}
-		}else{
-			tch_threadPrior prior = tch_threadGetPriority(tid);
-			if(tch_threadGetPriority(mcb->own) < prior)
-				tch_threadSetPriority((tch_threadId)mcb->own,prior);
-			tch_schedWait(&mcb->que,timeout);
-		}
+		return tchOK;									// if this mutex is locked by current thread, return 'ok'
+
+
+	if (tch_port_exclusiveCompareUpdate((uaddr_t) &mcb->own, 0,(uword_t) tid))
+	{
+
+		current->kthread->lckCnt++;
+		mcb->svdPrior = current->kthread->prior;
+		return tchOK;
+	}
+	else
+	{
+		if(!timeout)
+			return tchErrorResource;
+		tch_threadPrior prior = tch_threadGetPriority(tid);
+		if (tch_threadGetPriority(mcb->own) < prior)
+			tch_threadSetPriority((tch_threadId) mcb->own, prior);
+		tch_schedWait(&mcb->que, timeout);
 	}
 	return tchOK;
 }
 
 
-DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus){
+DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus)
+{
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
 	if(!tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) current,(uword_t)NULL))
 		return tchErrorResource;
