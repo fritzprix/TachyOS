@@ -35,20 +35,20 @@ typedef void* tch_eventTree;
 
 
 
-typedef struct _tch_thread_ix_t tch_thread_ix;
-typedef struct _tch_condvar_ix_t tch_condv_ix;
-typedef struct _tch_signal_ix_t tch_signal_ix;
-typedef struct _tch_mutex_ix_t tch_mtx_ix;
-typedef struct _tch_semaph_ix_t tch_semaph_ix;
-typedef struct _tch_systime_ix_t tch_systime_ix;
-typedef struct _tch_msgque_ix_t tch_msgq_ix;
-typedef struct _tch_mailbox_ix_t tch_mailq_ix;
-typedef struct _tch_mpool_ix_t tch_mpool_ix;
-typedef struct _tch_mem_ix_t tch_mem_ix;
-typedef struct _tch_ustdl_ix_t tch_ustdlib_ix;
-typedef struct _tch_bar_ix_t tch_bar_ix;
+typedef struct tch_thread_ix_t tch_thread_ix;
+typedef struct tch_condvar_ix_t tch_condv_ix;
+typedef struct tch_signal_ix_t tch_signal_ix;
+typedef struct tch_mutex_ix_t tch_mtx_ix;
+typedef struct tch_semaph_ix_t tch_semaph_ix;
+typedef struct tch_systime_ix_t tch_systime_ix;
+typedef struct tch_msgque_ix_t tch_msgq_ix;
+typedef struct tch_mailbox_ix_t tch_mailq_ix;
+typedef struct tch_mpool_ix_t tch_mpool_ix;
+typedef struct tch_mem_ix_t tch_mem_ix;
+typedef struct tch_ustdl_ix_t tch_ustdlib_ix;
+typedef struct tch_bar_ix_t tch_bar_ix;
 typedef struct tch_hal_t tch_hal;
-typedef struct _tch_event_ix_t tch_event_ix;
+typedef struct tch_event_ix_t tch_event_ix;
 
 
 /**

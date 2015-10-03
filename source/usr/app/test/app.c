@@ -26,11 +26,9 @@ int main(const tch* ctx){
 	if((testResult = semaphore_performTest((tch*) ctx)) != tchOK)
 		return testResult;
 
-
 	while(TRUE){
 		ctx->Thread->sleep(1);
 	}
-
 }
 
 

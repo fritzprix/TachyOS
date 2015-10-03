@@ -736,13 +736,11 @@ const tch_hal* tch_hal_init(const tch* env){
 
 	RTC_IX = tch_rtcHalInit(env);
 	DMA_IX = tch_dmaHalInit(env);
-	/***
-	 *  bind hal interface
-	 */
 
 	HAL_IX = tch_shmAlloc(sizeof(tch_hal));
 	if(!HAL_IX)
-		KERNEL_PANIC("tch_hal.c","Can't create HAL interface stubs");
+		KERNEL_PANIC("tch_hal.c","Can't create HAL interface");
+
 	HAL_IX->adc = tch_adcHalInit(env);
 	HAL_IX->gpio  = tch_gpioHalInit(env);
 	HAL_IX->timer = tch_timerHalInit(env);

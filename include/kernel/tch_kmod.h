@@ -33,6 +33,9 @@ extern "C" {
  *  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  */
 
+
+#define MOD_TYPE_UART				((int) 1)
+
 typedef int (*__mod_init_t) (void);
 typedef void (*__mod_exit_t) (void);
 
@@ -41,11 +44,15 @@ typedef struct module_header {
 	void*					uaccess_ix;
 } module_header_t;
 
-#define MODULE_INIT(init) 	 __attribute__((section(".initv_array"))) __mod_init_t ___##init_VECTOR = init;
-#define MODULE_EXIT(exit)    __attribute__((section(".exitv_array"))) __mod_exit_t ___##exit_VECTOR = exit;
 
-extern BOOL tch_registerInterface(int key, __UACESS void* interface);
-extern BOOL tch_unregisterInterface(int key);
+
+#define MODULE_INIT(init) 	 __attribute__((section(".sinitv_array"))) __mod_init_t ___##init_VECTOR = init;
+#define MODULE_EXIT(exit)    __attribute__((section(".sexitv_array"))) __mod_exit_t ___##exit_VECTOR = exit;
+
+extern BOOL tch_registerUserModule(int type,int owner_key, __UACESS void* interface,BOOL ispriv);
+extern BOOL tch_unregisterUserModule(int type,int owner_key,BOOL ispriv);
+
+
 
 
 #if defined(__cplusplus)

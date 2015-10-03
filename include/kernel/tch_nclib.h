@@ -44,7 +44,9 @@ struct crt_param {
  * \see ANSI_LIBSET
  * \see POSIX_LIBSET
  */
-typedef struct _tch_stdio_ix_t {
+
+
+typedef struct tch_stdio_ix_t {
 	int (*getchar)(void);
 	void (*perror)(const char* prefix);
 	int (*putchar)(int ch);
@@ -54,9 +56,9 @@ typedef struct _tch_stdio_ix_t {
 	int (*siprintf)(char* str,const char* format,...);
 	int (*iprintf)(const char* format,...);
 	int (*iscanf)(const char* format,...);
-}tch_stdio_ix;
+} tch_stdio_ix;
 
-typedef struct _tch_string_ix_t {
+typedef struct tch_string_ix_t {
 	void* (*memchr)(const void* src,int c, size_t length);
 	int (*memcmp)(const void* s1,const void* s2,size_t n);
 	void* (*memcpy)(void* out,const void* in,size_t n);
@@ -67,9 +69,9 @@ typedef struct _tch_string_ix_t {
 	size_t (*strlen)(const char* str);
 	size_t (*strspn)(const char* s1,const char* s2);
 	char* (*strtok)(char*__restrict src,const char*__restrict del);
-}tch_string_ix;
+} tch_string_ix;
 
-typedef struct _tch_stdlib_ix_t{
+typedef struct tch_stdlib_ix_t{
 	int (*abs)(int x);
 	double (*atof)(const char* str);
 	float (*atoff)(const char* str);
@@ -80,11 +82,11 @@ typedef struct _tch_stdlib_ix_t{
 	void* (*malloc)(size_t size);
 	int (*rand)(void);
 	void (*srand)(unsigned seed);
-}tch_stdlib_ix;
+} tch_stdlib_ix;
 
-typedef struct _tch_math_ix_t {
+typedef struct tch_math_ix_t {
 	void* dummy;
-}tch_math_ix;
+} tch_math_ix;
 
 typedef struct _tch_ctype_ix_t {
 	int (*isalnum)(int c);
@@ -112,7 +114,7 @@ typedef struct _tch_time_ix_t{
 
 
 
-typedef struct _tch_ustdl_ix_t {
+typedef struct tch_ustdl_ix_t {
 	const tch_stdio_ix* stdio;
 	const tch_stdlib_ix* stdlib;
 	const tch_string_ix* string;

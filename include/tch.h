@@ -75,7 +75,7 @@ struct tch_hal_t{
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* ctx)
 
 
-struct _tch_thread_ix_t {
+struct tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
@@ -99,7 +99,7 @@ struct _tch_thread_ix_t {
 };
 
 
-struct _tch_mutex_ix_t {
+struct tch_mutex_ix_t {
 	tch_mtxId (*create)();
 	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
 	tchStatus (*unlock)(tch_mtxId mtx);
@@ -107,7 +107,7 @@ struct _tch_mutex_ix_t {
 };
 
 
-struct _tch_semaph_ix_t {
+struct tch_semaph_ix_t {
 	tch_semId (*create)(uint32_t count);
 	tchStatus (*lock)(tch_semId sid,uint32_t timeout);
 	tchStatus (*unlock)(tch_semId sid);
@@ -115,7 +115,7 @@ struct _tch_semaph_ix_t {
 };
 
 
-struct _tch_bar_ix_t {
+struct tch_bar_ix_t {
 	tch_barId (*create)();
 	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
 	tchStatus (*signal)(tch_barId bar,tchStatus result);
@@ -123,7 +123,7 @@ struct _tch_bar_ix_t {
 };
 
 
-struct _tch_systime_ix_t {
+struct tch_systime_ix_t {
 	tchStatus (*getLocaltime)(struct tm* tm);
 	tchStatus (*setLocaltime)(struct tm* tm,const tch_timezone tz);
 	uint64_t (*getCurrentTimeMills)();
@@ -131,10 +131,11 @@ struct _tch_systime_ix_t {
 };
 
 
+
 /*!
  * \brief posix-like condition variable API struct
  */
-struct _tch_condvar_ix_t {
+struct tch_condvar_ix_t {
 
 	/*! \brief create posix-like condition variable
 	 *  \return initiated \ref tch_condvId
@@ -153,7 +154,7 @@ struct _tch_condvar_ix_t {
 
 
 
-struct _tch_mpool_ix_t {
+struct tch_mpool_ix_t {
 	tch_mpoolId (*create)(size_t sz,uint32_t plen);
 	void* (*alloc)(tch_mpoolId mpool);
 	void* (*calloc)(tch_mpoolId mpool);
@@ -161,13 +162,13 @@ struct _tch_mpool_ix_t {
 	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
-struct _tch_signal_ix_t {
+struct tch_signal_ix_t {
 	int32_t (*set)(tch_threadId thread,int32_t signals);
 	int32_t (*clear)(tch_threadId thread,int32_t signals);
 	tchStatus (*wait)(int32_t signals,uint32_t millisec);
 };
 
-struct _tch_event_ix_t {
+struct tch_event_ix_t {
 	tch_eventId (*create)();
 	int32_t (*set)(tch_eventId ev,int32_t signals);
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
@@ -179,7 +180,7 @@ struct _tch_event_ix_t {
  *    CMSIS RTOS Compatible message queue
  */
 
-struct _tch_msgque_ix_t {
+struct tch_msgque_ix_t {
 	/**
 	 *  Create and initiate Message Queue instance
 	 *  ##Note : In CMSIS, this function actually has one more arguement, which is thread. however it is pointless
@@ -225,7 +226,7 @@ struct _tch_msgque_ix_t {
 };
 
 
-struct _tch_mailbox_ix_t {
+struct tch_mailbox_ix_t {
 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
 	void* (*alloc)(tch_mailqId qid,uint32_t timeout,tchStatus* result);
 	tchStatus (*put)(tch_mailqId qid,void* mail,uint32_t timeout);
@@ -234,7 +235,7 @@ struct _tch_mailbox_ix_t {
 	tchStatus (*destroy)(tch_mailqId qid);
 };
 
-struct _tch_mem_ix_t {
+struct tch_mem_ix_t {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
 	void (*mstat)(mstat* statp);

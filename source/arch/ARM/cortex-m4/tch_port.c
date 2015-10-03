@@ -125,7 +125,9 @@ void tch_port_disablePrivilegedThread(){
 	__set_CONTROL(mcu_control);
 }
 
-
+/**
+ *
+ */
 void tch_port_atomicBegin(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
