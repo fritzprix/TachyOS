@@ -14,15 +14,15 @@
 
 DECLARE_THREADROUTINE(main){
 
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;
 	iocfg.popt = ActOnSleep;
 
-	tch_GpioHandle* ext_wkup = env->Device->gpio->allocIo(env,tch_gpio3,(1 << 12),&iocfg,osWaitForever);
+	tch_gpioHandle* ext_wkup = env->Device->gpio->allocIo(env,tch_gpio3,(1 << 12),&iocfg,osWaitForever);
 
-	tch_GpioEvCfg evcfg;
+	gpio_event_config_t evcfg;
 	evcfg.EvCallback = NULL;
 	evcfg.EvEdge = GPIO_EvEdge_Fall;
 	evcfg.EvType = GPIO_EvType_Interrupt;

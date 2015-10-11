@@ -416,7 +416,7 @@ int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 
 
 void HardFault_Handler(){
-	tch_kernelOnHardFault(FAULT_TYPE_HARD);
+	tch_kernel_handleHardFault(FAULT_TYPE_HARD);
 }
 
 void MemManage_Handler(){
@@ -435,9 +435,9 @@ void MemManage_Handler(){
 }
 
 void BusFault_Handler(){
-	tch_kernelOnHardFault(FAULT_TYPE_BUS);
+	tch_kernel_handleHardFault(FAULT_TYPE_BUS);
 }
 
 void UsageFault_Handler(){
-	tch_kernelOnHardFault(FAULT_TYPE_USG);
+	tch_kernel_handleHardFault(FAULT_TYPE_USG);
 }

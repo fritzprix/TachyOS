@@ -17,6 +17,21 @@ extern "C"{
 #endif
 
 
+#define MODULE_TYPE_GPIO				((uint32_t) 0)
+#define MODULE_TYPE_RTC					((uint32_t) 1)
+#define MODULE_TYPE_DMA					((uint32_t) 2)
+#define MODULE_TYPE_UART				((uint32_t) 3)
+#define MODULE_TYPE_IIC					((uint32_t) 4)
+#define MODULE_TYPE_SPI					((uint32_t) 5)
+#define MODULE_TYPE_TIMER				((uint32_t) 6)
+#define MODULE_TYPE_ANALOGIN			((uint32_t) 7)
+#define MODULE_TYPE_ANALOGOUT			((uint32_t) 8)
+
+
+typedef struct module_map {
+	uint64_t _map[8];
+}module_map_t;
+
 typedef void* tch_threadId;
 typedef void* tch_eventId;
 typedef void* tch_mtxId;
@@ -37,18 +52,16 @@ typedef void* tch_eventTree;
 
 typedef struct tch_thread_ix_t tch_thread_ix;
 typedef struct tch_condvar_ix_t tch_condv_ix;
-typedef struct tch_signal_ix_t tch_signal_ix;
 typedef struct tch_mutex_ix_t tch_mtx_ix;
 typedef struct tch_semaph_ix_t tch_semaph_ix;
-typedef struct tch_systime_ix_t tch_systime_ix;
+typedef struct tch_time_ix_t tch_time_ix;
 typedef struct tch_msgque_ix_t tch_msgq_ix;
 typedef struct tch_mailbox_ix_t tch_mailq_ix;
 typedef struct tch_mpool_ix_t tch_mpool_ix;
 typedef struct tch_mem_ix_t tch_mem_ix;
-typedef struct tch_ustdl_ix_t tch_ustdlib_ix;
 typedef struct tch_bar_ix_t tch_bar_ix;
-typedef struct tch_hal_t tch_hal;
 typedef struct tch_event_ix_t tch_event_ix;
+typedef struct tch_service_ix_t tch_service_ix;
 
 
 /**
@@ -72,21 +85,19 @@ struct application_header {
 };
 
 
-
 typedef struct _tch_runtime_t {
 	const tch_thread_ix* Thread;
 	const tch_event_ix* Event;
-	const tch_systime_ix* Time;
+	const tch_time_ix* Time;
 	const tch_condv_ix* Condv;
 	const tch_mtx_ix* Mtx;
 	const tch_semaph_ix* Sem;
 	const tch_bar_ix* Barrier;
 	const tch_msgq_ix* MsgQ;
 	const tch_mailq_ix* MailQ;
-	const tch_mpool_ix* Mempool;                ///< Operating System
-	const tch_hal* Device;                      ///< Entry of Device Driver Handles
+	const tch_mpool_ix* Mempool;
 	const tch_mem_ix* Mem;
-	const tch_ustdlib_ix* uStdLib;              ///< minimal set of c standard library (Wrapper Class)
+	const tch_service_ix* Service;
 } tch;
 
 /// Status code values returned by CMSIS-RTOS functions.

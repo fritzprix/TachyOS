@@ -8,7 +8,7 @@ OBJS += $(APP_OBJS)
 
 
 $(APP_BUILD_DIR):
-	$(MK) $(APP_BUILD_DIR)
+	$(MKDIR) $(APP_BUILD_DIR)
 
 $(APP_BUILD_DIR)/%.o:$(USR_SRC_DIR)/app/$(APP_NAME)/%.c
 	@echo 'Building file: $<'

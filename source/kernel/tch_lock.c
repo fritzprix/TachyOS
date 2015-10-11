@@ -496,7 +496,7 @@ tchStatus tch_condvInit(tch_condvCb* condv){
 	return __SYSCALL_1(condv_init,condv);
 }
 
-tchStatus tch_condvDeint(tch_condvCb* condv){
+tchStatus tch_condvDeinit(tch_condvCb* condv){
 	if(!condv)
 		return tchErrorParameter;
 	if(tch_port_isISR())

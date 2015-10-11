@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include "tch_gpio.h"
 #include "tch_hal.h"
+
+#include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/tch_ktypes.h"
@@ -53,7 +55,7 @@
 
 #define GPIO_INTERRUPT_INIT      ((uint32_t) 0xF8 << 16)
 #define GPIO_INTERRUPT_INIT_MSK  ((uint32_t) 0xFF << 16)
-#define TCH_GPIO_CLASS_KEY       ((uint16_t) 0x3D03)
+#define GPIO_CLASS_KEY  	     ((uint16_t) 0x3D03)
 
 
 #define SET_INTERRUPT(gpio_handle)  ((tch_gpio_handle_prototype*) gpio_handle)->state |= GPIO_INTERRUPT_INIT
@@ -70,7 +72,7 @@ typedef struct tch_gpio_manager_internal_t {
 }tch_gpio_manager;
 
 typedef struct _tch_gpio_handle_prototype {
-	tch_GpioHandle               _pix;
+	tch_gpioHandle               _pix;
 	uint8_t                       idx;
 	uint32_t                      state;
 	uint32_t                      pMsk;
@@ -86,56 +88,65 @@ typedef struct _tch_gpio_handle_prototype {
 /**********************************************************************************************/
 /************************************  gpio driver public function  ***************************/
 /**********************************************************************************************/
-static tch_GpioHandle* tch_gpioAlloc(const tch* env,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout);
-static void tch_gpioInitCfg(tch_GpioCfg* cfg);
-static void tch_gpioInitEvCfg(tch_GpioEvCfg* evcfg);
-static tchStatus tch_gpioFree(tch_GpioHandle* self);
+static tch_gpioHandle* tch_gpio_alloc(const tch* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout);
+static tchStatus tch_gpio_free(tch_gpioHandle* self);
+static void tch_gpio_initCfg(gpio_config_t* cfg);
+static void tch_gpio_initEvCfg(gpio_event_config_t* evcfg);
 
 
 /**********************************************************************************************/
 /************************************  gpio handle public function ****************************/
 /**********************************************************************************************/
+static void tch_gpio_out(tch_gpioHandle* self,uint32_t pmsk,tch_bState nstate);
+static tch_bState tch_gpio_in(tch_gpioHandle* self,uint32_t pmsk);
+static tchStatus tch_gpio_configure(tch_gpioHandle* self,const gpio_config_t* cfg,uint32_t pmsk);
 
-static void tch_gpioOut(tch_GpioHandle* self,uint32_t pmsk,tch_bState nstate);
-static tch_bState tch_gpioIn(tch_GpioHandle* self,uint32_t pmsk);
-static tchStatus tch_gpioRegisterEvent(tch_GpioHandle* self,pin p,const tch_GpioEvCfg* cfg);
-static tchStatus tch_gpioUnregisterEvent(tch_GpioHandle* self,pin p);
-static tchStatus tch_gpioConfigureEvent(tch_GpioHandle* self,pin p,const tch_GpioEvCfg* cfg);
-static tchStatus tch_gpioConfigure(tch_GpioHandle* self,const tch_GpioCfg* cfg,uint32_t pmsk);
-static BOOL tch_gpioListen(tch_GpioHandle* self,uint8_t pin,uint32_t timeout);
+static tchStatus tch_gpio_registerEvent(tch_gpioHandle* self,pin p,const gpio_event_config_t* cfg);
+static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p);
+static tchStatus tch_gpio_configureEvent(tch_gpioHandle* self,pin p,const gpio_event_config_t* cfg);
+static BOOL tch_gpio_waitEvent(tch_gpioHandle* self,uint8_t pin,uint32_t timeout);
 
 
 
 /**********************************************************************************************/
 /************************************     private fuctnions   *********************************/
 /**********************************************************************************************/
+static int tch_gpio_init(void);
+static void tch_gpio_exit(void);
 static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt);
-
-static inline void tch_gpioValidate(tch_gpio_handle_prototype* _handle);
-static inline void tch_gpioInvalidate(tch_gpio_handle_prototype* _handle);
-static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle);
+static inline void tch_gpio_validate(tch_gpio_handle_prototype* _handle);
+static inline void tch_gpio_invalidate(tch_gpio_handle_prototype* _handle);
+static inline BOOL tch_gpio_isValid(tch_gpio_handle_prototype* _handle);
 
 __USER_RODATA__ tch_lld_gpio GPIO_Ops = {
 		.count = MFEATURE_GPIO,
-		.allocIo = tch_gpioAlloc,
-		.initCfg = tch_gpioInitCfg,
-		.initEvCfg = tch_gpioInitEvCfg
+		.allocIo = tch_gpio_alloc,
+		.initCfg = tch_gpio_initCfg,
+		.initEvCfg = tch_gpio_initEvCfg
 };
 
 static tch_mtxCb lock;
 static tch_condvCb condv;
 
-tch_lld_gpio* tch_gpioHalInit(const tch* env){
-	if(!env)
-		return NULL;
+
+static int tch_gpio_init(void){
 	tch_mutexInit(&lock);
 	tch_condvInit(&condv);
-	return &GPIO_Ops;
+	tch_kmod_register(MODULE_TYPE_GPIO,GPIO_CLASS_KEY,&GPIO_Ops,FALSE);
+	return TRUE;
 }
 
+static void tch_gpio_exit(void){
+	tch_kmod_unregister(MODULE_TYPE_GPIO,GPIO_CLASS_KEY);
+	tch_mutexDeinit(&lock);
+	tch_condvDeinit(&condv);
+}
+
+MODULE_INIT(tch_gpio_init);
+MODULE_EXIT(tch_gpio_exit);
 
 
-static tch_GpioHandle* tch_gpioAlloc(const tch* env,const gpIo_x port,uint32_t pmsk,const tch_GpioCfg* cfg,uint32_t timeout){
+static tch_gpioHandle* tch_gpio_alloc(const tch* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout){
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	if(!gpio->_clkenr)                   /// given GPIO port is not supported in this H/W
 		return NULL;
@@ -150,14 +161,14 @@ static tch_GpioHandle* tch_gpioAlloc(const tch* env,const gpIo_x port,uint32_t p
 
 	tch_gpio_handle_prototype* ins = env->Mem->alloc(sizeof(tch_gpio_handle_prototype));   // allocate gpio handle
 	ins->env = env;
-	ins->_pix.close = tch_gpioFree;
-	ins->_pix.in = tch_gpioIn;
-	ins->_pix.out = tch_gpioOut;
-	ins->_pix.listen = tch_gpioListen;
-	ins->_pix.registerIoEvent = tch_gpioRegisterEvent;
-	ins->_pix.unregisterIoEvent = tch_gpioUnregisterEvent;
-	ins->_pix.configure = tch_gpioConfigure;
-	ins->_pix.configureEvent = tch_gpioConfigureEvent;
+	ins->_pix.close = tch_gpio_free;
+	ins->_pix.in = tch_gpio_in;
+	ins->_pix.out = tch_gpio_out;
+	ins->_pix.listen = tch_gpio_waitEvent;
+	ins->_pix.registerIoEvent = tch_gpio_registerEvent;
+	ins->_pix.unregisterIoEvent = tch_gpio_unregisterEvent;
+	ins->_pix.configure = tch_gpio_configure;
+	ins->_pix.configureEvent = tch_gpio_configureEvent;
 	ins->pMsk = pmsk;
 	ins->mtxId = env->Mtx->create();
 	ins->cb = NULL;
@@ -169,12 +180,12 @@ static tch_GpioHandle* tch_gpioAlloc(const tch* env,const gpIo_x port,uint32_t p
 	}else{
 		*gpio->_lpclkenr &= ~gpio->lpclkmsk;     /// otherwise clear
 	}
-	tch_gpioConfigure((tch_GpioHandle*) ins,cfg,pmsk);
-	tch_gpioValidate(ins);
-	return (tch_GpioHandle*) ins;
+	tch_gpio_configure((tch_gpioHandle*) ins,cfg,pmsk);
+	tch_gpio_validate(ins);
+	return (tch_gpioHandle*) ins;
 }
 
-static void tch_gpioInitCfg(tch_GpioCfg* cfg){
+static void tch_gpio_initCfg(gpio_config_t* cfg){
 
 	cfg->Af = 0;
 	cfg->Mode = GPIO_Mode_IN;
@@ -184,44 +195,44 @@ static void tch_gpioInitCfg(tch_GpioCfg* cfg){
 	cfg->popt = ActOnSleep;
 }
 
-static void tch_gpioInitEvCfg(tch_GpioEvCfg* evcfg){
+static void tch_gpio_initEvCfg(gpio_event_config_t* evcfg){
 	evcfg->EvEdge = GPIO_EvEdge_Fall;
 	evcfg->EvType = GPIO_EvType_Interrupt;
 	evcfg->EvCallback = NULL;
 }
 
 
-static tchStatus tch_gpioFree(tch_GpioHandle* self){
+static tchStatus tch_gpio_free(tch_gpioHandle* self){
 	tch_gpio_handle_prototype* ins = NULL;
 	tchStatus result = 0;
 	if(!self)
 		return tchErrorParameter;
 	ins = (tch_gpio_handle_prototype*) self;
-	if(!tch_gpioIsValid(ins))
+	if(!tch_gpio_isValid(ins))
 		return tchErrorResource;
 	const tch* env = ins->env;
 	if(env->Mtx->lock(ins->mtxId,tchWaitForever) != tchOK)
 		return tchErrorTimeoutResource;
 
 	tch_gpio_descriptor* gpio = &GPIO_HWs[ins->idx];
-	tch_GpioCfg initCfg;
-	tch_gpioInitCfg(&initCfg);
-	tch_gpioConfigure(self,&initCfg,ins->pMsk);
+	gpio_config_t initCfg;
+	tch_gpio_initCfg(&initCfg);
+	tch_gpio_configure(self,&initCfg,ins->pMsk);
 	uint16_t pmsk = ins->pMsk;
 	pin p = 0;
 	while(pmsk){
-		tch_gpioUnregisterEvent(self,p);
+		tch_gpio_unregisterEvent(self,p);
 		pmsk >>= 1;
 		p++;
 	}
 
-	tch_gpioInvalidate(ins);
+	tch_gpio_invalidate(ins);
 	env->Mtx->destroy(ins->mtxId);
 
 	env->Mtx->lock(&lock,tchWaitForever);
 	*gpio->_clkenr &= ~gpio->clkmsk;
 	*gpio->_lpclkenr &= ~gpio->lpclkmsk;
-	tch_gpioInvalidate(ins);
+	tch_gpio_invalidate(ins);
 	gpio->io_ocpstate &= ~ins->pMsk;
 	env->Condv->wakeAll(&condv);
 	env->Mtx->unlock(&lock);
@@ -231,11 +242,11 @@ static tchStatus tch_gpioFree(tch_GpioHandle* self){
 
 
 
-static void tch_gpioOut(tch_GpioHandle* self,uint32_t pmsk,tch_bState nstate){
+static void tch_gpio_out(tch_gpioHandle* self,uint32_t pmsk,tch_bState nstate){
 	tch_gpio_handle_prototype* ins = (tch_gpio_handle_prototype*) self;
 	if(!ins)
 		return;
-	if(!tch_gpioIsValid(ins))
+	if(!tch_gpio_isValid(ins))
 		return;
 	if(!(ins->pMsk & pmsk))
 		return;
@@ -246,25 +257,25 @@ static void tch_gpioOut(tch_GpioHandle* self,uint32_t pmsk,tch_bState nstate){
 	}
 }
 
-static tch_bState tch_gpioIn(tch_GpioHandle* self,uint32_t pmsk){
+static tch_bState tch_gpio_in(tch_gpioHandle* self,uint32_t pmsk){
 	tch_gpio_handle_prototype* _handle = NULL;
 	if(!self)
 		return bClear;
 	_handle = (tch_gpio_handle_prototype*) self;
-	if(!tch_gpioIsValid(_handle))
+	if(!tch_gpio_isValid(_handle))
 		return bClear;
 	if(!(_handle->pMsk & pmsk))
 		return bClear;
 	return ((GPIO_TypeDef*)GPIO_HWs[_handle->idx]._hw)->IDR & pmsk ? bSet : bClear;
 }
 
-static tchStatus tch_gpioRegisterEvent(tch_GpioHandle* self,pin p,const tch_GpioEvCfg* cfg){
+static tchStatus tch_gpio_registerEvent(tch_gpioHandle* self,pin p,const gpio_event_config_t* cfg){
 	tch_gpio_handle_prototype* ins = (tch_gpio_handle_prototype*) self;
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[p];
 
 	if(!self)
 		return tchErrorParameter;
-	if(!tch_gpioIsValid(ins))
+	if(!tch_gpio_isValid(ins))
 		return tchErrorResource;
 
 	if(__get_IPSR())
@@ -286,17 +297,17 @@ static tchStatus tch_gpioRegisterEvent(tch_GpioHandle* self,pin p,const tch_Gpio
 	SET_INTERRUPT(ins);
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	ins->cb = cfg->EvCallback;
-	tch_gpioConfigureEvent(self,p,cfg);
+	tch_gpio_configureEvent(self,p,cfg);
 	env->Mtx->unlock(&lock);
 	return tchOK;
 }
 
-static tchStatus tch_gpioUnregisterEvent(tch_GpioHandle* self,pin p){
+static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p){
 	tch_gpio_handle_prototype* ins = NULL;
 	if(!self)
 		return tchErrorParameter;
 	ins = (tch_gpio_handle_prototype* )self;
-	if(!tch_gpioIsValid(ins))
+	if(!tch_gpio_isValid(ins))
 		return tchErrorResource;
 	if(!IS_INTERRUPT(ins))
 		return tchErrorParameter;
@@ -330,7 +341,7 @@ static tchStatus tch_gpioUnregisterEvent(tch_GpioHandle* self,pin p){
 }
 
 
-static tchStatus tch_gpioConfigure(tch_GpioHandle* self,const tch_GpioCfg* cfg,uint32_t pmsk){
+static tchStatus tch_gpio_configure(tch_gpioHandle* self,const gpio_config_t* cfg,uint32_t pmsk){
 	tch_gpio_handle_prototype* ins = NULL;
 	GPIO_TypeDef* ioHw = NULL;
 	uint8_t pin = 0;
@@ -339,7 +350,7 @@ static tchStatus tch_gpioConfigure(tch_GpioHandle* self,const tch_GpioCfg* cfg,u
 	if(!self)
 		return tchErrorParameter;
 	 ins = (tch_gpio_handle_prototype*) self;
-	if(!tch_gpioIsValid(ins))
+	if(!tch_gpio_isValid(ins))
 		return tchErrorResource;
 	if(!(ins->pMsk & pmsk))
 		return tchErrorParameter;
@@ -382,9 +393,9 @@ static tchStatus tch_gpioConfigure(tch_GpioHandle* self,const tch_GpioCfg* cfg,u
 	return tchOK;
 }
 
-static BOOL tch_gpioListen(tch_GpioHandle* self,uint8_t pin,uint32_t timeout){
+static BOOL tch_gpio_waitEvent(tch_gpioHandle* self,uint8_t pin,uint32_t timeout){
 	tch_gpio_handle_prototype* ins = (tch_gpio_handle_prototype*) self;
-	if((!self) || (!tch_gpioIsValid(ins)) || (__get_IPSR()))
+	if((!self) || (!tch_gpio_isValid(ins)) || (__get_IPSR()))
 		return FALSE;
 	uint32_t pmsk = (1 << pin);
 	if(!(ins->pMsk & pmsk))
@@ -398,9 +409,9 @@ static BOOL tch_gpioListen(tch_GpioHandle* self,uint8_t pin,uint32_t timeout){
 
 
 
-static tchStatus tch_gpioConfigureEvent(tch_GpioHandle* self,uint8_t pin,const tch_GpioEvCfg* cfg){
+static tchStatus tch_gpio_configureEvent(tch_gpioHandle* self,uint8_t pin,const gpio_event_config_t* cfg){
 	tch_gpio_handle_prototype* ins = (tch_gpio_handle_prototype*) self;
-	if((!self) || (!tch_gpioIsValid(ins)) || (__get_IPSR()))
+	if((!self) || (!tch_gpio_isValid(ins)) || (__get_IPSR()))
 		return tchErrorParameter;
 	uint16_t pmsk = (1 << pin);
 	if(!(ins->pMsk & pmsk))
@@ -437,16 +448,16 @@ static tchStatus tch_gpioConfigureEvent(tch_GpioHandle* self,uint8_t pin,const t
 }
 
 
-static inline void tch_gpioValidate(tch_gpio_handle_prototype* _handle){
-	_handle->state = ((uint32_t) _handle & 0xFFFF) ^ TCH_GPIO_CLASS_KEY;
+static inline void tch_gpio_validate(tch_gpio_handle_prototype* _handle){
+	_handle->state = ((uint32_t) _handle & 0xFFFF) ^ GPIO_CLASS_KEY;
 }
 
-static inline void tch_gpioInvalidate(tch_gpio_handle_prototype* _handle){
+static inline void tch_gpio_invalidate(tch_gpio_handle_prototype* _handle){
 	_handle->state &= ~(0xFFFF);
 }
 
-static inline BOOL tch_gpioIsValid(tch_gpio_handle_prototype* _handle){
-	return (_handle->state & 0xFFFF) == ((uint32_t) _handle & 0xFFFF) ^ TCH_GPIO_CLASS_KEY;
+static inline BOOL tch_gpio_isValid(tch_gpio_handle_prototype* _handle){
+	return (_handle->state & 0xFFFF) == ((uint32_t) _handle & 0xFFFF) ^ GPIO_CLASS_KEY;
 }
 
 static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
@@ -462,7 +473,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt){
 				return;
 			_handle = (tch_gpio_handle_prototype*)ioIntObj->io_occp;
 			if(_handle->cb)
-				_handle->cb((tch_GpioHandle*)_handle,base_idx + pos);
+				_handle->cb((tch_gpioHandle*)_handle,base_idx + pos);
 			EXTI->PR |= pMsk;
 			_handle->env->Barrier->signal(ioIntObj->evbar,tchOK);
 		}

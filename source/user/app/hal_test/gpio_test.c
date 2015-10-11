@@ -43,13 +43,13 @@ tchStatus gpio_performTest(const tch* api){
 
 static DECLARE_THREADROUTINE(evgenRoutine){
 
-	tch_GpioCfg iocfg;
-	const tch_lld_gpio* gpio = ctx->Device->gpio;
+	gpio_config_t iocfg;
+	tch_lld_gpio* gpio = ctx->Service->request(MODULE_TYPE_GPIO);
 	iocfg.Mode = GPIO_Mode_OUT;
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_Float;
 	iocfg.Speed = GPIO_OSpeed_50M;
-	tch_GpioHandle* out = gpio->allocIo(ctx,tch_gpio1,outp,&iocfg,tchWaitForever);    // set pin 8 @ port b as output
+	tch_gpioHandle* out = gpio->allocIo(ctx,tch_gpio1,outp,&iocfg,tchWaitForever);    // set pin 8 @ port b as output
 
 
 	out->out(out,outp,bSet);
@@ -61,16 +61,16 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 
 static DECLARE_THREADROUTINE(evconsRoutine){
 
-	tch_GpioHandle* in = NULL;
-	tch_GpioCfg iocfg;
-	const tch_lld_gpio* gpio = ctx->Device->gpio;
+	tch_gpioHandle* in = NULL;
+	gpio_config_t iocfg;
+	tch_lld_gpio* gpio;
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;
 	iocfg.Speed = GPIO_OSpeed_50M;
 	in = gpio->allocIo(ctx,tch_gpio0,inp,&iocfg,tchWaitForever);  // set pin 2 @ port a as input
 
-	tch_GpioEvCfg evcfg;
+	gpio_event_config_t evcfg;
 	gpio->initEvCfg(&evcfg);
 	evcfg.EvEdge = GPIO_EvEdge_Fall;
 	evcfg.EvType = GPIO_EvType_Interrupt;

@@ -35,14 +35,6 @@ extern "C" {
 #include "tch_sdio.h"
 
 
-struct tch_hal_t{
-	const tch_lld_usart* usart;
-	const tch_lld_spi*   spi;
-	const tch_lld_iic*   i2c;
-	const tch_lld_adc*   adc;
-	const tch_lld_gpio*  gpio;
-	const tch_lld_timer* timer;
-};
 /**
  * \mainpage Tachyos
  * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
@@ -123,13 +115,12 @@ struct tch_bar_ix_t {
 };
 
 
-struct tch_systime_ix_t {
+struct tch_time_ix_t {
 	tchStatus (*getLocaltime)(struct tm* tm);
 	tchStatus (*setLocaltime)(struct tm* tm,const tch_timezone tz);
 	uint64_t (*getCurrentTimeMills)();
 	uint64_t (*uptimeMills)();
 };
-
 
 
 /*!
@@ -162,23 +153,15 @@ struct tch_mpool_ix_t {
 	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
-struct tch_signal_ix_t {
-	int32_t (*set)(tch_threadId thread,int32_t signals);
-	int32_t (*clear)(tch_threadId thread,int32_t signals);
-	tchStatus (*wait)(int32_t signals,uint32_t millisec);
-};
-
 struct tch_event_ix_t {
-	tch_eventId (*create)();
+	tch_eventId (*create)(void);
 	int32_t (*set)(tch_eventId ev,int32_t signals);
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
 	tchStatus (*wait)(tch_eventId ev,int32_t signals,uint32_t millisec);
 	tchStatus (*destroy)(tch_eventId ev);
 };
 
-/**
- *    CMSIS RTOS Compatible message queue
- */
+
 
 struct tch_msgque_ix_t {
 	/**
@@ -242,7 +225,12 @@ struct tch_mem_ix_t {
 };
 
 
-#include "tch_nclib.h"
+struct tch_service_ix_t {
+	void* (*request)(int);
+	BOOL (*chkdep)(module_map_t* service);
+};
+
+
 extern DECLARE_THREADROUTINE(main);
 
 

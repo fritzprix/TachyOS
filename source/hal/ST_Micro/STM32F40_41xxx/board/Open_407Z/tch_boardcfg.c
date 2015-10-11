@@ -9,7 +9,7 @@
 
 
 
-__TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
+__TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
 //				DMA_Str15,
 				DMA_NOT_USED,
@@ -70,7 +70,7 @@ __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 	uint8_t        afv;
  */
 
-__TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
+__TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
 				tch_gpio0,
 				{
@@ -183,7 +183,7 @@ __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 	uint8_t        sck;
  */
 
-__TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
+__TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
 
 //				DMA_Str13,    //dma2_stream5
@@ -232,7 +232,7 @@ __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 	uint8_t       afv;
  */
 
-__TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = {
+__TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		{      // IIC 1
 				DMA_Str6,    // dma1_stream 6
 				DMA_Str5,    // dma1_stream 5
@@ -279,7 +279,7 @@ typedef struct _tch_adc_com_bs_t{
  */
 
 
-__TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
+__TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
 				DMA_Str12,
 				DMA_Ch0,
@@ -309,7 +309,7 @@ __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
 	uint8_t       adc_routemsk;
 	uint8_t       occp;
  */
-__TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+__TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch0
 		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch1
 		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch2

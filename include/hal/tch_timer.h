@@ -49,13 +49,13 @@ extern "C" {
 typedef uint8_t tch_timer;
 
 typedef struct _tch_gptimer_handle_t tch_gptimerHandle;
-typedef struct _tch_gptimer_def_t tch_gptimerDef;
+typedef struct _tch_gptimer_def_t gptimer_config_t;
 
 typedef struct _tch_pwm_handle_t tch_pwmHandle;
-typedef struct _tch_pwm_def_t tch_pwmDef;
+typedef struct _tch_pwm_def_t pwm_config_t;
 
 typedef struct _tch_tcapt_handle_t tch_tcaptHandle;
-typedef struct _tch_tcapt_def_t tch_tcaptDef;
+typedef struct _tch_tcapt_def_t pcapt_config_t;
 
 
 
@@ -104,9 +104,9 @@ struct _tch_tcapt_def_t {
 
 typedef struct tch_lld_timer {
 	const uint16_t count;
-	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
-	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
-	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
+	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout);
+	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout);
+	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout);
 	uint32_t (*getChannelCount)(tch_timer timer);
 	uint8_t (*getPrecision)(tch_timer timer);
 } tch_lld_timer;

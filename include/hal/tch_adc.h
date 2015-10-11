@@ -76,12 +76,12 @@ struct tch_adc_handle_t {
 };
 
 typedef struct tch_lld_adc_t {
-	const uint16_t ADC_COUNT;
-	const uint8_t  ADC_MAX_PRECISION;
-	const uint8_t  ADC_MIN_PRECISION;
+	const uint16_t count;
+	const uint8_t  max_precision;
+	const uint8_t  min_precision;
 	void (*initCfg)(tch_adcCfg* cfg);
-	void (*addChannel)(tch_adcChDef* chdef,uint8_t ch);
-	void (*removeChannel)(tch_adcChDef* chdef,uint8_t ch);
+	void (*addChannel)(tch_adcCfg* chdef,uint8_t ch);
+	void (*removeChannel)(tch_adcCfg* chdef,uint8_t ch);
 	tch_adcHandle* (*open)(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 	BOOL (*available)(adc_t adc);
 }tch_lld_adc;

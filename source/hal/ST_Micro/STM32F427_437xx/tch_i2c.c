@@ -104,9 +104,9 @@ struct tch_iic_handle_prototype_t {
 	tch_iicHandle                        pix;
 	tch_iic                              iic;
 	uint32_t                             status;
-	tch_GpioHandle*                      iohandle;
-	tch_DmaHandle*                       rxdma;
-	tch_DmaHandle*                       txdma;
+	tch_gpioHandle*                      iohandle;
+	tch_dmaHandle*                       rxdma;
+	tch_dmaHandle*                       txdma;
 	tch_eventId                          evId;
 	const tch*                           env;
 	tch_mtxId                            mtx;
@@ -221,7 +221,7 @@ __USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_
 		ins->txdma = DMA_IX->allocate(env,iicbs->txdma,&dmaCfg,timeout,popt);
 	}
 
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Af = iicbs->afv;
 	iocfg.Mode = GPIO_Mode_AF;

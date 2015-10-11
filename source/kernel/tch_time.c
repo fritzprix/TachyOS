@@ -30,14 +30,14 @@ static uint64_t tch_systime_uptimeMills();
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
 
-__attribute__((section(".data")))  static tch_systime_ix TIMER_StaticInstance = {
+__attribute__((section(".data")))  static tch_time_ix TIMER_StaticInstance = {
 		tch_systime_getLocalTime,
 		tch_systime_setLocalTime,
 		tch_systime_getCurrentTimeMills,
 		tch_systime_uptimeMills
 };
 
-tch_systime_ix* tchk_systimeInit(const tch* env, time_t init_tm,
+tch_time_ix* tchk_systimeInit(const tch* env, time_t init_tm,
 		tch_timezone init_tz) {
 
 	tch_hal_disableSystick();
@@ -46,7 +46,9 @@ tch_systime_ix* tchk_systimeInit(const tch* env, time_t init_tm,
 	tch_systimeTick = 0;
 	tch_sysUpTimeSec = 0;
 
-	rtcHandle = RTC_IX->open(env, init_tm, init_tz);
+	tch_lld_rtc* rtc = tch_kmod_request(MODULE_TYPE_RTC);
+
+	rtcHandle = rtc->open(env, init_tm, init_tz);
 	rtcHandle->enablePeriodicWakeup(rtcHandle, 1, tch_kernelOnWakeup);
 
 	tch_hal_enableSystick();

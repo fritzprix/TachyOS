@@ -19,6 +19,8 @@
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_kmod.h"
+#include "kernel/util/string.h"
 
 #define SET_SAFE_EXIT();      RETURN_EXIT:
 #define RETURN_SAFE()         goto RETURN_EXIT
@@ -51,64 +53,76 @@ typedef struct tch_adc_handle_prototype {
 	uint16_t                             isr_msk;
 	uint32_t                             ch_occp;
 	adc_t                                adc;
-	tch_DmaHandle                        dma;
+	tch_dmaHandle                        dma;
 	tch_pwmHandle*                       timer;
 	tch_mtxId                            mtx;
 	tch_condvId                          condv;
 	uint8_t                              chcnt;
-	tch_GpioHandle**                     io_handle;
+	tch_gpioHandle**                     io_handle;
 	tch_msgqId                           msgq;
 }tch_adc_handle_prototype;
 
 
-__USER_API__ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
-__USER_API__ static tchStatus tch_adcClose(tch_adcHandle* self);
-__USER_API__ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch);
-__USER_API__ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
+__USER_API__ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
+__USER_API__ static tchStatus tch_adc_close(tch_adcHandle* self);
+__USER_API__ static uint32_t tch_adc_read(const tch_adcHandle* self,uint8_t ch);
+__USER_API__ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
 static uint32_t tch_adcChannelOccpStatus;
 
 
-__USER_API__ static void tch_adcCfgInit(tch_adcCfg* cfg);
-__USER_API__ static void tch_adcAddChannel(tch_adcChDef* chdef,uint8_t ch);
-__USER_API__ static void tch_adcRemoveChannel(tch_adcChDef* chdef,uint8_t ch);
-__USER_API__ static BOOL tch_adcAvailable(adc_t adc);
+__USER_API__ static void tch_adc_cfgInit(tch_adcCfg* cfg);
+__USER_API__ static void tch_adc_addChannel(tch_adcCfg* cfg,uint8_t ch);
+__USER_API__ static void tch_adc_removeChannel(tch_adcCfg* cfg,uint8_t ch);
+__USER_API__ static BOOL tch_adc_isAvailable(adc_t adc);
 
-static void tch_adcValidate(tch_adc_handle_prototype* ins);
-static void tch_adcInvalidata(tch_adc_handle_prototype* ins);
-static BOOL tch_adcIsValid(tch_adc_handle_prototype* ins);
-static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins);
+static int tch_adc_init(void);
+static void tch_adc_exit(void);
+static void tch_adc_validate(tch_adc_handle_prototype* ins);
+static void tch_adc_invalidata(tch_adc_handle_prototype* ins);
+static BOOL tch_adc_isValid(tch_adc_handle_prototype* ins);
+static BOOL tch_adc_handleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins);
 
 static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t order);
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
 __USER_RODATA__ tch_lld_adc ADC_Ops = {
-		.ADC_COUNT = MFEATURE_ADC,
-		.ADC_MAX_PRECISION = 12,
-		.ADC_MIN_PRECISION = 6,
-		.initCfg = tch_adcCfgInit,
-		.addChannel = tch_adcAddChannel,
-		.removeChannel = tch_adcRemoveChannel,
-		.open = tch_adcOpen,
-		.available = tch_adcAvailable
+		.count = MFEATURE_ADC,
+		.max_precision = 12,
+		.min_precision = 6,
+		.initCfg = tch_adc_cfgInit,
+		.addChannel = tch_adc_addChannel,
+		.removeChannel = tch_adc_removeChannel,
+		.open = tch_adc_open,
+		.available = tch_adc_isAvailable
 };
 
 static tch_mtxCb ADC_Mutex;
 static tch_condvCb ADC_Condv;
 
-
-tch_lld_adc* tch_adcHalInit(const tch* env){
-	if(!env)
-		return NULL;
+static int tch_adc_init(void){
 	if(!MFEATURE_ADC)
-		return NULL;
+		return FALSE;
+
 	tch_adcChannelOccpStatus = 0;
 	tch_mutexInit(&ADC_Mutex);
 	tch_condvInit(&ADC_Condv);
-	return  &ADC_Ops;
+	tch_kmod_register(MODULE_TYPE_ANALOGIN,ADC_CLASS_KEY,&ADC_Ops,FALSE);
+
+	return  TRUE;
 }
 
-static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout){
+static void tch_adc_exit(void){
+	tch_mutexDeinit(&ADC_Mutex);
+	tch_condvInit(&ADC_Condv);
+	tch_kmod_unregister(MODULE_TYPE_ANALOGIN,ADC_CLASS_KEY);
+}
+
+
+MODULE_INIT(tch_adc_init);
+MODULE_EXIT(tch_adc_exit);
+
+static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout){
 	tch_adc_handle_prototype* ins = NULL;
 	uint8_t ch_idx = 0;
 	tch_DmaCfg dmacfg;
@@ -117,9 +131,16 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	if(!(cfg->chdef.chselMsk > 0))
 		return NULL;
 
+	tch_lld_timer* timer = (tch_lld_timer*) Service->request(MODULE_TYPE_TIMER);
+	tch_lld_gpio* gpio = (tch_lld_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_lld_dma* dma = (tch_lld_dma*) tch_kmod_request(MODULE_TYPE_DMA);
+
+	if(!timer || !gpio)
+		return NULL;
+
 	tch_adc_descriptor* adcDesc = &ADC_HWs[adc];
-	tch_adc_bs* adcBs = &ADC_BD_CFGs[adc];
-	tch_adc_channel_bs* adcChBs = NULL;
+	tch_adc_bs_t* adcBs = &ADC_BD_CFGs[adc];
+	tch_adc_channel_bs_t* adcChBs = NULL;
 	ADC_TypeDef* adcHw = adcDesc->_hw;
 	uint8_t smphld = 0;
 
@@ -130,18 +151,18 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 			return NULL;
 	}
 	ins = adcDesc->_handle = env->Mem->alloc(sizeof(tch_adc_handle_prototype));
-	env->uStdLib->string->memset(ins,0,sizeof(tch_adc_handle_prototype));
+	memset(ins,0,sizeof(tch_adc_handle_prototype));
 	tch_adcChannelOccpStatus |= (ins->ch_occp = cfg->chdef.chselMsk);
 	if(env->Mtx->unlock(&ADC_Mutex) != tchOK)
 		return NULL;
 
-	ins->io_handle = (tch_GpioHandle**) env->Mem->alloc(sizeof(tch_GpioHandle*) * cfg->chdef.chcnt);
+	ins->io_handle = (tch_gpioHandle**) env->Mem->alloc(sizeof(tch_gpioHandle*) * cfg->chdef.chcnt);
 	ins->mtx = env->Mtx->create();
 	ins->condv = env->Condv->create();
 	ins->msgq = env->MsgQ->create(1);
 	// gpio initialize
-	tch_GpioCfg iocfg;
-	env->Device->gpio->initCfg(&iocfg);
+	gpio_config_t iocfg;
+	gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_AN;
 	iocfg.PuPd = GPIO_PuPd_Float;
 	iocfg.popt = popt;
@@ -172,7 +193,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 			cfg->chdef.chcnt--;
 			adcChBs = &ADC_CH_BD_CFGs[ch_idx];
 			if(adcChBs->adc_routemsk & (1 << adc)){
-				ins->io_handle[ins->chcnt++] = env->Device->gpio->allocIo(env,adcChBs->port.port,(1 << adcChBs->port.pin),&iocfg,timeout);
+				ins->io_handle[ins->chcnt++] = gpio->allocIo(env,adcChBs->port.port,(1 << adcChBs->port.pin),&iocfg,timeout);
 				tch_adc_setRegSampleHold(adcDesc,ch_idx,smphld);
 				tch_adc_setRegChannel(adcDesc,ch_idx,0);
 			}
@@ -195,46 +216,49 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		dmacfg.pAlign = DMA_DataAlign_Hword;
 		dmacfg.pBurstSize = DMA_Burst_Single;
 		dmacfg.pInc = TRUE;
-		ins->dma = DMA_IX->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
+		ins->dma = dma->allocate(env,adcBs->dma,&dmacfg,timeout,popt);
 	}else{
 		// TODO :handle dma_not_used
 	}
 
-	tch_pwmDef pwmDef;
+	pwm_config_t pwmDef;
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.PeriodInUnitTime = _1_MHZ / cfg->SampleFreq;
 	pwmDef.pwrOpt = popt;
-	ins->timer = env->Device->timer->openPWM(env,adcBs->timer,&pwmDef,timeout);
+
+
+	ins->timer = timer->openPWM(env,adcBs->timer,&pwmDef,timeout);
 
 	ins->isr_msk |= ADC_SR_OVR | ADC_SR_EOC;
 	adcHw->CR1 |= (cfg->Precision << ADC_Precision_Pos) | ADC_CR1_OVRIE | ADC_CR1_EOCIE;
 	adcHw->CR2 |= (ADC_CR2_ADON | (adcBs->timerExtsel << ADC_CR2_EXTSEL_Pos));
 
-	ins->pix.close = tch_adcClose;
-	ins->pix.readBurst = tch_adcBurstConvert;
-	ins->pix.read = tch_adcRead;
+	ins->pix.close = tch_adc_close;
+	ins->pix.readBurst = tch_adc_burstConvert;
+	ins->pix.read = tch_adc_read;
 	ins->env = env;
 
 
 	tch_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
-	tch_adcValidate(ins);
+	tch_adc_validate(ins);
 	return (tch_adcHandle*) ins;
 }
 
-static BOOL tch_adcAvailable(adc_t adc){
+static BOOL tch_adc_isAvailable(adc_t adc){
 	if(adc >= MFEATURE_ADC)
 		return FALSE;
 	return ADC_HWs[adc]._handle == NULL;
 }
 
 
-static tchStatus tch_adcClose(tch_adcHandle* self){
+static tchStatus tch_adc_close(tch_adcHandle* self){
 	tch_adc_handle_prototype* ins =(tch_adc_handle_prototype*) self;
 	tch_adc_descriptor* adcDesc = &ADC_HWs[ins->adc];
+	tch_lld_dma* dma = tch_kmod_request(MODULE_TYPE_DMA);
 	tchStatus  result = tchOK;
 	if(!self)
 		return tchErrorParameter;
-	if(!tch_adcIsValid(ins))
+	if(!tch_adc_isValid(ins))
 		return tchErrorParameter;
 	const tch* env = ins->env;
 	if((result = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
@@ -243,14 +267,14 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 		if((result = env->Condv->wait(ins->condv,ins->mtx,tchWaitForever)) != tchOK)
 			return result;
 	}
-	tch_adcInvalidata(ins);
+	tch_adc_invalidata(ins);
 	env->Mtx->destroy(ins->mtx);
 	env->Condv->destroy(ins->condv);
 	while(ins->chcnt--){
 		ins->io_handle[ins->chcnt]->close(ins->io_handle[ins->chcnt]);
 	}
 	env->Mem->free(ins->io_handle);
-	DMA_IX->freeDma(ins->dma);
+	dma->freeDma(ins->dma);
 	ins->timer->close(ins->timer);
 
 	if((result = env->Mtx->lock(&ADC_Mutex,tchWaitForever)) != tchOK)
@@ -265,14 +289,14 @@ static tchStatus tch_adcClose(tch_adcHandle* self){
 	return tchOK;
 }
 
-static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
+static uint32_t tch_adc_read(const tch_adcHandle* self,uint8_t ch){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
 	tch_adc_descriptor* adcDesc = &ADC_HWs[ins->adc];
 	ADC_TypeDef* adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	tchEvent evt;
 	if(!ins)
 		return ADC_READ_FAIL;
-	if(!tch_adcIsValid(ins))
+	if(!tch_adc_isValid(ins))
 		return ADC_READ_FAIL;
 	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return ADC_READ_FAIL;
@@ -299,16 +323,18 @@ static uint32_t tch_adcRead(const tch_adcHandle* self,uint8_t ch){
 	return evt.value.v;
 }
 
-static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_mailqId q, uint32_t chnksz, uint32_t convCnt){
+static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_mailqId q, uint32_t chnksz, uint32_t convCnt){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
+	// TODO : caching dma
+	tch_lld_dma* dma = (tch_lld_dma*) tch_kmod_request(MODULE_TYPE_DMA);
 	ADC_TypeDef* adcHw = NULL;
-	tch_adc_bs* adcBs = NULL;
+	tch_adc_bs_t* adcBs = NULL;
 	tchEvent evt;
 	tchStatus result = tchOK;
 	tch_adc_descriptor* adcDesc = NULL;
 	if(!ins)
 		return tchErrorParameter;
-	if(!tch_adcIsValid(ins))
+	if(!tch_adc_isValid(ins))
 		return tchErrorParameter;
 
 	adcBs = &ADC_BD_CFGs[ins->adc];
@@ -334,9 +360,9 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_m
 	uint16_t* chnk = NULL;
 	while(convCnt--){
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,tchWaitForever,NULL);
-		DMA_IX->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
+		dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
 		ins->timer->start(ins->timer);
-		DMA_IX->beginXfer(ins->dma,&dmaReq,0,&result);
+		dma->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk,1000);
@@ -362,21 +388,22 @@ static tchStatus tch_adcBurstConvert(const tch_adcHandle* self,uint8_t ch, tch_m
 
 
 
-static void tch_adcCfgInit(tch_adcCfg* cfg){
+static void tch_adc_cfgInit(tch_adcCfg* cfg){
 	cfg->chdef.chcnt = cfg->chdef.chselMsk = 0;
 	cfg->Precision = ADC_Precision_8B;
 	cfg->SampleFreq = 1000;
 	cfg->SampleHold = ADC_SampleHold_Mid;
 }
 
-static void tch_adcAddChannel(tch_adcChDef* chdef,uint8_t ch){
-	chdef->chselMsk |= (1 << ch);
-	chdef->chcnt++;
+static void tch_adc_addChannel(tch_adcCfg* cfg,uint8_t ch){
+	cfg->chdef.chselMsk |= (1 << ch);
+	cfg->chdef.chselMsk |= (1 << ch);
+	cfg->chdef.chcnt++;
 }
 
-static void tch_adcRemoveChannel(tch_adcChDef* chdef,uint8_t ch){
-	chdef->chselMsk &= ~(1 << ch);
-	chdef->chcnt--;
+static void tch_adc_removeChannel(tch_adcCfg* cfg,uint8_t ch){
+	cfg->chdef.chselMsk &= ~(1 << ch);
+	cfg->chdef.chcnt--;
 }
 
 
@@ -403,21 +430,21 @@ static void tch_adc_setRegSampleHold(tch_adc_descriptor* adcDesc,uint8_t ch,uint
 	}
 }
 
-static void tch_adcValidate(tch_adc_handle_prototype* ins){
+static void tch_adc_validate(tch_adc_handle_prototype* ins){
 	ins->status &= ~0xFFFF;
 	ins->status |= (ADC_CLASS_KEY ^ ((uint32_t)ins & 0xFFFF));
 }
 
-static void tch_adcInvalidata(tch_adc_handle_prototype* ins){
+static void tch_adc_invalidata(tch_adc_handle_prototype* ins){
 	ins->status &= ~0xFFFF;
 }
 
-static BOOL tch_adcIsValid(tch_adc_handle_prototype* ins){
+static BOOL tch_adc_isValid(tch_adc_handle_prototype* ins){
 	return (ins->status & 0xFFFF) == (ADC_CLASS_KEY ^ ((uint32_t) ins & 0xFFFF));
 }
 
 
-static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins){
+static BOOL tch_adc_handleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_prototype* ins){
 	ADC_TypeDef* adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	if(adcHw->SR & ins->isr_msk){
 		if(adcHw->SR & ADC_SR_EOC){
@@ -436,15 +463,15 @@ static BOOL tch_adcHandleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_pr
 
 void ADC_IRQHandler(void){
 	if(ADC_HWs[0]._handle){
-		if(tch_adcHandleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
+		if(tch_adc_handleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
 			return;
 	}
 	if(ADC_HWs[1]._handle){
-		if(tch_adcHandleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
+		if(tch_adc_handleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
 			return;
 	}
 	if(ADC_HWs[2]._handle){
-		if(tch_adcHandleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
+		if(tch_adc_handleInterrupt(&ADC_HWs[0],ADC_HWs[0]._handle))
 			return;
 	}
 }

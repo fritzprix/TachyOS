@@ -12,7 +12,7 @@ FPU = HALFSOFT
 HW_VENDOR = ST_Micro
 HW_PLF = STM32F40_41xxx
 BOARD_NAME=Open_407Z
-APP_NAME=test
+APP_NAME=
 
 ### Open 427Z ###\
 ARCH = ARM\
@@ -46,7 +46,7 @@ ifeq ($(MAJOR_VER),)
 endif
 
 ifeq ($(MINOR_VER),)
-	MINOR_VER=1
+	MINOR_VER=3
 endif
 
 ifeq ($(TOOLCHAIN_NAME),)
@@ -58,7 +58,7 @@ ifeq ($(ARCH),)
 	ARCH = ARM
 endif
 
-# CPU Family  cortex-m3 | cortex-m0
+# CPU Family  cortex-m3 | cortex-m0 | cortex-m4
 ifeq ($(CPU),)
 	CPU = cortex-m4
 endif

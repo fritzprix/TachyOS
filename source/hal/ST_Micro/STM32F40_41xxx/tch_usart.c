@@ -18,8 +18,10 @@
 #include "tch_gpio.h"
 #include "tch_usart.h"
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
+#include "kernel/util/string.h"
 
 
 
@@ -94,11 +96,11 @@ typedef struct tch_usart_request_s {
 typedef struct tch_usart_handle_prototype_s {
 	struct tch_usart_handle_s        pix;
 	uart_t               	         pno;
-	tch_DmaHandle					 txDma;
-	tch_DmaHandle					 rxDma;
+	tch_dmaHandle					 txDma;
+	tch_dmaHandle					 rxDma;
 	tch_eventId                      txEvId;
 	tch_eventId                      rxEvId;
-	tch_GpioHandle*                  ioHandle;
+	tch_gpioHandle*                  ioHandle;
 	tch_mtxId                        rxMtx;
 	tch_condvId                      rxCondv;
 	tch_mtxId                        txMtx;
@@ -140,6 +142,7 @@ static tch_mtxCb 		mtx;
 static tch_condvCb 		condv;
 static uint16_t			occp_state;
 static uint16_t			lpoccp_state;
+static tch_lld_dma*		dma;
 
 
 tch_lld_usart* tch_usartHalInit(const tch* env){
@@ -158,14 +161,23 @@ tch_lld_usart* tch_usartHalInit(const tch* env){
 
 static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	tch_usartHandlePrototype uins = NULL;
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	uint32_t io_msk = 0;
 	uint32_t umskb = 1 << port;
+
+
+	if(!dma)
+		dma = tch_kmod_request(MODULE_TYPE_DMA);
 
 	if(port >= MFEATURE_UART)    // if requested channel is larger than uart channel count
 		return NULL;                    // return null
 	if(tch_port_isISR())
 		return NULL;
+
+	tch_lld_gpio* gpio = (tch_lld_gpio*) Service->request(MODULE_TYPE_GPIO);
+	if(!gpio)
+		return NULL;
+
 
 	if(env->Mtx->lock(&mtx,timeout) != tchOK)
 		return NULL;
@@ -177,13 +189,13 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	env->Mtx->unlock(&mtx); // exit critical section
 	tch_uart_descriptor* uDesc = &UART_HWs[port];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
-	tch_uart_bs* ubs = &UART_BD_CFGs[port];
+	tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
 
                    // configure io port required by uart
 
 
 	uDesc->_handle = uins = env->Mem->alloc(sizeof(struct tch_usart_handle_prototype_s));   // if successfully get io handle, create uart handle instance
-	env->uStdLib->string->memset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure
+	memset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure
 
 	uins->rxMtx = env->Mtx->create();
 	uins->rxCondv = env->Condv->create();
@@ -196,7 +208,8 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 	uins->pno = port;
 	uins->env = env;
 
-	env->Device->gpio->initCfg(&iocfg);
+
+	gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.Af = ubs->afv;
 	iocfg.popt = popt;
@@ -206,7 +219,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 		io_msk |= (1 << ubs->rtsp) | (1 << ubs->ctsp);
 	}
 
-	uins->ioHandle = env->Device->gpio->allocIo(env,ubs->port,io_msk,&iocfg,timeout); // try get io handle
+	uins->ioHandle = gpio->allocIo(env,ubs->port,io_msk,&iocfg,timeout); // try get io handle
 
 	/*  Uart Baudrate Configuration  */
 	uint8_t psc = 2;
@@ -257,7 +270,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->txDma = DMA_IX->allocate(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
+		uins->txDma = dma->allocate(env,ubs->txdma,&dmaCfg,timeout,popt); // can be null
 	}
 
 	if(ubs->rxdma != DMA_NOT_USED){ // setup rx dma
@@ -273,7 +286,7 @@ static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg
 		dmaCfg.pBurstSize = DMA_Burst_Single;
 		dmaCfg.pInc = FALSE;
 
-		uins->rxDma = DMA_IX->allocate(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
+		uins->rxDma = dma->allocate(env,ubs->rxdma,&dmaCfg,timeout,popt);  // can be null
 	}
 
 
@@ -339,10 +352,10 @@ static tchStatus tch_usartClose(tch_usartHandle handle){
 	env->Event->destroy(ins->txEvId);
 
 	if(ins->txDma){
-		DMA_IX->freeDma(ins->txDma);
+		dma->freeDma(ins->txDma);
 	}
 	if(ins->rxDma){
-		DMA_IX->freeDma(ins->rxDma);
+		dma->freeDma(ins->rxDma);
 	}
 	ins->ioHandle->close(ins->ioHandle);
 	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK){
@@ -423,12 +436,12 @@ static tchStatus tch_usartWrite(tch_usartHandle handle,const uint8_t* bp,uint32_
 	} else {
 		uhw->CR3 |= USART_CR3_DMAT;
 		tch_DmaReqDef req;
-		DMA_IX->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
+		dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
 		uhw->SR &= ~USART_SR_TC;    // clear tc
-		if(DMA_IX->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
+		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
 			result = tchErrorIo;
 			RETURN_SAFELY();
 		}
@@ -489,10 +502,10 @@ static uint32_t tch_usartRead(tch_usartHandle handle,uint8_t* bp, uint32_t sz,ui
 	} else {
 		uhw->CR3 |= USART_CR3_DMAR;
 		tch_DmaReqDef req;
-		DMA_IX->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
+		dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
-		sz -= DMA_IX->beginXfer(ins->rxDma,&req,timeout,NULL);
+		sz -= dma->beginXfer(ins->rxDma,&req,timeout,NULL);
 	}
 
 	env->Mtx->lock(ins->rxMtx,timeout);

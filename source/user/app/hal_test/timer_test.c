@@ -28,7 +28,7 @@ tchStatus timer_performTest(tch* ctx){
 	tchStatus result = tchOK;
 
 	// ************* Start of test for Basic Timer Function ********************** //
-	tch_gptimerDef gptDef;
+	gptimer_config_t gptDef;
 	gptDef.UnitTime = TIMER_UNITTIME_mSEC;
 	gptDef.pwrOpt = ActOnSleep;
 
@@ -63,7 +63,7 @@ tchStatus timer_performTest(tch* ctx){
 
 	// ************* Start of test for PWM Out Function ********************** //
 
-	tch_pwmDef pwmDef;
+	pwm_config_t pwmDef;
 	pwmDef.PeriodInUnitTime = 1000;
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
@@ -106,7 +106,7 @@ tchStatus timer_performTest(tch* ctx){
 	if(!pwmDrv)
 		return tchErrorOS;
 
-	tch_tcaptDef captDef;
+	pcapt_config_t captDef;
 	captDef.Polarity = TIMER_POLARITY_NEGATIVE;
 	captDef.UnitTime = TIMER_UNITTIME_uSEC;
 	captDef.periodInUnitTime = 1000;

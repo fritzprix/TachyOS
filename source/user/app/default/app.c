@@ -7,6 +7,7 @@
 
 
 #include "tch.h"
+#include "user/module/libc/tch_ulibc.h"
 
 /*
  * main.c
@@ -58,13 +59,15 @@ tch_threadId childId;
 
 int main(const tch* ctx) {
 
-
+/*
 	tch_spiCfg spicfg;
 	spicfg.Baudrate = SPI_BAUDRATE_HIGH;
 	spicfg.Role = SPI_ROLE_MASTER;
 	spicfg.ClkMode = SPI_CLKMODE_0;
 	spicfg.FrmFormat = SPI_FRM_FORMAT_8B;
 	spicfg.FrmOrient = SPI_FRM_ORI_LSBFIRST;
+
+	ctx->Service->request(MODULE_TYPE_SPI);
 
 	tch_spiHandle* spi = ctx->Device->spi->allocSpi(ctx,tch_spi0,&spicfg,tchWaitForever,ActOnSleep);
 
@@ -139,12 +142,16 @@ int main(const tch* ctx) {
 		}
 		ctx->Thread->sleep(1);
 	}
+	return tchOK;*/
+	while(TRUE){
+		ctx->Thread->sleep(2);
+	}
 	return tchOK;
 }
 
 
 static DECLARE_THREADROUTINE(btnHandler){
-
+/*
 	tch_spiHandle* spi = (tch_spiHandle*) ctx->Thread->getArg();
 	char c;
 
@@ -152,13 +159,13 @@ static DECLARE_THREADROUTINE(btnHandler){
 		spi->write(spi,"Press Button",11);
 //		ctx->uStdLib->stdio->iprintf("\rButton Loop\n");
 		ctx->Thread->sleep(2);
-	}
+	}*/
 	return tchOK;
 }
 
 
 static DECLARE_THREADROUTINE(childThreadRoutine){
-	tch_spiHandle* spi = (tch_spiHandle*)  ctx->Thread->getArg();
+/*	tch_spiHandle* spi = (tch_spiHandle*)  ctx->Thread->getArg();
 	tch_mailqId adcReadQ = ctx->MailQ->create(100,2);
 	struct tm ltm;
 	tchEvent evt;
@@ -185,7 +192,7 @@ static DECLARE_THREADROUTINE(childThreadRoutine){
 //		ctx->uStdLib->stdio->iprintf("\r\n%d/%d/%d %d:%d:%d\n",ltm.tm_year + 1900,ltm.tm_mon + 1,ltm.tm_mday,ltm.tm_hour,ltm.tm_min,ltm.tm_sec);
 		ctx->Thread->sleep(1);
 		spi->write(spi,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",50);
-	}
+	}*/
 	return tchOK;
 }
 

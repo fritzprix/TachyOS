@@ -5,8 +5,7 @@
 BOARD_BUILD_DIR=$(GEN_DIR)/board
 GEN_SUB_DIR+=$(BOARD_BUILD_DIR)
 
-BOARD_SRCS=tch_board.c\
-			tch_boardcfg.c
+BOARD_SRCS=tch_boardcfg.c
 
 BOARD_OBJS=$(BOARD_SRCS:%.c=$(BOARD_BUILD_DIR)/%.o)
 

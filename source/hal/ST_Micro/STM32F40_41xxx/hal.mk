@@ -23,13 +23,15 @@ GEN_SUB_DIR+=$(HAL_BUILD_DIR)
 HAL_ASM_OBJS=$(HAL_ASM_SRCS:%.S=$(HAL_BUILD_DIR)/%.o)
 HAL_OBJS=$(HAL_SRCS:%.c=$(HAL_BUILD_DIR)/%.o)
 
+include $(HAL_SRC_DIR)/board/$(BOARD_NAME)/bd.mk
+
 
 OBJS += $(HAL_OBJS) 
 OBJS += $(HAL_ASM_OBJS)
 
 
 $(HAL_BUILD_DIR): 
-	$(MK) $(HAL_BUILD_DIR)
+	$(MKDIR) $(HAL_BUILD_DIR)
 
 $(HAL_BUILD_DIR)/%.o: $(HAL_SRC_DIR)/%.c
 	@echo 'Building file: $<'

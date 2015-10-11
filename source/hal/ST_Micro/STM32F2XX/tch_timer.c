@@ -115,7 +115,7 @@ typedef struct tch_pwm_handle_proto_t{
 	uint32_t               status;
 	tch_timer              timer;
 	const tch*             env;
-	tch_GpioHandle**       iohandle;
+	tch_gpioHandle**       iohandle;
 	tch_barId              uev_bar;
 	tch_semId              uev_sem;
 	tch_mtxId              mtx;
@@ -126,7 +126,7 @@ typedef struct tch_tcapt_handle_proto_t{
 	uint32_t               status;
 	tch_timer              timer;
 	const tch*             env;
-	tch_GpioHandle**       iohandle;
+	tch_gpioHandle**       iohandle;
 	tch_msgqId*            msgqs;
 	tch_mtxId              mtx;
 	tch_condvId            condv;
@@ -134,9 +134,9 @@ typedef struct tch_tcapt_handle_proto_t{
 
 
 ///////            Timer Manager Function               ///////
-__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout);
-__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout);
-__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout);
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout);
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout);
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout);
 __USER_API__ static uint32_t tch_timer_getChannelCount(tch_timer timer);
 __USER_API__ static uint8_t tch_timer_getPrecision(tch_timer timer);
 
@@ -191,7 +191,7 @@ tch_lld_timer* tch_timerHalInit(const tch* env){
 }
 
 ///////            Timer Manager Function               ///////
-__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,tch_gptimerDef* gpt_def,uint32_t timeout){
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_gptimer_handle_proto* ins = NULL;
 
@@ -323,7 +323,7 @@ __USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env
 	return (tch_gptimerHandle*) ins;
 }
 
-__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,tch_pwmDef* tdef,uint32_t timeout){
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout){
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_pwm_handle_proto* ins = NULL;
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[timer];
@@ -362,8 +362,8 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_tim
 
 	tch_timer_PWMValidate(ins);
 
-	ins->iohandle = env->Mem->alloc(sizeof(tch_GpioHandle*) * timDesc->channelCnt);
-	env->uStdLib->string->memset(ins->iohandle,0,(sizeof(tch_GpioHandle*) * timDesc->channelCnt));
+	ins->iohandle = env->Mem->alloc(sizeof(tch_gpioHandle*) * timDesc->channelCnt);
+	env->uStdLib->string->memset(ins->iohandle,0,(sizeof(tch_gpioHandle*) * timDesc->channelCnt));
 
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)timDesc->_hw;
 
@@ -488,7 +488,7 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_tim
 /*!
  *
  */
-__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,tch_tcaptDef* tdef,uint32_t timeout){
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout){
 	tchStatus result = tchOK;
 	uint16_t pmsk = 0;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) env->Mem->alloc(sizeof(tch_tcapt_handle_proto));
@@ -511,7 +511,7 @@ __USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,t
 		return NULL;
 	}
 
-	ins->iohandle = env->Mem->alloc(sizeof(tch_GpioHandle*) * (timDesc->channelCnt / 2));
+	ins->iohandle = env->Mem->alloc(sizeof(tch_gpioHandle*) * (timDesc->channelCnt / 2));
 	if(!ins->iohandle){
 		env->Mem->free(ins);
 		return NULL;
@@ -791,7 +791,7 @@ __USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_
 		return tchErrorParameter;
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_bs* timBcfg = &TIMER_BD_CFGs[ins->timer];
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	ch = ch - 1;
 	if(enable && !ins->iohandle[ch] && (timBcfg->chp[ch] != -1)){
 		ins->env->Device->gpio->initCfg(&iocfg);
@@ -962,7 +962,7 @@ __USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uin
 	ch = (ch - 1) / 2;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
 	tch_timer_bs* tbs = &TIMER_BD_CFGs[ins->timer];
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	if(enable && !ins->iohandle[ch] && (tbs->chp[ch] != -1)){
 		ins->env->Device->gpio->initCfg(&iocfg);
 		iocfg.Mode = GPIO_Mode_AF;

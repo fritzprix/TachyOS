@@ -252,10 +252,6 @@ tch_threadId tch_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOO
 	kthread->lckCnt = 0;
 	kthread->prior = cfg->priority;
 	kthread->to = 0;
-
-#ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
-	_REENT_INIT_PTR(&kthread->uthread->reent)
-#endif
 	kthread->uthread->name = cfg->name;
 	memcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
 	return (tch_threadId) kthread->uthread;

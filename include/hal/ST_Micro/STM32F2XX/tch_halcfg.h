@@ -187,6 +187,10 @@ extern "C" {
 #define MFEATURE_ADC_Ch             (16)
 #endif
 
+#ifndef MFEATURE_SDIO
+#define MFEATURE_SDIO				(1)
+#endif
+
 
 
 #if defined(__cplusplus)

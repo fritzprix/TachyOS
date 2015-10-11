@@ -58,7 +58,7 @@ __USER_API__ void tch_free(void* ptr){
 	return;
 
 ERR_HEAP_FREE :
-	tch_kernel_raise_error(current,tchErrorHeapCorruption,"heap corrupted");
+	tch_kernel_raiseError(current,tchErrorHeapCorruption,"heap corrupted");
 }
 
 

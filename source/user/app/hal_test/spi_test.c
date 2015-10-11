@@ -11,7 +11,7 @@
 tchStatus spi_performTest(tch* ctx){
 	tch_spiHandle* spihandle = NULL;
 	uaddr_t faddr = 0;
-	tch_spiCfg spiCfg;
+	spi_config_t spiCfg;
 	uint32_t leakTestcnt = 1000;
 
 

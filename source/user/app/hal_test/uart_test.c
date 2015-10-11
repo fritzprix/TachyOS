@@ -21,6 +21,10 @@ tchStatus uart_performTest(tch* ctx){
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
 
+	tch_lld_usart* uart = ctx->Service->request(MODULE_TYPE_UART);
+	if(!uart)
+		return tchErrorOS;
+
 	tch_usartHandle serial = NULL;
 
 

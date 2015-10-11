@@ -27,8 +27,8 @@ static DECLARE_IO_CALLBACK(ioEventListener);
 static tch_msgqId mid;
 static tch_barId mBar;
 
-static tch_GpioHandle* out;
-static tch_GpioHandle* in;
+static tch_gpioHandle* out;
+static tch_gpioHandle* in;
 
 static volatile tch* Api;
 static int irqcnt;
@@ -46,27 +46,6 @@ tchStatus msgq_performTest(tch* api){
 	const tch_msgq_ix* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
 
-	tch_GpioCfg iocfg;
-	api->Device->gpio->initCfg(&iocfg);
-	iocfg.Mode = GPIO_Mode_OUT;
-	iocfg.Otype = GPIO_Otype_OD;
-	iocfg.PuPd = GPIO_PuPd_PU;
-	iocfg.Speed = GPIO_OSpeed_50M;
-	out = api->Device->gpio->allocIo(api,tch_gpio0,1 << 2,&iocfg,tchWaitForever);
-	out->out(out,1 << 2,bSet);
-
-	iocfg.Mode = GPIO_Mode_IN;
-	iocfg.PuPd = GPIO_PuPd_PU;;
-	iocfg.Speed = GPIO_OSpeed_50M;
-	in = api->Device->gpio->allocIo(api,tch_gpio0,1 << 0,&iocfg,tchWaitForever);
-
-	tch_GpioEvCfg evcfg;
-	api->Device->gpio->initEvCfg(&evcfg);
-	evcfg.EvEdge = GPIO_EvEdge_Fall;
-	evcfg.EvType = GPIO_EvType_Interrupt;
-	evcfg.EvCallback = ioEventListener;
-	uint32_t pmsk = 1 << 0;
-	in->registerIoEvent(in,&evcfg,&pmsk);
 
 	const tch_thread_ix* Thread = api->Thread;
 	tch_threadCfg tcfg;
