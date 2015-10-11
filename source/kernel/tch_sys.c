@@ -30,7 +30,6 @@
 #include "kernel/tch_bar.h"
 #include "kernel/tch_sem.h"
 #include "kernel/tch_mpool.h"
-#include "kernel/mm/tch_malloc.h"
 #include "kernel/tch_event.h"
 #include "kernel/tch_err.h"
 #include "kernel/tch_kernel.h"
@@ -38,7 +37,10 @@
 #include "kernel/tch_msgq.h"
 #include "kernel/tch_thread.h"
 #include "kernel/tch_time.h"
+#include "kernel/tch_kmod.h"
 #include "kernel/mm/tch_mm.h"
+#include "kernel/mm/tch_malloc.h"
+
 
 
 #if !defined(CONFIG_KERNEL_DYNAMICSIZE) || \
@@ -63,13 +65,13 @@ static tch RuntimeInterface = {
 		.MailQ = &MailQ_IX,
 		.MsgQ = &MsgQ_IX,
 		.Mem = &UMem_IX,
-		.Event = &Event_IX
+		.Event = &Event_IX,
+		.Service = &Service_IX
 };
 __USER_RODATA__ const tch* tch_rti = &RuntimeInterface;
 
 static tch_threadId sysThread;
 volatile BOOL kernel_ready;
-tch_boardParam boardHandle = NULL;
 BOOL __VALID_SYSCALL;
 
 
@@ -104,7 +106,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
-		tch_kernel_raise_error(current,tchErrorIllegalAccess,"Illegal System call route detected");
+		tch_kernel_raiseError(current,tchErrorIllegalAccess,"Illegal System call route detected");
 
 
 	tch_thread_kheader* cth = NULL;
@@ -143,15 +145,11 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 static DECLARE_THREADROUTINE(systhreadRoutine){
 
 	/** perform runtime initialization **/
-	RuntimeInterface.uStdLib = tch_initCrt0(NULL);
+	tch_kmod_init();
 	tch_port_enableISR();                   // interrupt enable
 	kernel_ready = TRUE;
 
 
-	RuntimeInterface.Device = tch_hal_init(&RuntimeInterface);
-	if(!RuntimeInterface.Device)
-		KERNEL_PANIC("tch_sys.c","Hal interface lost");
-	boardHandle = tch_boardInit(&RuntimeInterface);
 
 
 	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
@@ -160,6 +158,8 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	while(TRUE){
 		__lwtsk_start_loop();			// start loop lwtask handler
 	}
+
+	tch_kmod_exit();
 	return tchOK;    					// unreachable point
 }
 

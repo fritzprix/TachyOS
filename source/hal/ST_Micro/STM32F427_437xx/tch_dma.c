@@ -122,9 +122,9 @@ typedef struct tch_dma_handle_prototype_t{
  */
 __USER_API__ static void tch_dmaInitCfg(tch_DmaCfg* cfg);
 __USER_API__ static void tch_dmaInitReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-__USER_API__ static tch_DmaHandle tch_dmaOpenStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-__USER_API__ static uint32_t tch_dmaBeginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
-__USER_API__ static tchStatus tch_dmaClose(tch_DmaHandle self);
+__USER_API__ static tch_dmaHandle tch_dmaOpenStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+__USER_API__ static uint32_t tch_dmaBeginXfer(tch_dmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
+__USER_API__ static tchStatus tch_dmaClose(tch_dmaHandle self);
 
 
 
@@ -192,7 +192,7 @@ __USER_API__ static void tch_dmaInitReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_
 
 
 
-__USER_API__ static tch_DmaHandle tch_dmaOpenStream(const tch* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
+__USER_API__ static tch_dmaHandle tch_dmaOpenStream(const tch* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_dma_handle_prototype* ins;
 	if(dma == DMA_NOT_USED)
 		return NULL;
@@ -239,13 +239,13 @@ __USER_API__ static tch_DmaHandle tch_dmaOpenStream(const tch* env,dma_t dma,tch
 	__DMB();
 	__ISB();
 	tch_dmaValidate(dma_desc->_handle);
-	return (tch_DmaHandle*)dma_desc->_handle;
+	return (tch_dmaHandle*)dma_desc->_handle;
 }
 
 
 
 
-__USER_API__ static uint32_t tch_dmaBeginXfer(tch_DmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
+__USER_API__ static uint32_t tch_dmaBeginXfer(tch_dmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result){
 	if(!self)
 		return -1;
 	if(!tch_dmaIsValid((tch_dma_handle_prototype*)self))
@@ -296,7 +296,7 @@ __USER_API__ static uint32_t tch_dmaBeginXfer(tch_DmaHandle self,tch_DmaReqDef* 
 }
 
 
-__USER_API__ static tchStatus tch_dmaClose(tch_DmaHandle self){
+__USER_API__ static tchStatus tch_dmaClose(tch_dmaHandle self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus result = tchOK;
 	if(!tch_dmaIsValid(ins))
@@ -313,7 +313,7 @@ __USER_API__ static tchStatus tch_dmaClose(tch_DmaHandle self){
 	tch_dmaInvalidate(ins);
 	tch_mutexDeinit(&ins->lock);
 	env->MsgQ->destroy(ins->dma_mq);
-	tch_condvDeint(&ins->condWait);
+	tch_condvDeinit(&ins->condWait);
 
 	if((result = env->Mtx->lock(&mutex,tchWaitForever)) != tchOK)
 		return result;
@@ -381,7 +381,7 @@ static BOOL tch_dmaHandleIrq(tch_dma_handle_prototype* handle,tch_dma_descriptor
 		return FALSE;                     // return
 	}
 	if(handle->listener){
-		if(!handle->listener((tch_DmaHandle)handle,isr))
+		if(!handle->listener((tch_dmaHandle)handle,isr))
 			return FALSE;
 	}
 	const tch* env = handle->env;

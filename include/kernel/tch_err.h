@@ -19,7 +19,7 @@ typedef struct tch_errorDescriptor {
 	tch_threadId   	who;
 }tch_errorDescriptor;
 
-extern void tch_kernel_raise_error(tch_threadId who,int errno,const char* msg);			//managable error which is cuased by thread level erroneous behavior
+extern void tch_kernel_raiseError(tch_threadId who,int errno,const char* msg);			//managable error which is cuased by thread level erroneous behavior
 extern void tch_kernel_panic(const char* floc,int errorno, const char* msg);								//error which can not be handled by kernel (typically caused by kernel bug or boot environments)
 
 

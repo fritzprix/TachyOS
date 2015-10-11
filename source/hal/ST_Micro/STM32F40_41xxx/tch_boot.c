@@ -12,21 +12,6 @@
 #include "kernel/tch_boot.h"
 #include "kernel/tch_err.h"
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_TypesDefinitions
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Defines
-  * @{
-  */
 
 /************************* Miscellaneous Configuration ************************/
 /*!< Uncomment the following line if you need to use external SRAM or SDRAM mounted
@@ -72,21 +57,6 @@
 
 /******************************************************************************/
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Macros
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Variables
-  * @{
-  */
 
 #if defined (STM32F40_41xxx)
   uint32_t SystemCoreClock = 168000000;
@@ -102,13 +72,6 @@
 
   __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_FunctionPrototypes
-  * @{
-  */
 
 void tch_boot_setSystemClock(){
 	  /* FPU settings ------------------------------------------------------------*/

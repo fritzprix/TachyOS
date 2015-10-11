@@ -46,8 +46,6 @@ static BOOL tch_semaphoreIsValid(tch_semId sid);
 
 
 
-
-
 __USER_RODATA__ tch_semaph_ix Semaphore_IX = {
 		.create = tch_semCreate,
 		.lock = tch_semLock,

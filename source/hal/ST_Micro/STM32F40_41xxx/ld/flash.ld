@@ -103,7 +103,19 @@ SECTIONS
     	__syscall_entry = . ;
     	*(.sysc.table) 
     	. = ALIGN(4);
-    	__syscall_end = . ;   
+    	__syscall_end = . ;
+    	
+    	_initv_begin = . ;
+    	KEEP(*(.sinitv))  
+    	KEEP(*(.sinitv*)) 
+    	. = ALIGN(4); 
+    	_initv_end = . ;
+    	
+    	_exitv_begin = . ;
+    	KEEP(*(.sexitv))
+    	KEEP(*(.sexitv*))
+    	. = ALIGN(4);
+    	_exitv_end = . ;    	
 	    _etext = . ;
 	    
     	

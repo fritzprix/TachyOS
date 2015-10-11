@@ -15,6 +15,9 @@
 #include "tch_condv.h"
 #include "kernel/tch_kconfig.h"
 
+
+
+
 #ifndef CONFIG_NR_KERNEL_SEG
 #define CONFIG_NR_KERNEL_SEG	5		// segment 0 dynamic /  segment 1 kernel text / segment 2 data / segment 3 sdata /  segment 4 kernel stack
 #endif
@@ -26,6 +29,57 @@ struct user_heap {
 	wt_heapNode_t		heap_node;
 };
 
+
+const struct section_descriptor __default_sections[] = {
+		{		// kernel dynamic section
+				.flags = (MEMTYPE_INRAM | SEGMENT_NORMAL | SECTION_DYNAMIC),
+				.start = &_skheap,
+				.end = &_ekheap
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_UTEXT),
+				.start = &_utext_begin,
+				.end = &_utext_end
+		},
+		{
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_URODATA),
+				.start = &_surox,
+				.end = &_eurox
+		},
+		{
+				// kernel text section
+				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_TEXT),
+				.start = &_stext,
+				.end = &_etext
+		},
+		{		// kernel bss section (zero filled data)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sbss,
+				.end = &_ebss
+		},
+		{		// kernel data section (initialized to specified value)
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_DATA),
+				.start = &_sdata,
+				.end = &_edata
+		},
+		{		// kernel stack
+				.flags = (MEMTYPE_INRAM | SEGMENT_KERNEL | SECTION_STACK),
+				.start = &_sstack,
+				.end = &_estack
+		}
+};
+
+
+const struct __attribute__((section(".data"))) section_descriptor* const default_sections[] = {
+		&__default_sections[0],
+		&__default_sections[1],
+		&__default_sections[2],
+		&__default_sections[3],
+		&__default_sections[4],
+		&__default_sections[5],
+		&__default_sections[6],
+		NULL
+};
 
 
 volatile struct tch_mm*		current_mm;
@@ -120,7 +174,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 
 	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz)){
 		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD){
-			tch_condvDeint(condv);
+			tch_condvDeinit(condv);
 			tch_mutexDeinit(mtx);
 			kfree(condv);
 			kfree(mtx);
@@ -219,7 +273,7 @@ BOOL tch_mmProcClean(tch_thread_kheader* thread){
 	if((mmp->flags & ROOT) == ROOT){									// if current thread is root thread in thread group
 		tch_segmentFreeRegion(mmp->heap_region);						// free heap region
 		tch_mutexDeinit(mmp->dynamic->mtx);
-		tch_condvDeint(mmp->dynamic->condv);
+		tch_condvDeinit(mmp->dynamic->condv);
 		kfree(mmp->dynamic->mtx);
 		kfree(mmp->dynamic->condv);
 		kfree(mmp->dynamic);											// free memory area for dynamic struct

@@ -95,8 +95,8 @@ extern "C" {
 
 
 typedef uint8_t dma_t;
-typedef void* tch_DmaHandle;
-typedef BOOL (*tch_dma_eventListener)(tch_DmaHandle ins,uint16_t evType);
+typedef void* tch_dmaHandle;
+typedef BOOL (*tch_dma_eventListener)(tch_dmaHandle ins,uint16_t evType);
 typedef struct dma_cfg_t tch_DmaCfg;
 
 
@@ -137,9 +137,9 @@ typedef struct tch_lld_dma {
 	 * \return dma handle which allows access dma H/W
 	 */
 	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-	tch_DmaHandle (*allocate)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
-	uint32_t (*beginXfer)(tch_DmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
-	tchStatus (*freeDma)(tch_DmaHandle handle);
+	tch_dmaHandle (*allocate)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	uint32_t (*beginXfer)(tch_dmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
+	tchStatus (*freeDma)(tch_dmaHandle handle);
 
 }tch_lld_dma;
 

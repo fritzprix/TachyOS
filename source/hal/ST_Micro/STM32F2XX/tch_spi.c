@@ -63,8 +63,8 @@ typedef struct tch_spi_request_s tch_spi_request;
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG
 
 
-__USER_API__ static void tch_spiInitCfg(tch_spiCfg* cfg);
-__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static void tch_spiInitCfg(spi_config_t* cfg);
+__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
 
 __USER_API__ static tchStatus tch_spiWrite(tch_spiHandle* self,const void* wb,size_t sz);
 __USER_API__ static tchStatus tch_spiRead(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
@@ -91,14 +91,14 @@ struct tch_spi_handle_prototype {
 	spi_t                     spi;
 	const tch*                env;
 	union {
-		tch_DmaHandle        dma;
+		tch_dmaHandle        dma;
 	}txCh;
 	union {
-		tch_DmaHandle        dma;
+		tch_dmaHandle        dma;
 	}rxCh;
 	tch_eventId               evId;
 	uint32_t                  status;
-	tch_GpioHandle*           iohandle;
+	tch_gpioHandle*           iohandle;
 	tch_mtxId                 mtx;
 	tch_condvId               condv;
 	tch_spi_request*          req;
@@ -122,7 +122,7 @@ tch_lld_spi* tch_spiHalInit(const tch* env){
 	return &SPI_Ops;
 }
 
-__USER_API__ static void tch_spiInitCfg(tch_spiCfg* cfg){
+__USER_API__ static void tch_spiInitCfg(spi_config_t* cfg){
 	cfg->Baudrate = SPI_BAUDRATE_NORMAL;
 	cfg->ClkMode = SPI_CLKMODE_0;
 	cfg->FrmFormat = SPI_FRM_FORMAT_8B;
@@ -130,13 +130,13 @@ __USER_API__ static void tch_spiInitCfg(tch_spiCfg* cfg){
 	cfg->Role = SPI_ROLE_MASTER;
 }
 
-__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+__USER_API__ static tch_spiHandle* tch_spiOpen(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt){
 
 	tch_spi_bs* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
 	tch_spi_handle_prototype* ins = NULL;
 	SPI_TypeDef* spiHw = NULL;
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	tch_DmaCfg dmaCfg;
 
 	if(env->Mtx->lock(&lock,timeout) != tchOK)

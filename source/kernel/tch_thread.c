@@ -123,9 +123,7 @@ DEFINE_SYSCALL_2(thread_terminate,tch_threadId,tid,tchStatus,res,tchStatus){
 
 	tch_schedTerminate(tid,res);
 	tch_thread_kheader* kth = getThreadKHeader(tid);
-	if(tch_threadIsRoot(tid)){
-		cdsl_dlistRemove(&kth->t_siblingLn);
-	}
+	cdsl_dlistRemove(&kth->t_siblingLn);			// remove link to sibling list
 	tch_mmProcClean(kth);
 	kfree(kth);
 	return tchOK;
@@ -254,10 +252,6 @@ tch_threadId tch_threadCreateThread(tch_threadCfg* cfg,void* arg,BOOL isroot,BOO
 	kthread->lckCnt = 0;
 	kthread->prior = cfg->priority;
 	kthread->to = 0;
-
-#ifdef __NEWLIB__																			// optional part of initialization for reentrant structure required by std libc
-	_REENT_INIT_PTR(&kthread->uthread->reent)
-#endif
 	kthread->uthread->name = cfg->name;
 	memcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
 	return (tch_threadId) kthread->uthread;
@@ -361,19 +355,15 @@ __attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
 	tch_thread_kheader* ch_p = NULL;
 
 
-	// terminate all the child threads
-	while(!cdsl_dlistIsEmpty(&th_p->child_list)){
+	while(!cdsl_dlistIsEmpty(&th_p->child_list)){												// if has child, kill all of them
 		ch_p = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->child_list);
 		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
 		tch_threadExit(ch_p->uthread,status);
 		Thread->join(ch_p->uthread,tchWaitForever);
 	}
 
-	// destruct kobject
-	tch_destroyAllKobjects();
-	// destruct sh object
-	tch_shmCleanup(thread);
-	// clean up memory
+	tch_destroyAllKobjects();	// destruct kobject
+	tch_shmCleanup(thread);		// clean up memory
 	__SYSCALL_2(thread_terminate,thread,status);
 }
 

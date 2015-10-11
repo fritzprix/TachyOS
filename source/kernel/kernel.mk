@@ -1,4 +1,3 @@
-##include $(CURDIR)/COMMON.mk
 
 KERNEL_SRCS=\
 		tch_lock.c\
@@ -13,17 +12,17 @@ KERNEL_SRCS=\
 	    tch_time.c\
 	    tch_event.c\
 	    tch_kdesc.c\
-	    tch_crt0.c\
 	    tch_idle.c\
 	    tch_lwtask.c\
 	    tch_err.c\
 	    tch_loader.c\
 	    tch_init.c\
 	    tch_interrupt.c\
-	    tch_kobj.c
+	    tch_kobj.c\
+	    tch_kmod.c
 	    
 	    
-KERNEL_CPP_SRCS=tch_crtb.cpp
+KERNEL_CPP_SRCS=
 
 
 KERNEL_BUILD_DIR=$(GEN_DIR)/kernel
@@ -31,12 +30,14 @@ GEN_SUB_DIR+=$(KERNEL_BUILD_DIR)
 KERNEL_OBJS=$(KERNEL_SRCS:%.c=$(KERNEL_BUILD_DIR)/%.o)
 KERNEL_CPPOBJS=$(KERNEL_CPP_SRCS:%.cpp=$(KERNEL_BUILD_DIR)/%.o)
 
+include $(KERNEL_SRC_DIR)/util/Makefile
+include $(KERNEL_SRC_DIR)/mm/Makefile
            
 OBJS += $(KERNEL_OBJS)
 OBJS += $(KERNEL_CPPOBJS)
 
 $(KERNEL_BUILD_DIR):
-	$(MK) $(KERNEL_BUILD_DIR)
+	$(MKDIR) $(KERNEL_BUILD_DIR)
 
 
 $(KERNEL_BUILD_DIR)/%.o:$(KERNEL_SRC_DIR)/%.c# $(KERNEL_BUILD_DIR)

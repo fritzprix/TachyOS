@@ -14,14 +14,13 @@ CPFLAG =
 LDFLAG =
 TOOL_PREFIX=
 
-# C Compiler preprocessor option
+# Configuration make file
 include tchConfig.mk
 
 
-# Tachyos Src Tree Structure
 ROOT_DIR= $(CURDIR)
-ifeq ($(MK),)
-	MK=mkdir
+ifeq ($(MKDIR),)
+	MKDIR=mkdir
 endif
 
 
@@ -40,33 +39,26 @@ endif
 #######################################################################################
 
 #source code directory 
-KERNEL_UTIL_SRC_DIR=$(ROOT_DIR)/source/kernel/util
-KERNEL_MM_SRC_DIR=$(ROOT_DIR)/source/kernel/mm
 KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
-PORT_SRC_DIR=$(ROOT_DIR)/source/arch
+ARCH_SRC_DIR=$(ROOT_DIR)/source/arch
 HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
-BOARD_SRC_DIR=$(ROOT_DIR)/source/board/$(BOARD_NAME)
-USR_SRC_DIR=$(ROOT_DIR)/source/usr
-UTEST_SRC_BASE=$(ROOT_DIR)/source/test
+USR_SRC_DIR=$(ROOT_DIR)/source/user
 
 #header file directory
-BASE_HEADER_DIR=$(ROOT_DIR)/include
-KERNEL_UTIL_HEADER_DIR=$(ROOT_DIR)/include/kernel/util
-KERNEL_HEADER_DIR=$(ROOT_DIR)/include/kernel
-PORT_ARCH_COMMON_HEADER_DIR=$(ROOT_DIR)/include/arch/$(ARCH)
-PORT_ARCH_HEADER_DIR=$(PORT_ARCH_COMMON_HEADER_DIR)/$(CPU)
-HAL_COMMON_HEADER_DIR=$(ROOT_DIR)/include/hal
-HAL_VENDOR_HEADER_DIR=$(ROOT_DIR)/include/hal/$(HW_VENDOR)/$(HW_PLF)
-BOARD_HEADER_DIR=$(ROOT_DIR)/include/board
-UTEST_HEADER_DIR=$(ROOT_DIR)/include/test
-USR_HEADER_DIR=$(ROOT_DIR)/include/usr
+HEADER_ROOT_DIR=$(ROOT_DIR)/include
+KERNEL_HEADER_DIR=$(HEADER_ROOT_DIR)/kernel
+ARCH_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/arch/$(ARCH)
+ARCH_CPU_HEADER_DIR=$(ARCH_BASE_HEADER_DIR)/$(CPU)
+HAL_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/hal
+HAL_VENDOR_HEADER_DIR=$(HAL_BASE_HEADER_DIR)/$(HW_VENDOR)
+HAL_CHIPSET_HEADER_DIR=$(HAL_VENDOR_HEADER_DIR)/$(HW_PLF)
 
 #######################################################################################
 ##################          initialize build option       #############################
 #######################################################################################
 TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
-TIME_STAMP=$(shell date +%s)
-TIME_FLAG=__BUILD_TIME_EPOCH=$(TIME_STAMP)UL
+#TIME_STAMP=$(shell date +%s)
+TIME_FLAG=__BUILD_TIME_EPOCH=$(shell date +%s)UL
 
 
 ifeq ($(LDSCRIPT),)
@@ -75,35 +67,38 @@ endif
 
 ###################      TachyOS default header inclusion  ############################
 ifeq ($(INC),)
-	INC = -I$(PORT_ARCH_HEADER_DIR)\
-	      -I$(PORT_ARCH_COMMON_HEADER_DIR)\
+	INC = -I$(ARCH_CPU_HEADER_DIR)\
+	      -I$(ARCH_BASE_HEADER_DIR)\
+	      -I$(HAL_BASE_HEADER_DIR)\
 	      -I$(HAL_VENDOR_HEADER_DIR)\
-	      -I$(HAL_COMMON_HEADER_DIR)\
+	      -I$(HAL_CHIPSET_HEADER_DIR)\
 	      -I$(KERNEL_HEADER_DIR)\
-	      -I$(BASE_HEADER_DIR)\
-	      -I$(BOARD_HEADER_DIR)\
-	      -I$(KERNEL_UTIL_HEADER_DIR)
+	      -I$(HEADER_ROOT_DIR)
 endif
 
 ###################      toolchain & architecture specific makefile   #################
-include $(PORT_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
+include $(ARCH_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 
 
 #######################################################################################
 ####################  Toolchain Independent section of Makefile  ######################
 #######################################################################################
 
-CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG) -DSIMPLIFIED_SYSCALL
-CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF)
+CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
+CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 
-include $(PORT_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
-include $(KERNEL_UTIL_SRC_DIR)/kutil.mk
-include $(KERNEL_MM_SRC_DIR)/mm.mk
-include $(HAL_SRC_DIR)/hal.mk
+
+##
+#KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
+#ARCH_SRC_DIR=$(ROOT_DIR)/source/arch
+#HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
+#USR_SRC_DIR=$(ROOT_DIR)/source/usr
+##
+
+include $(ARCH_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
+include $(HAL_SRC_DIR)/hal.mk
 include $(USR_SRC_DIR)/usr.mk
-include $(BOARD_SRC_DIR)/bd.mk
-include $(UTEST_SRC_BASE)/tst.mk
 
 TARGET_SIZE = $(TARGET:%.elf=%.siz)
 TARGET_FLASH = $(TARGET:%.elf=%.hex) 
@@ -114,7 +109,7 @@ all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TAR
 
 
 $(GEN_DIR): 
-	$(MK) $(GEN_DIR)
+	$(MKDIR) $(GEN_DIR)
 
 $(TARGET): $(OBJS) $(DEPS)
 	@echo "Generating ELF"
@@ -141,4 +136,4 @@ $(TARGET_SIZE): $(TARGET)
 	
 	
 clean:
-	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) $(GEN_SUB_DIR)
+	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) $(GEN_SUB_DIR) $(GEN_DIR)

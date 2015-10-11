@@ -46,38 +46,6 @@ typedef enum {
 /*---------------2. RTC provides critical functionality in system low power mode--- */
 /*--------------------------------------------------------------------------------- */
 
-/**\var tch_rtc
- *  RTC HAL Object, which is not directly accessible to user program.
- *  RTC is abstracted to System Timer, which keeps track of real time information of system
- *  and also deals with timed scheduling of task
- */
-
-/**\var tch_dma
- *
- *  DMA HAL Object, which is not directly accessible to user program.
- *  it's been recommended that DMA is accessed by another HAL Interface
- */
-
-extern tch_lld_rtc* RTC_IX; /**<RTC HAL Object  */
-extern tch_lld_dma* DMA_IX; /**<DMA HAL Object  */
-
-extern int _stext;
-extern int _etext;
-extern int _sdata;
-extern int _edata;
-extern int _sbss;
-extern int _ebss;
-extern int _skheap;
-extern int _ekheap;
-extern int _sstack;
-extern int _estack;
-extern int _utext_begin;
-extern int _utext_end;
-extern int _surox;
-extern int _eurox;
-
-extern const struct section_descriptor* const default_sections[];
-extern const tch_hal* tch_hal_init(const tch* ctx);
 
 /**
  * \callgraph
@@ -132,17 +100,6 @@ extern void tch_hal_pauseSysClock();
  */
 
 extern void tch_hal_resumeSysClock();
-
-
-
-extern tch_lld_adc* tch_adcHalInit(const tch* env);
-extern tch_lld_dma* tch_dmaHalInit(const tch* env);
-extern tch_lld_gpio* tch_gpioHalInit(const tch* env);
-extern tch_lld_iic* tch_iicHalInit(const tch* env);
-extern tch_lld_rtc* tch_rtcHalInit(const tch* env);
-extern tch_lld_spi* tch_spiHalInit(const tch* env);
-extern tch_lld_timer* tch_timerHalInit(const tch* env);
-extern tch_lld_usart* tch_usartHalInit(const tch* env);
 
 
 #if defined(__cplusplus)

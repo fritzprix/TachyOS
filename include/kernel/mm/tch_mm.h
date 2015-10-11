@@ -155,11 +155,32 @@ struct proc_dynamic {
 	tch_mtxId mtx;
 };
 
+
+extern const struct section_descriptor* const default_sections[];
+
+extern int _stext;
+extern int _etext;
+extern int _initv_begin;
+extern int _initv_end;
+extern int _exitv_begin;
+extern int _exitv_end;
+extern int _sdata;
+extern int _edata;
+extern int _sbss;
+extern int _ebss;
+extern int _skheap;
+extern int _ekheap;
+extern int _sstack;
+extern int _estack;
+extern int _utext_begin;
+extern int _utext_end;
+extern int _surox;
+extern int _eurox;
+
 extern struct tch_mm init_mm;
 extern volatile struct tch_mm* current_mm;
 
-extern BOOL tch_mmProcInit(tch_thread_kheader* thread,
-		struct proc_header* proc);
+extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
 extern BOOL tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
 

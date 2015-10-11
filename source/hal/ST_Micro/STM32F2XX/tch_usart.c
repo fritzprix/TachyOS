@@ -94,11 +94,11 @@ typedef struct tch_usart_request_s {
 typedef struct tch_usart_handle_prototype_s {
 	struct tch_usart_handle_s        pix;
 	uart_t               	         pno;
-	tch_DmaHandle					 txDma;
-	tch_DmaHandle					 rxDma;
+	tch_dmaHandle					 txDma;
+	tch_dmaHandle					 rxDma;
 	tch_eventId                      txEvId;
 	tch_eventId                      rxEvId;
-	tch_GpioHandle*                  ioHandle;
+	tch_gpioHandle*                  ioHandle;
 	tch_mtxId                        rxMtx;
 	tch_condvId                      rxCondv;
 	tch_mtxId                        txMtx;
@@ -158,7 +158,7 @@ tch_lld_usart* tch_usartHalInit(const tch* env){
 
 static tch_usartHandle tch_usartOpen(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	tch_usartHandlePrototype uins = NULL;
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	uint32_t io_msk = 0;
 	uint32_t umskb = 1 << port;
 

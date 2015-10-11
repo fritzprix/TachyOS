@@ -59,7 +59,7 @@ typedef struct tch_spi_cfg_t {
 	uint8_t FrmOrient;
 	uint8_t Role;
 	uint8_t Baudrate;
-}tch_spiCfg;
+}spi_config_t;
 
 struct tch_spi_handle_t {
 	tchStatus (*close)(tch_spiHandle* self);
@@ -70,8 +70,8 @@ struct tch_spi_handle_t {
 
 typedef struct tch_lld_spi {
 	const uint16_t count;
-	void (*initCfg)(tch_spiCfg* cfg);
-	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,tch_spiCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	void (*initCfg)(spi_config_t* cfg);
+	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_lld_spi;
 
 #if defined(__cplusplus)

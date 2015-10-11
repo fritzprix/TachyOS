@@ -35,7 +35,7 @@ struct _tch_condv_cb_t {
 
 extern tch_condv_ix CondVar_IX;
 extern tchStatus tch_condvInit(tch_condvCb* condv);
-extern tchStatus tch_condvDeint(tch_condvCb* condv);
+extern tchStatus tch_condvDeinit(tch_condvCb* condv);
 
 
 

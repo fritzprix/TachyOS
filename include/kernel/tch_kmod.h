@@ -13,8 +13,8 @@
  *      Author: innocentevil
  */
 
-#ifndef TCH_KMOD_H_
-#define TCH_KMOD_H_
+#ifndef TCH_KMODULE_H_
+#define TCH_KMODULE_H_
 
 #include "tch_types.h"
 #include "kernel/util/cdsl_rbtree.h"
@@ -33,19 +33,30 @@ extern "C" {
  *  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  */
 
-typedef int (*__mod_init_t) (void);
-typedef void (*__mod_exit_t) (void);
 
-typedef struct module_header {
-	rb_treeNode_t 			rbn;
-	void*					uaccess_ix;
-} module_header_t;
 
-#define MODULE_INIT(init) 	 __attribute__((section(".initv_array"))) __mod_init_t ___##init_VECTOR = init;
-#define MODULE_EXIT(exit)    __attribute__((section(".exitv_array"))) __mod_exit_t ___##exit_VECTOR = exit;
+#define set_module_type(map,type)			map->_map[type / 64] |= (1 << (type % 64))
+#define clr_module_type(map,type)			map->_map[type / 64] &= ~(1 << (type % 64))
 
-extern BOOL tch_registerInterface(int key, __UACESS void* interface);
-extern BOOL tch_unregisterInterface(int key);
+typedef int (*initv_t) (void);
+typedef void (*exitv_t) (void);
+
+
+#define MODULE_INIT(init) 	 __attribute__((section(".sinitv"))) const initv_t  ___##init##_vector = init
+#define MODULE_EXIT(exit)    __attribute__((section(".sexitv"))) const exitv_t  ___##exit##_vector = exit
+
+
+extern tch_service_ix Service_IX;
+
+
+extern BOOL tch_kmod_init(void);
+extern void tch_kmod_exit(void);
+extern BOOL tch_kmod_register(int type,int owner, __UACESS void* interface,BOOL ispriv);
+extern BOOL tch_kmod_unregister(int type,int owner);
+extern BOOL tch_kmod_chkdep(const module_map_t* map);
+extern void* tch_kmod_request(int type);
+
+
 
 
 #if defined(__cplusplus)
@@ -54,4 +65,4 @@ extern BOOL tch_unregisterInterface(int key);
 
 
 
-#endif /* TCH_KMOD_H_ */
+#endif /* TCH_KMODULE_H_ */

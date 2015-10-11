@@ -25,7 +25,6 @@ TOOL_CFLAG =-fsigned-char\
 		   -fdata-sections\
 		   -ffreestanding\
 		   -nostartfiles\
-		   --specs=nano.specs\
 		   -T$(LDSCRIPT)\
 		   $(OPT_FLAG)\
 		   -mcpu=$(CPU)\
@@ -45,14 +44,8 @@ TOOL_CPFLAG = -mlong-calls\
 	          -mthumb
 
 
-TOOL_SEPCIFIC_CFLAG=--specs=nano.specs
-TOOL_LIBS = c_nano\
-			g_nano\
-			stdc++_nano
-			
-
-CFLAG+= $(TOOL_CFLAG) -D__NEWLIB__ -D_REENT_SMALL -D__DYNAMIC_REENT__ 
-CPFLAG+= $(TOOL_CPFLAG) -D__NEWLIB__ -D_REENT_SMALL -D__DYNAMIC_REENT__ 
+CFLAG+= $(TOOL_CFLAG)
+CPFLAG+= $(TOOL_CPFLAG)
 LDFLAG+= $(TOOL_LINKER_OPT:%=-Wl,%)		
 
 TOOL_LIBS_DIR=

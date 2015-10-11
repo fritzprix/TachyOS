@@ -51,12 +51,12 @@ typedef struct tch_adc_handle_prototype {
 	uint16_t                             isr_msk;
 	uint32_t                             ch_occp;
 	adc_t                                adc;
-	tch_DmaHandle                        dma;
+	tch_dmaHandle                        dma;
 	tch_pwmHandle*                       timer;
 	tch_mtxId                            mtx;
 	tch_condvId                          condv;
 	uint8_t                              chcnt;
-	tch_GpioHandle**                     io_handle;
+	tch_gpioHandle**                     io_handle;
 	tch_msgqId                           msgq;
 }tch_adc_handle_prototype;
 
@@ -135,12 +135,12 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 	if(env->Mtx->unlock(&ADC_Mutex) != tchOK)
 		return NULL;
 
-	ins->io_handle = (tch_GpioHandle**) env->Mem->alloc(sizeof(tch_GpioHandle*) * cfg->chdef.chcnt);
+	ins->io_handle = (tch_gpioHandle**) env->Mem->alloc(sizeof(tch_gpioHandle*) * cfg->chdef.chcnt);
 	ins->mtx = env->Mtx->create();
 	ins->condv = env->Condv->create();
 	ins->msgq = env->MsgQ->create(1);
 	// gpio initialize
-	tch_GpioCfg iocfg;
+	gpio_config_t iocfg;
 	env->Device->gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_AN;
 	iocfg.PuPd = GPIO_PuPd_Float;
@@ -200,7 +200,7 @@ static tch_adcHandle* tch_adcOpen(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_P
 		// TODO :handle dma_not_used
 	}
 
-	tch_pwmDef pwmDef;
+	pwm_config_t pwmDef;
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.PeriodInUnitTime = _1_MHZ / cfg->SampleFreq;
 	pwmDef.pwrOpt = popt;

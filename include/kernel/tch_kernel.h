@@ -120,14 +120,8 @@ extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint3
 extern void tch_KernelOnSystick();
 extern void tch_kernelOnWakeup();
 
-
 extern void tch_kernelOnMemFault(paddr_t pa, int fault);
-extern void tch_kernelOnHardFault(int fault);
-
-
-extern tchStatus tch_kernelPostSysTask(int id,tch_sysTaskFn fn,void* arg);
-extern tchStatus tch_kernelEnableInterrupt(IRQn_Type irq,uint32_t priority);
-extern tchStatus tch_kernelDisableInterrupt(IRQn_Type irq);
+extern void tch_kernel_handleHardFault(int fault);
 
 
 
@@ -166,11 +160,9 @@ extern const tch_event_ix* Event;
 extern const tch_mailq_ix* MailQ;
 extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* uMem;
-extern const tch_ustdlib_ix* uStdLib;
 extern const tch_event_ix* Event;
-extern const tch_signal_ix* Sig;
+extern const tch_service_ix* Service;
 
-extern const tch_hal* Hal;
 
 
 
@@ -181,7 +173,6 @@ extern volatile BOOL kernel_ready;
 extern volatile uint64_t tch_systimeTick;
 extern tch_thread_queue procList;
 extern const tch* tch_rti;
-extern tch_boardParam boardHandle;
 extern tch_memId sharedMem;
 extern BOOL __VALID_SYSCALL;
 
