@@ -55,18 +55,18 @@ tchStatus monitor_performTest(tch* ctx){
 	condC = ctx->Condv->create();
 
 
-	tch_threadCfg thcfg;
-	ctx->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
+	thread_config_t thcfg;
+	ctx->Thread->initConfig(&thcfg,consumerRoutine,Normal,512,0,"consumer1");
 	consumer1Thread = ctx->Thread->create(&thcfg,ctx);
 
-	ctx->Thread->initCfg(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
+	ctx->Thread->initConfig(&thcfg,consumerRoutine,Normal,512,0,"consumer2");
 	consumer2Thread = ctx->Thread->create(&thcfg,ctx);
 
 
-	ctx->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer1");
+	ctx->Thread->initConfig(&thcfg,producerRoutine,Normal,512,0,"producer1");
 	producer1Thread = ctx->Thread->create(&thcfg,ctx);
 
-	ctx->Thread->initCfg(&thcfg,producerRoutine,Normal,512,0,"producer2");
+	ctx->Thread->initConfig(&thcfg,producerRoutine,Normal,512,0,"producer2");
 	producer2Thread = ctx->Thread->create(&thcfg,ctx);
 
 

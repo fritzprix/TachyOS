@@ -48,11 +48,11 @@ tchStatus msgq_performTest(tch* api){
 
 
 	const tch_thread_ix* Thread = api->Thread;
-	tch_threadCfg tcfg;
-	api->Thread->initCfg(&tcfg,sender,Normal,1 << 9,0,"sender");
+	thread_config_t tcfg;
+	api->Thread->initConfig(&tcfg,sender,Normal,1 << 9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);
 
-	api->Thread->initCfg(&tcfg,receiver,Normal,1 << 9,0, "receiver");
+	api->Thread->initConfig(&tcfg,receiver,Normal,1 << 9,0, "receiver");
 	receiver_id = Thread->create(&tcfg,api);
 
 	Thread->start(receiver_id);

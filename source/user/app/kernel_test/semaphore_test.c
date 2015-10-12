@@ -35,15 +35,15 @@ tchStatus semaphore_performTest(tch* api){
 
 	kmstat(&init_mstat);
 
-	tch_threadCfg thcfg;
-	api->Thread->initCfg(&thcfg,child1Routine,Normal,512 , 0, "child1");
+	thread_config_t thcfg;
+	api->Thread->initConfig(&thcfg,child1Routine,Normal,512 , 0, "child1");
 	ch1Id = api->Thread->create(&thcfg,api);
 
 
-	api->Thread->initCfg(&thcfg,child2Routine,Normal,512, 0 ,"child2");
+	api->Thread->initConfig(&thcfg,child2Routine,Normal,512, 0 ,"child2");
 	ch2Id = api->Thread->create(&thcfg,api);
 
-	api->Thread->initCfg(&thcfg,child3Routine,Normal,512,0, "child3");
+	api->Thread->initConfig(&thcfg,child3Routine,Normal,512,0, "child3");
 	ch3Id = api->Thread->create(&thcfg,api);
 
 	ts = api->Sem->create(1);

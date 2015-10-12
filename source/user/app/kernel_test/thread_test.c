@@ -16,7 +16,7 @@ tchStatus thread_performTest(tch* ctx){
 	mstat init_mstat;
 	mstat fin_mstat;
 	BOOL threadStarted = FALSE;
-	tch_threadCfg tcfg;
+	thread_config_t tcfg;
 	tch_threadId child;
 	uint8_t cnt = 10;
 	tch_barId bar = ctx->Barrier->create();
@@ -30,7 +30,7 @@ tchStatus thread_performTest(tch* ctx){
 
 	while(cnt--){
 		threadStarted = FALSE;
-		ctx->Thread->initCfg(&tcfg,run,Normal,0,0,"test_run");
+		ctx->Thread->initConfig(&tcfg,run,Normal,0,0,"test_run");
 		child = (tch_threadId) tch_threadCreateThread(&tcfg,bar,TRUE,TRUE,NULL);
 		ctx->Thread->start(child);
 		ctx->Barrier->wait(bar,tchWaitForever);
@@ -46,7 +46,7 @@ tchStatus thread_performTest(tch* ctx){
 
 	while(cnt--){
 		threadStarted = FALSE;
-		ctx->Thread->initCfg(&tcfg,run,Normal,0,0,"test_run");
+		ctx->Thread->initConfig(&tcfg,run,Normal,0,0,"test_run");
 		child = ctx->Thread->create(&tcfg,bar);
 		ctx->Thread->start(child);
 		ctx->Barrier->wait(bar,tchWaitForever);

@@ -38,11 +38,11 @@ tchStatus mailq_performTest(tch* api){
 	testmailq_id = api->MailQ->create(sizeof(person),10);
 
 	const tch_thread_ix* Thread = api->Thread;
-	tch_threadCfg tcfg;
-	Thread->initCfg(&tcfg,sender,Normal,1<<9,0,"sender");
+	thread_config_t tcfg;
+	Thread->initConfig(&tcfg,sender,Normal,1<<9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);
 
-	Thread->initCfg(&tcfg,receiver,Normal,1 << 9, 0, "receiver");
+	Thread->initConfig(&tcfg,receiver,Normal,1 << 9, 0, "receiver");
 	receiver_id = Thread->create(&tcfg,api);
 
 	Thread->start(receiver_id);

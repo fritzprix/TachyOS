@@ -121,7 +121,7 @@ typedef struct tch_dma_handle_prototype_t{
 /**
  *  User Accessible Stubs
  */
-__USER_API__ static void tch_dma_initCfg(tch_DmaCfg* cfg);
+__USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg);
 __USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 __USER_API__ static uint32_t tch_dma_beginXfer(tch_dmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
@@ -139,7 +139,7 @@ static BOOL tch_dma_setDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 
 __USER_RODATA__ tch_lld_dma DMA_Ops = {
 	.count = MFEATURE_DMA,
-	.initCfg = tch_dma_initCfg,
+	.initCfg = tch_dma_initConfig,
 	.initReq = tch_dma_initReq,
 	.allocate = tch_dma_openStream,
 	.beginXfer = tch_dma_beginXfer,
@@ -169,7 +169,7 @@ static void tch_dma_exit(void){
 MODULE_INIT(tch_dma_init);
 MODULE_EXIT(tch_dma_exit);
 
-__USER_API__ static void tch_dma_initCfg(tch_DmaCfg* cfg){
+__USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg){
 	cfg->BufferType = DMA_BufferMode_Normal;
 	cfg->Ch = 0;
 	cfg->Dir = DMA_Dir_MemToPeriph;
@@ -191,9 +191,6 @@ __USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr
 	attr->size = size;
 }
 
-
-
-
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_dma_handle_prototype* ins;
 	if(dma == DMA_NOT_USED)
@@ -209,7 +206,6 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch* env,dma_t dma,tc
 
 	ins = (tch_dma_handle_prototype*) env->Mem->alloc(sizeof(tch_dma_handle_prototype));
 
-	// Acquire DMA H/w
 	tch_dma_descriptor* dma_desc = &DMA_HWs[dma];
 	*dma_desc->_clkenr |= dma_desc->clkmsk;          // clk source is enabled
 	if(pcfg == ActOnSleep){

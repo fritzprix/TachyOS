@@ -324,11 +324,11 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
 	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &current->kthread->mm){
 		//kill thread
-		tch_threadExit(current,tchErrorIllegalAccess);
+		tch_thread_exit(current,tchErrorIllegalAccess);
 	}
 
 	if(!tch_port_addPageEntry(((struct tch_mm*) &current->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
-		tch_threadExit(current,tchErrorIllegalAccess);																// already in table?
+		tch_thread_exit(current,tchErrorIllegalAccess);																// already in table?
 	}
 }
 

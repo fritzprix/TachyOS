@@ -28,11 +28,11 @@ tchStatus mtx_performTest(tch* api){
 
 
 	const tch_thread_ix* Thread = api->Thread;
-	tch_threadCfg thCfg;
-	api->Thread->initCfg(&thCfg,child1Routine,Normal,512 , 0, "child1_mtx");
+	thread_config_t thCfg;
+	api->Thread->initConfig(&thCfg,child1Routine,Normal,512 , 0, "child1_mtx");
 	child1 = Thread->create(&thCfg,api);
 
-	api->Thread->initCfg(&thCfg,child2Routine,Normal,512, 0 , "child2_mtx");
+	api->Thread->initConfig(&thCfg,child2Routine,Normal,512, 0 , "child2_mtx");
 	child2 = Thread->create(&thCfg,api);
 
 	mmtx = api->Mtx->create();

@@ -79,14 +79,13 @@ __USER_RODATA__ tch_lld_rtc RTC_Ops = {
 		.open = tch_rtc_open
 };
 
-const tch_lld_rtc* RTC_IX =  &RTC_Ops;
-
 static void* _handle;
 static tch_mtxCb mtx;
 static tch_condvCb condv;
 
 
-static int tch_rtc_init(void){
+static int tch_rtc_init(void)
+{
 
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
@@ -97,7 +96,8 @@ static int tch_rtc_init(void){
 	return tch_kmod_register(MODULE_TYPE_RTC,RTC_CLASS_KEY,&RTC_Ops,TRUE);
 }
 
-static void tch_rtc_exit(void){
+static void tch_rtc_exit(void)
+{
 	RCC->APB1ENR &= ~RCC_APB1ENR_PWREN;
 
 	tch_mutexDeinit(&mtx);
@@ -110,13 +110,15 @@ MODULE_EXIT(tch_rtc_exit);
 
 
 
-static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone tz){
+static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone tz)
+{
 	tch_rtc_handle_prototype* ins = NULL;
 
 	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK)
 		return NULL;
 
-	while(_handle){
+	while(_handle)
+	{
 		if(env->Condv->wait(&condv,&mtx,tchWaitForever) != tchOK)
 			return NULL;
 	}
@@ -139,14 +141,13 @@ static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone 
 	RTC->WPR = RTC_ACCESS_KEY1;
 	RTC->WPR = RTC_ACCESS_KEY2;    // input access-key
 
-	if(RTC->ISR & RTC_ISR_INITS){
-
+	if(RTC->ISR & RTC_ISR_INITS)
+	{
 		RTC->ISR |= RTC_ISR_INIT;
 		while(!(RTC->ISR & RTC_ISR_INITF)) __NOP();
 
 		RTC->PRER = (255 << RTC_PRERS_Pos);  // setup rtc prescaler to obtain 1 Hz
 		RTC->PRER |= (127 << RTC_PRERA_Pos);  // setup rtc prescaler to obtain 1 Hz
-
 	}
 
 	ins->mtx = env->Mtx->create();
@@ -162,14 +163,12 @@ static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone 
 	tch_rtcValidate(ins);
 
 	tch_rtc_setTime((tch_rtcHandle*) ins,gmt_epoch,tz,TRUE);
-
 	RTC->ISR &= ~RTC_ISR_INIT;
-
-
 	return (tch_rtcHandle*) ins;
 }
 
-static tchStatus tch_rtc_close(tch_rtcHandle* self){
+static tchStatus tch_rtc_close(tch_rtcHandle* self)
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
 		return tchErrorParameter;
@@ -203,7 +202,8 @@ static tchStatus tch_rtc_close(tch_rtcHandle* self){
 	return tchOK;
 }
 
-static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone tz,BOOL force){
+static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone tz,BOOL force)
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	struct tm localTm;
 	uint32_t dr = 0;
@@ -256,7 +256,8 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 	return tchOK;
 }
 
-static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm){
+static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	tchStatus result;
 	uint32_t date, time = 0;
@@ -304,15 +305,18 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm){
 	return tchOK;
 }
 
-static tch_alrId tch_rtc_setAlarm(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution){
+static tch_alrId tch_rtc_setAlarm(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution)
+{
 
 }
 
-static tchStatus tch_rtc_cancelAlarm(tch_rtcHandle* self,tch_alrId alrm){
+static tchStatus tch_rtc_cancelAlarm(tch_rtcHandle* self,tch_alrId alrm)
+{
 
 }
 
-static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler wkup_handler){
+static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler wkup_handler)
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
 		return tchErrorParameter;
@@ -340,7 +344,8 @@ static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t perio
 
 }
 
-static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self){
+static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self)
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	if(!ins)
 		return tchErrorParameter;
@@ -359,17 +364,18 @@ static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self){
 	ins->wkup_handler = NULL;
 
 	tch_disableInterrupt(RTC_WKUP_IRQn);
-
 	return ins->env->Mtx->unlock(ins->mtx);
 
 }
 
 
-void RTC_Alarm_IRQHandler(){
+void RTC_Alarm_IRQHandler()
+{
 
 }
 
-void RTC_WKUP_IRQHandler(){
+void RTC_WKUP_IRQHandler()
+{
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*)_handle;
 	if(!ins)
 		return;
@@ -382,5 +388,4 @@ void RTC_WKUP_IRQHandler(){
 	EXTI->PR |= (1 << 22);
 	RTC->ISR &= ~RTC_ISR_WUTF;
 	PWR->CR |= PWR_CR_CWUF;
-
 }

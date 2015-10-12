@@ -38,15 +38,15 @@ tchStatus barrier_performTest(tch* ctx){
 
 	kmstat(&init_mstat);
 
-	tch_threadCfg tcfg;
-	ctx->Thread->initCfg(&tcfg,child1Routine,Normal,512, 0 ,"child1");
+	thread_config_t tcfg;
+	ctx->Thread->initConfig(&tcfg,child1Routine,Normal,512, 0 ,"child1");
 	child1Id = ctx->Thread->create(&tcfg,ctx);
 
-	ctx->Thread->initCfg(&tcfg,child2Routine,Normal,512,0, "child2");
+	ctx->Thread->initConfig(&tcfg,child2Routine,Normal,512,0, "child2");
 	child2Id = ctx->Thread->create(&tcfg,ctx);
 
 
-	ctx->Thread->initCfg(&tcfg,child3Routine,Normal,512,0,"child3");
+	ctx->Thread->initConfig(&tcfg,child3Routine,Normal,512,0,"child3");
 	child3Id = ctx->Thread->create(&tcfg,ctx);
 
 	tch_assert(ctx,child1Id && child2Id && child3Id,tchErrorOS);

@@ -214,13 +214,13 @@ typedef struct tch_user_mem_cfg_s {
 	uint32_t	u_memsz;			// size of supplied user memory (only needed in child creation)
 } tch_userMemDef_t;
 
-typedef struct _tch_thread_cfg_t {
+typedef struct thread_config {
 	size_t				 stksz;
 	size_t				 heapsz;
 	tch_thread_routine	 entry;
 	tch_threadPrior      priority;
 	const char*          name;
-}tch_threadCfg;
+}thread_config_t;
 
 
 

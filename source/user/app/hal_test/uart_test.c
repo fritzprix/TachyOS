@@ -28,9 +28,9 @@ tchStatus uart_performTest(tch* ctx){
 	tch_usartHandle serial = NULL;
 
 
-	tch_threadCfg thcfg;
+	thread_config_t thcfg;
 
-	ctx->Thread->initCfg(&thcfg,printerThreadRoutine,Normal,(1 << 10),0,"printer");
+	ctx->Thread->initConfig(&thcfg,printerThreadRoutine,Normal,(1 << 10),0,"printer");
 	tch_threadId printer = ctx->Thread->create(&thcfg,serial);
 	ctx->Thread->start(printer);
 

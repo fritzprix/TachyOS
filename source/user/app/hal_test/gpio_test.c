@@ -18,11 +18,11 @@ uint16_t inp = 1 << 2;
 tchStatus gpio_performTest(const tch* api){
 
 
-	tch_threadCfg thcfg;
-	api->Thread->initCfg(&thcfg,evgenRoutine,Normal,1 << 9,0,"evgen");
+	thread_config_t thcfg;
+	api->Thread->initConfig(&thcfg,evgenRoutine,Normal,1 << 9,0,"evgen");
 	tch_threadId evgenThread = api->Thread->create(&thcfg,api);
 
-	api->Thread->initCfg(&thcfg,evconsRoutine,Normal,1 << 9,0,"evcons");
+	api->Thread->initConfig(&thcfg,evconsRoutine,Normal,1 << 9,0,"evcons");
 	tch_threadId evconsThread = api->Thread->create(&thcfg,api);
 
 	api->Thread->start(evgenThread);

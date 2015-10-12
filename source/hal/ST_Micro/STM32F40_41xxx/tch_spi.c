@@ -120,21 +120,16 @@ static tch_mtxCb 	lock;
 static tch_condvCb  condv;
 static tch_lld_dma* dma;
 
-tch_lld_spi* tch_spiHalInit(const tch* env){
-	if(!env)
-		return NULL;
-	tch_mutexInit(&lock);
-	tch_condvInit(&condv);
-	return &SPI_Ops;
-}
-
-static int tch_spi_init(void){
+static int tch_spi_init(void)
+{
+	dma = NULL;
 	tch_mutexInit(&lock);
 	tch_condvInit(&condv);
 	return tch_kmod_register(MODULE_TYPE_SPI,SPI_CLASS_KEY,&SPI_Ops,FALSE);
 }
 
-static void tch_spi_exit(void){
+static void tch_spi_exit(void)
+{
 	tch_mutexDeinit(&lock);
 	tch_condvDeinit(&condv);
 	tch_kmod_unregister(MODULE_TYPE_SPI,SPI_CLASS_KEY);
@@ -143,7 +138,8 @@ static void tch_spi_exit(void){
 MODULE_INIT(tch_spi_init);
 MODULE_EXIT(tch_spi_exit);
 
-__USER_API__ static void tch_spi_initConfig(spi_config_t* cfg){
+__USER_API__ static void tch_spi_initConfig(spi_config_t* cfg)
+{
 	cfg->Baudrate = SPI_BAUDRATE_NORMAL;
 	cfg->ClkMode = SPI_CLKMODE_0;
 	cfg->FrmFormat = SPI_FRM_FORMAT_8B;
@@ -151,7 +147,8 @@ __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg){
 	cfg->Role = SPI_ROLE_MASTER;
 }
 
-__USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt){
+__USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
+{
 
 	tch_spi_bs_t* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
@@ -173,14 +170,12 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 	if(!gpio)
 		return NULL;
 
-
 	spiDesc->_handle = ins = env->Mem->alloc(sizeof(tch_spi_handle_prototype));
-	if(env->Mtx->unlock(&lock) != tchOK){
+	if(env->Mtx->unlock(&lock) != tchOK)
+	{
 		return NULL;
 	}
-
 	memset(ins,0,sizeof(tch_spi_handle_prototype));
-
 	iocfg.Af = spibs->afv;
 	iocfg.Speed = GPIO_OSpeed_100M;
 	iocfg.Mode = GPIO_Mode_AF;
@@ -188,17 +183,20 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 
 	gpio->allocIo(env,spibs->port,((1 << spibs->miso) | (1 << spibs->mosi) | (1 << spibs->sck)),&iocfg,timeout);
 
-	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED)){
+	if((spibs->rxdma != DMA_NOT_USED) && (spibs->txdma != DMA_NOT_USED) && dma)
+	{
 		dmaCfg.BufferType = DMA_BufferMode_Normal;
 		dmaCfg.Ch = spibs->rxch;
 		dmaCfg.Dir = DMA_Dir_PeriphToMem;
 		dmaCfg.FlowCtrl = DMA_FlowControl_DMA;
 		dmaCfg.Priority = DMA_Prior_Mid;
-		if(cfg->FrmFormat == SPI_FRM_FORMAT_8B){
+		if(cfg->FrmFormat == SPI_FRM_FORMAT_8B)
+		{
 			dmaCfg.mAlign = DMA_DataAlign_Byte;
 			dmaCfg.pAlign = DMA_DataAlign_Byte;
 		}
-		else{
+		else
+		{
 			dmaCfg.mAlign = DMA_DataAlign_Hword;
 			dmaCfg.pAlign = DMA_DataAlign_Hword;
 		}
@@ -213,7 +211,8 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 		ins->txCh.dma = dma->allocate(env,spibs->txdma,&dmaCfg,timeout,popt);
 	}
 
-	if(!ins->rxCh.dma || !ins->txCh.dma){
+	if((!ins->rxCh.dma || !ins->txCh.dma) && dma )
+	{
 		dma->freeDma(ins->rxCh.dma);
 		dma->freeDma(ins->txCh.dma);
 	}
@@ -254,43 +253,51 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 	if(cfg->ClkMode & 1)
 		spiHw->CR1 |= SPI_CR1_CPHA;
 
-	if(cfg->Role == SPI_ROLE_MASTER){
+	if(cfg->Role == SPI_ROLE_MASTER)
+	{
 		spiHw->CR1 &= ~SPI_CR1_BR;
 		spiHw->CR1 |= (cfg->Baudrate << 3);
 		spiHw->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI;
 		spiHw->CR1 |= SPI_CR1_MSTR;
-	}else{
+	}
+	else
+	{
 		spiHw->CR1 |= SPI_CR1_SSM;
 		spiHw->CR1 &= ~SPI_CR1_SSI;
 		spiHw->CR1 &= ~SPI_CR1_MSTR;
 	}
+
 	if(ins->txCh.dma && ins->rxCh.dma)
+	{
 		spiHw->CR2 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
-	else{
+	}
+	else
+	{
 		spiHw->CR2 |= SPI_CR2_ERRIE;
 		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
-
-
 	tch_spi_validate((tch_spi_handle_prototype*) ins);
 	return (tch_spiHandle*) ins;
 }
 
-__USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,size_t sz){
+__USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,size_t sz)
+{
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spi_isValid(ins))
 		return tchErrorResource;
 	return ins->pix.transceive(self,wb,NULL,sz,tchWaitForever);
 }
 
-__USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout){
+__USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout)
+{
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spi_isValid(ins))
 		return tchErrorResource;
 	return ins->pix.transceive(self,NULL,rb,sz,timeout);
 }
 
-__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
+__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
+{
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	void* twb = (void*) wb;
 	if(!ins)
@@ -327,12 +334,14 @@ __USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void*
 	spiHw->CR1 |= SPI_CR1_SPE;
 	spiHw->CR2 |= (SPI_CR2_TXEIE | SPI_CR2_RXNEIE);
 
-	if((result = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever)) != tchOK){
+	if((result = ins->env->Event->wait(ins->evId,(TCH_SPI_EVENT_RX_COMPLETE | TCH_SPI_EVENT_TX_COMPLETE),tchWaitForever)) != tchOK)
+	{
 		ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL);
 		RETURN_SAFE();
 	}
 
-	if((sig = ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL)) & TCH_SPI_EVENT_ERR_MSK){
+	if((sig = ins->env->Event->clear(ins->evId,TCH_SPI_EVENT_ALL)) & TCH_SPI_EVENT_ERR_MSK)
+	{
 		result =  tchErrorIo;
 		RETURN_SAFE();
 	}
@@ -350,11 +359,12 @@ __USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void*
 	return result;
 }
 
-__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout){
+__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
+{
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!ins)
 		return tchErrorParameter;
-	if(!tch_spi_isValid(ins))
+	if(!tch_spi_isValid(ins) || !dma)
 		return tchErrorResource;
 	tchStatus result = tchOK;
 	tch_spi_descriptor* spiDesc = &SPI_HWs[ins->spi];
@@ -396,7 +406,6 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const vo
 		RETURN_SAFE();
 	}
 	result = tchOK;
-
 	SET_SAFE_RETURN();
 	env->Mtx->lock(ins->mtx,tchWaitForever);
 	spiHw->CR1 &= ~SPI_CR1_SPE;
@@ -407,7 +416,8 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const vo
 }
 
 
-__USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self){
+__USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self)
+{
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	tch_spi_descriptor* spiDesc = NULL;
 	SPI_TypeDef* spiHw = NULL;
@@ -423,7 +433,8 @@ __USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self){
 	const tch* env = ins->env;
 	tchStatus result = tchOK;
 	env->Mtx->lock(ins->mtx,tchWaitForever);
-	while(SPI_isBusy(ins)){
+	while(SPI_isBusy(ins))
+	{
 		env->Condv->wait(ins->condv,ins->mtx,tchWaitForever);
 	}
 	tch_spi_invalidate(ins);
@@ -431,11 +442,13 @@ __USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self){
 	env->Condv->destroy(ins->condv);
 	env->Event->destroy(ins->evId);
 
-	dma->freeDma(ins->rxCh.dma);
-	dma->freeDma(ins->txCh.dma);
+	if(dma)
+	{
+		dma->freeDma(ins->rxCh.dma);
+		dma->freeDma(ins->txCh.dma);
+	}
 
 	ins->iohandle->close(ins->iohandle);
-
 	env->Mtx->lock(&lock,tchWaitForever);
 
 	*spiDesc->_rstr |= spiDesc->rstmsk;
@@ -446,27 +459,29 @@ __USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self){
 	spiDesc->_handle = NULL;
 	env->Condv->wakeAll(&condv);
 	env->Mtx->unlock(&lock);
-
 	env->Mem->free(ins);
-
 	return tchOK;
 
 }
 
-static void tch_spi_validate(tch_spi_handle_prototype* ins){
+static void tch_spi_validate(tch_spi_handle_prototype* ins)
+{
 	ins->status &= ~0xFFFF;
 	ins->status |= ((uint32_t)ins & 0xFFFF) ^ SPI_CLASS_KEY;
 }
 
-static BOOL tch_spi_isValid(tch_spi_handle_prototype* ins){
+static BOOL tch_spi_isValid(tch_spi_handle_prototype* ins)
+{
 	return ((ins->status & 0xFFFF) == (((uint32_t) ins & 0xFFFF) ^ SPI_CLASS_KEY));
 }
 
-static void tch_spi_invalidate(tch_spi_handle_prototype* ins){
+static void tch_spi_invalidate(tch_spi_handle_prototype* ins)
+{
 	ins->status &= ~0xFFFF;
 }
 
-static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc){
+static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descriptor* spiDesc)
+{
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	uint16_t readout;
 	const tch* env = ins->env;
@@ -474,61 +489,82 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 	uint16_t sr = spiHw->SR;
 	if(!spiDesc->_handle)
 		return FALSE;
-	if(sr & SPI_SR_TXE){
-		if(req){
-			if(req->tsz-- > 0){
+	if(sr & SPI_SR_TXE)
+	{
+		if(req)
+		{
+			if(req->tsz-- > 0)
+			{
 				spiHw->DR = *((uint16_t*) req->txb);
 				req->txb += req->align;
-				if(!req->tsz){
+				if(!req->tsz)
+				{
 					ins->env->Event->set(ins->evId,TCH_SPI_EVENT_TX_COMPLETE);
 				}
-			}else{
+			}
+			else
+			{
 				if(req->rsz > 0)
 					spiHw->DR = 0;
 			}
-		}else
+		}
+		else
+		{
 			return FALSE;
+		}
 	}
-	if(sr & SPI_SR_RXNE){
-		if(req){
-			if(req->rsz-- > 0){
+	if(sr & SPI_SR_RXNE)
+	{
+		if(req)
+		{
+			if(req->rsz-- > 0)
+			{
 				*((uint16_t*)req->rxb) = spiHw->DR;
 				req->rxb += req->align;
-				if(!req->rsz){
+				if(!req->rsz)
+				{
 					ins->env->Event->set(ins->evId,TCH_SPI_EVENT_RX_COMPLETE);
 					spiHw->CR2 &= ~(SPI_CR2_RXNEIE | SPI_CR2_TXEIE);
 				}
 			}
-		}else
+		}
+		else
+		{
 			return FALSE;
+		}
 	}
-	if(sr & SPI_SR_OVR){
+	if(sr & SPI_SR_OVR)
+	{
 		readout = spiHw->DR;
 		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_OVR_ERR);
 		return TRUE;
 	}
-	if(sr & SPI_SR_UDR){
+	if(sr & SPI_SR_UDR)
+	{
 		ins->env->Event->set(ins->evId,TCH_SPI_EVENT_UDR_ERR);
 		return TRUE;
 	}
 	return FALSE;
 }
 
-void SPI1_IRQHandler(void){
+void SPI1_IRQHandler(void)
+{
 	tch_spi_descriptor* spiDesc = &SPI_HWs[0];
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	if(!tch_spi_handleInterrupt(spiDesc->_handle,spiDesc))
 		spiHw->SR &= ~(spiHw->SR);
 }
 
-void SPI2_IRQHandler(void){
+void SPI2_IRQHandler(void)
+{
 	tch_spi_descriptor* spiDesc = &SPI_HWs[1];
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	if(!tch_spi_handleInterrupt(spiDesc->_handle,spiDesc))
 		spiHw->SR &= ~(spiHw->SR);
 }
 
-void SPI3_IRQHandler(void){
+void SPI3_IRQHandler(void)
+{
 	tch_spi_descriptor* spiDesc = &SPI_HWs[2];
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	if(!tch_spi_handleInterrupt(spiDesc->_handle,spiDesc))
