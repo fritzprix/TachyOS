@@ -93,8 +93,8 @@ void tch_kernelInit(void* arg){
 
 	tch_port_atomicBegin();
 
-	tch_threadCfg thcfg;
-	Thread->initCfg(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
+	thread_config_t thcfg;
+	Thread->initConfig(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tch_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 	tch_schedInit(sysThread);
 
@@ -121,16 +121,12 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 			cth->state = RUNNING;
 			current_mm = &current->kthread->mm;
 
-	#ifdef __NEWLIB__
-			_impure_ptr = &current->reent;
-	#endif
-
 			tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
 			tch_port_setUserSP((uint32_t)sp);
 			if((arg1 = tch_threadIsValid(current)) == tchOK){
 				tch_port_atomicEnd();
 			}else{
-				tch_threadExit(current,arg1);
+				tch_thread_exit(current,arg1);
 			}
 			if(tch_threadIsPrivilidged(current))
 				tch_port_enablePrivilegedThread();

@@ -71,7 +71,7 @@ struct tch_thread_ix_t {
 	/**
 	 *  Create Thread Object
 	 */
-	tch_threadId (*create)(tch_threadCfg* cfg,void* arg);
+	tch_threadId (*create)(thread_config_t* cfg,void* arg);
 	/**
 	 *  Start New Thread
 	 */
@@ -81,7 +81,7 @@ struct tch_thread_ix_t {
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
 	tchStatus (*exit)(tch_threadId thread,tchStatus res);
-	void (*initCfg)(tch_threadCfg* cfg,
+	void (*initConfig)(thread_config_t* cfg,
 					tch_thread_routine entry,
 					tch_threadPrior prior,
 					uint32_t stksz,

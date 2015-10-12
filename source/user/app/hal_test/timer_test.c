@@ -38,12 +38,12 @@ tchStatus timer_performTest(tch* ctx){
 	tch_threadId waiterThread2;
 
 
-	tch_threadCfg thcfg;
-	ctx->Thread->initCfg(&thcfg,waiter1Run,Normal,(1 << 9),0,"waiter1");
+	thread_config_t thcfg;
+	ctx->Thread->initConfig(&thcfg,waiter1Run,Normal,(1 << 9),0,"waiter1");
 	waiterThread1 = ctx->Thread->create(&thcfg,gptimer);
 
 
-	ctx->Thread->initCfg(&thcfg,waiter2Run,Normal,(1 << 9),0,"waiter2");
+	ctx->Thread->initConfig(&thcfg,waiter2Run,Normal,(1 << 9),0,"waiter2");
 	waiterThread2 = ctx->Thread->create(&thcfg,gptimer);
 
 	ctx->Thread->start(waiterThread1);
@@ -76,12 +76,12 @@ tchStatus timer_performTest(tch* ctx){
 	}
 
 	pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
-	ctx->Thread->initCfg(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
+	ctx->Thread->initConfig(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
 	waiterThread1 = ctx->Thread->create(&thcfg,pwmDrv);
 
 
 
-	ctx->Thread->initCfg(&thcfg,pulsDrv2Run,Normal,(1 << 9),0,"pulsedrv2");
+	ctx->Thread->initConfig(&thcfg,pulsDrv2Run,Normal,(1 << 9),0,"pulsedrv2");
 	waiterThread2 = ctx->Thread->create(&thcfg,pwmDrv);
 
 	ctx->Thread->start(waiterThread1);
@@ -116,15 +116,15 @@ tchStatus timer_performTest(tch* ctx){
 	if(!capt)
 		return tchErrorOS;
 
-	ctx->Thread->initCfg(&thcfg,pulseGenRun,Normal,(1 << 9),0,"pgen");
+	ctx->Thread->initConfig(&thcfg,pulseGenRun,Normal,(1 << 9),0,"pgen");
 	tch_threadId pgenThread = ctx->Thread->create(&thcfg,pwmDrv);
 
-	ctx->Thread->initCfg(&thcfg,pulseCon1Run,Normal,(1 << 9),0,"pcon1");
+	ctx->Thread->initConfig(&thcfg,pulseCon1Run,Normal,(1 << 9),0,"pcon1");
 	tch_threadId pcon1Thread = ctx->Thread->create(&thcfg,capt);
 
 	uint8_t* pconStk = ctx->Mem->alloc(1 << 9);
 
-	ctx->Thread->initCfg(&thcfg,pulseCon2Run,Normal,(1 << 9),0,"pcon2");
+	ctx->Thread->initConfig(&thcfg,pulseCon2Run,Normal,(1 << 9),0,"pcon2");
 	tch_threadId pcon2Thread = ctx->Thread->create(&thcfg,capt);
 
 	ctx->Thread->start(pgenThread);

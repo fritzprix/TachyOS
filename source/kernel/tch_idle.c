@@ -37,8 +37,8 @@ static tch_threadId mainThread;
 
 
 void idle_init(){
-	tch_threadCfg thcfg;
-	Thread->initCfg(&thcfg,idle,Idle,CONFIG_THREAD_MIN_STACK,0,"idle");
+	thread_config_t thcfg;
+	Thread->initConfig(&thcfg,idle,Idle,CONFIG_THREAD_MIN_STACK,0,"idle");
 	idleThread = (tch_threadId) tch_threadCreateThread(&thcfg,NULL,FALSE,TRUE,NULL);
 
 	busy_cnt = 0;
@@ -76,8 +76,8 @@ static DECLARE_THREADROUTINE(idle){
 	struct idle_parameter parm;
 
 
-	tch_threadCfg threadcfg;
-	Thread->initCfg(&threadcfg,main,Normal,0x800,0x800,"main");
+	thread_config_t threadcfg;
+	Thread->initConfig(&threadcfg,main,Normal,0x800,0x800,"main");
 	mainThread = (tch_threadId) tch_threadCreateThread(&threadcfg,ctx,TRUE,TRUE,NULL);
 
 
