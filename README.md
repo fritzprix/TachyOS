@@ -1,7 +1,7 @@
 # TachyOS 
 [![Build Status](https://drone.io/github.com/fritzprix/tachyos/status.png)](https://drone.io/github.com/fritzprix/tachyos/latest)
 ## About
-> TachyOS is the RTOS based on microkernel architecture which includes only minimal components like thread / synchronization, memory management, inter-thread communication while supporting execution context / address space isolation(protection) and extensible modular interface. Name of this project comes from the name of subatomic particle called 'tachyon' [tæki.ɒn] whose speed is known to increase as its energy decreases theoretically. I think this characteristic is very ideal to many low cost battery powered application like home environmental sensor device, wearable sensor, smart switch, etc. 
+> TachyOS is the RTOS based on microkernel architecture which includes only minimal components like thread / synchronization, memory management, inter-thread communication while supporting execution context / address space isolation(protection) and extensible modular interface.  
 
 ### Motivation   
  + Build modular architecture which supports both static linked(kernel mode) and dynamic-linked module(user mode). 

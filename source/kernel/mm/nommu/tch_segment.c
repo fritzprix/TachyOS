@@ -370,7 +370,7 @@ static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr){
 	rb_treeNode_t* arb = segp->reg_root;
 	struct mem_region* region;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
-	if(arb)
+	if(!arb)
 		KERNEL_PANIC("tch_segment.c","Segment has no allocated region -> Invalid Use of Pointer");
 	while(!cdsl_rbtreeIsNIL(arb)){
 		region = container_of(arb,struct mem_region,rbn);
@@ -391,7 +391,7 @@ static struct mem_segment* findSegmentFromPtr(void* ptr){
 	rb_treeNode_t* arb = addr_root;
 	struct mem_segment* segment;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
-	if(arb)
+	if(!arb)
 		KERNEL_PANIC("tch_segment.c","No Registered Segment in kernel -> Memory is not initialize properly");
 	while(!cdsl_rbtreeIsNIL(arb)){
 		segment = container_of(arb,struct mem_segment,addr_rbn);

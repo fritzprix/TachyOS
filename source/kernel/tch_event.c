@@ -31,11 +31,11 @@
 #define EVENT_ISVALID(ins)    ((((tch_eventCb*) ins)->status & 0xFFFF) == (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF))
 
 
-static tch_eventId tch_eventCreate();
-static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal);
-static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal);
-static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
-static tchStatus tch_eventDestroy(tch_eventId ev);
+__USER_API__ static tch_eventId tch_eventCreate();
+__USER_API__ static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal);
+__USER_API__ static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal);
+__USER_API__ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
+__USER_API__ static tchStatus tch_eventDestroy(tch_eventId ev);
 
 static tch_eventId event_init(tch_eventCb* evcb,BOOL is_static);
 static tchStatus event_deinit(tch_eventCb* evcb);

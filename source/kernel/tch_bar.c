@@ -26,29 +26,27 @@
 #include "kernel/tch_kobj.h"
 
 
-#define TCH_BARRIER_CLASS_KEY        ((uhword_t) 0x2D03)
+#define BARRIER_CLASS_KEY   	     ((uhword_t) 0x2D03)
 
 #define BAR_VALIDATE(bar)			do {\
-	((tch_barCb*) bar)->status |= (((uint32_t) bar ^ TCH_BARRIER_CLASS_KEY) & 0xFFFF);\
+	((tch_barCb*) bar)->status |= (((uint32_t) bar ^ BARRIER_CLASS_KEY) & 0xFFFF);\
 }while(0)
 
 #define BAR_INVALIDATE(bar)			do {\
 	((tch_barCb*) bar)->status &= ~0xFFFF;\
 }while(0)
 
-#define BAR_ISVALID(bar)			((((tch_barCb*) bar)->status & 0xFFFF) == (((uint32_t) bar ^ TCH_BARRIER_CLASS_KEY) & 0xFFFF))
+#define BAR_ISVALID(bar)			((((tch_barCb*) bar)->status & 0xFFFF) == (((uint32_t) bar ^ BARRIER_CLASS_KEY) & 0xFFFF))
 
 
 
-static tch_barId tch_barCreate();
-static tchStatus tch_barWait(tch_barId bar,uint32_t timeout);
-static tchStatus tch_barSignal(tch_barId bar,tchStatus result);
-static tchStatus tch_barDestroy(tch_barId bar);
+__USER_API__ static tch_barId tch_barCreate();
+__USER_API__ static tchStatus tch_barWait(tch_barId bar,uint32_t timeout);
+__USER_API__ static tchStatus tch_barSignal(tch_barId bar,tchStatus result);
+__USER_API__ static tchStatus tch_barDestroy(tch_barId bar);
 
 static tch_barId bar_init(tch_barCb* bar,BOOL is_static);
 static tchStatus bar_deinit(tch_barCb* bar);
-
-
 
 __USER_RODATA__ tch_bar_ix Barrier_IX = {
 		.create = tch_barCreate,
@@ -58,7 +56,6 @@ __USER_RODATA__ tch_bar_ix Barrier_IX = {
 };
 
 __USER_RODATA__ const tch_bar_ix* Barrier = &Barrier_IX;
-
 
 
 DECLARE_SYSCALL_0(bar_create,tch_barId);
