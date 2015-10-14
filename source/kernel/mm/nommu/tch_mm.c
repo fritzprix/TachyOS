@@ -88,7 +88,8 @@ struct tch_mm				init_mm;
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz);
 
-BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
+BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
+{
 	/**
 	 *  add mapping to region containing process binary image
 	 */
@@ -111,12 +112,14 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	 *     - binary image is part of program binary (whether kernel binary or user mode binary)
 	 *     - share memory mapping with its root
 	 */
-	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
+	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD)
+	{
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		mmp->dynamic = (struct proc_dynamic*) kmalloc(sizeof(struct proc_dynamic));
 		mtx = (tch_mtxCb*) kmalloc(sizeof(tch_mtxCb));
 		condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb));
-		if(!mmp->dynamic || !mmp->pgd || !mtx || !condv){
+		if(!mmp->dynamic || !mmp->pgd || !mtx || !condv)
+		{
 			kfree(condv);
 			kfree(mtx);
 			kfree(mmp->pgd);
@@ -127,12 +130,15 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		mmp->flags |= ROOT;
 		mmp->dynamic->mtx = mtx;
 		mmp->dynamic->condv = condv;
-		if(proc_header->flag & PROCTYPE_DYNAMIC){			// dynamic loaded process
+		if(proc_header->flag & PROCTYPE_DYNAMIC)
+		{			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
 			mmp->data_region = proc_header->data_region;
 			mmp->flags |= DYN;
-		}else {
+		}
+		else
+		{
 					// text/ bss / data section of static process are assumed to be part of kernel binary image
 			mmp->text_region = NULL;
 			mmp->bss_region = NULL;
@@ -142,7 +148,9 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 		mmp->dynamic->mregions = NULL;
 		tch_mutexInit(mmp->dynamic->mtx);
 		tch_condvInit(mmp->dynamic->condv);
-	}else {
+	}
+	else
+	{
 		struct tch_mm* parent_mm = &current->kthread->parent->mm;
 		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->flags = 0;
@@ -172,8 +180,10 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	mmp->heap_region = &regions[0];
 	mmp->stk_region = &regions[1];
 
-	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz)){
-		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD){
+	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz))
+	{
+		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD)
+		{
 			tch_condvDeinit(condv);
 			tch_mutexDeinit(mtx);
 			kfree(condv);
@@ -210,10 +220,13 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header){
 	 */
 	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) << CONFIG_PAGE_SHIFT);
 	argv = argv - proc_header->argv_sz;
-	if (proc_header->argv_sz > 0) {												// if process argument is null terminated strings,
+	if (proc_header->argv_sz > 0)
+	{												// if process argument is null terminated strings,
 		memcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
 		thread->uthread->t_arg = argv;
-	}else {																		// if process argument is just pointer to another object
+	}
+	else
+	{																		// if process argument is just pointer to another object
 		thread->uthread->t_arg = proc_header->argv;				    			// just copy refernece
 	}
 	mmp->estk = argv;			// end of stack

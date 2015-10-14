@@ -115,7 +115,7 @@ extern "C" {
 #define PERM_MSK				(PERM_KERNEL_ALL | PERM_OWNER_ALL | PERM_OTHER_ALL)
 
 #define perm_is_only_priv(flags)		(!(flags & (PERM_OWNER_ALL || PERM_OTHER_ALL)))
-#define perm_is_public(flags)			((flags & PERM_OTHER_ALL) == PERM_OTHER_ALL)
+#define perm_is_public(flags)			(((flags & PERM_OTHER_ALL) == PERM_OTHER_ALL) && (flags & SHAREABLE_MSK))
 
 #define clr_permission(flag)			(flag &= ~PERM_MSK)
 #define get_permission(flag)			(flag & PERM_MSK)

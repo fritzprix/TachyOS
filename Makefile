@@ -15,7 +15,7 @@ LDFLAG =
 TOOL_PREFIX=
 
 # Configuration make file
-include tchConfig.mk
+include config.mk
 
 
 ROOT_DIR= $(CURDIR)

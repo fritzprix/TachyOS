@@ -14,7 +14,6 @@ extern tch_mem_ix UMem_IX;
 extern void* tch_malloc(size_t sz);
 extern void tch_free(void* ptr);
 extern void tch_mstat(mstat* statp);
-extern size_t tch_avail(void);
 
 
 #endif /* TCH_MALLOC_H_ */
