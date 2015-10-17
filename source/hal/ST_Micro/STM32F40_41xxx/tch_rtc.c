@@ -216,7 +216,7 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 	if((RTC->ISR & RTC_ISR_INITS) || !force)   // RTC is already initialized or not forced, it'll not be updated
 		return tchOK;
 	gmt_tm += tz * (HOUR_IN_SEC);
-	localtime_r(&gmt_tm,&localTm);
+	localtime(&gmt_tm,&localTm);
 	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	RTC->ISR |= RTC_ISR_INIT;

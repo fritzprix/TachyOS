@@ -107,9 +107,6 @@ struct tch_thread_uheader_s {
 	tch_mtxId					mtx;
 	tch 						ctx;
 	uword_t						kRet;				///<kernel return value
-#ifdef __NEWLIB__									///<@NOTE : NEWLIBC will be replaced by tch_libc which is more suitable for low-cost embedded system
-	struct _reent				reent;				///<reentrant struct used by LIBC
-#endif
 	uint32_t					chks;				///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));
 

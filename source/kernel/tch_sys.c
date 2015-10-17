@@ -55,10 +55,11 @@ static DECLARE_THREADROUTINE(systhreadRoutine);
 
 
 static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
-static tch RuntimeInterface = {
+__USER_RODATA__ const tch RuntimeInterface = {
 		.Thread = &Thread_IX,
 		.Mtx = &Mutex_IX,
 		.Sem = &Semaphore_IX,
+		.Time = &Time_IX,
 		.Condv = &CondVar_IX,
 		.Barrier = &Barrier_IX,
 		.Mempool = &MPool_IX,
@@ -68,7 +69,8 @@ static tch RuntimeInterface = {
 		.Event = &Event_IX,
 		.Service = &Service_IX
 };
-__USER_RODATA__ const tch* tch_rti = &RuntimeInterface;
+
+const tch* tch_rti = &RuntimeInterface;
 
 static tch_threadId sysThread;
 volatile BOOL kernel_ready;
@@ -83,7 +85,6 @@ BOOL __VALID_SYSCALL;
 void tch_kernelInit(void* arg){
 
 	kernel_ready = FALSE;
-
 	if(!tch_port_init())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
@@ -148,7 +149,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 
-	RuntimeInterface.Time = tchk_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
+	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 	idle_init();
 
 	while(TRUE){

@@ -8,7 +8,8 @@
 #ifndef TCH_ERR_H_
 #define TCH_ERR_H_
 
-#include "tch_ktypes.h"
+#include "kernel/util/time.h"
+#include "kernel/tch_ktypes.h"
 
 #define KERNEL_PANIC(filename,msg)	tch_kernel_panic(filename,__LINE__,msg)
 

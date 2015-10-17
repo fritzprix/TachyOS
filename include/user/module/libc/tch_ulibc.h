@@ -15,7 +15,6 @@
 #include <wchar.h>
 #include <wctype.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #if defined(__cplusplus)

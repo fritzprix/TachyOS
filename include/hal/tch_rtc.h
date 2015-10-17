@@ -16,9 +16,9 @@
 #define TCH_RTC_H_
 
 
-
+#include "tch_ktypes.h"
 #include "tch_types.h"
-#include <time.h>
+
 
 #if defined(__cplusplus)
 extern "C"{

@@ -150,11 +150,11 @@ tchStatus tch_threadIsValid(tch_threadId thread){
 	if(!thread)
 		return tchErrorParameter;
 	if(getThreadHeader(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN)){
-		getThreadHeader(thread)->reent._errno = tchErrorStackOverflow;
+		getThreadHeader(thread)->kRet = tchErrorStackOverflow;
 		return tchErrorStackOverflow;
 	}
 	if(getThreadHeader(thread)->kthread->flag & THREAD_DEATH_BIT)
-		return getThreadHeader(thread)->reent._errno;
+		return getThreadHeader(thread)->kRet;
 	return tchOK;
 }
 
@@ -171,7 +171,7 @@ static void tch_thread_validate(tch_threadId thread){
 
 
 static void tch_thread_invalidate(tch_threadId thread,tchStatus reason){
-	getThreadHeader(thread)->reent._errno = reason;
+	getThreadHeader(thread)->kRet = reason;
 	getThreadHeader(thread)->kthread->flag |= THREAD_DEATH_BIT;
 }
 

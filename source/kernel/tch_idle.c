@@ -110,7 +110,7 @@ static DECLARE_LWTASK(idleTaskHandler){
 		tch_hal_enterSleepMode();
 		tch_hal_resumeSysClock();
 		tch_hal_setSleepMode(LP_LEVEL0);
-		tch_hal_enableSystick();
+		tch_hal_enableSystick(CONFIG_KERNEL_LSTICK_PERIOD);
 		break;
 	}
 }

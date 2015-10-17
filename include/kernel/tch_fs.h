@@ -12,6 +12,7 @@
 #include "cdsl_rbtree.h"
 
 struct tch_file_operations;
+typedef int32_t ssize_t;
 
 
 struct tch_dentry {

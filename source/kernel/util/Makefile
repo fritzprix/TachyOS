@@ -6,7 +6,8 @@ KERNEL_UTIL_SRCS=\
 	    cdsl_rbtree.c\
 	    cdsl_slist.c\
 	    cdsl_spltree.c\
-	    string.c
+	    string.c\
+	    time.c
 	    
 	    
 KERNEL_UTIL_BUILD_DIR=$(GEN_DIR)/kutil

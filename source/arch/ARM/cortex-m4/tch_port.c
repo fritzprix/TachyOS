@@ -12,10 +12,8 @@
  *      Author: innocentevil
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "tch_kernel.h"
+#include "kernel/tch_kernel.h"
 #include "tch_fault.h"
 #include "tch_hal.h"
 #include "tch_port.h"

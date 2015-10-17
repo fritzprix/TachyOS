@@ -162,6 +162,7 @@ extern const tch_mpool_ix* Mempool;
 extern const tch_mem_ix* uMem;
 extern const tch_event_ix* Event;
 extern const tch_service_ix* Service;
+extern const tch_time_ix* Time;
 
 
 
@@ -170,7 +171,7 @@ extern const tch_service_ix* Service;
 extern const tch_kernel_descriptor kernel_descriptor;
 extern tch_thread_uheader* current;
 extern volatile BOOL kernel_ready;
-extern volatile uint64_t tch_systimeTick;
+extern volatile uint64_t systimeTick;
 extern tch_thread_queue procList;
 extern const tch* tch_rti;
 extern tch_memId sharedMem;

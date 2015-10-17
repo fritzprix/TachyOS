@@ -174,17 +174,6 @@ typedef struct  {
 } tchEvent;
 
 
-/***
- *  General Types
- */
- /*
-#ifndef BOOL
-#define BOOL	uint8_t
-#endif
-
-#define TRUE  	((uint8_t) (1 > 0))
-#define FALSE	!(TRUE)*/
-
 typedef enum {	TRUE = ((uint8_t)(1 > 0)),FALSE = ((uint8_t)!TRUE)  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_PwrOpt;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
@@ -223,7 +212,6 @@ typedef struct thread_config {
 }thread_config_t;
 
 
-
 /**
  * type definition for mpool
  */
@@ -245,9 +233,6 @@ typedef enum {
 	Once,Periodic
 }tch_timer_type;
 
-typedef struct tch_timer_def_s {
-	tch_timer_callback     fn;
-}tch_timer_def;
 
 
 

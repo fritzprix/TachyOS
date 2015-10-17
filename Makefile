@@ -88,12 +88,6 @@ CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 
 
-##
-#KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
-#ARCH_SRC_DIR=$(ROOT_DIR)/source/arch
-#HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
-#USR_SRC_DIR=$(ROOT_DIR)/source/usr
-##
 
 include $(ARCH_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
 include $(KERNEL_SRC_DIR)/kernel.mk

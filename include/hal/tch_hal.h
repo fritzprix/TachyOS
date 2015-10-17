@@ -54,7 +54,7 @@ typedef enum {
  *
  * this function would be invoked in the initialization stage of system
  */
-extern void tch_hal_enableSystick();
+extern void tch_hal_enableSystick(uint32_t mills);
 
 /**
  * \brief Disable system tick timer
