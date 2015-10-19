@@ -12,7 +12,6 @@
 void memset(void* dst,int v,size_t sz){
 	if(!dst)
 		return;
-
 	while(sz--) ((uint8_t*) dst)[sz] = v;
 }
 

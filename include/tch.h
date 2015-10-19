@@ -122,6 +122,7 @@ struct tch_time_ix_t {
 	tch_timezone (*getTimezone)();
 	uint64_t (*getCurrentTimeMills)();
 	uint64_t (*uptimeMills)();
+	struct tm* (*toBrokentime)(uint64_t timeinmills,struct tm* result);
 };
 
 

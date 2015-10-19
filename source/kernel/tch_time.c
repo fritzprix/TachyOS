@@ -20,13 +20,14 @@
 #include "kernel/util/cdsl_dlist.h"
 #include "kernel/util/time.h"
 
+
+
+
 static tch_rtcHandle* rtcHandle;
 static cdsl_dlistNode_t systimeWaitQ;
 static cdsl_dlistNode_t lpsystimeWaitQ;
 static tch_timezone current_tz;
 
-static uint32_t lptick_period;
-static uint32_t tick_period;
 volatile uint64_t sysUpTimeSec;		/// time in second since system timer initialized
 volatile uint64_t systimeTick;		/// time in millisecond since system timer initialized
 
@@ -34,6 +35,10 @@ volatile uint64_t gmt_sec;			/// without time zone
 volatile uint32_t gmt_subsec;		/// millisec
 
 
+/**
+ *  user interface declaration (user accessible code)
+ */
+__USER_API__ static struct tm* tch_systime_toBrokenTime(uint64_t ms,struct tm* result);
 __USER_API__ static tchStatus tch_systime_getLocalTime(struct tm* dest_tm);
 __USER_API__ static tchStatus tch_systime_setLocalTime(struct tm* time, tch_timezone ltz);
 __USER_API__ static tch_timezone tch_systime_setTimezone(const tch_timezone tz);
@@ -42,6 +47,9 @@ __USER_API__ static uint64_t tch_systime_getCurrentTimeMills(void);
 __USER_API__ static uint64_t tch_systime_uptimeMills(void);
 
 
+/**
+ *  system call declaration
+ */
 DECLARE_SYSCALL_1(systime_get_local_time,struct tm*,tchStatus);
 DECLARE_SYSCALL_2(systime_set_local_time,struct tm*,tch_timezone,tchStatus);
 DECLARE_SYSCALL_1(systime_set_timezone,const tch_timezone,tch_timezone);
@@ -49,7 +57,14 @@ DECLARE_SYSCALL_0(systime_get_timezone,tch_timezone);
 DECLARE_SYSCALL_0(systime_get_current_time_mills,uint64_t);
 DECLARE_SYSCALL_0(systime_uptime_mills,uint64_t);
 
+
+/**
+ *  private method declaration
+ */
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
+static struct tm* to_broken_time(const time_t* timep,struct tm* result,tch_timezone tz);
+static time_t to_gmt_epoch(struct tm* timep);
+
 
 
 __USER_RODATA__  tch_time_ix Time_IX = {
@@ -58,7 +73,8 @@ __USER_RODATA__  tch_time_ix Time_IX = {
 		.setTimezone = tch_systime_setTimezone,
 		.getTimezone = tch_systime_getTimezone,
 		.getCurrentTimeMills = tch_systime_getCurrentTimeMills,
-		.uptimeMills = tch_systime_uptimeMills
+		.uptimeMills = tch_systime_uptimeMills,
+		.toBrokentime = tch_systime_toBrokenTime
 };
 
 __USER_RODATA__ const tch_time_ix* Time = &Time_IX;
@@ -67,6 +83,7 @@ __USER_RODATA__ const tch_time_ix* Time = &Time_IX;
 DEFINE_SYSCALL_1(systime_get_local_time,struct tm*, time, tchStatus){
 	if(!rtcHandle)
 		return tchErrorResource;
+
 }
 
 DEFINE_SYSCALL_2(systime_set_local_time,struct tm*,ltm,tch_timezone,ltz,tchStatus){
@@ -106,11 +123,9 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 
 	gmt_sec = init_tm;
 	gmt_subsec = 0;
-	lptick_period = CONFIG_KERNEL_LSTICK_PERIOD;
-	tick_period = CONFIG_KERNEL_HSTICK_PERIOD;
 	rtcHandle = rtc->open(env, init_tm, current_tz);
-	rtcHandle->enablePeriodicWakeup(rtcHandle, lptick_period, tch_kernelOnWakeup);
-	tch_hal_enableSystick(tick_period);
+	rtcHandle->enablePeriodicWakeup(rtcHandle, CONFIG_KERNEL_LSTICK_PERIOD, tch_kernelOnWakeup);
+	tch_hal_enableSystick(CONFIG_KERNEL_HSTICK_PERIOD);
 }
 
 
@@ -148,12 +163,17 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread) {
 	return tchOK;
 }
 
+static struct tm* tch_systime_toBrokenTime(uint64_t ms,struct tm* result){
+	return result;
+}
+
+
 static tchStatus tch_systime_getLocalTime(struct tm* dest_tm) {
-	if (!rtcHandle)
-		return tchErrorResource;
-	if (!dest_tm)
-		return tchErrorParameter;
-	return rtcHandle->getTime(rtcHandle, dest_tm);
+	if(tch_port_isISR())
+	{
+		return __systime_get_local_time(dest_tm);
+	}
+	return __SYSCALL_1(systime_get_local_time,dest_tm);
 }
 
 static tchStatus tch_systime_setLocalTime(struct tm* time, tch_timezone ltz) {
@@ -162,7 +182,7 @@ static tchStatus tch_systime_setLocalTime(struct tm* time, tch_timezone ltz) {
 		return tchErrorResource;
 	if (!time)
 		return tchErrorParameter;
-	tm = mktime(time);
+	tm = tch_time_broken_to_gmt_epoch(time);
 	return rtcHandle->setTime(rtcHandle, tm, ltz, TRUE);
 }
 
@@ -189,7 +209,7 @@ BOOL tch_systimeIsPendingEmpty() {
 
 void tch_kernelOnWakeup() {
 	tch_thread_kheader* nth = NULL;
-	sysUpTimeSec += lptick_period;
+	sysUpTimeSec += CONFIG_KERNEL_LSTICK_PERIOD;
 	while ((!cdsl_dlistIsEmpty(&lpsystimeWaitQ)) && (((tch_thread_kheader*) lpsystimeWaitQ.next)->to	<= sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&lpsystimeWaitQ);
 		nth->to = 0;
@@ -205,7 +225,7 @@ void tch_kernelOnWakeup() {
 
 void tch_KernelOnSystick() {
 	tch_thread_kheader* nth = NULL;
-	systimeTick++;
+	systimeTick += CONFIG_KERNEL_HSTICK_PERIOD;
 	getThreadKHeader(current)->tslot++;
 	while ((!cdsl_dlistIsEmpty(&systimeWaitQ)) && (((tch_thread_kheader*) systimeWaitQ.next)->to <= systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&systimeWaitQ);

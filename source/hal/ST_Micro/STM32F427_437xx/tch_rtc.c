@@ -296,7 +296,7 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
 	ltm->tm_mday += ((date & RTC_DR_DT) >> 4) * 10;
 	ltm->tm_mday += (date & RTC_DR_DU);
 
-	lt = mktime(ltm);                                     // get updated ltm and epoch
+	lt = tch_time_broken_to_gmt_epoch(ltm);                                     // get updated ltm and epoch
 	ins->gmt_epoch = lt - (HOUR_IN_SEC * ins->local_tz);   // update gmt epoch
 
 	if(time & RTC_TR_PM)

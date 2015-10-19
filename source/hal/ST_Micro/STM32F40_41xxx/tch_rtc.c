@@ -215,8 +215,7 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 		return tchErrorParameter;
 	if((RTC->ISR & RTC_ISR_INITS) || !force)   // RTC is already initialized or not forced, it'll not be updated
 		return tchOK;
-	gmt_tm += tz * (HOUR_IN_SEC);
-	localtime(&gmt_tm,&localTm);
+	tch_time_epoch_to_broken(&gmt_tm,&localTm,tz);
 	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	RTC->ISR |= RTC_ISR_INIT;
@@ -296,7 +295,7 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
 	ltm->tm_mday += ((date & RTC_DR_DT) >> 4) * 10;
 	ltm->tm_mday += (date & RTC_DR_DU);
 
-	lt = mktime(ltm);                                     // get updated ltm and epoch
+	lt = tch_time_broken_to_gmt_epoch(ltm);                                     // get updated ltm and epoch
 	ins->gmt_epoch = lt - (HOUR_IN_SEC * ins->local_tz);   // update gmt epoch
 
 	if(time & RTC_TR_PM)
