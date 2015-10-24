@@ -110,7 +110,7 @@ struct tch_spi_handle_prototype {
 };
 
 
-__USER_RODATA__ tch_lld_spi SPI_Ops = {
+__USER_RODATA__ tch_device_service_spi SPI_Ops = {
 		.count = MFEATURE_SPI,
 		.initCfg = tch_spi_initConfig,
 		.allocSpi = tch_spi_open
@@ -118,7 +118,7 @@ __USER_RODATA__ tch_lld_spi SPI_Ops = {
 
 static tch_mtxCb 	lock;
 static tch_condvCb  condv;
-static tch_lld_dma* dma;
+static tch_device_service_dma* dma;
 
 static int tch_spi_init(void)
 {
@@ -166,7 +166,7 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 			return NULL;
 	}
 
-	tch_lld_gpio* gpio = (tch_lld_gpio*) tch_kmod_request(MODULE_TYPE_GPIO);
+	tch_device_service_gpio* gpio = (tch_device_service_gpio*) tch_kmod_request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 
@@ -175,7 +175,7 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 	{
 		return NULL;
 	}
-	memset(ins,0,sizeof(tch_spi_handle_prototype));
+	mset(ins,0,sizeof(tch_spi_handle_prototype));
 	iocfg.Af = spibs->afv;
 	iocfg.Speed = GPIO_OSpeed_100M;
 	iocfg.Mode = GPIO_Mode_AF;

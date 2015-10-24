@@ -38,7 +38,7 @@ static inline void tch_mailqValidate(tch_mailqId qid);
 static inline void tch_mailqInvalidate(tch_mailqId qid);
 static inline BOOL tch_mailqIsValid(tch_mailqId qid);
 
-__USER_RODATA__ tch_mailq_ix MailQ_IX = {
+__USER_RODATA__ tch_kernel_service_mailQ MailQ_IX = {
 		.create = tch_mailqCreate,
 		.alloc = tch_mailqAlloc,
 		.put = tch_mailqPut,
@@ -47,7 +47,7 @@ __USER_RODATA__ tch_mailq_ix MailQ_IX = {
 		.destroy = tch_mailqDestroy
 };
 
-__USER_RODATA__  const tch_mailq_ix* MailQ = &MailQ_IX;
+__USER_RODATA__  const tch_kernel_service_mailQ* MailQ = &MailQ_IX;
 
 
 
@@ -251,7 +251,7 @@ __USER_API__ static tchStatus tch_mailqDestroy(tch_mailqId qid){
 static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL isstatic){
 	if(!qcb)
 		return NULL;
-	memset(qcb,0,sizeof(tch_mailqCb));
+	mset(qcb,0,sizeof(tch_mailqCb));
 	qcb->queue = (void**) kmalloc(sizeof(void*) * qlen);
 	qcb->bpool = Mempool->create(sz,qlen);
 	if(!qcb->bpool || !qcb->queue){

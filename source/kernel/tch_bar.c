@@ -48,14 +48,14 @@ __USER_API__ static tchStatus tch_barDestroy(tch_barId bar);
 static tch_barId bar_init(tch_barCb* bar,BOOL is_static);
 static tchStatus bar_deinit(tch_barCb* bar);
 
-__USER_RODATA__ tch_bar_ix Barrier_IX = {
+__USER_RODATA__ tch_kernel_service_barrier Barrier_IX = {
 		.create = tch_barCreate,
 		.wait = tch_barWait,
 		.signal = tch_barSignal,
 		.destroy = tch_barDestroy
 };
 
-__USER_RODATA__ const tch_bar_ix* Barrier = &Barrier_IX;
+__USER_RODATA__ const tch_kernel_service_barrier* Barrier = &Barrier_IX;
 
 
 DECLARE_SYSCALL_0(bar_create,tch_barId);
@@ -114,7 +114,7 @@ DEFINE_SYSCALL_1(bar_deinit,tch_barCb*,bp,tchStatus){
 }
 
 static tch_barId bar_init(tch_barCb* bar,BOOL is_static){
-	memset(bar, 0, sizeof(tch_barCb));
+	mset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
 	cdsl_dlistInit(&bar->wq);
 	tch_registerKobject(&bar->__obj,is_static? (tch_kobjDestr) bar_deinit : (tch_kobjDestr) tch_barDestroy);

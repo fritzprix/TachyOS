@@ -75,7 +75,7 @@ static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self);
 
 
 
-__USER_RODATA__ tch_lld_rtc RTC_Ops = {
+__USER_RODATA__ tch_device_service_rtc RTC_Ops = {
 		.open = tch_rtc_open
 };
 
@@ -126,7 +126,7 @@ static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone 
 	_handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
 	if(env->Mtx->unlock(&mtx) != tchOK)
 		return NULL;
-	memset(ins,0,sizeof(tch_rtc_handle_prototype));
+	mset(ins,0,sizeof(tch_rtc_handle_prototype));
 
 	// RTC Clock source enable
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
@@ -215,8 +215,7 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 		return tchErrorParameter;
 	if((RTC->ISR & RTC_ISR_INITS) || !force)   // RTC is already initialized or not forced, it'll not be updated
 		return tchOK;
-	gmt_tm += tz * (HOUR_IN_SEC);
-	localtime_r(&gmt_tm,&localTm);
+	tch_time_epoch_to_broken(&gmt_tm,&localTm,tz);
 	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	RTC->ISR |= RTC_ISR_INIT;
@@ -275,7 +274,7 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
 
 	if(time & RTC_TR_PM)
 		RTC->TR &= ~RTC_TR_PM;
-	memset(ltm,0,sizeof(struct tm));
+	mset(ltm,0,sizeof(struct tm));
 
 	ltm->tm_hour += ((time & RTC_TR_HT) >> 20) * 10;
 	ltm->tm_hour += ((time & RTC_TR_HU) >> 16);

@@ -36,7 +36,7 @@ typedef struct _tch_mailq_karg{
 	void*    chunk;
 }tch_mailq_karg;
 
-extern tch_mailq_ix MailQ_IX;
+extern tch_kernel_service_mailQ MailQ_IX;
 extern tchStatus tch_mailqInit(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen);
 extern tchStatus tch_mailqDeinit(tch_mailqCb* qcb);
 

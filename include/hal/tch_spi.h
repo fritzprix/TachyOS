@@ -68,11 +68,11 @@ struct tch_spi_handle_t {
 	tchStatus (*transceive)(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
 };
 
-typedef struct tch_lld_spi {
+typedef struct tch_device_service_spi {
 	const uint16_t count;
 	void (*initCfg)(spi_config_t* cfg);
 	tch_spiHandle* (*allocSpi)(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
-}tch_lld_spi;
+}tch_device_service_spi;
 
 #if defined(__cplusplus)
 }

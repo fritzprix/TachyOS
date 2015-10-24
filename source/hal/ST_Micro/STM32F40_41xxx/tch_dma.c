@@ -137,7 +137,7 @@ static inline BOOL tch_dma_isValid(tch_dma_handle_prototype* _handle);
 static BOOL tch_dma_setDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 
 
-__USER_RODATA__ tch_lld_dma DMA_Ops = {
+__USER_RODATA__ tch_device_service_dma DMA_Ops = {
 	.count = MFEATURE_DMA,
 	.initCfg = tch_dma_initConfig,
 	.initReq = tch_dma_initReq,

@@ -27,7 +27,7 @@ tchStatus mtx_performTest(tch* api){
 
 
 
-	const tch_thread_ix* Thread = api->Thread;
+	const tch_kernel_service_thread* Thread = api->Thread;
 	thread_config_t thCfg;
 	api->Thread->initConfig(&thCfg,child1Routine,Normal,512 , 0, "child1_mtx");
 	child1 = Thread->create(&thCfg,api);
@@ -52,7 +52,7 @@ tchStatus mtx_performTest(tch* api){
 
 static void race(tch* api){
 	uint32_t idx = 0;
-	const tch_mtx_ix* Mtx = api->Mtx;
+	const tch_kernel_service_mtx* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){
 		if(Mtx->lock(mmtx,tchWaitForever) == tchOK){
 			api->Thread->yield(0);

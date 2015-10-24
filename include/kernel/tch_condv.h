@@ -33,7 +33,7 @@ struct _tch_condv_cb_t {
 	tch_thread_queue  wq;
 };
 
-extern tch_condv_ix CondVar_IX;
+extern tch_kernel_service_condv CondVar_IX;
 extern tchStatus tch_condvInit(tch_condvCb* condv);
 extern tchStatus tch_condvDeinit(tch_condvCb* condv);
 

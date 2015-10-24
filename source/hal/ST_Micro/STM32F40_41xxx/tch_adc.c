@@ -60,7 +60,7 @@ typedef struct tch_adc_handle_prototype {
 	uint8_t                              chcnt;
 	tch_gpioHandle**                     io_handle;
 	tch_msgqId                           msgq;
-}tch_adc_handle_prototype;
+} tch_adc_handle_prototype;
 
 
 __USER_API__ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
@@ -86,7 +86,7 @@ static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t ord
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-__USER_RODATA__ tch_lld_adc ADC_Ops = {
+__USER_RODATA__ tch_device_service_adc ADC_Ops = {
 		.count = MFEATURE_ADC,
 		.max_precision = 12,
 		.min_precision = 6,
@@ -99,7 +99,7 @@ __USER_RODATA__ tch_lld_adc ADC_Ops = {
 
 static tch_mtxCb ADC_Mutex;
 static tch_condvCb ADC_Condv;
-static tch_lld_dma* dma;
+static tch_device_service_dma* dma;
 
 static int tch_adc_init(void)
 {
@@ -136,11 +136,11 @@ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_
 	if(!(cfg->chdef.chselMsk > 0))
 		return NULL;
 
-	tch_lld_timer* timer = (tch_lld_timer*) Service->request(MODULE_TYPE_TIMER);
-	tch_lld_gpio* gpio = (tch_lld_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_device_service_timer* timer = (tch_device_service_timer*) Service->request(MODULE_TYPE_TIMER);
+	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
 
 	if(!dma)
-		dma = (tch_lld_dma*) tch_kmod_request(MODULE_TYPE_DMA);
+		dma = (tch_device_service_dma*) tch_kmod_request(MODULE_TYPE_DMA);
 
 	if(!timer || !gpio)
 		return NULL;
@@ -160,7 +160,7 @@ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_
 	}
 
 	ins = adcDesc->_handle = env->Mem->alloc(sizeof(tch_adc_handle_prototype));
-	memset(ins,0,sizeof(tch_adc_handle_prototype));
+	mset(ins,0,sizeof(tch_adc_handle_prototype));
 	tch_adcChannelOccpStatus |= (ins->ch_occp = cfg->chdef.chselMsk);
 	if(env->Mtx->unlock(&ADC_Mutex) != tchOK)
 		return NULL;

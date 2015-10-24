@@ -64,7 +64,7 @@
 
 
 typedef struct tch_gpio_manager_internal_t {
-	tch_lld_gpio                 _pix;
+	tch_device_service_gpio                 _pix;
 	tch_mtxId                     mtxId;
 	tch_condvId                   condvId;
 	const uint8_t                 port_cnt;
@@ -117,7 +117,7 @@ static inline void tch_gpio_validate(tch_gpio_handle_prototype* _handle);
 static inline void tch_gpio_invalidate(tch_gpio_handle_prototype* _handle);
 static inline BOOL tch_gpio_isValid(tch_gpio_handle_prototype* _handle);
 
-__USER_RODATA__ tch_lld_gpio GPIO_Ops = {
+__USER_RODATA__ tch_device_service_gpio GPIO_Ops = {
 		.count = MFEATURE_GPIO,
 		.allocIo = tch_gpio_alloc,
 		.initCfg = tch_gpio_initConfig,

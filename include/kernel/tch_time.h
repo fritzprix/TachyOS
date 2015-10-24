@@ -20,7 +20,7 @@
 extern "C"{
 #endif
 
-extern tch_time_ix Time_IX;
+extern tch_kernel_service_time Time_IX;
 
 
 extern void tch_systimeInit(const tch* env,time_t itm,tch_timezone itz);

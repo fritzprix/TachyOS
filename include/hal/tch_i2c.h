@@ -62,11 +62,11 @@ struct tch_iic_handle_t{
 };
 
 
-typedef struct tch_lld_iic_t {
+typedef struct tch_device_service_iic {
 	uint8_t	count;
 	void (*initCfg)(tch_iicCfg* cfg);
 	tch_iicHandle* (*allocIIC)(const tch* env,tch_iic iic,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-}tch_lld_iic;
+}tch_device_service_iic;
 
 
 

@@ -150,32 +150,31 @@ extern BOOL idle_is_busy();
  * Kernel API Struct* List
  * - are bound statically in compile time
  */
-extern const tch_thread_ix* Thread;
-extern const tch_condv_ix* Condv;
-extern const tch_mtx_ix* Mtx;
-extern const tch_semaph_ix* Sem;
-extern const tch_bar_ix* Barrier;
-extern const tch_msgq_ix* MsgQ;
-extern const tch_event_ix* Event;
-extern const tch_mailq_ix* MailQ;
-extern const tch_mpool_ix* Mempool;
-extern const tch_mem_ix* uMem;
-extern const tch_event_ix* Event;
-extern const tch_service_ix* Service;
-extern const tch_time_ix* Time;
+extern const tch_kernel_service_thread* Thread;
+extern const tch_kernel_service_condv* Condv;
+extern const tch_kernel_service_mtx* Mtx;
+extern const tch_kernel_service_semaphore* Sem;
+extern const tch_kernel_service_barrier* Barrier;
+extern const tch_kernel_service_messageQ* MsgQ;
+extern const tch_kernel_service_event* Event;
+extern const tch_kernel_service_mailQ* MailQ;
+extern const tch_kernel_service_mempool* Mempool;
+extern const tch_kernel_service_mem* uMem;
+extern const tch_kernel_service_svcmanager* Service;
+extern const tch_kernel_service_time* Time;
 
 
 
 
 
 extern const tch_kernel_descriptor kernel_descriptor;
+extern const tch* tch_rti;
+extern tch_thread_queue procList;
 extern tch_thread_uheader* current;
+extern volatile BOOL __VALID_SYSCALL;
 extern volatile BOOL kernel_ready;
 extern volatile uint64_t systimeTick;
-extern tch_thread_queue procList;
-extern const tch* tch_rti;
-extern tch_memId sharedMem;
-extern BOOL __VALID_SYSCALL;
+
 
 
 

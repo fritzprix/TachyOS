@@ -46,7 +46,7 @@ typedef void (*exitv_t) (void);
 #define MODULE_EXIT(exit)    __attribute__((section(".sexitv"))) const exitv_t  ___##exit##_vector = exit
 
 
-extern tch_service_ix Service_IX;
+extern tch_kernel_service_svcmanager Service_IX;
 
 
 extern BOOL tch_kmod_init(void);

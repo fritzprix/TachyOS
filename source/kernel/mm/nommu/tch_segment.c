@@ -58,7 +58,7 @@ static struct mem_segment* findSegmentFromPtr(void* ptr);
 
 
 void tch_initSegment(struct section_descriptor* init_section){
-	memset(&init_seg,0,sizeof(struct mem_segment));
+	mset(&init_seg,0,sizeof(struct mem_segment));
 	seg_cnt = 0;
 
 	init_segid = initSegment(init_section,&init_seg);

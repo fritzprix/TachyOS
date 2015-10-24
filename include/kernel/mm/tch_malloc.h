@@ -10,7 +10,7 @@
 
 #include "tch_ktypes.h"
 
-extern tch_mem_ix UMem_IX;
+extern tch_kernel_service_mem UMem_IX;
 extern void* tch_malloc(size_t sz);
 extern void tch_free(void* ptr);
 extern void tch_mstat(mstat* statp);

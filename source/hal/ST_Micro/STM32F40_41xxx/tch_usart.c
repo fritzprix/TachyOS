@@ -106,13 +106,6 @@ typedef struct tch_usart_handle_prototype_s {
 	const tch*                       env;
 }* tch_usartHandlePrototype;
 
-struct tch_usart_prototype_s {
-	tch_lld_usart                     pix;
-	tch_mtxId                         mtx;
-	tch_condvId                       condv;
-	uint16_t                          occp_state;
-	uint16_t                          lpoccp_state;
-};
 
 __USER_API__ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 __USER_API__ static tchStatus tch_usart_close(tch_usartHandle handle);
@@ -128,7 +121,7 @@ static inline void tch_usart_invalidate(tch_usartHandlePrototype _handle);
 static inline BOOL tch_usart_isValid(tch_usartHandlePrototype _handle);
 
 
-__USER_RODATA__ struct tch_lld_usart UART_Ops = {
+__USER_RODATA__ tch_device_service_usart UART_Ops = {
 		.count = MFEATURE_UART,
 		.allocate = tch_usart_open
 };
@@ -137,7 +130,7 @@ static tch_mtxCb 		mtx;
 static tch_condvCb 		condv;
 static uint16_t			occp_state;
 static uint16_t			lpoccp_state;
-static tch_lld_dma*		dma;
+static tch_device_service_dma*		dma;
 
 
 static int tch_usart_init(void)
@@ -182,7 +175,7 @@ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cf
 		return NULL;
 	}
 
-	tch_lld_gpio* gpio = (tch_lld_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
 		return NULL;
@@ -206,7 +199,7 @@ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cf
 	tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
 
 	uDesc->_handle = uins = env->Mem->alloc(sizeof(struct tch_usart_handle_prototype_s));   // if successfully get io handle, create uart handle instance
-	memset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure
+	mset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure
 
 	uins->rxMtx = env->Mtx->create();
 	uins->rxCondv = env->Condv->create();

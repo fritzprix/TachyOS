@@ -80,14 +80,14 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb);
 
 
 
-__USER_RODATA__ tch_mtx_ix Mutex_IX = {
+__USER_RODATA__ tch_kernel_service_mtx Mutex_IX = {
 		tch_mutexCreate,
 		tch_mutexLock,
 		tch_mutexUnlock,
 		tch_mutexDestroy,
 };
 
-__USER_RODATA__ const tch_mtx_ix* Mtx = &Mutex_IX;
+__USER_RODATA__ const tch_kernel_service_mtx* Mtx = &Mutex_IX;
 
 DECLARE_SYSCALL_0(mutex_create,tch_mtxId);
 DECLARE_SYSCALL_2(mutex_lock,tch_mtxId,uint32_t,tchStatus);
@@ -115,7 +115,7 @@ struct condv_param {
 	void*		arg;
 };
 
-__USER_RODATA__ tch_condv_ix CondVar_IX = {
+__USER_RODATA__ tch_kernel_service_condv CondVar_IX = {
 		.create = tch_condvCreate,
 		.wait = tch_condvWait,
 		.wake = tch_condvWake,
@@ -124,7 +124,7 @@ __USER_RODATA__ tch_condv_ix CondVar_IX = {
 };
 
 
-__USER_RODATA__ const tch_condv_ix* Condv = &CondVar_IX;
+__USER_RODATA__ const tch_kernel_service_condv* Condv = &CondVar_IX;
 
 
 
@@ -402,7 +402,7 @@ DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus){
 
 
 static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static){
-	memset(condv,0,sizeof(tch_condvCb));
+	mset(condv,0,sizeof(tch_condvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	CONDV_VALIDATE(condv);

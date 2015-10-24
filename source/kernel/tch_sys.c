@@ -40,6 +40,7 @@
 #include "kernel/tch_kmod.h"
 #include "kernel/mm/tch_mm.h"
 #include "kernel/mm/tch_malloc.h"
+#include "kernel/tch_klog.h"
 
 
 
@@ -74,7 +75,7 @@ const tch* tch_rti = &RuntimeInterface;
 
 static tch_threadId sysThread;
 volatile BOOL kernel_ready;
-BOOL __VALID_SYSCALL;
+volatile BOOL __VALID_SYSCALL;
 
 
 /***
@@ -99,6 +100,7 @@ void tch_kernelInit(void* arg){
 	sysThread = tch_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
 	tch_schedInit(sysThread);
 
+	tch_klog("Kernel Init Successful!! @ %ld",0);
 	return;
 }
 

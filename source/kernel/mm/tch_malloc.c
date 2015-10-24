@@ -17,13 +17,13 @@
 #include "tch_kernel.h"
 #include "tch_malloc.h"
 
-__USER_RODATA__ tch_mem_ix UMem_IX = {
+__USER_RODATA__ tch_kernel_service_mem UMem_IX = {
 		.alloc = tch_malloc,
 		.free = tch_free,
 		.mstat = tch_mstat
 };
 
-__USER_RODATA__ const tch_mem_ix* uMem = &UMem_IX;
+__USER_RODATA__ const tch_kernel_service_mem* uMem = &UMem_IX;
 
 __USER_API__ void* tch_malloc(size_t sz){
 	void* result;

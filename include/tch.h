@@ -67,7 +67,7 @@ extern "C" {
 #define DECLARE_THREADROUTINE(fn)                    int fn(const tch* ctx)
 
 
-struct tch_thread_ix_t {
+struct tch_kernel_service_thread {
 	/**
 	 *  Create Thread Object
 	 */
@@ -91,7 +91,7 @@ struct tch_thread_ix_t {
 };
 
 
-struct tch_mutex_ix_t {
+struct tch_kernel_service_mutex {
 	tch_mtxId (*create)();
 	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
 	tchStatus (*unlock)(tch_mtxId mtx);
@@ -99,7 +99,7 @@ struct tch_mutex_ix_t {
 };
 
 
-struct tch_semaph_ix_t {
+struct tch_kernel_service_semaphore {
 	tch_semId (*create)(uint32_t count);
 	tchStatus (*lock)(tch_semId sid,uint32_t timeout);
 	tchStatus (*unlock)(tch_semId sid);
@@ -107,7 +107,7 @@ struct tch_semaph_ix_t {
 };
 
 
-struct tch_bar_ix_t {
+struct tch_kernel_service_barrier {
 	tch_barId (*create)();
 	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
 	tchStatus (*signal)(tch_barId bar,tchStatus result);
@@ -115,7 +115,7 @@ struct tch_bar_ix_t {
 };
 
 
-struct tch_time_ix_t {
+struct tch_kernel_service_time {
 	tchStatus (*getLocaltime)(struct tm* tm);
 	tchStatus (*setLocaltime)(struct tm* tm,const tch_timezone tz);
 	tch_timezone (*setTimezone)(const tch_timezone tz);
@@ -129,7 +129,7 @@ struct tch_time_ix_t {
 /*!
  * \brief posix-like condition variable API struct
  */
-struct tch_condvar_ix_t {
+struct tch_kernel_service_condvar {
 
 	/*! \brief create posix-like condition variable
 	 *  \return initiated \ref tch_condvId
@@ -148,7 +148,7 @@ struct tch_condvar_ix_t {
 
 
 
-struct tch_mpool_ix_t {
+struct tch_kernel_service_mempool {
 	tch_mpoolId (*create)(size_t sz,uint32_t plen);
 	void* (*alloc)(tch_mpoolId mpool);
 	void* (*calloc)(tch_mpoolId mpool);
@@ -156,7 +156,7 @@ struct tch_mpool_ix_t {
 	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
-struct tch_event_ix_t {
+struct tch_kernel_service_event {
 	tch_eventId (*create)(void);
 	int32_t (*set)(tch_eventId ev,int32_t signals);
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
@@ -166,7 +166,7 @@ struct tch_event_ix_t {
 
 
 
-struct tch_msgque_ix_t {
+struct tch_kernel_service_msgque {
 	/**
 	 *  Create and initiate Message Queue instance
 	 *  ##Note : In CMSIS, this function actually has one more arguement, which is thread. however it is pointless
@@ -212,7 +212,7 @@ struct tch_msgque_ix_t {
 };
 
 
-struct tch_mailbox_ix_t {
+struct tch_kernel_service_mailbox {
 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
 	void* (*alloc)(tch_mailqId qid,uint32_t timeout,tchStatus* result);
 	tchStatus (*put)(tch_mailqId qid,void* mail,uint32_t timeout);
@@ -221,21 +221,20 @@ struct tch_mailbox_ix_t {
 	tchStatus (*destroy)(tch_mailqId qid);
 };
 
-struct tch_mem_ix_t {
+struct tch_kernel_service_mem {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
 	void (*mstat)(mstat* statp);
 };
 
 
-struct tch_service_ix_t {
+struct tch_kernel_service_svcmanager {
 	void* (*request)(int);
 	BOOL (*chkdep)(module_map_t* service);
 };
 
 
 extern DECLARE_THREADROUTINE(main);
-
 
 /***
  * tachyos generic data interface

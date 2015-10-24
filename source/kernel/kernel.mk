@@ -19,7 +19,8 @@ KERNEL_SRCS=\
 	    tch_init.c\
 	    tch_interrupt.c\
 	    tch_kobj.c\
-	    tch_kmod.c
+	    tch_kmod.c\
+	    tch_klog.c
 	    
 	    
 KERNEL_CPP_SRCS=

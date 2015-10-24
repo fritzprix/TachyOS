@@ -44,7 +44,7 @@ tchStatus gpio_performTest(const tch* api){
 static DECLARE_THREADROUTINE(evgenRoutine){
 
 	gpio_config_t iocfg;
-	tch_lld_gpio* gpio = ctx->Service->request(MODULE_TYPE_GPIO);
+	tch_device_service_gpio* gpio = ctx->Service->request(MODULE_TYPE_GPIO);
 	iocfg.Mode = GPIO_Mode_OUT;
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_Float;
@@ -63,7 +63,7 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 
 	tch_gpioHandle* in = NULL;
 	gpio_config_t iocfg;
-	tch_lld_gpio* gpio;
+	tch_device_service_gpio* gpio;
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;

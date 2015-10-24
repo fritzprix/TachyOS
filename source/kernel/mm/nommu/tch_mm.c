@@ -99,7 +99,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	tch_condvCb* condv;
 	wt_cache_t* cache;
 	struct tch_mm* mmp = &thread->mm;
-	memset(mmp,0,sizeof(struct tch_mm));
+	mset(mmp,0,sizeof(struct tch_mm));
 	/**
 	 *  ================= setup regions for binary images ============================
 	 *  1. dynamic program => dynamically loaded program in run time
@@ -152,7 +152,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	else
 	{
 		struct tch_mm* parent_mm = &current->kthread->parent->mm;
-		memcpy(mmp,parent_mm,sizeof(struct tch_mm));
+		mcpy(mmp,parent_mm,sizeof(struct tch_mm));
 		mmp->flags = 0;
 		mmp->pgd = tch_port_allocPageDirectory(kmalloc);
 		if(!mmp->pgd)
@@ -222,7 +222,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	argv = argv - proc_header->argv_sz;
 	if (proc_header->argv_sz > 0)
 	{												// if process argument is null terminated strings,
-		memcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
+		mcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area
 		thread->uthread->t_arg = argv;
 	}
 	else
@@ -314,7 +314,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL)
 		KERNEL_PANIC("tch_mm.c","invalid section descriptor table");
 
-	memset(&init_mm,0,sizeof(struct tch_mm));
+	mset(&init_mm,0,sizeof(struct tch_mm));
 	current_mm = &init_mm;
 	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
 

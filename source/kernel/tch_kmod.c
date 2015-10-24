@@ -36,12 +36,12 @@ static module_map_t	module_map = {0};
 
 static void* _request_kmod(int type,BOOL ispriv);
 
-__USER_RODATA__ tch_service_ix Service_IX = {
+__USER_RODATA__ tch_kernel_service_svcmanager Service_IX = {
 		.request = kmod_usr_request,
 		.chkdep = kmod_usr_chkdep
 };
 
-__USER_RODATA__ const tch_service_ix* Service = &Service_IX;
+__USER_RODATA__ const tch_kernel_service_svcmanager* Service = &Service_IX;
 
 
 DECLARE_SYSCALL_1(kmod_usr_request,int,void*);
@@ -55,8 +55,8 @@ DEFINE_SYSCALL_1(kmod_usr_request,int,type,void*) {
 DEFINE_SYSCALL_1(kmod_usr_chkdep,module_map_t*, map,tchStatus){
 	if(!map)
 		return tchErrorParameter;
-	if(memcmp(map,&module_map,sizeof(module_map_t)) != 0) {
-		memcpy(map,&module_map,sizeof(module_map_t));
+	if(mcmp(map,&module_map,sizeof(module_map_t)) != 0) {
+		mcpy(map,&module_map,sizeof(module_map_t));
 		return tchErrorResource;
 	}
 	return tchOK;
@@ -123,7 +123,7 @@ BOOL tch_kmod_unregister(int type,int owner){
 }
 
 BOOL tch_kmod_chkdep(const module_map_t* map){
-	return memcmp(map,&module_map,sizeof(module_map_t)) == 0;
+	return mcmp(map,&module_map,sizeof(module_map_t)) == 0;
 }
 
 void* tch_kmod_request(int type){

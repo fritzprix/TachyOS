@@ -49,18 +49,18 @@ typedef void* tch_eventTree;
 
 
 
-typedef struct tch_thread_ix_t tch_thread_ix;
-typedef struct tch_condvar_ix_t tch_condv_ix;
-typedef struct tch_mutex_ix_t tch_mtx_ix;
-typedef struct tch_semaph_ix_t tch_semaph_ix;
-typedef struct tch_time_ix_t tch_time_ix;
-typedef struct tch_msgque_ix_t tch_msgq_ix;
-typedef struct tch_mailbox_ix_t tch_mailq_ix;
-typedef struct tch_mpool_ix_t tch_mpool_ix;
-typedef struct tch_mem_ix_t tch_mem_ix;
-typedef struct tch_bar_ix_t tch_bar_ix;
-typedef struct tch_event_ix_t tch_event_ix;
-typedef struct tch_service_ix_t tch_service_ix;
+typedef struct tch_kernel_service_thread tch_kernel_service_thread;
+typedef struct tch_kernel_service_condvar tch_kernel_service_condv;
+typedef struct tch_kernel_service_mutex tch_kernel_service_mtx;
+typedef struct tch_kernel_service_semaphore tch_kernel_service_semaphore;
+typedef struct tch_kernel_service_time tch_kernel_service_time;
+typedef struct tch_kernel_service_msgque tch_kernel_service_messageQ;
+typedef struct tch_kernel_service_mailbox tch_kernel_service_mailQ;
+typedef struct tch_kernel_service_mempool tch_kernel_service_mempool;
+typedef struct tch_kernel_service_mem tch_kernel_service_mem;
+typedef struct tch_kernel_service_barrier tch_kernel_service_barrier;
+typedef struct tch_kernel_service_event tch_kernel_service_event;
+typedef struct tch_kernel_service_svcmanager tch_kernel_service_svcmanager;
 
 
 /**
@@ -84,19 +84,19 @@ struct application_header {
 };
 
 
-typedef struct _tch_runtime_t {
-	const tch_thread_ix* Thread;
-	const tch_event_ix* Event;
-	const tch_time_ix* Time;
-	const tch_condv_ix* Condv;
-	const tch_mtx_ix* Mtx;
-	const tch_semaph_ix* Sem;
-	const tch_bar_ix* Barrier;
-	const tch_msgq_ix* MsgQ;
-	const tch_mailq_ix* MailQ;
-	const tch_mpool_ix* Mempool;
-	const tch_mem_ix* Mem;
-	const tch_service_ix* Service;
+typedef struct tch_runtime {
+	const tch_kernel_service_thread* Thread;
+	const tch_kernel_service_event* Event;
+	const tch_kernel_service_time* Time;
+	const tch_kernel_service_condv* Condv;
+	const tch_kernel_service_mtx* Mtx;
+	const tch_kernel_service_semaphore* Sem;
+	const tch_kernel_service_barrier* Barrier;
+	const tch_kernel_service_messageQ* MsgQ;
+	const tch_kernel_service_mailQ* MailQ;
+	const tch_kernel_service_mempool* Mempool;
+	const tch_kernel_service_mem* Mem;
+	const tch_kernel_service_svcmanager* Service;
 } tch;
 
 /// Status code values returned by CMSIS-RTOS functions.

@@ -43,11 +43,11 @@ tchStatus msgq_performTest(tch* api){
 	usrcnt = 0;
 
 
-	const tch_msgq_ix* MsgQ = api->MsgQ;
+	const tch_kernel_service_messageQ* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
 
 
-	const tch_thread_ix* Thread = api->Thread;
+	const tch_kernel_service_thread* Thread = api->Thread;
 	thread_config_t tcfg;
 	api->Thread->initConfig(&tcfg,sender,Normal,1 << 9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);

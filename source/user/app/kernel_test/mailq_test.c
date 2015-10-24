@@ -37,7 +37,7 @@ tchStatus mailq_performTest(tch* api){
 
 	testmailq_id = api->MailQ->create(sizeof(person),10);
 
-	const tch_thread_ix* Thread = api->Thread;
+	const tch_kernel_service_thread* Thread = api->Thread;
 	thread_config_t tcfg;
 	Thread->initConfig(&tcfg,sender,Normal,1<<9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);
@@ -66,7 +66,7 @@ DECLARE_THREADROUTINE(sender){
 	person* p = NULL;
 	while(cnt < 100){
 		p = ctx->MailQ->alloc(testmailq_id,tchWaitForever,NULL);
-		memset(p,0,sizeof(person));
+		mset(p,0,sizeof(person));
 		p->age = 0;
 		p->sex = 1;
 		ctx->MailQ->put(testmailq_id,p,1000);

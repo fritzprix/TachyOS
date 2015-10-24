@@ -36,14 +36,14 @@ static void tch_msgqInvalidate(tch_msgqId);
 static BOOL tch_msgqIsValid(tch_msgqId);
 
 
-__USER_RODATA__ tch_msgq_ix MsgQ_IX = {
+__USER_RODATA__ tch_kernel_service_messageQ MsgQ_IX = {
 		tch_msgqCreate,
 		tch_msgqPut,
 		tch_msgqGet,
 		tch_msgqDestroy
 };
 
-__USER_RODATA__ const tch_msgq_ix* MsgQ = &MsgQ_IX;
+__USER_RODATA__ const tch_kernel_service_messageQ* MsgQ = &MsgQ_IX;
 
 
 DECLARE_SYSCALL_1(messageQ_create,uint32_t,tch_msgqId);
@@ -191,7 +191,7 @@ __USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId mqId){
 
 
 static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic){
-	memset(mq, 0, sizeof(tch_msgqCb));
+	mset(mq, 0, sizeof(tch_msgqCb));
 	mq->bp = bp;
 	mq->sz = sz;
 	cdsl_dlistInit(&mq->cwq);

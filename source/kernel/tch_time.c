@@ -67,7 +67,7 @@ static time_t to_gmt_epoch(struct tm* timep);
 
 
 
-__USER_RODATA__  tch_time_ix Time_IX = {
+__USER_RODATA__  tch_kernel_service_time Time_IX = {
 		.getLocaltime = tch_systime_getLocalTime,
 		.setLocaltime = tch_systime_setLocalTime,
 		.setTimezone = tch_systime_setTimezone,
@@ -77,7 +77,7 @@ __USER_RODATA__  tch_time_ix Time_IX = {
 		.toBrokentime = tch_systime_toBrokenTime
 };
 
-__USER_RODATA__ const tch_time_ix* Time = &Time_IX;
+__USER_RODATA__ const tch_kernel_service_time* Time = &Time_IX;
 
 
 DEFINE_SYSCALL_1(systime_get_local_time,struct tm*, time, tchStatus){
@@ -116,7 +116,7 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 	systimeTick = 0;
 	sysUpTimeSec = 0;
 	current_tz = init_tz;
-	tch_lld_rtc* rtc = (tch_lld_rtc*) tch_kmod_request(MODULE_TYPE_RTC);
+	tch_device_service_rtc* rtc = (tch_device_service_rtc*) tch_kmod_request(MODULE_TYPE_RTC);
 	if(!rtc){
 		KERNEL_PANIC("tch_time.c","rtc is not available");
 	}

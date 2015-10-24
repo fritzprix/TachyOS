@@ -39,7 +39,7 @@ static inline void tch_mpoolValidate(tch_mpoolId mp);
 static inline void tch_mpoolInvalidate(tch_mpoolId mp);
 static inline BOOL tch_mpoolIsValid(tch_mpoolId mp);
 
-__USER_RODATA__ tch_mpool_ix MPool_IX = {
+__USER_RODATA__ tch_kernel_service_mempool MPool_IX = {
 		tch_mpoolCreate,
 		tch_mpoolAlloc,
 		tch_mpoolCalloc,
@@ -47,16 +47,16 @@ __USER_RODATA__ tch_mpool_ix MPool_IX = {
 		tch_mpoolDestroy
 };
 
-__USER_RODATA__ const tch_mpool_ix* Mempool = &MPool_IX;
+__USER_RODATA__ const tch_kernel_service_mempool* Mempool = &MPool_IX;
 
 __USER_API__ tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shmAlloc(sizeof(tch_mpoolCb) + sz * plen);
-	memset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
+	mset(mpcb,0,sizeof(tch_mpoolCb) + sz * plen);
 	mpcb->bpool = (tch_mpoolCb*) mpcb + 1;
 	mpcb->balign = sz;
 
 	mpcb->__obj.__destr_fn = (tch_kobjDestr) tch_mpoolDestroy;
-	memset(mpcb->bpool,0,sz * plen);
+	mset(mpcb->bpool,0,sz * plen);
 	void* next = NULL;
 	uint8_t* blk = (uint8_t*) mpcb->bpool;
 	uint8_t* end = blk + sz * plen;
@@ -96,7 +96,7 @@ __USER_API__ void* tch_mpoolCalloc(tch_mpoolId mpool){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) mpool;
 	void* free = tch_mpoolAlloc(mpool);
 	if(free){
-		memset(free,0,mpcb->balign);
+		mset(free,0,mpcb->balign);
 	}
 	return free;
 }

@@ -175,7 +175,7 @@ void tch_port_enterPrivThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t 
 	                                                              //   - redirect kernel routine
 	                                                              //
 	org_sp--;                                                     // 1. push stack
-	memset(org_sp,0,sizeof(tch_exc_stack));
+	mset(org_sp,0,sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R2 = arg3;
@@ -214,7 +214,7 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
 void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) stktop - 1;                // offset exc_stack size (size depends on floating point option)
 	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
-	memset(exc_sp,0,sizeof(tch_exc_stack));
+	mset(exc_sp,0,sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = (uint32_t) uthread_header;
@@ -225,7 +225,7 @@ void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t 
 	exc_sp = (tch_exc_stack*)((uint32_t*) exc_sp + 2);
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	memset(th_ctx,0,sizeof(tch_thread_context) - 8);
+	mset(th_ctx,0,sizeof(tch_thread_context) - 8);
 	return (uint32_t*) th_ctx;
 
 }

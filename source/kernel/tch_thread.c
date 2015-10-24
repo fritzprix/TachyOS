@@ -59,7 +59,7 @@ static void tch_thread_validate(tch_threadId thread);
 static void tch_thread_invalidate(tch_threadId thread,tchStatus reason);
 
 
-__USER_RODATA__ tch_thread_ix Thread_IX = {
+__USER_RODATA__ tch_kernel_service_thread Thread_IX = {
 		.create = tch_thread_create,
 		.start = tch_thread_start,
 		.self = tch_thread_self,
@@ -72,7 +72,7 @@ __USER_RODATA__ tch_thread_ix Thread_IX = {
 };
 
 
-__USER_RODATA__ const tch_thread_ix* Thread = &Thread_IX;
+__USER_RODATA__ const tch_kernel_service_thread* Thread = &Thread_IX;
 
 
 DECLARE_SYSCALL_2(thread_create,thread_config_t*,void*,tch_threadId);
@@ -206,7 +206,7 @@ tch_threadId tch_threadCreateThread(thread_config_t* cfg,void* arg,BOOL isroot,B
 	if(!kthread)
 		return NULL;
 
-	memset(kthread,0,(sizeof(tch_thread_kheader)));
+	mset(kthread,0,(sizeof(tch_thread_kheader)));
 	if(isroot){ 			// if new thread is the root thread of a process, parent will be self
 		if(!proc){			// if new thread is trusted thread
 			proc = &default_prochdr;
@@ -253,7 +253,7 @@ tch_threadId tch_threadCreateThread(thread_config_t* cfg,void* arg,BOOL isroot,B
 	kthread->prior = cfg->priority;
 	kthread->to = 0;
 	kthread->uthread->name = cfg->name;
-	memcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
+	mcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
 	return (tch_threadId) kthread->uthread;
 }
 
@@ -315,7 +315,7 @@ __USER_API__ static void tch_thread_initConfig(thread_config_t* cfg,
 							  uint32_t req_stksz,
 							  uint32_t req_heapsz,
 							  const char* name){
-	memset(cfg,0,sizeof(thread_config_t));
+	mset(cfg,0,sizeof(thread_config_t));
 	cfg->heapsz = req_heapsz;
 	cfg->stksz = req_stksz;
 	cfg->priority = prior;

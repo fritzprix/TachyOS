@@ -48,9 +48,9 @@ struct tch_rtc_handle {
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
 };
 
-typedef struct tch_lld_rtc {
+typedef struct tch_device_service_rtc {
 	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
-}tch_lld_rtc;
+}tch_device_service_rtc;
 
 #if defined(__cplusplus)
 }

@@ -144,7 +144,7 @@ static BOOL tch_IIC_isValid(tch_iic_handle_prototype* hnd);
 static void tch_IIC_invalidate(tch_iic_handle_prototype* hnd);
 
 
-__USER_RODATA__ tch_lld_iic IIC_Ops = {
+__USER_RODATA__ tch_device_service_iic IIC_Ops = {
 		.count = MFEATURE_IIC,
 		.initCfg = tch_IIC_initConfig,
 		.allocIIC = tch_IIC_alloc
@@ -152,7 +152,7 @@ __USER_RODATA__ tch_lld_iic IIC_Ops = {
 
 static tch_mtxCb 	lock;
 static tch_condvCb  condv;
-static tch_lld_dma* dma;
+static tch_device_service_dma* dma;
 
 
 
@@ -187,7 +187,7 @@ __USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_
 	I2C_TypeDef* iicHw = iicDesc->_hw;
 	tch_iic_handle_prototype* ins = NULL;
 
-	tch_lld_gpio* gpio = (tch_lld_gpio* ) Service->request(MODULE_TYPE_GPIO);
+	tch_device_service_gpio* gpio = (tch_device_service_gpio* ) Service->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 
@@ -209,7 +209,7 @@ __USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_
 
 
 	iicDesc->_handle = ins;
-	memset(ins,0,sizeof(tch_iic_handle_prototype));
+	mset(ins,0,sizeof(tch_iic_handle_prototype));
 	ins->iic = i2c;
 	ins->env = env;
 	ins->condv = env->Condv->create();

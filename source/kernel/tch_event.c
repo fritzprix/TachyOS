@@ -42,7 +42,7 @@ static tchStatus event_deinit(tch_eventCb* evcb);
 
 
 
-__USER_RODATA__ tch_event_ix Event_IX = {
+__USER_RODATA__ tch_kernel_service_event Event_IX = {
 		tch_eventCreate,
 		tch_eventSet,
 		tch_eventClear,
@@ -51,7 +51,7 @@ __USER_RODATA__ tch_event_ix Event_IX = {
 };
 
 
-__USER_RODATA__ const tch_event_ix* Event = &Event_IX;
+__USER_RODATA__ const tch_kernel_service_event* Event = &Event_IX;
 
 
 DECLARE_SYSCALL_0(event_create,tch_eventId);
@@ -128,7 +128,7 @@ DEFINE_SYSCALL_1(event_deinit,tch_eventCb*,ep,tchStatus){
 
 
 tch_eventId event_init(tch_eventCb* evcb,BOOL is_static){
-	memset(evcb,0,sizeof(tch_eventCb));
+	mset(evcb,0,sizeof(tch_eventCb));
 	tch_registerKobject(&evcb->__obj,is_static? (tch_kobjDestr) event_deinit :  (tch_kobjDestr) tch_eventDestroy);
 	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
 	EVENT_VALIDATE(evcb);

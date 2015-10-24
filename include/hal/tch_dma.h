@@ -119,7 +119,7 @@ typedef struct tch_dma_req_s {
  *  \brief DMA HAL Interface
  *   DMA HAL Interface which is accessible from \ref tch object
  */
-typedef struct tch_lld_dma {
+typedef struct tch_device_service_dma {
 	/*!
 	 * \brief Initialize DMA Configuration
 	 * \param cfg pointer of \ref tch_dma_cfg
@@ -141,7 +141,7 @@ typedef struct tch_lld_dma {
 	uint32_t (*beginXfer)(tch_dmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_dmaHandle handle);
 
-}tch_lld_dma;
+}tch_device_service_dma;
 
 
 /*
