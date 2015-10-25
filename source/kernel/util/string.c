@@ -171,44 +171,4 @@ size_t format(char* dest,const char* fmt,...)
 	va_list args;
 	va_start(args,fmt);
 	return vformat(dest,fmt,args);
-
-	/*
-	const char* eos = strchar(fmt,STR_TERM);
-	lcp = cp = (char*) fmt;
-	while((cp < eos) && cp)
-	{
-		cp = (char*) strchar(lcp,FORMAT_DELIM);
-		if(!cp)
-		{
-			strcopy(dest,lcp);
-			return sz;
-		}
-		gap = ((uint32_t) cp - (uint32_t) lcp);
-		sz += gap;
-		mcpy(dest,lcp , ((size_t) cp - (size_t) lcp) * sizeof(char));
-		dest = &dest[gap];
-		lcp = &cp[2];
-		switch(cp[1]){
-		case 'd':
-			dest = &dest[itostr(va_arg(args,int),dest,10)];
-			break;
-		case 'f':
-			if(cp[2] == '.' && isdigit(cp[3]))
-			{
-				dest = &dest[ftostr((float) va_arg(args,double),dest,cp[3] - 48)];
-				lcp = &cp[4];
-			}
-			else
-				dest = &dest[ftostr((float) va_arg(args,double),dest,5)];
-			break;
-		case 's':
-			dest = &dest[strcpy(dest,va_arg(args,char*))];
-			break;
-		case 'c':
-			*(dest++) = (char) va_arg(args,int);
-			break;
-		}
-	}
-	return sz;*/
-
 }

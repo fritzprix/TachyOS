@@ -11,8 +11,8 @@
 
 __TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
-//				DMA_Str15,
-				DMA_NOT_USED,
+				DMA_Str15,
+//				DMA_NOT_USED,
 				DMA_NOT_USED,
 				DMA_Ch4,
 				DMA_Ch4,
@@ -265,18 +265,6 @@ __TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		}
 };
 
-/**
- * typedef struct _tch_adc_bs_t {
-	dma_t         dma;
-	uint8_t       dmach;
-	uint8_t       afv;
-}tch_adc_bs;
-
-typedef struct _tch_adc_com_bs_t{
-	tch_port ports[MFEATURE_ADC_Ch];
-	uint32_t occp_status;
-};
- */
 
 
 __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
@@ -303,12 +291,6 @@ __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		}
 };
 
-/**
- *
- * 	tch_port      port;
-	uint8_t       adc_routemsk;
-	uint8_t       occp;
- */
 __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch0
 		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch1

@@ -16,6 +16,14 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/util/cdsl_dlist.h"
 
+/**
+ *  kobject is to provide basic framework for kernel level object whose leak causes more serious problem than simple memory leak.
+ *  for example, mutex lock has its own control block which has wait queue for blocking request thread. when the thread that creates the mutex
+ *  lock is terminated without destroying the mutex. it's not only memory leak but also many threads can be unintentionally lost.
+ *  kobject is simple data struct to manage those critical data within kernel by linking those in the list from thread control block.
+ *  if thread is terminated, kernel follow the list and forces destructor of any object to be invoked.
+ *
+ */
 
 
 tchStatus tch_registerKobject(tch_kobj* obj, tch_kobjDestr destfn){

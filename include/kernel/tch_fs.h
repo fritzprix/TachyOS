@@ -19,18 +19,18 @@ struct tch_dentry {
 
 };
 
-struct tch_file {
+typedef struct tch_file {
 	void*						data;				//
 	struct tch_file_operations*	ops;
-};
+} file;
 
-struct tch_file_operations {
+typedef struct tch_file_operations {
 	int (*open)(struct tch_file* filp);
 	ssize_t (*read)(struct tch_file* filp,char* bp,size_t len);
 	ssize_t (*write)(struct tch_file* filp,const char* bp,size_t len);
 	int (*close)(struct tch_file* filp);
 	ssize_t (*seek)(struct tch_file* filp,size_t offset,int whence);
-};
+}file_operations;
 
 
 
