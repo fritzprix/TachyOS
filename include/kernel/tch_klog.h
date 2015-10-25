@@ -15,8 +15,8 @@ extern "C" {
 #endif
 
 extern void tch_klog_init(void);
-extern void tch_klog(const char*,...);
-extern void tch_klog_flush(struct tch_file* fp);
+extern void tch_klog_print(const char*,...);
+extern size_t tch_klog_dump(char*);
 
 
 #if defined(__cplusplus)

@@ -55,6 +55,10 @@ char* strchar(const char* s,int c)
 			return &s[idx];
 		idx++;
 	}
+	if(c == '\0')
+	{
+		return &s[idx];
+	}
 	return NULL;
 }
 
@@ -122,7 +126,7 @@ size_t vformat(char* dst,const char* fmt,va_list args){
 		cp = (char*) strchar(lcp,FORMAT_DELIM);
 		if(!cp)
 		{
-			strcopy(dst,lcp);
+			sz += strcopy(dst,lcp);
 			return sz;
 		}
 		gap = ((uint32_t) cp - (uint32_t) lcp);
@@ -132,22 +136,28 @@ size_t vformat(char* dst,const char* fmt,va_list args){
 		lcp = &cp[2];
 		switch(cp[1]){
 		case 'd':
-			dst = &dst[itostr(va_arg(args,int),dst,10)];
+			dst = &dst[(gap = itostr(va_arg(args,int),dst,10))];
+			sz += gap;
 			break;
 		case 'f':
 			if(cp[2] == '.' && isdigit(cp[3]))
 			{
-				dst = &dst[ftostr((float) va_arg(args,double),dst,cp[3] - 48)];
+				dst = &dst[(gap = ftostr((float) va_arg(args,double),dst,cp[3] - 48))];
 				lcp = &cp[4];
 			}
 			else
-				dst = &dst[ftostr((float) va_arg(args,double),dst,5)];
+			{
+				dst = &dst[(gap = ftostr((float) va_arg(args,double),dst,5))];
+			}
+			sz += gap;
 			break;
 		case 's':
-			dst = &dst[strcpy(dst,va_arg(args,char*))];
+			dst = &dst[(gap = strcopy(dst,va_arg(args,char*)))];
+			sz += gap;
 			break;
 		case 'c':
 			*(dst++) = (char) va_arg(args,int);
+			sz++;
 			break;
 		}
 	}

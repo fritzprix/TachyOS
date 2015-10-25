@@ -86,6 +86,7 @@ volatile BOOL __VALID_SYSCALL;
 void tch_kernelInit(void* arg){
 
 	kernel_ready = FALSE;
+	tch_klog_init();
 	if(!tch_port_init())										// initialize port layer
 		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
 
@@ -98,10 +99,8 @@ void tch_kernelInit(void* arg){
 	thread_config_t thcfg;
 	Thread->initConfig(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tch_threadCreateThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
+	tch_klog_print("Kernel Init Successful!! @ %d\n",0);
 	tch_schedInit(sysThread);
-
-	tch_klog("Kernel Init Successful!! @ %ld",0);
-	return;
 }
 
 
