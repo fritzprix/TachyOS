@@ -26,6 +26,8 @@
  */
 
 
+
+
 tchStatus tch_registerKobject(tch_kobj* obj, tch_kobjDestr destfn){
 	if(!obj || !destfn)
 		return tchErrorParameter;
