@@ -9,8 +9,8 @@
 
 ## Motivation   
 + Build modular architecture which supports both static linked(kernel mode) and dynamic-linked module(user mode).
- + Provides dynamic loading and dependency management of an application through network.
- + Provides secure runtime environment and fault isolation for user application using memory protection facility which is generally available in low-cost hardware.
++ Provides dynamic loading and dependency management of an application through network.
++ Provides secure runtime environment and fault isolation for user application using memory protection facility which is generally available in low-cost hardware.
 
 ## Features
  + provide runtime scalablility with various dynamic modules. (Not Supported Yet)
