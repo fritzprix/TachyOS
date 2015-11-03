@@ -116,6 +116,7 @@ struct tch_thread_kheader_s {
 	cdsl_dlistNode_t				t_joinQ;		///<thread queue to wait for this thread's termination
 	cdsl_dlistNode_t				child_list;		///<thread queue node to iterate child thread
 	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
+	cdsl_dlistNode_t				lockables;		///<linked list of locks that are locked by this thread
 	cdsl_dlistNode_t*				t_waitQ;		///<reference to wait queue in which this thread is waiting
 	void*							ctx;			///<ptr to thread saved context (stack pointer value)
 	struct tch_mm					mm;				///<embedded memory management handle struct

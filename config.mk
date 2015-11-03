@@ -6,13 +6,19 @@
 
 
 ### Open 407Z ###
-ARCH = ARM
-CPU = cortex-m4
+ARCH_VENDOR = ARM
+ARCH_NAME = cortex-m4
 FPU = HALFSOFT
 HW_VENDOR = ST_Micro
 HW_PLF = STM32F40_41xxx
 BOARD_NAME=Open_407Z
 APP_NAME=
+
+MODULES=console\
+		fs
+		
+CONFIG_CONSOLE_NAME=
+CONFIG_FS_NAME=
 
 ### Open 427Z ###\
 ARCH = ARM\
@@ -54,13 +60,13 @@ ifeq ($(TOOLCHAIN_NAME),)
 endif
 
 # Architecture Conf.
-ifeq ($(ARCH),)
-	ARCH = ARM
+ifeq ($(ARCH_VENDOR),)
+	ARCH_VENDOR = ARM
 endif
 
 # CPU Family  cortex-m3 | cortex-m0 | cortex-m4
-ifeq ($(CPU),)
-	CPU = cortex-m4
+ifeq ($(ARCH_NAME),)
+	ARCH_NAME = cortex-m4
 endif
 
 

@@ -47,8 +47,8 @@ USR_SRC_DIR=$(ROOT_DIR)/source/user
 #header file directory
 HEADER_ROOT_DIR=$(ROOT_DIR)/include
 KERNEL_HEADER_DIR=$(HEADER_ROOT_DIR)/kernel
-ARCH_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/arch/$(ARCH)
-ARCH_CPU_HEADER_DIR=$(ARCH_BASE_HEADER_DIR)/$(CPU)
+ARCH_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/arch/$(ARCH_VENDOR)
+ARCH_CPU_HEADER_DIR=$(ARCH_BASE_HEADER_DIR)/$(ARCH_NAME)
 HAL_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/hal
 HAL_VENDOR_HEADER_DIR=$(HAL_BASE_HEADER_DIR)/$(HW_VENDOR)
 HAL_CHIPSET_HEADER_DIR=$(HAL_VENDOR_HEADER_DIR)/$(HW_PLF)
@@ -77,7 +77,7 @@ ifeq ($(INC),)
 endif
 
 ###################      toolchain & architecture specific makefile   #################
-include $(ARCH_SRC_DIR)/$(ARCH)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
+include $(ARCH_SRC_DIR)/$(ARCH_VENDOR)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
 
 
 #######################################################################################
@@ -89,7 +89,7 @@ CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
 
 
 
-include $(ARCH_SRC_DIR)/$(ARCH)/$(CPU)/port.mk
+include $(ARCH_SRC_DIR)/$(ARCH_VENDOR)/$(ARCH_NAME)/port.mk
 include $(KERNEL_SRC_DIR)/kernel.mk
 include $(HAL_SRC_DIR)/hal.mk
 include $(USR_SRC_DIR)/usr.mk

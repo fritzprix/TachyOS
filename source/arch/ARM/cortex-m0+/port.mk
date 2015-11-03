@@ -5,15 +5,12 @@ GEN_SUB_DIR+=$(PORT_BUILD_DIR)
 PORT_SRCS=tch_port.c
 PORT_OBJS=$(PORT_SRCS:%.c=$(PORT_BUILD_DIR)/%.o)
 
-
-
 OBJS += $(PORT_OBJS)
 
-
 $(PORT_BUILD_DIR):
-	$(MK) $(PORT_BUILD_DIR)
+	$(MKDIR) $(PORT_BUILD_DIR)
 
-$(PORT_BUILD_DIR)/%.o:$(PORT_SRC_DIR)/%.c $(PORT_BUILD_DIR)
+$(PORT_BUILD_DIR)/%.o:$(ARCH_SRC_DIR)/$(ARCH_VENDOR)/$(ARCH_NAME)/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@

@@ -102,27 +102,27 @@ typedef struct tch_runtime {
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
 typedef enum  {
-  tchOK                    =     0,       ///< function completed; no error or event occurred.
-  tchInterrupted		   =  0x01,		  ///< thread is interrupted from waiting
-  tchEventSignal           =  0x08,       ///< function completed; signal event occurred.
-  tchEventMessage          =  0x10,       ///< function completed; message event occurred.
-  tchEventMail             =  0x20,       ///< function completed; mail event occurred.
-  tchEventTimeout          =  0x40,       ///< function completed; timeout occurred.
-  tchErrorIllegalAccess	   =  0x42,		  ///< illegal access to kernel functionality
-  tchErrorMemoryLeaked	   =  0x44,		  ///< memory leakage detected
-  tchErrorParameter        =  0x80,       ///< parameter error: a mandatory parameter was missing or specified an incorrect object.
-  tchErrorResource         =  0x81,       ///< resource not available: a specified resource was not available.
-  tchErrorTimeoutResource  =  0xC1,       ///< resource not available within given time: a specified resource was not available within the timeout period.
-  tchErrorISR              =  0x82,       ///< not allowed in ISR context: the function cannot be called from interrupt service routines.
-  tchErrorISRRecursive     =  0x83,       ///< function called multiple times from ISR with same object.
-  tchErrorPriority         =  0x84,       ///< system cannot determine priority or thread has illegal priority.
-  tchErrorNoMemory         =  0x85,       ///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
-  tchErrorValue            =  0x86,       ///< value of a parameter is out of range.
-  tchErrorIo               =  0x87,       ///< Error occurs in IO operation
-  tchErrorStackOverflow    =  0x88,       ///< stack overflow error
-  tchErrorHeapCorruption   =  0x89,		  /// <heap corrupted
-  tchErrorOS               =  0xFF,       ///< unspecified RTOS error: run-time error but no other error message fits.
-  tch_status_reserved       =  0xFFFFFFFF    ///< prevent from enum down-size compiler optimization.
+  tchOK                    =   0,			///< function completed; no error or event occurred.
+  tchInterrupted		   =  -1,			///< thread is interrupted from waiting
+  tchEventSignal           =  -2,			///< function completed; signal event occurred.
+  tchEventMessage          =  -3,			///< function completed; message event occurred.
+  tchEventMail             =  -4,			///< function completed; mail event occurred.
+  tchEventTimeout          =  -5,			///< function completed; timeout occurred.
+  tchErrorIllegalAccess	   =  -6,			///< illegal access to kernel functionality
+  tchErrorMemoryLeaked	   =  -7,			///< memory leakage detected
+  tchErrorParameter        =  -8,			///< parameter error: a mandatory parameter was missing or specified an incorrect object.
+  tchErrorResource         =  -9,			///< resource not available: a specified resource was not available.
+  tchErrorTimeoutResource  =  -10,			///< resource not available within given time: a specified resource was not available within the timeout period.
+  tchErrorISR              =  -11,			///< not allowed in ISR context: the function cannot be called from interrupt service routines.
+  tchErrorISRRecursive     =  -12,			///< function called multiple times from ISR with same object.
+  tchErrorPriority         =  -13,			///< system cannot determine priority or thread has illegal priority.
+  tchErrorNoMemory         =  -14,			///< system is out of memory: it was impossible to allocate or reserve memory for the operation.
+  tchErrorValue            =  -15,			///< value of a parameter is out of range.
+  tchErrorIo               =  -16,			///< Error occurs in IO operation
+  tchErrorStackOverflow    =  -17,			///< stack overflow error
+  tchErrorHeapCorruption   =  -18,			/// <heap corrupted
+  tchErrorOS               =  -19,			///< unspecified RTOS error: run-time error but no other error message fits.
+  tch_status_reserved      =  0xFFFFFFFF    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
 typedef enum {

@@ -19,6 +19,7 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
+#include "kernel/tch_lock.h"
 #include "kernel/tch_kobj.h"
 
 
@@ -76,6 +77,7 @@ __USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId mtx);
 static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx);
 static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static);
 static tchStatus mutex_deinit(tch_mtxCb* mcb);
+static tchStatus mutex_suspicious_unlock(lock_t* ulp);
 
 
 
@@ -159,9 +161,9 @@ DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus)
 
 	if (tch_port_exclusiveCompareUpdate((uaddr_t) &mcb->own, 0,(uword_t) tid))
 	{
-
 		current->kthread->lckCnt++;
 		mcb->svdPrior = current->kthread->prior;
+		tch_lock_add(&mcb->__unlockable,mutex_suspicious_unlock);
 		return tchOK;
 	}
 	else
@@ -180,19 +182,20 @@ DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus)
 DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus)
 {
 	tch_mtxCb* mcb = (tch_mtxCb*) mtx;
-	if(!tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) current,(uword_t)NULL))
+	if(!tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) current,(uword_t) NULL))
 		return tchErrorResource;
 	if(!(--current->kthread->lckCnt)){
 		tch_threadSetPriority(mcb->own,mcb->svdPrior);
 		mcb->svdPrior = Idle;
 	}
-
+	tch_lock_remove(&mcb->__unlockable);
 	if(!cdsl_dlistIsEmpty(&mcb->que))
 		tch_schedWake(&mcb->que,1,tchInterrupted,TRUE);
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
+DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus)
+{
 	tchStatus result = mutex_deinit(mtx);
 	if(result != tchOK)
 		return result;
@@ -201,20 +204,23 @@ DEFINE_SYSCALL_1(mutex_destroy,tch_mtxId, mtx , tchStatus){
 	return result;
 }
 
-DEFINE_SYSCALL_1(mutex_init,tch_mtxCb*,mp,tchStatus){
+DEFINE_SYSCALL_1(mutex_init,tch_mtxCb*,mp,tchStatus)
+{
 	if(!mp)
 		return tchErrorParameter;
 	mutex_init(mp,TRUE);
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(mutex_deinit,tch_mtxCb*,mp,tchStatus){
+DEFINE_SYSCALL_1(mutex_deinit,tch_mtxCb*,mp,tchStatus)
+{
 	if(!mp || !MTX_ISVALID(mp))
 		return tchErrorParameter;
 	return mutex_deinit(mp);
 }
 
-static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static){
+static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static)
+{
 	mcb->svdPrior = Normal;
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
@@ -224,7 +230,8 @@ static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static){
 	return mcb;
 }
 
-static tchStatus mutex_deinit(tch_mtxCb* mcb){
+static tchStatus mutex_deinit(tch_mtxCb* mcb)
+{
 	if(!MTX_ISVALID(mcb))
 		return tchErrorParameter;
 
@@ -238,13 +245,15 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb){
 	return tchOK;
 }
 
-__USER_API__ static tch_mtxId tch_mutexCreate(){
+__USER_API__ static tch_mtxId tch_mutexCreate()
+{
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_mtxId) __SYSCALL_0(mutex_create);
 }
 
-__USER_API__ static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout){
+__USER_API__ static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout)
+{
 	tchStatus result = tchOK;
 	if(!id)
 		return tchErrorParameter;
@@ -253,13 +262,14 @@ __USER_API__ static tchStatus tch_mutexLock(tch_mtxId id,uint32_t timeout){
 	}
 	do {
 		result = (tchStatus) __SYSCALL_2(mutex_lock,id,timeout);
-		if (result == tchOK) // check if mutex is successfully locked
-			return result; // if mutex locked by current thread,return with ok, otherwise retry or return with error
+		if (result == tchOK)			// check if mutex is successfully locked
+			return result; 				// if mutex locked by current thread,return with ok, otherwise retry or return with error
 	} while (result == tchInterrupted);
 	return result;
 }
 
-__USER_API__ static tchStatus tch_mutexUnlock(tch_mtxId id){
+__USER_API__ static tchStatus tch_mutexUnlock(tch_mtxId id)
+{
 	if(!id || !MTX_ISVALID(id))
 		return tchErrorResource;
 	if(tch_port_isISR())
@@ -267,7 +277,8 @@ __USER_API__ static tchStatus tch_mutexUnlock(tch_mtxId id){
 	return (tchStatus) __SYSCALL_1(mutex_unlock,id);
 }
 
-static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx){
+static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx)
+{
 	if(!mtx || !MTX_ISVALID(mtx))
 		return tchErrorParameter;
 
@@ -284,8 +295,8 @@ static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx){
 	return tchOK;
 }
 
-
-__USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId id){
+__USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId id)
+{
 	tchStatus result = tchOK;
 	if(tch_port_isISR())
 		return tchErrorISR;
@@ -293,7 +304,8 @@ __USER_API__ static tchStatus tch_mutexDestroy(tch_mtxId id){
 }
 
 
-tchStatus tch_mutexInit(tch_mtxCb* mcb){
+tchStatus tch_mutexInit(tch_mtxCb* mcb)
+{
 	if(!mcb)
 		return tchErrorParameter;
 	if(tch_port_isISR() || !kernel_ready)
@@ -301,7 +313,8 @@ tchStatus tch_mutexInit(tch_mtxCb* mcb){
 	return __SYSCALL_1(mutex_init,mcb);
 }
 
-tchStatus tch_mutexDeinit(tch_mtxCb* mcb){
+tchStatus tch_mutexDeinit(tch_mtxCb* mcb)
+{
 	if(!mcb || !MTX_ISVALID(mcb))
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -309,8 +322,17 @@ tchStatus tch_mutexDeinit(tch_mtxCb* mcb){
 	return __SYSCALL_1(mutex_deinit,mcb);
 }
 
+static tchStatus mutex_suspicious_unlock(lock_t* ulp)
+{
+	if(!ulp)
+		return tchErrorParameter;
+	return __SYSCALL_1(mutex_unlock,(tch_mtxCb*) container_of(ulp,tch_mtxCb,__unlockable));
+}
 
-DEFINE_SYSCALL_0(condv_create,tch_condvId){
+
+
+DEFINE_SYSCALL_0(condv_create,tch_condvId)
+{
 	tch_condvCb* condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb));
 	if(!condv)
 		KERNEL_PANIC("tch_condv.c","can't create condition variable object");
@@ -318,7 +340,8 @@ DEFINE_SYSCALL_0(condv_create,tch_condvId){
 	return (tch_condvId) condv;
 }
 
-DEFINE_SYSCALL_3(condv_wait,tch_condvId, condvId, tch_mtxId, mtxId,uint32_t,timeout,tchStatus){
+DEFINE_SYSCALL_3(condv_wait,tch_condvId, condvId, tch_mtxId, mtxId,uint32_t,timeout,tchStatus)
+{
 	if(!condvId || !CONDV_ISVALID(condvId) || !MTX_ISVALID(mtxId))
 		return tchErrorParameter;
 
@@ -341,7 +364,8 @@ DEFINE_SYSCALL_3(condv_wait,tch_condvId, condvId, tch_mtxId, mtxId,uint32_t,time
 	return tchOK;			// kernel result of current thread
 }
 
-DEFINE_SYSCALL_1(condv_wake,struct condv_param*,cparm,tchStatus){
+DEFINE_SYSCALL_1(condv_wake,struct condv_param*,cparm,tchStatus)
+{
 	if(!cparm)
 		return tchErrorParameter;
 	tch_condvCb* condv = (tch_condvCb*) cparm->id;
@@ -359,7 +383,8 @@ DEFINE_SYSCALL_1(condv_wake,struct condv_param*,cparm,tchStatus){
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
+DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus)
+{
 	if(!cparm)
 		return tchErrorParameter;
 	tch_condvCb* condv = (tch_condvCb*) cparm->id;
@@ -377,7 +402,8 @@ DEFINE_SYSCALL_1(condv_wakeAll,struct condv_param*,cparm,tchStatus) {
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus){
+DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus)
+{
 	tchStatus result = condv_deint(id);
 	if(result != tchOK)
 		return result;
@@ -386,14 +412,16 @@ DEFINE_SYSCALL_1(condv_destroy,tch_condvId,id,tchStatus){
 }
 
 
-DEFINE_SYSCALL_1(condv_init,tch_condvCb*,cp,tchStatus){
+DEFINE_SYSCALL_1(condv_init,tch_condvCb*,cp,tchStatus)
+{
 	if(!cp)
 		return tchErrorParameter;
 	condv_init(cp,TRUE);
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus){
+DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus)
+{
 	if(!cp || !CONDV_ISVALID(cp))
 		return tchErrorParameter;
 	condv_deint(cp);
@@ -401,7 +429,8 @@ DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus){
 }
 
 
-static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static){
+static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static)
+{
 	mset(condv,0,sizeof(tch_condvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
@@ -410,7 +439,8 @@ static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static){
 	return (tch_condvId) condv;
 }
 
-static tchStatus condv_deint(tch_condvCb* condv){
+static tchStatus condv_deint(tch_condvCb* condv)
+{
 	if(!condv)
 		return tchErrorParameter;
 	if(!CONDV_ISVALID(condv))
@@ -421,7 +451,8 @@ static tchStatus condv_deint(tch_condvCb* condv){
 	return tchOK;
 }
 
-__USER_API__ static tch_condvId tch_condvCreate(){
+__USER_API__ static tch_condvId tch_condvCreate()
+{
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_condvId)__SYSCALL_0(condv_create);
@@ -432,7 +463,8 @@ __USER_API__ static tch_condvId tch_condvCreate(){
  *  \
  *
  */
-__USER_API__ static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32_t timeout){
+__USER_API__ static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32_t timeout)
+{
 	if(!id || !lock)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -447,7 +479,8 @@ __USER_API__ static tchStatus tch_condvWait(tch_condvId id,tch_mtxId lock,uint32
 /*!
  * \brief posix condition variable signal
  */
-__USER_API__ static tchStatus tch_condvWake(tch_condvId id){
+__USER_API__ static tchStatus tch_condvWake(tch_condvId id)
+{
 	tch_condvCb* condv = (tch_condvCb*) id;
 	if(!id)
 		return tchErrorParameter;
@@ -464,7 +497,8 @@ __USER_API__ static tchStatus tch_condvWake(tch_condvId id){
 	return result;
 }
 
-__USER_API__ static tchStatus tch_condvWakeAll(tch_condvId id){
+__USER_API__ static tchStatus tch_condvWakeAll(tch_condvId id)
+{
 	if(!id)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -479,7 +513,8 @@ __USER_API__ static tchStatus tch_condvWakeAll(tch_condvId id){
 	return result;
 }
 
-__USER_API__ static tchStatus tch_condvDestroy(tch_condvId id){
+__USER_API__ static tchStatus tch_condvDestroy(tch_condvId id)
+{
 	if(!id)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -488,7 +523,8 @@ __USER_API__ static tchStatus tch_condvDestroy(tch_condvId id){
 }
 
 
-tchStatus tch_condvInit(tch_condvCb* condv){
+tchStatus tch_condvInit(tch_condvCb* condv)
+{
 	if(!condv)
 		return tchErrorParameter;
 	if(tch_port_isISR() || !kernel_ready)
@@ -496,11 +532,53 @@ tchStatus tch_condvInit(tch_condvCb* condv){
 	return __SYSCALL_1(condv_init,condv);
 }
 
-tchStatus tch_condvDeinit(tch_condvCb* condv){
+tchStatus tch_condvDeinit(tch_condvCb* condv)
+{
 	if(!condv)
 		return tchErrorParameter;
 	if(tch_port_isISR())
 		return __condv_deinit(condv);
 	return __SYSCALL_1(condv_deinit,condv);
 }
+
+
+tchStatus tch_lock_add(lock_t* lock,unlock_fn fn)
+{
+	if(!lock || !fn)
+		return tchErrorParameter;
+
+	cdsl_dlistInit(&lock->lock_ln);
+	lock->unlock_fn = fn;
+	cdsl_dlistPutHead(&getThreadKHeader(current)->lockables,&lock->lock_ln);
+	return tchOK;
+}
+
+tchStatus tch_lock_remove(lock_t* lock)
+{
+	if(!lock)
+		return tchErrorParameter;
+	return cdsl_dlistRemove(&lock->lock_ln)? tchOK : tchErrorParameter;
+}
+
+tchStatus tch_lock_unlock(lock_t* lock)
+{
+	if(!lock)
+		return tchErrorParameter;
+	return lock->unlock_fn(lock);
+}
+
+tchStatus tch_lock_force_release(cdsl_dlistNode_t* lock_list)
+{
+	if(!lock_list)
+		return tchErrorParameter;
+	lock_t* lockp;
+	while(!cdsl_dlistIsEmpty(lock_list))
+	{
+		lockp = cdsl_dlistDequeue(lock_list);
+		lockp = container_of(lockp,lock_t,lock_ln);
+		lockp->unlock_fn(lockp);
+	}
+	return tchOK;
+}
+
 

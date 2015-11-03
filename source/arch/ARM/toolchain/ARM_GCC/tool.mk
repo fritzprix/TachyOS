@@ -27,7 +27,7 @@ TOOL_CFLAG =-fsigned-char\
 		   -nostartfiles\
 		   -T$(LDSCRIPT)\
 		   $(OPT_FLAG)\
-		   -mcpu=$(CPU)\
+		   -mcpu=$(ARCH_NAME)\
 		   -mthumb
 
 # Cpp build option

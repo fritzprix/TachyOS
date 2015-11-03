@@ -16,6 +16,7 @@
 #define TCH_MTX_H_
 
 #include "tch_kobj.h"
+#include "tch_lock.h"
 
 
 #if defined(__cplusplus)
@@ -24,11 +25,12 @@ extern "C" {
 
 
 typedef struct _tch_mtx_cb_t  {
-	tch_kobj            __obj;
+	tch_kobj            __obj;			///< base object to preventing kernel heap leak unin
+	lock_t		__unlockable;	///< unlockable struct for leaving critical section
 	uint32_t            status;
 	tch_thread_queue    que;
 	tch_threadId        own;
-	tch_threadPrior    svdPrior;
+	tch_threadPrior     svdPrior;
 }tch_mtxCb;
 
 

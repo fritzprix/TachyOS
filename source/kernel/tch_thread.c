@@ -354,7 +354,6 @@ __attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
 	tch_thread_kheader* th_p = getThreadKHeader(thread);
 	tch_thread_kheader* ch_p = NULL;
 
-
 	while(!cdsl_dlistIsEmpty(&th_p->child_list)){												// if has child, kill all of them
 		ch_p = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->child_list);
 		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
@@ -362,6 +361,7 @@ __attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
 		Thread->join(ch_p->uthread,tchWaitForever);
 	}
 
+	tch_lock_force_release(&th_p->lockables);
 	tch_destroyAllKobjects();	// destruct kobject
 	tch_shmCleanup(thread);		// clean up memory
 	__SYSCALL_2(thread_terminate,thread,status);
