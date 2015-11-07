@@ -1,0 +1,114 @@
+#
+# TachyOS Configuration 
+#
+
+config ARCH_VENDOR
+	string 
+	prompt "Set name of architecture's vendor"
+	help 
+	  The name of architecture's vendor in upper case (ex. ARM / MIPS)
+
+config ARCH_NAME
+	string 
+	prompt "Set architecture name"
+	help
+	  The architecture's name in lower case (ex. cortex-m3)
+
+config SOC_VENDOR
+	string 
+	prompt "Set name of SoC manufacture company"
+	help 
+	  The SoC Manufacturer's name (ex. ST_Micro / NXP)
+
+config SOC_NAME
+	string 
+	prompt "Set name of SoC family"
+	help
+	  The SoC family name that compatible to each other (ex. STM32F40_41xxx)
+
+config BOARD_NAME
+	string 
+	prompt "Set board name"
+	help
+	    The board's name
+	    awefwaef
+
+
+config USE_MMU
+	bool
+	prompt "is MMU supported"
+	help
+	  Whether target has MMU or equivalent hardware
+	  
+config USE_EXMEM
+	bool 
+	prompt "is external memory used"
+	help
+	 If external memory is used, external memory bus interface will be 
+	 configured when kernel initialization process.
+
+config PAGE_SIZE
+	int 
+	prompt "set page size in byte"
+	help
+	 page size should be pow of 2
+
+config HI_TICK_INTERVAL
+	int
+	prompt "set tick interval(ms) of hi speed timer"
+	help
+	 interval in milli second of system tick timer. it can affect responsive
+	 ness of the system 
+
+config LO_TICK_INTERVAL
+	int 
+	prompt "set tick interval(s) of low speed timer"
+	help
+	 interval in second of low power mode tick timer. it provides minimum
+	 responiveness of system while keeping system power consumption low.
+
+config KERNEL_STACK_SIZE
+	int 
+	prompt "set stack size of kernel in bytes"
+	help
+	 stack size of kernel in bytes. 
+
+config KERNEL_STACK_LIMIT
+	hex 
+	prompt "set the end of kernel stack"
+	help 
+	 the address of kernel stack's top
+
+config KERNEL_DYNAMIC_SIZE
+	int 
+	prompt "set the size of kernel heap in bytes" 
+	help 
+	 kernel heap is used for dynamic allocation of kernel internal objects,
+	 allowed to be accessed in privileged mode. 
+
+config SHARED_SIZE
+	int 
+	prompt "set the size of shared dynamic memory"
+	help 
+	 shared memory which is used for communication among the different 
+	 process (thread group). 
+
+config PROC_DYNAMIC_SIZE
+	int 
+	prompt "set default size of heap for  process"
+	help 
+	 default size of heap for process in bytes.
+	
+
+config PROC_STACK_SIZE
+	int 
+	prompt "set default size of stack for thread(process)" 
+	help 
+	 default size of stack for thread(process)
+
+config USE_ROUNDROBIN
+	bool 
+	prompt "is round-robin scheduling used?"
+	help 
+	 thread scheduling uses round robin if this option is set 
+

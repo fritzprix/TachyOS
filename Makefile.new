@@ -1,0 +1,39 @@
+
+
+#######################################################
+#        Tachyos Root Makefile                        #
+#        Author : Doowoong,Lee                        #
+#######################################################
+
+PHONY += .config
+ROOT_DIR := $(CURDIR)
+
+-include .config
+
+CC=$(CROSS_COMPLIE)gcc
+CXX=$(CROSS_COMPILE)g++
+
+PY=python
+MKDIR=mkdir
+CONFIG_PY=$(ROOT_DIR)/tools/kconfigpy/config.py
+
+KCONFIG_ENTRY=$(ROOT_DIR)/Kconfig
+KCONFIG_TARGET=$(ROOT_DIR)/.config
+
+CLFAG_KERNEL=
+CLFAG_APP=
+CLFAG_MODULE=
+
+LDFLAG_KERNEL=
+LDFLAG_APP=
+LDFLAG_MODULE=
+
+.SILENT : $(KCONFIG_TARGET)
+
+config : $(KCONFIG_TARGET)
+
+$(KCONFIG_TARGET) : 
+	$(PY) $(CONFIG_PY) -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET)
+	
+	
+all : 
