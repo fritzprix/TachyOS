@@ -1,0 +1,15 @@
+{
+  "SOC_NAME":{
+    "type":"enum",
+    "default":0,
+    "enum":[
+      "STM32F2xx",
+      "STM32F40_41xxx",
+      "STM32F427_437xx"
+    ]
+  },
+  "SOC_HAL_CONFIG":{
+    "type":"config",
+    "path":"/$SOC_NAME/config.json"
+  }
+}

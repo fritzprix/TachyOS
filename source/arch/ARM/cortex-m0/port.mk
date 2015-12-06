@@ -6,7 +6,6 @@ PORT_SRCS=tch_port.c
 PORT_OBJS=$(PORT_SRCS:%.c=$(PORT_BUILD_DIR)/%.o)
 
 
-
 OBJS += $(PORT_OBJS)
 
 
@@ -19,4 +18,3 @@ $(PORT_BUILD_DIR)/%.o:$(PORT_SRC_DIR)/%.c $(PORT_BUILD_DIR)
 	$(CC) $< -c $(CFLAG) $(LDFLAG) $(INC) -o $@
 	@echo 'Finished building: $<'
 	@echo ' '
-           

@@ -1,0 +1,9 @@
+{
+  "TOOLCHAIN":{
+    "type":"enum",
+    "default":0,
+    "enum":[
+      "ARM_GCC"
+    ]
+  }
+}

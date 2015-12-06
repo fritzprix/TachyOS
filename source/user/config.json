@@ -1,0 +1,6 @@
+{
+  "APP_CONFIG":{
+    "type":"config",
+    "path":"/app/config.json"
+  }
+}

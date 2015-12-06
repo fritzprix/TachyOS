@@ -1,0 +1,18 @@
+{
+  "SOC_VENDOR":{
+    "type":"enum",
+    "prompt":"select target platform soc vendor",
+    "default":0,
+    "enum":[
+      "ST_Micro"
+    ],
+    "help":[
+      "SoC vendor means company name (or its alias) that manufactures and designs mcu which is targeted",
+      "typically, many soc vendors keep hardward compatibility among microcontollers"
+    ]
+  },
+  "SOC_CONFIG":{
+    "type":"config",
+    "path":"/$SOC_VENDOR/config.json"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "UART":{
+    "prompt":"",
+    "type":"bool",
+    "help":[
+
+    ]
+  },
+  "ADC":{
+    "prompt":"",
+    "type":"bool",
+    "help":[
+
+    ]
+  },
+  "SPI":{
+    "prompt":"",
+    "type":"bool",
+    "help":[
+
+    ]
+  },
+  "IIC":{
+    "prompt":"",
+    "type":"bool",
+    "help":[
+
+    ]
+  },
+  "TIMER":{
+    "prompt":"",
+    "type":"bool",
+    "help":[
+
+    ]
+  },
+  "BOARD_CONFIG":{
+    "type":"config",
+    "path":"/board/config.json"
+  }
+}

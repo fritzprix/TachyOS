@@ -1,0 +1,13 @@
+{
+  "ARCH_VENDOR":{
+    "type":"enum",
+    "default":1,
+    "enum":[
+      "ARM"
+    ]
+  },
+  "ARCH_SUB_CONFIG":{
+    "type":"config",
+    "path":"/$ARCH_VENDOR/config.json"
+  }
+}
