@@ -1,0 +1,3 @@
+[submodule "tools/kconfigpy"]
+	path = tools/kconfigpy
+	url = https://github.com/fritzprix/kconfigpy.git
