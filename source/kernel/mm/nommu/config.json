@@ -1,0 +1,6 @@
+{
+  "NO_MMU_MK":{
+    "type":"make",
+    "path":"./Makefile.mk"
+  }
+}

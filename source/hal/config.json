@@ -13,6 +13,6 @@
   },
   "SOC_CONFIG":{
     "type":"config",
-    "path":"/$SOC_VENDOR/config.json"
+    "path":"./$SOC_VENDOR/config.json"
   }
 }

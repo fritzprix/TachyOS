@@ -1,0 +1,14 @@
+{
+  "KERNEL_MK":{
+    "type":"make",
+    "path":"./Makefile.mk"
+  },
+  "MM_CONFIG":{
+    "type":"config",
+    "path":"./mm/config.json"
+  },
+  "UTIL_CONFIG":{
+    "type":"config",
+    "path":"./util/config.json"
+  }
+}

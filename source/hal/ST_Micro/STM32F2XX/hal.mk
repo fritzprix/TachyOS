@@ -12,7 +12,7 @@ HAL_SRCS=\
 		tch_boot.c
 	
 HAL_ASM_SRCS=\
-     startup_stm32f2xx.S
+     startup.S
      
 ASM_OPT=-x assembler-with-cpp\
         -nostdinc

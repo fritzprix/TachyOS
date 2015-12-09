@@ -1,0 +1,18 @@
+{
+	"MM_TYPE":{
+		"type":"enum",
+		"default": 0,
+		"enum":[
+			"nommu",
+			"mmu"
+		]
+	},
+	"MM_SUB_CONFIG":{
+		"type":"config",
+		"path":"./$MM_TYPE/config.json"
+	},
+	"MM_COMMON_MAKE":{
+		"type":"make",
+		"path":"./Makefile.mk"
+	}
+}

@@ -53,6 +53,7 @@ TOOL_LIBS_FLAG = $(TOOL_LIBS:%=-l%)
 TOOL_PREFIX=arm-none-eabi-
 
 
+
 ifeq ($(FPU),HARD)
 	ifeq ($(CPU),cortex-m4)
 		FLOAT_OPTION += -mfpu=fpv4-sp-d16

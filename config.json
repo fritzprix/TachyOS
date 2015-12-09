@@ -1,6 +1,6 @@
 {
   "CONFIG_ENTRY":{
     "type":"config",
-    "path":"/sourc/config.json"
+    "path":"./source/config.json"
   }
 }
