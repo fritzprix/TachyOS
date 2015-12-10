@@ -1,5 +1,5 @@
 {
-  "NO_MMU_MK":{
+  "DEFAULT_APP_RCP":{
     "type":"recipe",
     "path":"./recipe.mk"
   }

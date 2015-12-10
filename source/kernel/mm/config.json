@@ -12,7 +12,7 @@
 		"path":"./$MM_TYPE/config.json"
 	},
 	"MM_COMMON_MAKE":{
-		"type":"make",
-		"path":"./Makefile.mk"
+		"type":"recipe",
+		"path":"./recipe.mk"
 	}
 }

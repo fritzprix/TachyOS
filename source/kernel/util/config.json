@@ -1,6 +1,6 @@
 {
   "UTIL_MK":{
-    "type":"make",
+    "type":"recipe",
     "path":"./Makefile.mk"
   }
 }

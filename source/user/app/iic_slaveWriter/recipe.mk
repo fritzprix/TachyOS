@@ -1,0 +1,1 @@
+OBJ-y+=app.uo

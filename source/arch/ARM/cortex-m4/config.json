@@ -1,16 +1,6 @@
 {
-  "FPU_VERSION":{
-    "type":"enum",
-    "default":0,
-    "enum":["fpv4-sp-d16"]
-  },
-  "FPU_ABI":{
-    "type":"enum",
-    "default":0,
-    "enum":[
-      "soft",
-      "softfp",
-      "hardfp"
-    ]
+  "ARCH_RECIPE":{
+    "type":"recipe",
+    "path":"./recipe.mk"
   }
 }

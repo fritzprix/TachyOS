@@ -1,0 +1,13 @@
+{
+  "APP_NAME":{
+    "type":"string",
+    "prompt":"",
+    "help":[
+
+    ],
+  },
+  "APP_SUB_CONFIG":{
+    "type":"config",
+    "path":"./$APP_NAME/config.json"
+  }
+}

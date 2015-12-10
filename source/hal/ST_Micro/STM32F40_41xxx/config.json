@@ -34,6 +34,10 @@
 
     ]
   },
+  "HAL_RECIPE":{
+    "type":"recipe",
+    "path":"./recipe.mk"
+  },
   "BOARD_CONFIG":{
     "type":"config",
     "path":"/board/config.json"

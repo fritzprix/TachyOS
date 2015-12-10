@@ -17,6 +17,9 @@
 	},
 	"USER_CONFIG":{
 		"type":"config",
+		"depend":{
+			"USE_STATIC_LINKED_APP":true
+		},
 		"path":"./user/config.json"
 	}
 }
