@@ -3,7 +3,7 @@
 
 # Linker Option
 LDFLAG_COMMON +=-Map,$(TARGET:%.elf=%.map)\
-				--gc-sections\
+				--gc-sections
 
 # C build option
 CFLAG_COMMON += -fsigned-char\
@@ -13,7 +13,7 @@ CFLAG_COMMON += -fsigned-char\
 				-nostartfiles\
 				-T$(LDSCRIPT)\
 				$(FLOAT_OPTION)\
-				-mcpu=$(ARCH_NAME)\
+				-mcpu=$(CONFIG_ARCH_NAME)\
 				-mthumb
 
 # Cpp build option
@@ -26,8 +26,8 @@ CPFLAG_COMMON = -mlong-calls\
 				-fpermissive\
 				-T$(LDSCRIPT)\
 				$(FLOAT_OPTION)\
-				-mcpu=$(ARCH_NAME)\
+				-mcpu=$(CONFIG_ARCH_NAME)\
 				-mthumb
 
 # floating point option
-FLOAT_OPTION= -mfloat-abi=$(CONFIG_FPI_ABI) -mfpu=$(CONFIG_FPU_VERSION)
+FLOAT_OPTION= -mfloat-abi=$(CONFIG_FPU_ABI) -mfpu=$(CONFIG_FPU_VERSION)

@@ -1,3 +1,5 @@
+LDSCRIPT=$(CURDIR)/source/hal/ST_Micro/STM32F40_41xxx/ld/flash.ld
+
 OBJ-y+=startup.sko
 OBJ-y+=tch_rtc.ko
 OBJ-y+=tch_boot.ko
