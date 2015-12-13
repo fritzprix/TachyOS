@@ -8,7 +8,7 @@ LDFLAG_COMMON +=-Map,$(TARGET:%.elf=%.map)\
 # C build option
 CFLAG_COMMON += -fsigned-char\
 				-ffunction-sections\
-				-sections\
+				-fdata-sections\
 				-ffreestanding\
 				-nostartfiles\
 				-T$(LDSCRIPT)\
@@ -18,7 +18,7 @@ CFLAG_COMMON += -fsigned-char\
 
 # Cpp build option
 CPFLAG_COMMON = -mlong-calls\
-				-sections\
+				-fdata-sections\
 				-ffreestanding\
 				-fno-rtti\
 				-fno-exceptions\

@@ -1,4 +1,6 @@
-OBJ-y+=startup.s.ko
+LDSCRIPT=$(CURDIR)/source/hal/ST_Micro/STM32F427_437xx/ld/flash.ld
+
+OBJ-y+=startup.sko
 OBJ-y+=tch_rtc.ko
 OBJ-y+=tch_boot.ko
 OBJ-y+=tch_gpio.ko

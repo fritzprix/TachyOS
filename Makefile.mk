@@ -26,6 +26,8 @@ KCONFIG_ENTRY:= $(ROOT_DIR)/config.json
 KCONFIG_TARGET:= $(ROOT_DIR)/.config
 
 VPATH= source/kernel/ source/hal/ST_Micro/STM32F40_41xxx
+HEADER_DIR=$(ROOT_DIR)/include
+INC=$(HEADER_DIR:%=-I%)
 
 ASFLAG_KERNEL:=-x assembler-with-cpp\
 				-nostdinc
@@ -57,20 +59,20 @@ $(KCONFIG_TARGET) :
 debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
 
 $(DEBUG_TARGET) : $(OBJ-y) 
-	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(LIBS) $(LDFLAG_KERNEL)
+	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%)
 	
 $(OBJS_DIR_DEBUG): 
 	@echo $(CFLAG_COMMON)
 	$(MKDIR) $@
 	
 %.ko:%.c 
-	$(CC) $< $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(LIBS) $(LDFLAG_KERNEL) -o $@
+	$(CC) $< $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 
 %.sko:%.S
-	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(LIBS) $(LDFLAG_KERNEL) $(ASFLAG_KERNEL) -o $@
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
 
 
 clean:
-	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(KCONFIG_TARGET) 
+	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET)
  
 .PHONY = $(PHONY)
