@@ -25,12 +25,6 @@ OBJS_DIR_RELEASE:= $(ROOT_DIR)/release
 KCONFIG_ENTRY:= $(ROOT_DIR)/config.json
 KCONFIG_TARGET:= $(ROOT_DIR)/.config
 
-#include makefile from target source directory
--include source/arch/$(CONFIG_ARCH_VENDOR)/$(CONFIG_ARCH_NAME)/Makefile.mk
--include source/arch/$(CONFIG_ARCH_VENDOR)/$(CONFIG_ARCH_NAME)/$(TOOLCHAIN)/Makefile.mk
--include source/hal/$(CONFIG_SOC_VENDOR)/$(CONFIG_SOC_NAME)/Makefile.mk
-
-
 VPATH= source/kernel/
 
 CLFAG_KERNEL=$(CFLAG_COMMON)
@@ -50,14 +44,13 @@ PHONY=config all debug release clean
 
 .SILENT : $(KCONFIG_TARGET)
 
+all : debug
+
 config : $(KCONFIG_TARGET)
 
 $(KCONFIG_TARGET) :
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET)
 	
-	
-all : debug
-
 debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
 
 $(DEBUG_TARGET) : 

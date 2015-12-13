@@ -11,10 +11,10 @@
   },
   "ARCH_SPEC_CONFIG":{
     "type":"config",
-    "path":"/$ARCH_NAME/config.json"
+    "path":"./$ARCH_NAME/config.json"
   },
   "TOOLCHAIN_CONFIG":{
     "type":"config",
-    "path":"/toolchain/config.json"
+    "path":"./toolchain/config.json"
   }
 }

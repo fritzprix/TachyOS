@@ -1,5 +1,5 @@
 {
-  "UTIL_MK":{
+  "TOOLCHAIN_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
   }

@@ -20,7 +20,7 @@
 #endif
 
 #ifndef VER_MINOR
-#define VER_MINRO	0
+#define VER_MINOR	0
 #endif
 
 #ifndef ARCH_NAME
@@ -35,7 +35,7 @@
 
 const tch_kernel_descriptor kernel_descriptor = {
 		.version_major = VER_MAJOR,
-		.version_minor = VER_MINRO,
+		.version_minor = VER_MINOR,
 		.arch_name = ARCH_NAME,
 		.pltf_name = PLATFORM_NAME,
 };

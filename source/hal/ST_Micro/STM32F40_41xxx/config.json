@@ -40,6 +40,6 @@
   },
   "BOARD_CONFIG":{
     "type":"config",
-    "path":"/board/config.json"
+    "path":"./board/config.json"
   }
 }

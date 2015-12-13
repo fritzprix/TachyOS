@@ -8,6 +8,6 @@
   },
   "ARCH_SUB_CONFIG":{
     "type":"config",
-    "path":"/$ARCH_VENDOR/config.json"
+    "path":"./$ARCH_VENDOR/config.json"
   }
 }

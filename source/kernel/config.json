@@ -1,7 +1,7 @@
 {
   "KERNEL_MK":{
-    "type":"make",
-    "path":"./Makefile.mk"
+    "type":"recipe",
+    "path":"./recipe.mk"
   },
   "MM_CONFIG":{
     "type":"config",

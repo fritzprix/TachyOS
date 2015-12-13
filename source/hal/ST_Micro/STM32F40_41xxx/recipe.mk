@@ -1,4 +1,4 @@
-OBJ-y+=startup.s.ko
+OBJ-y+=startup.sko
 OBJ-y+=tch_rtc.ko
 OBJ-y+=tch_boot.ko
 OBJ-y+=tch_gpio.ko

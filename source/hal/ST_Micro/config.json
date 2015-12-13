@@ -10,6 +10,6 @@
   },
   "SOC_HAL_CONFIG":{
     "type":"config",
-    "path":"/$SOC_NAME/config.json"
+    "path":"./$SOC_NAME/config.json"
   }
 }
