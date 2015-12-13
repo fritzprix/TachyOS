@@ -3,6 +3,8 @@
 
 *.launch
 
+.config
+
 .cproject
 
 .settings/language.settings.xml
