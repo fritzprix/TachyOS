@@ -14,5 +14,9 @@
   "SOC_CONFIG":{
     "type":"config",
     "path":"./$SOC_VENDOR/config.json"
+  },
+  "HAL_RECIPE":{
+    "type":"recipe",
+    "path":"./recipe.mk"
   }
 }

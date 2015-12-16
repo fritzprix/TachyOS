@@ -1,3 +1,6 @@
+INC-y+=$(ROOT_DIR)/include/kernel
+SRC-y+=$(ROOT_DIR)/source/kernel
+
 OBJ-y+=tch_bar.ko\
 			 tch_err.ko\
 			 tch_event.ko\

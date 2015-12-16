@@ -1,4 +1,6 @@
-LDSCRIPT=$(CURDIR)/source/hal/ST_Micro/STM32F427_437xx/ld/flash.ld
+LDSCRIPT=$(ROOT_DIR)/source/hal/ST_Micro/STM32F427_437xx/ld/flash.ld
+INC-y+=$(ROOT_DIR)/include/hal/ST_Micro/STM32F427_437xx
+SRC-y+=$(ROOT_DIR)/source/hal/ST_Micro/STM32F427_437xx
 
 OBJ-y+=startup.sko
 OBJ-y+=tch_rtc.ko

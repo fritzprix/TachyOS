@@ -2,7 +2,7 @@
 
 
 # Linker Option
-LDFLAG_COMMON +=-Map,$(TARGET:%.elf=%.map)\
+LDFLAG_COMMON +=-Map,$(DEBUG_TARGET:%.elf=%.map)\
 				--gc-sections
 
 # C build option

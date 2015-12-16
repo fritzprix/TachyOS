@@ -34,7 +34,7 @@
 
     ]
   },
-  "HAL_RECIPE":{
+  "HAL_SUB_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
   },

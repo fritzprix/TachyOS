@@ -16,5 +16,9 @@
   "TOOLCHAIN_CONFIG":{
     "type":"config",
     "path":"./toolchain/config.json"
+  },
+  "ARM_RECIPE":{
+  	"type":"recipe",
+  	"path":"./recipe.mk"
   }
 }
