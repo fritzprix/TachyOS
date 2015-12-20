@@ -2,37 +2,30 @@
 Default linker script for STM32F4xx_1024K_192K
 */
 
+/*
+HSTICK_PERIOD 
+LSTICK_PERIOD 
+RR_TIMESLOT 
+USE_ROUNDROBIN 
+XMEM_SIZE 
+PAGE_SIZE 
+PAGE_OFFSET 
+KERNEL_DYNAMIC_SIZE 
+KERNEL_STACK_SIZE 
+SHM_SIZE 
+MM_TYPE nommu
+HEAP_SIZE 
+KERNEL_STACK_LIMIT 
+MAX_CACHE_SIZE 
+USE_XMEM
+*/
+
 /* include the common STM32F4xx  sub-script */
 
 /* Common part of the linker scripts for STM32F devices*/
 
+__stack_init = _estack  - KERNEL_STACK_SIZE ;
 
-/* default stack sizes. 
-
-These are used by the startup in order to allocate stacks for the different modes.
-*/
-
-__Stack_Size = 1024 ;
-
-PROVIDE ( _Stack_Size = __Stack_Size ) ;
-
-__Stack_Init = _estack  - CONFIG_KERNEL_STACKSIZE ;
-
-/*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
-PROVIDE ( _Stack_Init = __Stack_Init ) ;
-
-
-/*
-There will be a link error if there is not this amount of RAM free at the end.
-*/
-_Minimum_Stack_Size = 0x100 ;
-
-
-/* include the memory spaces definitions sub-script */
-/*
-Linker subscript for STM32F4xx definitions with 1024 Flash and 192 Onchip SRAM */
-
-/* Memory Spaces Definitions */
 
 MEMORY
 {
@@ -47,8 +40,6 @@ MEMORY
   MEMORY_ARRAY (xrw)  : ORIGIN = 0x20002000, LENGTH = 32
 }
 
-/* higher address of the user mode stack (end of 128K RAM on AHB bus)*/
-_estack = CONFIG_KERNEL_STACKLIMIT;
 
 
 
@@ -120,15 +111,15 @@ SECTIONS
 	    
     	
     	/* user executable part of kernel binary */
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_surox = .;
     	*(.urodata)
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_eurox = .;
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_utext_begin = . ;
     	*(.utext)
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_utext_end = . ;    
 	    
 	    
@@ -151,7 +142,7 @@ SECTIONS
     It is one task of the startup to copy the initial values from FLASH to RAM. */
     .data  : AT ( _sidata )
     {
-	    . = ALIGN(CONFIG_PAGE_SIZE);
+	    . = ALIGN(PAGE_SIZE);
         /* This is used by the startup in order to initialize the .data secion */
         _sdata = . ;
         
@@ -176,35 +167,35 @@ SECTIONS
         *(.bss.*)
         *(COMMON)
         
-	    . = ALIGN(CONFIG_PAGE_SIZE);
+	    . = ALIGN(PAGE_SIZE);
 	    /* This is used by the startup in order to initialize the .bss secion */
 	    _ebss = . ;
     } >RAM
     
     .udata : AT ( _usidata )
     {
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_sudata = .;
     	*(.udata)
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_eudata = .;
     } >RAM 
     
     .kheap :
     {
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_skheap = .;
-    	. += CONFIG_KERNEL_DYNAMICSIZE;
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. += KERNEL_DYNAMIC_SIZE;
+    	. = ALIGN(PAGE_SIZE);
     } >RAM
     
-    .kstack __Stack_Init :
+    .kstack __stack_init :
     {	
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_ekheap = .;
     	_sstack = .;
 	   	KEEP(*(.kernel.stack))
-    	. = . + CONFIG_KERNEL_STACKSIZE;
+    	. = . + KERNEL_STACK_SIZE;
     	_estack = .;
     } >RAM
     

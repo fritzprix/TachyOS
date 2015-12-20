@@ -19,7 +19,7 @@
 #include "tch_err.h"
 #include "tch_mm.h"
 
-#define  MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
+#define MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
 #define available(heap) 			(((wt_heapRoot_t*) heap)->free_sz)
 
 static wt_heapRoot_t kernel_heap_root;
@@ -36,7 +36,7 @@ struct alloc_header {
 void tch_kmalloc_init(int segid){
 
 	init_segid = segid;
-	tch_segmentAllocRegion(segid,&init_region,CONFIG_KERNEL_DYNAMICSIZE,PERM_KERNEL_ALL | PERM_OTHER_RD);
+	tch_segmentAllocRegion(segid,&init_region,KERNEL_DYNAMIC_SIZE,PERM_KERNEL_ALL | PERM_OTHER_RD);
 	tch_mapRegion(&init_mm,&init_region);
 
 	wt_initRoot(&kernel_heap_root);
@@ -62,7 +62,7 @@ void* kmalloc(size_t sz){
 								// otherwise, allocate new region and add it to kernel heap
 		}
 
-		rsz = ((rsz * PAGE_SIZE) > CONFIG_KERNEL_DYNAMICSIZE) ? (rsz * PAGE_SIZE) : CONFIG_KERNEL_DYNAMICSIZE;
+		rsz = ((rsz * PAGE_SIZE) > KERNEL_DYNAMIC_SIZE) ? (rsz * PAGE_SIZE) : KERNEL_DYNAMIC_SIZE;
 		tch_segmentAllocRegion(init_segid,nregion,rsz,PERM_KERNEL_ALL | PERM_OTHER_RD);
 		wt_initNode(&init_kernel_cache,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
 		wt_addNode(&kernel_heap_root,&init_kernel_cache);
@@ -99,8 +99,4 @@ void kmstat(mstat* sp){
 	sp->total = kernel_heap_root.size;
 	sp->used = kernel_heap_root.size - kernel_heap_root.free_sz;
 }
-
-
-
-
 

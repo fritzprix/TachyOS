@@ -1,15 +1,106 @@
 {
-	"MM_TYPE":{
-		"type":"enum",
-		"default": 0,
-		"enum":[
-			"nommu",
-			"mmu"
-		]
+	"PAGE_SHIFT":{
+		"type":"int",
+		"default":12,
+		"prompt":"Enter left-shift amount representing page size (if 10 page size will be 1024)",
+		"gen-list":{
+			"PAGE_SIZE":"1 << this",
+			"PAGE_OFFSET":"this"
+		}
 	},
-	"MM_SUB_CONFIG":{
+
+	"KERNEL_STACK_SIZE":{
+		"type":"hex",
+		"default":"0x2000",
+		"prompt":"Enter size of kernel stack in bytes",
+		"gen-list":{
+			"KERNEL_STACK_SIZE":"this"
+		}
+	},
+	"KERNEL_STACK_LIMIT":{
+		"type":"hex",
+		"default":"0x20020000",
+		"prompt":"Enter top address of kernel stack",
+		"gen-list":{
+			"KERNEL_STACK_LIMIT":"this"
+		}
+	},
+	"KERNEL_DYNAMIC_SIZE":{
+		"type":"hex",
+		"default":"0x8000",
+		"prompt":"Enter size of kernel heap memory in bytes",
+		"gen-list":{
+			"KERNEL_DYNAMIC_SIZE":"this"
+		}
+	},
+	"SHARED_REGION_SIZE":{
+		"type":"hex",
+		"default":"0x4000",
+		"prompt":"Enter size of shared memory in bytes",
+		"gen-list":{
+			"SHM_SIZE":"this"
+		}
+	},
+	"USER_HEAP_SIZE":{
+		"type":"hex",
+		"default":"0x2000",
+		"prompt":"Enter heap size of user process in bytes",
+		"gen-list":{
+			"HEAP_SIZE":"this"
+		}
+	},
+	"USER_MAX_CACHE_SIZE":{
+		"type":"hex",
+		"default":"0x400",
+		"prompt":"Enter cache size of user process in bytes",
+		"gen-list":{
+			"MAX_CACHE_SIZE":"this"
+		}
+	},
+	"USER_MIN_STACK":{
+		"type":"hex",
+		"default":"0x400",
+		"prompt":"Enter per-thread stack size at minimum"
+	},
+	"USE_XMEM":{
+		"type":"bool",
+		"default":"n",
+		"gen-list":{
+			"USE_XMEM":"to_int(this)"
+		},
+		"prompt":"whether external memory is used or not"
+	},
+	"XMEM_SIZE":{
+		"type":"hex",
+		"default":"0x0",
+		"depend":{
+			"USE_XMEM":"y"
+		},
+		"gen-list":{
+			"XMEM_SIZE":"this"
+		},
+		"prompt":"Enter size of extenal memory"
+	},
+	"USE_MMU":{
+		"type":"bool",
+		"default":"n",
+		"gen-list":{
+			"USE_MMU":"to_int(this)"
+		}
+	},
+	"NOMMU_CONFIG":{
 		"type":"config",
-		"path":"./$MM_TYPE/config.json"
+		"depend":{
+			"USE_MMU":"n"
+		},
+		"path":"./nommu/config.json"
+	},
+	"MMU_CONFIG":{
+		"type":"config",
+		"depend":{
+			"USE_MMU":"y"
+		},
+		"path":"./mmu/config.json"
 	},
 	"MM_COMMON_MAKE":{
 		"type":"recipe",

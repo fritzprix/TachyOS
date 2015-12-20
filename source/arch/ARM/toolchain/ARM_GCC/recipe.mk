@@ -29,5 +29,6 @@ CPFLAG_COMMON = -mlong-calls\
 				-mcpu=$(CONFIG_ARCH_NAME)\
 				-mthumb
 
+CROSS_COMPILE=arm-none-eabi-
 # floating point option
 FLOAT_OPTION= -mfloat-abi=$(CONFIG_FPU_ABI) -mfpu=$(CONFIG_FPU_VERSION)

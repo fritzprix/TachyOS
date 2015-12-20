@@ -61,41 +61,6 @@ defined in linker script */
 .word _eudata
 
 
-.globl sys_heap_base
-.globl sys_heap_limit
-
-.globl mbarrier_upperLimit
-.globl mbarrier_lowerLimit
-
-#ifdef __HEAP_SIZE
-.equ Heap_Size, __HEAP_SIZE
-#else
-.equ Heap_Size, 0x10000
-#endif
-
-
-#ifdef __MBARRIER_SIZE
-.equ mBarrier_Size, __MBARRIER_SIZE
-#else
-.equ mBarrier_Size, 0x60
-#endif
-
-
-.section .heap
-sys_heap_base:
-	.align 4
-	.space Heap_Size
-sys_heap_limit:
-
-
-.section .mbarrier
-mbarrier_lowerLimit:
-	.align 8
-	.space mBarrier_Size
-mbarrier_upperLimit:
-
-
-
 
 /**
  * @brief  This is the code that gets called when the processor first

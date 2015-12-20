@@ -1,0 +1,12 @@
+{
+  "BOARD_NAME":{
+    "type":"enum",
+    "enum":[
+      "Port_103Z"
+    ]
+  },
+  "BOARD_SUB_CONFIG":{
+    "type":"config",
+    "path":"./$BOARD_NAME/config.json"
+  }
+}

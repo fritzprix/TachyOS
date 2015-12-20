@@ -25,19 +25,19 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
-///////////////////////////////////////////¡é Configuration Constant Declarations¡é/////////////////////////////////////////////
+///////////////////////////////////////////ï¿½ï¿½ Configuration Constant Declarationsï¿½ï¿½/////////////////////////////////////////////
 /**
- *  @brief Us External Crystal, so that internal inverter is enabled for generating main clock
+ *  @brief External Crystal, so that internal inverter is enabled for generating main clock
  */
 #define SYS_MCLK_TYPE_CRYSTAL     0
 
 /**
- *  @brief Use External Osc. which has its own driver and High Q resonating node so internal crystal driver is by-passed
+ *  @brief External Osc. which has its own driver and High Q resonating node so internal crystal driver is by-passed
  */
 #define SYS_MCLK_TYPE_EXTOSC      1
 
 /**
- *  @brief Use Internal Osc. so there is no need for additional component (but usually show less quality than the others)
+ *  @brief Internal Osc. so there is no need for additional component (but usually show less quality than the others)
  */
 #define SYS_MCLK_TYPE_INTERNAL    2
 
@@ -58,7 +58,7 @@
 
 
 
-///////////////////////////////////////////¡é Configuration Block ¡é/////////////////////////////////////////////
+///////////////////////////////////////////ï¿½ï¿½ Configuration Block ï¿½ï¿½/////////////////////////////////////////////
 
 
 /**
@@ -73,7 +73,6 @@
 #endif
 
 #if (USE_EXTMEM == 1)
-
 #ifndef EXTMEM_TYPE
  #error "Please define 'EXTMEM_TYPE' "
 #endif

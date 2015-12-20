@@ -1,19 +1,19 @@
 {
-	"ARCH_CONFIG":{
+	"HAL_CONFIG":{
 		"type":"config",
-		"path":"./arch/config.json"
+		"path":"./hal/config.json"
 	},
 	"KERNEL_CONFIG":{
 		"type":"config",
 		"path":"./kernel/config.json"
 	},
-	"HAL_CONFIG":{
+	"ARCH_CONFIG":{
 		"type":"config",
-		"path":"./hal/config.json"
+		"path":"./arch/config.json"
 	},
 	"USE_STATIC_LINKED_APP":{
 		"type":"bool",
-		"default":false
+		"default":"n"
 	},
 	"USER_CONFIG":{
 		"type":"config",

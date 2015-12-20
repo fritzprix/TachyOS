@@ -6,7 +6,7 @@
   },
   "FPU_ABI":{
     "type":"enum",
-    "default":0,
+    "default":1,
     "enum":[
       "soft",
       "softfp",

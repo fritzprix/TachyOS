@@ -161,7 +161,9 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),
+						"r"(&((tch_thread_kheader*) nth)->ctx),
+						"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
 }
 
 

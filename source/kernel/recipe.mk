@@ -1,4 +1,5 @@
 INC-y+=$(ROOT_DIR)/include/kernel
+INC-y+=$(ROOT_DIR)/include/kernel/autogen
 SRC-y+=$(ROOT_DIR)/source/kernel
 
 OBJ-y+=tch_bar.ko\

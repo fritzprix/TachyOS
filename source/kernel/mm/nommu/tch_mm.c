@@ -22,13 +22,14 @@
 #define CONFIG_NR_KERNEL_SEG	5		// segment 0 dynamic /  segment 1 kernel text / segment 2 data / segment 3 sdata /  segment 4 kernel stack
 #endif
 
-#define SECTION_KERNEL_DYNAMIC
-
 struct user_heap {
 	wt_heapRoot_t		heap_root;
 	wt_heapNode_t		heap_node;
 };
 
+/**
+ *  NOTE : the order of section should not change
+ */
 
 const struct section_descriptor __default_sections[] = {
 		{		// kernel dynamic section
@@ -131,7 +132,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 		mmp->dynamic->mtx = mtx;
 		mmp->dynamic->condv = condv;
 		if(proc_header->flag & PROCTYPE_DYNAMIC)
-		{			// dynamic loaded process
+		{
+			// dynamic loaded process
 			mmp->text_region = proc_header->text_region;
 			mmp->bss_region = proc_header->bss_region;
 			mmp->data_region = proc_header->data_region;
@@ -139,7 +141,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 		}
 		else
 		{
-					// text/ bss / data section of static process are assumed to be part of kernel binary image
+			// text/ bss / data section of static process are assumed to be part of kernel binary image
 			mmp->text_region = NULL;
 			mmp->bss_region = NULL;
 			mmp->data_region = NULL;
@@ -180,8 +182,10 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	mmp->heap_region = &regions[0];
 	mmp->stk_region = &regions[1];
 
+	// try allocate stack region from dynamic segment
 	if(!init_mmProcStack(mmp,mmp->stk_region,proc_header->req_stksz))
 	{
+		// if stack allocation fail, clean up and return
 		if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD)
 		{
 			tch_condvDeinit(condv);
@@ -209,7 +213,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	 *  ============== prepare per thread user mode accessible struct ==============
 	 *  1. located in stack bottom for check stack integrity
 	 */
-	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << CONFIG_PAGE_SHIFT);
+	tch_thread_uheader* uthread = (tch_thread_uheader*) (mmp->stk_region->poff << PAGE_OFFSET);
 	thread->uthread = uthread;
 	thread->uthread->cache = (wt_cache_t*) &uthread[1]; 			// cache struct is made at bottom of user stack
 
@@ -218,8 +222,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	 *  Argument Type 1 : Null Terminated strings which is meant for command line argument from shell execution
 	 *  Argument Type 2 : Pointer referencing to an object is meant for typical thread execution
 	 */
-	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) << CONFIG_PAGE_SHIFT);
-	argv = argv - proc_header->argv_sz;
+	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) << PAGE_OFFSET);
+	argv = (char*) ((argv - proc_header->argv_sz) & ~0xF);
 	if (proc_header->argv_sz > 0)
 	{												// if process argument is null terminated strings,
 		mcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area

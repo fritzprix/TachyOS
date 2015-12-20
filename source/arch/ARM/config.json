@@ -1,7 +1,7 @@
 {
   "ARCH_NAME":{
     "type":"enum",
-    "default":0,
+    "default":3,
     "enum":[
       "cortex-m0",
       "cortex-m0+",

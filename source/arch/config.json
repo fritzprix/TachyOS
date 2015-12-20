@@ -1,7 +1,7 @@
 {
   "ARCH_VENDOR":{
     "type":"enum",
-    "default":1,
+    "default":0,
     "enum":[
       "ARM"
     ]

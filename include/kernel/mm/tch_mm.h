@@ -64,7 +64,6 @@ extern "C" {
  *
  */
 
-#define PAGE_SIZE		 			(1 << CONFIG_PAGE_SHIFT)
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
 #define SEGMENT_NORMAL				((uint32_t) 0)

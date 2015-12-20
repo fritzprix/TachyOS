@@ -1,5 +1,40 @@
 {
-  "KERNEL_MK":{
+  "HSTICK_PERIOD":{
+    "type":"int",
+    "default":1,
+    "prompt":"Enter period of high-definition timer in millisec",
+    "gen-list":{
+      "HSTICK_PERIOD":"this"
+    }
+  },
+  "LSTICK_PERIOD":{
+    "type":"int",
+    "default":1,
+    "prompt":"Enter period of low power timer in sec",
+    "gen-list":{
+      "LSTICK_PERIOD":"this"
+    }
+  },
+  "USE_ROUND_ROBIN":{
+    "type":"bool",
+    "default":"y",
+    "prompt":"round-robin rule is applied to scheduler",
+    "gen-list":{
+      "USE_ROUNDROBIN":"to_int(this)"
+    }
+  },
+  "ROUND_ROBIN_TIMESLOT":{
+    "type":"int",
+    "default":10,
+    "depend":{
+    	"USE_ROUND_ROBIN":"y"
+    },
+    "prompt":"Enter round-robin time slot",
+    "gen-list":{
+      "RR_TIMESLOT":"this"
+    }
+  },
+  "KERNEL_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
   },
