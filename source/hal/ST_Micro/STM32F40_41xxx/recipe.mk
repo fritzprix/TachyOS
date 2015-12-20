@@ -13,5 +13,4 @@ OBJ-$(ADC)+=tch_adc.ko
 OBJ-$(SPI)+=tch_spi.ko
 OBJ-$(IIC)+=tch_i2c.ko
 OBJ-$(TIMER)+=tch_timer.ko
-
-y-OBJ+=tch_hal.ko
+OBJ-y+=tch_hal.ko

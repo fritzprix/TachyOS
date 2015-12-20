@@ -1,5 +1,5 @@
 {
-  "NO_MMU_MK":{
+  "NO_MMU_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
   }

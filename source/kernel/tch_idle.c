@@ -17,7 +17,7 @@
 #include "kernel/tch_lwtask.h"
 #include "kernel/tch_err.h"
 
-
+extern DECLARE_THREADROUTINE(main)__attribute__((weak,alias("__main")));
 
 static DECLARE_LWTASK(idleTaskHandler);
 static DECLARE_THREADROUTINE(idle);
@@ -34,6 +34,7 @@ static uint32_t		busy_cnt;
 
 static tch_threadId idleThread;
 static tch_threadId mainThread;
+
 
 
 void idle_init(){
@@ -110,7 +111,15 @@ static DECLARE_LWTASK(idleTaskHandler){
 		tch_hal_enterSleepMode();
 		tch_hal_resumeSysClock();
 		tch_hal_setSleepMode(LP_LEVEL0);
-		tch_hal_enableSystick(CONFIG_KERNEL_LSTICK_PERIOD);
+		tch_hal_enableSystick(LSTICK_PERIOD);
 		break;
 	}
 }
+
+
+DECLARE_THREADROUTINE(__main){
+	while(TRUE) ctx->Thread->sleep(1);
+}
+
+
+

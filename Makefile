@@ -6,127 +6,89 @@
 #######################################################
 
 
-FLOAT_OPTION= 
-LIBS=
-LIB_DIR=
-CFLAG =
-CPFLAG =  
-LDFLAG =
-TOOL_PREFIX=
+-include .config
+-include version.mk
 
-# Configuration make file
-include config.mk
+# setup root directory of source tree
+ROOT_DIR := $(CURDIR)
 
+# setup tools for 'make' works
+CC:=$(CROSS_COMPILE)gcc
+CXX:=$(CROSS_COMPILE)g++
+PY:=python
+MKDIR:=mkdir
+CONFIG_PY:= $(ROOT_DIR)/tools/jconfigpy/jconfigpy.py
 
-ROOT_DIR= $(CURDIR)
-ifeq ($(MKDIR),)
-	MKDIR=mkdir
-endif
+OBJS_DIR_DEBUG:= $(ROOT_DIR)/DEBUG
+OBJS_DIR_RELEASE:= $(ROOT_DIR)/RELEASE
 
+OBJS_DEBUG=$(OBJ-y:%=$(OBJS_DIR_DEBUG)/%)
+OBJS_RELEASE=$(OBJ-y:%=$(OBJS_DIR_RELEASE)/%)
 
-# target directory to put binary file 
-ifeq ($(GEN_DIR),)
-	GEN_DIR=$(ROOT_DIR)/$(BUILD)
-endif
+KCONFIG_ENTRY:=$(ROOT_DIR)/config.json
+KCONFIG_TARGET:=$(ROOT_DIR)/.config
+KCONFIG_AUTOGEN:=$(ROOT_DIR)/include/kernel/autogen/autogen.h
 
-ifeq ($(GEN_SUB_DIR),)
-	GEN_SUB_DIR=
-endif
+# SRC-y and INC-y are source and header directory list for each made from recipe file(recipe.mk)
+VPATH= $(SRC-y)
+INC=$(INC-y:%=-I%)
 
+# Assembler flag used in kernel source build
+ASFLAG_KERNEL:= -x assembler-with-cpp\
+				-nostdinc
 
-#######################################################################################
-###################     TachyOS source tree declaration    ############################
-#######################################################################################
+CFLAG_KERNEL=$(CFLAG_COMMON)
+CFLAG_APP=$(CFLAG_COMMON)
+CFLAG_MODULE=$(CFLAG_COMMON)
+CFLAG_DEBUG:=-O0 -g3
+CFLAG_RELEASE:=-O2 -g0
 
-#source code directory 
-KERNEL_SRC_DIR=$(ROOT_DIR)/source/kernel
-ARCH_SRC_DIR=$(ROOT_DIR)/source/arch
-HAL_SRC_DIR=$(ROOT_DIR)/source/hal/$(HW_VENDOR)/$(HW_PLF)
-USR_SRC_DIR=$(ROOT_DIR)/source/user
+LDFLAG_KERNEL=$(LDFLAG_COMMON)
+LDFLAG_APP=$(LDFLAG_COMMON)
+LDFLAG_MODULE=$(LDFLAG_COMMON)
 
-#header file directory
-HEADER_ROOT_DIR=$(ROOT_DIR)/include
-KERNEL_HEADER_DIR=$(HEADER_ROOT_DIR)/kernel
-ARCH_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/arch/$(ARCH_VENDOR)
-ARCH_CPU_HEADER_DIR=$(ARCH_BASE_HEADER_DIR)/$(ARCH_NAME)
-HAL_BASE_HEADER_DIR=$(HEADER_ROOT_DIR)/hal
-HAL_VENDOR_HEADER_DIR=$(HAL_BASE_HEADER_DIR)/$(HW_VENDOR)
-HAL_CHIPSET_HEADER_DIR=$(HAL_VENDOR_HEADER_DIR)/$(HW_PLF)
+LDFLAG_KERNEL+=$(DEF:%=-defsym,%)
+DEF-y+=$(DEF)
+DEFS=$(DEF-y:%=-D%)
 
-#######################################################################################
-##################          initialize build option       #############################
-#######################################################################################
-TARGET=$(GEN_DIR)/tachyos_Ver$(MAJOR_VER).$(MINOR_VER).elf
-#TIME_STAMP=$(shell date +%s)
-TIME_FLAG=__BUILD_TIME_EPOCH=$(shell date +%s)UL
+DEBUG_TARGET=TachyOS_dbg_$(MAJOR).$(MINOR).elf
+RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).elf
 
+PHONY=config all debug release clean config_clean
 
-ifeq ($(LDSCRIPT),)
-LDSCRIPT=$(HAL_SRC_DIR)/ld/flash.ld
-endif
+.SILENT : $(KCONFIG_TARGET) $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET)
 
-###################      TachyOS default header inclusion  ############################
-ifeq ($(INC),)
-	INC = -I$(ARCH_CPU_HEADER_DIR)\
-	      -I$(ARCH_BASE_HEADER_DIR)\
-	      -I$(HAL_BASE_HEADER_DIR)\
-	      -I$(HAL_VENDOR_HEADER_DIR)\
-	      -I$(HAL_CHIPSET_HEADER_DIR)\
-	      -I$(KERNEL_HEADER_DIR)\
-	      -I$(HEADER_ROOT_DIR)
-endif
+all : debug
 
-###################      toolchain & architecture specific makefile   #################
-include $(ARCH_SRC_DIR)/$(ARCH_VENDOR)/toolchain/$(TOOLCHAIN_NAME)/tool.mk
+config :
+	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
+
+defconfig:
 
 
-#######################################################################################
-####################  Toolchain Independent section of Makefile  ######################
-#######################################################################################
+debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
 
-CFLAG+= $(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
-CPFLAG+=$(FLOAT_OPTION)	$(DBG_OPTION) -D$(HW_PLF) -D$(TIME_FLAG)
+$(DEBUG_TARGET) : $(OBJ-y)
+	@echo $(OBJ-y)
+	@echo 'building elf image.. $@'
+	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(OBJ-y) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 
+$(OBJS_DIR_DEBUG):
+	$(MKDIR) $@
 
+%.ko:%.c
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 
-include $(ARCH_SRC_DIR)/$(ARCH_VENDOR)/$(ARCH_NAME)/port.mk
-include $(KERNEL_SRC_DIR)/kernel.mk
-include $(HAL_SRC_DIR)/hal.mk
-include $(USR_SRC_DIR)/usr.mk
-
-TARGET_SIZE = $(TARGET:%.elf=%.siz)
-TARGET_FLASH = $(TARGET:%.elf=%.hex) 
-TARGET_BINARY = $(TARGET:%.elf=%.bin)
-
-all : $(GEN_DIR) $(GEN_SUB_DIR) $(TARGET) $(TARGET_FLASH) $(TARGET_BINARY) $(TARGET_SIZE)
+%.sko:%.S
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
 
 
-$(GEN_DIR): 
-	$(MKDIR) $(GEN_DIR)
-
-$(TARGET): $(OBJS) $(DEPS)
-	@echo "Generating ELF"
-	$(CPP) -o $@ $(CFLAG) $(LDFLAG) $(MMAP_FLAG) $(LIB_DIR) $(LIBS)  $(INC) $(OBJS)
-	@echo ' '
-
-$(TARGET_FLASH): $(TARGET)
-	@echo 'Invoking: Cross ARM GNU Create Flash Image'
-	$(OBJCP) -O ihex $<  $@
-	@echo 'Finished building: $@'
-	@echo ' '
-	
-$(TARGET_BINARY): $(TARGET)
-	@echo 'Invoking: Cross ARM GNU Create Flash Image'
-	$(OBJCP) -O binary -S $<  $@
-	@echo 'Finished building: $@'
-	@echo ' '
-
-$(TARGET_SIZE): $(TARGET)
-	@echo 'Invoking: Cross ARM GNU Print Size'
-	$(SIZEPRINT) --format=berkeley $<
-	@echo 'Finished building: $@'
-	@echo ' '
-	
-	
 clean:
-	rm -rf $(OBJS) $(TARGET) $(TARGET_FLASH) $(TARGET_SIZE) $(TARGET_BINARY) $(GEN_SUB_DIR) $(GEN_DIR)
+	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET)
+
+config_clean:
+	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN)
+
+.PHONY = $(PHONY)

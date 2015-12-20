@@ -223,7 +223,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	 *  Argument Type 2 : Pointer referencing to an object is meant for typical thread execution
 	 */
 	char* argv = (char*) (((size_t) mmp->stk_region->poff + mmp->stk_region->psz) << PAGE_OFFSET);
-	argv = (char*) ((argv - proc_header->argv_sz) & ~0xF);
+	argv = (char*) ((int)(argv - proc_header->argv_sz) & ~0xF);
 	if (proc_header->argv_sz > 0)
 	{												// if process argument is null terminated strings,
 		mcpy(argv, proc_header->argv, sizeof(char) * proc_header->argv_sz);   // copy them into stack top area

@@ -131,6 +131,9 @@ extern tchStatus __tch_noop_destr(tch_kobj* obj);
 extern void __tch_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
 
 
+
+
+
 /**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode
  *
  */

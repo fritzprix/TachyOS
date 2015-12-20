@@ -124,8 +124,8 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 	gmt_sec = init_tm;
 	gmt_subsec = 0;
 	rtcHandle = rtc->open(env, init_tm, current_tz);
-	rtcHandle->enablePeriodicWakeup(rtcHandle, CONFIG_KERNEL_LSTICK_PERIOD, tch_kernelOnWakeup);
-	tch_hal_enableSystick(CONFIG_KERNEL_HSTICK_PERIOD);
+	rtcHandle->enablePeriodicWakeup(rtcHandle, LSTICK_PERIOD, tch_kernelOnWakeup);
+	tch_hal_enableSystick(HSTICK_PERIOD);
 }
 
 
@@ -209,7 +209,7 @@ BOOL tch_systimeIsPendingEmpty() {
 
 void tch_kernelOnWakeup() {
 	tch_thread_kheader* nth = NULL;
-	sysUpTimeSec += CONFIG_KERNEL_LSTICK_PERIOD;
+	sysUpTimeSec += LSTICK_PERIOD;
 	while ((!cdsl_dlistIsEmpty(&lpsystimeWaitQ)) && (((tch_thread_kheader*) lpsystimeWaitQ.next)->to	<= sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&lpsystimeWaitQ);
 		nth->to = 0;
@@ -225,7 +225,7 @@ void tch_kernelOnWakeup() {
 
 void tch_KernelOnSystick() {
 	tch_thread_kheader* nth = NULL;
-	systimeTick += CONFIG_KERNEL_HSTICK_PERIOD;
+	systimeTick += HSTICK_PERIOD;
 	getThreadKHeader(current)->tslot++;
 	while ((!cdsl_dlistIsEmpty(&systimeWaitQ)) && (((tch_thread_kheader*) systimeWaitQ.next)->to <= systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&systimeWaitQ);
