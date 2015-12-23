@@ -11,6 +11,7 @@
 
 # setup root directory of source tree
 ROOT_DIR := $(CURDIR)
+CONFIG_DIR :=$(ROOT_DIR)/source/arch/$(ARCH)/configs
 
 # setup tools for 'make' works
 CC:=$(CROSS_COMPILE)gcc
@@ -51,42 +52,66 @@ LDFLAG_KERNEL+=$(DEF:%=-defsym,%)
 DEF-y+=$(DEF)
 DEFS=$(DEF-y:%=-D%)
 
+DEBUG_OBJS=$(OBJ-y:%=DEBUG/%)
+RELEASE_OBJS=$(OBJ-y:%=RELEASE/%)
+
 DEBUG_TARGET=TachyOS_dbg_$(MAJOR).$(MINOR).elf
 RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).elf
 
+
 PHONY=config all debug release clean config_clean
 
-.SILENT : $(KCONFIG_TARGET) $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET)
+.SILENT : $(KCONFIG_TARGET) $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
 
 all : debug
 
+ifeq ($(DEFCONF),)
 config :
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
+else
+config :
+	$(PY) $(CONFIG_PY) -s -i $(CONFIG_DIR)/$(DEFCONF) -t $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
+endif
 
-defconfig:
 
 
 debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
 
-$(DEBUG_TARGET) : $(OBJ-y)
-	@echo $(OBJ-y)
-	@echo 'building elf image.. $@'
-	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(OBJ-y) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+release: $(OBJS_DIR_RELEASE) $(RELEASE_TARGET)
 
-$(OBJS_DIR_DEBUG):
+
+$(DEBUG_TARGET) : $(DEBUG_OBJS)
+	@echo 'building elf image.. $@'
+	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(DEBUG_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	
+	
+$(RELEASE_TARGET) : $(RELEASE_OBJS)
+	@echo 'building elf image.. $@'
+	$(CC) $(CLFAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(RELEASE_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	
+
+$(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE):
 	$(MKDIR) $@
 
-%.ko:%.c
+DEBUG/%.ko:%.c
 	@echo 'compile.. $@'
 	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 
-%.sko:%.S
+DEBUG/%.sko:%.S
 	@echo 'compile.. $@'
 	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
-
+	
+RELEASE/%.ko:%.c
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	
+RELEASE/%.sko:%.S
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
+	
 
 clean:
-	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET)
+	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(RELEASE_OBJS) $(DEBUG_OBJS)
 
 config_clean:
 	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN)
