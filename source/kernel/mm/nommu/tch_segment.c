@@ -13,7 +13,7 @@
 #include "tch_segment.h"
 #include "tch_kmalloc.h"
 
-#define ptr_to_pgidx(ptr)		(((size_t) ptr) >> CONFIG_PAGE_SHIFT)
+#define ptr_to_pgidx(ptr)		(((size_t) ptr) >> PAGE_OFFSET)
 
 
 /**
@@ -247,7 +247,7 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 		KERNEL_PANIC("tch_segment.c","region mapping broken");
 
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
-	page_frame_t* frame = (page_frame_t*) (mreg->poff << CONFIG_PAGE_SHIFT); /*15.09.18 : poff shift */
+	page_frame_t* frame = (page_frame_t*) (mreg->poff << PAGE_OFFSET); /*15.09.18 : poff shift */
 	page_frame_t* cframe;
 	frame->fhdr.offset = mreg->poff;
 	frame->fhdr.contig_pcount = mreg->psz;
@@ -288,10 +288,10 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 		return -1;
 
 	uint32_t i;
-	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> CONFIG_PAGE_SHIFT;				// calculate page index of segment's begining from section base address
-	size_t section_limit = ((size_t) section->end)  >> CONFIG_PAGE_SHIFT; 					// calculate page index of segment's ending from sectioni size
+	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's begining from section base address
+	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from sectioni size
 	seg->psize = section_limit - seg->poff;													// segment size in pages
-	page_frame_t* pages = (page_frame_t*) (seg->poff << CONFIG_PAGE_SHIFT);
+	page_frame_t* pages = (page_frame_t*) (seg->poff << PAGE_OFFSET);
 
 	seg->flags = section->flags;															// inherit permission of section
 	seg->reg_root = NULL;
@@ -425,6 +425,6 @@ void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg){
 int tch_regionGetSize(struct mem_region* mreg){
 	if(!mreg)
 		return 0;
-	return (mreg->psz << CONFIG_PAGE_SHIFT);
+	return (mreg->psz << PAGE_OFFSET);
 }
 

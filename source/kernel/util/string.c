@@ -52,12 +52,12 @@ char* strchar(const char* s,int c)
 	while(s[idx] != '\0')
 	{
 		if(s[idx] == c)
-			return &s[idx];
+			return (char*) &s[idx];
 		idx++;
 	}
 	if(c == '\0')
 	{
-		return &s[idx];
+		return (char*) &s[idx];
 	}
 	return NULL;
 }

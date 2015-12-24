@@ -13,7 +13,6 @@
 #include "tch_kmalloc.h"
 #include "tch_mtx.h"
 #include "tch_condv.h"
-#include "kernel/tch_kconfig.h"
 
 
 
@@ -242,8 +241,8 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 	 * 3. add mapping of this region
 	 */
 	if((proc_header->flag & HEADER_TYPE_MSK) == HEADER_ROOT_THREAD) {
-		if(proc_header->req_heapsz < CONFIG_HEAP_SIZE)
-			proc_header->req_heapsz = CONFIG_HEAP_SIZE;
+		if(proc_header->req_heapsz < HEAP_SIZE)
+			proc_header->req_heapsz = HEAP_SIZE;
 		if(!tch_segmentAllocRegion(0,mmp->heap_region,proc_header->req_heapsz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_DYNAMIC))){
 			tch_segmentFreeRegion(mmp->stk_region);
 			kfree(regions);
@@ -252,20 +251,20 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 			return FALSE;
 		}
 
-		struct user_heap* proc_heap = (struct user_heap*) (mmp->heap_region->poff << CONFIG_PAGE_SHIFT);
+		struct user_heap* proc_heap = (struct user_heap*) (mmp->heap_region->poff << PAGE_OFFSET);
 		paddr_t sheap = (paddr_t) &proc_heap[1];
-		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << CONFIG_PAGE_SHIFT);
+		paddr_t eheap = (paddr_t) ((mmp->heap_region->poff + mmp->heap_region->psz) << PAGE_OFFSET);
 
 		wt_initRoot(&proc_heap->heap_root);
 		wt_initNode(&proc_heap->heap_node,sheap,((size_t) eheap - (size_t) sheap));
 		wt_addNode(&proc_heap->heap_root,&proc_heap->heap_node);
-		wt_initCache(thread->uthread->cache,CONFIG_MAX_CACHE_SIZE);
+		wt_initCache(thread->uthread->cache,MAX_CACHE_SIZE);
 
 		tch_port_addPageEntry(mmp->pgd,mmp->heap_region->poff,mmp->heap_region->flags);
 		mmp->dynamic->heap = &proc_heap->heap_root;
 	}else {
 		thread->uthread->heap = thread->parent->uthread->heap;
-		wt_initCache(thread->uthread->cache,CONFIG_MAX_CACHE_SIZE);
+		wt_initCache(thread->uthread->cache,MAX_CACHE_SIZE);
 	}
 
 	thread->uthread->heap = thread->mm.dynamic->heap;
@@ -344,7 +343,7 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 		tch_thread_exit(current,tchErrorIllegalAccess);
 	}
 
-	if(!tch_port_addPageEntry(((struct tch_mm*) &current->kthread->mm)->pgd, (region->poff << CONFIG_PAGE_SHIFT),get_permission(region->flags))) {			// add to table
+	if(!tch_port_addPageEntry(((struct tch_mm*) &current->kthread->mm)->pgd, (region->poff << PAGE_OFFSET),get_permission(region->flags))) {			// add to table
 		tch_thread_exit(current,tchErrorIllegalAccess);																// already in table?
 	}
 }
@@ -352,12 +351,12 @@ void tch_kernelOnMemFault(paddr_t pa, int fault){
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz){
 	if(!stksz)										// stack size should not 0
-		stksz = CONFIG_THREAD_MIN_STACK;
+		stksz = USER_MIN_STACK;
 	if(!(tch_segmentAllocRegion(0,stkregion,stksz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_STACK)) > 0)){
 		return NULL;
 	}
 	tch_port_addPageEntry(mmp->pgd, stkregion->poff,stkregion->flags);
-	return (uint32_t*) (stkregion->poff << CONFIG_PAGE_SHIFT);
+	return (uint32_t*) (stkregion->poff << PAGE_OFFSET);
 }
 
 

@@ -332,7 +332,7 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
 	case SECTION_DYNAMIC:
 		// check page is already in the table
 		for(idx = PE_DYNAMIC;idx < NR_PAGE_ENTRY;idx++){
-			if(((uint32_t)pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << CONFIG_PAGE_SHIFT)){
+			if(((uint32_t)pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)){
 				return FALSE;
 			}
 		}
@@ -381,10 +381,10 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
 		attr |= (4 << MPU_RASR_AP_Pos);				// read only
 	attr |= (2 << MPU_RASR_AP_Pos);
 	attr |= (flag & PERM_OWNER_WR) ? (1 << MPU_RASR_AP_Pos) : 0;
-	attr |= (MPU_RASR_SIZE_Msk & CONFIG_PAGE_SHIFT);
+	attr |= (MPU_RASR_SIZE_Msk & PAGE_OFFSET);
 	attr |= MPU_RASR_ENABLE_Msk;
 
-	address = ((uint32_t) poffset << CONFIG_PAGE_SHIFT)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
+	address = ((uint32_t) poffset << PAGE_OFFSET)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
 
 	pgdp->_pte[idx].baddr = address;
 	pgdp->_pte[idx].attr = attr;
@@ -403,7 +403,7 @@ int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 	struct pte* ptep;
 	for(idx = 0;idx < NR_PAGE_ENTRY; idx++) {
 		ptep = &pgdp->_pte[idx];
-		if(((uint32_t)ptep->baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << CONFIG_PAGE_SHIFT)){
+		if(((uint32_t)ptep->baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)){
 			ptep->attr &= ~MPU_RASR_ENABLE_Msk;			// clear enable bit
 			tch_port_updateProtectionEntry(ptep);
 			ptep->value = 0;

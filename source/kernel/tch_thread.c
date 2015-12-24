@@ -243,11 +243,11 @@ tch_threadId tch_threadCreateThread(thread_config_t* cfg,void* arg,BOOL isroot,B
 		KERNEL_PANIC("tch_thread.c","Null Running Thread");
 	}
 	tch_thread_validate(kthread->uthread);
-	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(void*)((kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << CONFIG_PAGE_SHIFT),__tch_thread_entry);
+	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(void*)((kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << PAGE_OFFSET),__tch_thread_entry);
 	kthread->flag |= isroot? THREAD_ROOT_BIT : 0;
 	kthread->flag |= ispriv? THREAD_PRIV_BIT : 0;
 
-	kthread->tslot = CONFIG_ROUNDROBIN_TIMESLOT;
+	kthread->tslot = RR_TIMESLOT;
 	kthread->state = PENDED;
 	kthread->lckCnt = 0;
 	kthread->prior = cfg->priority;

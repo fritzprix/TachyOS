@@ -60,6 +60,9 @@
 	"USER_MIN_STACK":{
 		"type":"hex",
 		"default":"0x400",
+		"gen-list":{
+			"USER_MIN_STACK":"this"
+		},
 		"prompt":"Enter per-thread stack size at minimum"
 	},
 	"USE_XMEM":{

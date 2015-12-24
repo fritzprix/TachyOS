@@ -12,7 +12,6 @@
 
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"
-#include "kernel/tch_kconfig.h"
 #include "kernel/mm/wtmalloc.h"
 #include "kernel/util/cdsl_rbtree.h"
 #include "kernel/util/cdsl_slist.h"
