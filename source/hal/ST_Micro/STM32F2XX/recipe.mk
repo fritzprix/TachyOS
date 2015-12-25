@@ -7,10 +7,10 @@ OBJ-y+=tch_rtc.ko
 OBJ-y+=tch_boot.ko
 OBJ-y+=tch_gpio.ko
 OBJ-y+=tch_dma.ko
-OBJ-$(UART)+=tch_uart.ko
-OBJ-$(ADC)+=tch_adc.ko
-OBJ-$(SPI)+=tch_spi.ko
-OBJ-$(IIC)+=tch_i2c.ko
-OBJ-$(TIMER)+=tch_timer.ko
+OBJ-$(CONFIG_UART)+=tch_uart.ko
+OBJ-$(CONFIG_ADC)+=tch_adc.ko
+OBJ-$(CONFIG_SPI)+=tch_spi.ko
+OBJ-$(CONFIG_IIC)+=tch_i2c.ko
+OBJ-$(CONFIG_TIMER)+=tch_timer.ko
 
 OBJ-y+=tch_hal.ko

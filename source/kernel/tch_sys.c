@@ -44,10 +44,10 @@
 
 
 
-#if !defined(CONFIG_KERNEL_DYNAMIC_SIZE) || \
-	!defined(CONFIG_KERNEL_STACK_SIZE) ||\
-	!defined(CONFIG_PAGE_SHIFT) ||\
-	!defined(CONFIG_KERNEL_STACK_LIMIT)
+#if !defined(KERNEL_DYNAMIC_SIZE) || \
+	!defined(KERNEL_STACK_SIZE) ||\
+	!defined(PAGE_OFFSET) ||\
+	!defined(KERNEL_STACK_LIMIT)
 #warning "Kernel is not configured properly"
 #endif
 

@@ -17,6 +17,7 @@ AUTOGEN_DIR :=$(ROOT_DIR)/include/kernel/autogen
 # setup tools for 'make' works
 CC:=$(CROSS_COMPILE)gcc
 CXX:=$(CROSS_COMPILE)g++
+SIZE:=$(CROSS_COMPILE)size
 PY:=python
 MKDIR:=mkdir
 CONFIG_PY:= $(ROOT_DIR)/tools/jconfigpy/jconfigpy.py
@@ -36,8 +37,7 @@ VPATH= $(SRC-y)
 INC=$(INC-y:%=-I%)
 
 # Assembler flag used in kernel source build
-ASFLAG_KERNEL:= -x assembler-with-cpp\
-				-nostdinc
+ASFLAG_KERNEL:= -nostdinc
 
 CFLAG_KERNEL=$(CFLAG_COMMON)
 CFLAG_APP=$(CFLAG_COMMON)
@@ -75,8 +75,8 @@ config : $(AUTOGEN_DIR)
 endif
 
 
-
 debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
+
 
 release: $(OBJS_DIR_RELEASE) $(RELEASE_TARGET)
 
@@ -84,11 +84,16 @@ release: $(OBJS_DIR_RELEASE) $(RELEASE_TARGET)
 $(DEBUG_TARGET) : $(DEBUG_OBJS)
 	@echo 'building elf image.. $@'
 	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(DEBUG_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
-	
+	$(SIZE) $@
+	@echo 'build complete!!'
+
 	
 $(RELEASE_TARGET) : $(RELEASE_OBJS)
 	@echo 'building elf image.. $@'
 	$(CC) $(CLFAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(RELEASE_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	$(SIZE) $@
+	@echo 'build complete!!'
+
 	
 
 $(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE) $(AUTOGEN_DIR):

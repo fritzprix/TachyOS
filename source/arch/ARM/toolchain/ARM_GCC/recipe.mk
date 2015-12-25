@@ -1,8 +1,7 @@
 #tool chain specific build option
 
-
 # Linker Option
-LDFLAG_COMMON +=-Map,$(DEBUG_TARGET:%.elf=%.map)\
+LDFLAG_COMMON +=-Map,$(@:%.elf=%.map)\
 				--gc-sections
 
 # C build option
@@ -22,7 +21,6 @@ CPFLAG_COMMON = -mlong-calls\
 				-ffreestanding\
 				-fno-rtti\
 				-fno-exceptions\
-				-Wall\
 				-fpermissive\
 				-T$(LDSCRIPT)\
 				$(FLOAT_OPTION)\

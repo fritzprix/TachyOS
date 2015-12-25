@@ -24,7 +24,7 @@ USE_XMEM
 
 /* Common part of the linker scripts for STM32F devices*/
 
-__stack_init = _estack  - KERNEL_STACK_SIZE ;
+__stack_init = KERNEL_STACK_LIMIT  - KERNEL_STACK_SIZE ;
 
 
 MEMORY

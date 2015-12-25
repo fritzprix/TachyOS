@@ -574,7 +574,7 @@ tchStatus tch_lock_force_release(cdsl_dlistNode_t* lock_list)
 	lock_t* lockp;
 	while(!cdsl_dlistIsEmpty(lock_list))
 	{
-		lockp = cdsl_dlistDequeue(lock_list);
+		lockp = (lock_t*) cdsl_dlistDequeue(lock_list);
 		lockp = container_of(lockp,lock_t,lock_ln);
 		lockp->unlock_fn(lockp);
 	}

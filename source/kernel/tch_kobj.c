@@ -33,7 +33,7 @@ tchStatus tch_registerKobject(tch_kobj* obj, tch_kobjDestr destfn){
 		return tchErrorParameter;
 	cdsl_dlistInit(&obj->lhead);
 	obj->__destr_fn = destfn;
-	cdsl_dlistPutTail(&current_mm->kobj_list,&obj->lhead);
+	cdsl_dlistPutTail((cdsl_dlistNode_t*) &current_mm->kobj_list,&obj->lhead);
 	return tchOK;
 }
 
@@ -52,7 +52,7 @@ tchStatus tch_unregisterKobject(tch_kobj* obj){
 
 tchStatus tch_destroyAllKobjects(){
 	while(!cdsl_dlistIsEmpty(&current_mm->kobj_list)){
-		tch_kobj* obj = cdsl_dlistDequeue(&current_mm->kobj_list);
+		tch_kobj* obj = (tch_kobj*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &current_mm->kobj_list);
 		obj = container_of(obj,tch_kobj,lhead);
 		obj->__destr_fn(obj);
 	}
