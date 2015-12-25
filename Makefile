@@ -12,6 +12,7 @@
 # setup root directory of source tree
 ROOT_DIR := $(CURDIR)
 CONFIG_DIR :=$(ROOT_DIR)/source/arch/$(ARCH)/configs
+AUTOGEN_DIR :=$(ROOT_DIR)/include/kernel/autogen
 
 # setup tools for 'make' works
 CC:=$(CROSS_COMPILE)gcc
@@ -28,7 +29,7 @@ OBJS_RELEASE=$(OBJ-y:%=$(OBJS_DIR_RELEASE)/%)
 
 KCONFIG_ENTRY:=$(ROOT_DIR)/config.json
 KCONFIG_TARGET:=$(ROOT_DIR)/.config
-KCONFIG_AUTOGEN:=$(ROOT_DIR)/include/kernel/autogen/autogen.h
+KCONFIG_AUTOGEN:=$(AUTOGEN_DIR)/autogen.h
 
 # SRC-y and INC-y are source and header directory list for each made from recipe file(recipe.mk)
 VPATH= $(SRC-y)
@@ -66,10 +67,10 @@ PHONY=config all debug release clean config_clean
 all : debug
 
 ifeq ($(DEFCONF),)
-config :
+config : $(AUTOGEN_DIR)
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
 else
-config :
+config : $(AUTOGEN_DIR)
 	$(PY) $(CONFIG_PY) -s -i $(CONFIG_DIR)/$(DEFCONF) -t $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
 endif
 
@@ -90,7 +91,7 @@ $(RELEASE_TARGET) : $(RELEASE_OBJS)
 	$(CC) $(CLFAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(RELEASE_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 	
 
-$(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE):
+$(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE) $(AUTOGEN_DIR):
 	$(MKDIR) $@
 
 DEBUG/%.ko:%.c
