@@ -61,8 +61,10 @@ RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).elf
 
 
 PHONY=config all debug release clean config_clean
+.SILENT : $(SILENT)
 
-.SILENT : $(KCONFIG_TARGET) $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
+SILENT=cofig $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
+
 
 all : debug
 
@@ -123,3 +125,5 @@ config_clean:
 	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN)
 
 .PHONY = $(PHONY)
+
+
