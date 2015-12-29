@@ -1,38 +1,23 @@
 {
   "UART":{
-    "prompt":"",
     "type":"bool",
-    "help":[
-
-    ]
+    "default":"y"
   },
   "ADC":{
-    "prompt":"",
     "type":"bool",
-    "help":[
-
-    ]
+    "default":"n"
   },
   "SPI":{
-    "prompt":"",
     "type":"bool",
-    "help":[
-
-    ]
+    "default":"n"
   },
   "IIC":{
-    "prompt":"",
     "type":"bool",
-    "help":[
-
-    ]
+    "default":"n"
   },
   "TIMER":{
-    "prompt":"",
     "type":"bool",
-    "help":[
-
-    ]
+    "default":"n"
   },
   "HAL_SUB_RECIPE":{
     "type":"recipe",

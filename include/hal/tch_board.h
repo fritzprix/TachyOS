@@ -11,6 +11,7 @@
 
 #include "tch.h"
 #include "tch_halcfg.h"
+#include "tch_haldesc.h"
 
 #if defined(__cplusplus)
 extern "C" {

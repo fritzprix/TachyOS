@@ -1,1 +1,1 @@
-OBJ-y+=tch_boardcfg.ko
+OBJ-y+=tch_board.ko

@@ -25,9 +25,12 @@
 #ifndef TCH_HALCFG_H_
 #define TCH_HALCFG_H_
 
+#include "stm32f2xx.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
 
 ///////////////////////////////////////////�� Configuration Constant Declarations��/////////////////////////////////////////////
 /**
@@ -72,11 +75,11 @@ extern "C" {
  *  @see EXTMEM_TYPE_SDRAM
  *  @see EXTMEM_TYPE_SRAM
  */
-#ifndef USE_EXTMEM
-#define USE_EXTMEM                0
+#ifndef USE_EXMEM
+#define USE_EXMEM                0
 #endif
 
-#if (USE_EXTMEM == 1)
+#if (USE_EXMEM == 1)
 
 #ifndef EXTMEM_TYPE
  #error "Please define 'EXTMEM_TYPE' "
@@ -138,12 +141,6 @@ extern "C" {
  */
 
 
-#if (SYS_MCLK_TYPE != SYS_MCLK_TYPE_INTERNAL)
-#define HSE_VALUE                SYS_MCLK_FREQ
-#else
-#define HSE_VALUE                SYS_INTERNAL_CLK_FREQ
-#endif
-
 
 #ifndef MFEATURE_GPIO
 #define MFEATURE_GPIO               (6)          ///  define number of gpio port your platform
@@ -197,8 +194,5 @@ extern "C" {
 }
 #endif
 
-
-#include "stm32f2xx.h"
-#include "tch_haldesc.h"
 
 #endif /* TCH_HALCFG_H_ */
