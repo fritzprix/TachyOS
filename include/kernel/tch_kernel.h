@@ -104,25 +104,22 @@ extern uint32_t __syscall_entry;
 	tch_port_enterSv((uint32_t) &__entry__##fn - (uint32_t) &__syscall_entry,0,0,0)
 
 
-
-
-
-#define TCH_SYS_TASKQ_SZ                    (16)
-#define tchk_kernelSetResult(th,result)		((tch_thread_uheader*) th)->kRet = (uint32_t) result
-#define getThreadHeader(th_id)  			((tch_thread_uheader*) th_id)
-#define getThreadKHeader(th_id) 			(((tch_thread_uheader*) th_id)->kthread)
+#define TCH_SYS_TASKQ_SZ						(16)
+#define tch_kernel_set_result(th,result)		((tch_thread_uheader*) th)->kRet = (uint32_t) result
+#define get_thread_header(th_id) 	 			((tch_thread_uheader*) th_id)
+#define get_thread_kheader(th_id)	 			(((tch_thread_uheader*) th_id)->kthread)
 
 /*!
  * \brief
  */
 extern __attribute__((naked)) void __init(void* arg);
-extern void tch_kernelInit(void* arg);
-extern void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3);
-extern void tch_KernelOnSystick();
-extern void tch_kernelOnWakeup();
+extern void tch_kernel_init(void* arg);
+extern void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3);
+extern void tch_kernel_onSystick();
+extern void tch_kernel_onWakeup();
 
-extern void tch_kernelOnMemFault(paddr_t pa, int fault);
-extern void tch_kernel_handleHardFault(int fault);
+extern void tch_kernel_onMemFault(paddr_t pa, int fault, int spec);
+extern void tch_kernel_onHardException(int fault,int spec);
 
 
 
@@ -137,17 +134,17 @@ extern void __tch_thread_atexit(tch_threadId thread,int res) __attribute__((nake
 /**\!brief Notify kernel that system is busy, so system should be prevented from going into sleep mode
  *
  */
-extern void idle_set_busy();
+extern void set_system_busy();
 
 /**\!brief Notify kernel that busy task is finished, so system can be go into sleep mode
  *
  */
-extern void idle_clear_busy();
+extern void clear_system_busy();
 
 /**\!brief check whether system is busy
  *
  */
-extern BOOL idle_is_busy();
+extern BOOL is_system_busy();
 
 
 /**

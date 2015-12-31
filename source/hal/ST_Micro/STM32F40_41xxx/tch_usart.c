@@ -56,28 +56,28 @@
 
 #define UART_SET_RXBUSY(ins)\
 	do{\
-		idle_set_busy();\
+		set_system_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_RXBUSY;\
 	}while(0)
 
 #define UART_CLR_RXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_RXBUSY;\
-		idle_clear_busy();\
+		clear_system_busy();\
 	}while(0)
 
 #define UART_IS_RXBUSY(ins)         ((tch_usartHandlePrototype) ins)->status & UART_RXBUSY
 
 #define UART_SET_TXBUSY(ins)\
 	do{\
-		idle_set_busy();\
+		set_system_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_TXBUSY;\
 	}while(0)
 
 #define UART_CLR_TXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_TXBUSY;\
-		idle_clear_busy();\
+		clear_system_busy();\
 	}while(0)
 
 #define UART_IS_TXBUSY(ins)          ((tch_usartHandlePrototype) ins)->status & UART_TXBUSY

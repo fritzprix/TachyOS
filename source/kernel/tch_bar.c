@@ -38,60 +38,66 @@
 
 #define BAR_ISVALID(bar)			((((tch_barCb*) bar)->status & 0xFFFF) == (((uint32_t) bar ^ BARRIER_CLASS_KEY) & 0xFFFF))
 
+#define BAR_SET_MAX(bar,max)		do {\
+	((tch_barCb*) bar)->status |= ((0xff & max) << 16);\
+}while(0)
+
+#define BAR_GET_MAX(bar)			(0xff & (((tch_barCb*) bar)->status >> 16))
 
 
-__USER_API__ static tch_barId tch_barCreate();
-__USER_API__ static tchStatus tch_barWait(tch_barId bar,uint32_t timeout);
-__USER_API__ static tchStatus tch_barSignal(tch_barId bar,tchStatus result);
+__USER_API__ static tch_barId tch_barCreate(uint8_t th_cnt);
+__USER_API__ static tchStatus tch_barEnter(tch_barId bar,uint32_t timeout);
 __USER_API__ static tchStatus tch_barDestroy(tch_barId bar);
 
-static tch_barId bar_init(tch_barCb* bar,BOOL is_static);
+static tch_barId bar_init(tch_barCb* bar,uint8_t cnt,BOOL is_static);
 static tchStatus bar_deinit(tch_barCb* bar);
 
 __USER_RODATA__ tch_kernel_service_barrier Barrier_IX = {
 		.create = tch_barCreate,
-		.wait = tch_barWait,
-		.signal = tch_barSignal,
+		.enter = tch_barEnter,
 		.destroy = tch_barDestroy
 };
 
 __USER_RODATA__ const tch_kernel_service_barrier* Barrier = &Barrier_IX;
 
 
-DECLARE_SYSCALL_0(bar_create,tch_barId);
-DECLARE_SYSCALL_2(bar_wait,tch_barId,uint32_t,tchStatus);
-DECLARE_SYSCALL_2(bar_signal,tch_barId,tchStatus,tchStatus);
+DECLARE_SYSCALL_1(bar_create,uint8_t,tch_barId);
+DECLARE_SYSCALL_2(bar_enter,tch_barId,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(bar_destroy,tch_barId,tchStatus);
-DECLARE_SYSCALL_1(bar_init,tch_barCb*,tchStatus);
+DECLARE_SYSCALL_2(bar_init,tch_barCb*,uint8_t,tchStatus);
 DECLARE_SYSCALL_1(bar_deinit,tch_barCb*,tchStatus);
 
 
-DEFINE_SYSCALL_0(bar_create,tch_barId) {
+DEFINE_SYSCALL_1(bar_create,uint8_t,th_cnt,tch_barId)
+{
 	tch_barCb* bar = (tch_barCb*) kmalloc(sizeof(tch_barCb));
 	if(!bar)
 		KERNEL_PANIC("tch_bar.c","can't allocate barrier");
-	bar_init(bar,FALSE);
+	bar_init(bar,th_cnt,FALSE);
 	return (tch_barId) bar;
 }
 
-DEFINE_SYSCALL_2(bar_wait,tch_barId,bar,uint32_t,timeout,tchStatus) {
-	if(!bar || !BAR_ISVALID(bar))
+DEFINE_SYSCALL_2(bar_enter,tch_barId,bar,uint32_t,timeout,tchStatus)
+{
+	if((!bar) || (!BAR_ISVALID(bar)))
 		return tchErrorParameter;
-	tch_barCb* _bar = (tch_barCb*) bar;
-	return tch_schedWait((tch_thread_queue*) &_bar->wq,timeout);
-}
-
-DEFINE_SYSCALL_2(bar_signal,tch_barId,barId,tchStatus,result,tchStatus){
-	tch_barCb* bar = (tch_barCb*) barId;
-	if(!bar || !BAR_ISVALID(bar))
-		return tchErrorParameter;
-	if(cdsl_dlistIsEmpty(&bar->wq))
-		return tchOK;
-	tch_schedWake((tch_thread_queue*)&bar->wq,SCHED_THREAD_ALL,tchOK,TRUE);
+	uint8_t th_max = BAR_GET_MAX(bar);
+	tch_barCb* bcb = (tch_barCb*) bar;
+	bcb->th_cnt++;
+	if(th_max > bcb->th_cnt)
+	{
+		tch_schedWait((tch_thread_queue*)&bcb->wq,timeout);
+	}
+	else
+	{
+		bcb->th_cnt = 0;
+		tch_schedWake((tch_thread_queue*)&bcb->wq,SCHED_THREAD_ALL,tchOK,FALSE);
+	}
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
+DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus)
+{
 	if((!barId) || (!BAR_ISVALID(barId)))
 		return tchErrorParameter;
 	bar_deinit(barId);
@@ -99,23 +105,27 @@ DEFINE_SYSCALL_1(bar_destroy,tch_barId,barId,tchStatus){
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(bar_init,tch_barCb*,bp,tchStatus){
+DEFINE_SYSCALL_2(bar_init,tch_barCb*,bp,uint8_t,cnt,tchStatus)
+{
 	if(!bp)
 		return tchErrorParameter;
-	bar_init(bp,TRUE);
+	bar_init(bp,cnt,TRUE);
 	return tchOK;
 }
 
-DEFINE_SYSCALL_1(bar_deinit,tch_barCb*,bp,tchStatus){
+DEFINE_SYSCALL_1(bar_deinit,tch_barCb*,bp,tchStatus)
+{
 	if(!bp || !BAR_ISVALID(bp))
 		return tchErrorParameter;
 	bar_deinit(bp);
 	return tchOK;
 }
 
-static tch_barId bar_init(tch_barCb* bar,BOOL is_static){
+static tch_barId bar_init(tch_barCb* bar,uint8_t cnt,BOOL is_static){
 	mset(bar, 0, sizeof(tch_barCb));
 	BAR_VALIDATE(bar);
+	BAR_SET_MAX(bar,cnt);
+	bar->th_cnt = 0;
 	cdsl_dlistInit(&bar->wq);
 	tch_registerKobject(&bar->__obj,is_static? (tch_kobjDestr) bar_deinit : (tch_kobjDestr) tch_barDestroy);
 
@@ -132,31 +142,25 @@ static tchStatus bar_deinit(tch_barCb* bar){
 }
 
 
-__USER_API__ static tch_barId tch_barCreate(){
+__USER_API__ static tch_barId tch_barCreate(uint8_t cnt)
+{
 	if(tch_port_isISR())
 		return NULL;
 	return (tch_barId) __SYSCALL_0(bar_create);
 }
 
-__USER_API__ static tchStatus tch_barWait(tch_barId bar,uint32_t timeout){
-	if(!bar)
+__USER_API__ static tchStatus tch_barEnter(tch_barId barid,uint32_t timeout)
+{
+	if(!barid)
 		return tchErrorParameter;
 	if(tch_port_isISR())
 		return tchErrorISR;
-	return __SYSCALL_2(bar_wait,bar,timeout);
+	return __SYSCALL_2(bar_enter,barid,timeout);
 }
 
-__USER_API__ static tchStatus tch_barSignal(tch_barId barId,tchStatus result){
-	tch_barCb* bar = (tch_barCb*) barId;
-	if(!bar)
-		return tchErrorParameter;
-	if(tch_port_isISR()){
-		return __bar_signal(barId,result);
-	}
-	return __SYSCALL_2(bar_signal,barId,result);
-}
 
-__USER_API__ static tchStatus tch_barDestroy(tch_barId barId){
+__USER_API__ static tchStatus tch_barDestroy(tch_barId barId)
+{
 	if(!barId)
 		return tchErrorParameter;
 	if(tch_port_isISR())
@@ -165,12 +169,12 @@ __USER_API__ static tchStatus tch_barDestroy(tch_barId barId){
 }
 
 
-tchStatus tch_barInit(tch_barCb* bar){
+tchStatus tch_barInit(tch_barCb* bar,uint8_t th_cnt){
 	if(!bar)
 		return tchErrorParameter;
 	if(tch_port_isISR())
-		return __bar_init(bar);
-	return __SYSCALL_1(bar_init,bar);
+		return __bar_init(bar,th_cnt);
+	return __SYSCALL_2(bar_init,bar,th_cnt);
 }
 
 tchStatus tch_barDeinit(tch_barCb* bar){

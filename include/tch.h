@@ -108,10 +108,16 @@ struct tch_kernel_service_semaphore {
 
 
 struct tch_kernel_service_barrier {
-	tch_barId (*create)();
-	tchStatus (*wait)(tch_barId bar,uint32_t timeout);
-	tchStatus (*signal)(tch_barId bar,tchStatus result);
+	tch_barId (*create)(uint8_t thread_cnt);
+	tchStatus (*enter)(tch_barId bar,uint32_t timeout);
 	tchStatus (*destroy)(tch_barId bar);
+};
+
+struct tch_kernel_service_rendezvu {
+	tch_rendvId (*create)();
+	tchStatus (*sleep)(tch_rendvId rendv,uint32_t timeout);
+	tchStatus (*wake)(tch_rendvId rendv);
+	tchStatus (*destroy)(tch_rendvId rendv);
 };
 
 
@@ -162,6 +168,10 @@ struct tch_kernel_service_event {
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
 	tchStatus (*wait)(tch_eventId ev,int32_t signals,uint32_t millisec);
 	tchStatus (*destroy)(tch_eventId ev);
+};
+
+struct tch_kernel_service_usWait {
+
 };
 
 

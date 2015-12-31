@@ -14,22 +14,29 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_err.h"
 
-
-
-void tch_kernel_raiseError(tch_threadId who,int errno,const char* msg){			//managable error which is cuased by thread level erroneous behavior
-	while(TRUE){
+/**
+ * exception detected by software(kernel)
+ */
+void tch_kernel_onSoftException(tch_threadId who, tchStatus err, const char* msg)
+{
+	while (TRUE)
+	{
 		__WFE();
 	}
 }
 
-void tch_kernel_panic(const char* floc,int lno, const char* msg){
-	while(TRUE){
+void tch_kernel_onPanic(const char* floc, int lno, const char* msg)
+{
+	while (TRUE)
+	{
 		__WFE();
 	}
 }
 
-void tch_kernel_handleHardFault(int fault){
-	while(TRUE){
+void tch_kernel_onHardException(int fault, int spec)
+{
+	while (TRUE)
+	{
 		__WFE();
 	}
 }

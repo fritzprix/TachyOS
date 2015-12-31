@@ -36,6 +36,6 @@ __attribute__((naked)) void __init(void* arg){
 		tch_port_setKerenlSP((uword_t) tch_kernelMemInit((struct section_descriptor**) default_sections));
 	}
 
-	tch_kernelInit(arg);
+	tch_kernel_init(arg);
 }
 

@@ -274,7 +274,7 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
+	tch_kernel_onSyscall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
 }
 
 int tch_port_clearFault(int type){
@@ -414,7 +414,7 @@ int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 
 
 void HardFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_HARD);
+	tch_kernel_onHardException(FAULT_TYPE_HARD);
 }
 
 void MemManage_Handler(){
@@ -429,13 +429,13 @@ void MemManage_Handler(){
 	}else if(mfault & (1)){
 		fault = MEM_FAULT_IABORT;
 	}
-	tch_kernelOnMemFault(pa,fault);
+	tch_kernel_onMemFault(pa,fault);
 }
 
 void BusFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_BUS);
+	tch_kernel_onHardException(FAULT_TYPE_BUS);
 }
 
 void UsageFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_USG);
+	tch_kernel_onHardException(FAULT_TYPE_USG);
 }

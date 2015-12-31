@@ -21,7 +21,7 @@
 #include <sys/reent.h>
 
 #define THREAD_CHK_PATTERN		((uint32_t) 0xF3F3D5D5)
-#define getThreadHeader(th_id)  ((tch_thread_uheader*) th_id)
+#define get_thread_header(th_id)  ((tch_thread_uheader*) th_id)
 
 #define THREAD_ROOT_BIT			((uint8_t) 1 << 0)
 #define THREAD_DEATH_BIT		((uint8_t) 1 << 1)
@@ -105,7 +105,7 @@ DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,err,tchStatus){
 
 	tch_thread_uheader* thr = (tch_thread_uheader*) tid;
 	if (tid == current){
-		tch_thread_kheader* kth = getThreadKHeader(thr);
+		tch_thread_kheader* kth = get_thread_kheader(thr);
 		kth->flag &= ~THREAD_DEATH_BIT;
 		kth->prior = Low;
 		tch_port_enterPrivThread(__tch_thread_atexit, (uint32_t) tid, err, 0);
@@ -122,7 +122,7 @@ DEFINE_SYSCALL_2(thread_terminate,tch_threadId,tid,tchStatus,res,tchStatus){
 		return tchErrorParameter;
 
 	tch_schedTerminate(tid,res);
-	tch_thread_kheader* kth = getThreadKHeader(tid);
+	tch_thread_kheader* kth = get_thread_kheader(tid);
 	cdsl_dlistRemove(&kth->t_siblingLn);			// remove link to sibling list
 	tch_mmProcClean(kth);
 	kfree(kth);
@@ -149,46 +149,46 @@ DEFINE_SYSCALL_2(thread_join,tch_threadId,id,uint32_t,timeout,tchStatus){
 tchStatus tch_threadIsValid(tch_threadId thread){
 	if(!thread)
 		return tchErrorParameter;
-	if(getThreadHeader(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN)){
-		getThreadHeader(thread)->kRet = tchErrorStackOverflow;
+	if(get_thread_header(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN)){
+		get_thread_header(thread)->kRet = tchErrorStackOverflow;
 		return tchErrorStackOverflow;
 	}
-	if(getThreadHeader(thread)->kthread->flag & THREAD_DEATH_BIT)
-		return getThreadHeader(thread)->kRet;
+	if(get_thread_header(thread)->kthread->flag & THREAD_DEATH_BIT)
+		return get_thread_header(thread)->kRet;
 	return tchOK;
 }
 
 BOOL tch_threadIsPrivilidged(tch_threadId thread){
-	return ((getThreadKHeader(thread)->flag & THREAD_PRIV_BIT) > 0);
+	return ((get_thread_kheader(thread)->flag & THREAD_PRIV_BIT) > 0);
 }
 
 static void tch_thread_validate(tch_threadId thread){
 	if(!thread)
 		return;
-	getThreadHeader(thread)->chks = ((uint32_t) THREAD_CHK_PATTERN);
-	getThreadKHeader(thread)->flag = 0;
+	get_thread_header(thread)->chks = ((uint32_t) THREAD_CHK_PATTERN);
+	get_thread_kheader(thread)->flag = 0;
 }
 
 
 static void tch_thread_invalidate(tch_threadId thread,tchStatus reason){
-	getThreadHeader(thread)->kRet = reason;
-	getThreadHeader(thread)->kthread->flag |= THREAD_DEATH_BIT;
+	get_thread_header(thread)->kRet = reason;
+	get_thread_header(thread)->kthread->flag |= THREAD_DEATH_BIT;
 }
 
 
 BOOL tch_threadIsRoot(tch_threadId thread){
-	return (getThreadHeader(thread)->kthread->flag & THREAD_ROOT_BIT);
+	return (get_thread_header(thread)->kthread->flag & THREAD_ROOT_BIT);
 }
 
 
 void tch_threadSetPriority(tch_threadId tid,tch_threadPrior nprior){
 	if(nprior > Unpreemtible)
 		return;
-	getThreadKHeader(tid)->prior = nprior;
+	get_thread_kheader(tid)->prior = nprior;
 }
 
 tch_threadPrior tch_threadGetPriority(tch_threadId tid){
-	return getThreadKHeader(tid)->prior;
+	return get_thread_kheader(tid)->prior;
 }
 /**
  * create new thread
@@ -351,7 +351,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
 __attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
 	if(!thread)
 		KERNEL_PANIC("tch_thread.c","invalid tid at atexit");
-	tch_thread_kheader* th_p = getThreadKHeader(thread);
+	tch_thread_kheader* th_p = get_thread_kheader(thread);
 	tch_thread_kheader* ch_p = NULL;
 
 	while(!cdsl_dlistIsEmpty(&th_p->child_list)){												// if has child, kill all of them

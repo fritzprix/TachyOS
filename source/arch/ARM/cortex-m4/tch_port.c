@@ -13,7 +13,7 @@
  */
 
 
-#include "kernel/tch_kernel.h"
+#include "tch_kernel.h"
 #include "tch_fault.h"
 #include "tch_hal.h"
 #include "tch_port.h"
@@ -28,17 +28,13 @@
 #define CTRL_UNPRIV_THREAD_ENABLE  ((uint32_t) 0x1)
 #define CTRL_FPCA                  ((uint32_t) 0x4)
 
-#define FAULT_TYPE_HARD            ((int) -1)
-#define FAULT_TYPE_BUS             ((int) -2)
-#define FAULT_TYPE_USG             ((int) -4)
-
 #define PE_TEXT						((uint8_t) 0)
 #define PE_DATA						((uint8_t) 1)
 #define PE_STACK					((uint8_t) 2)
 #define PE_DYNAMIC					((uint8_t) 3)
 
 
-#define NR_PAGE_ENTRY				((uint8_t) 8)
+#define NR_PAGE_ENTRY				8
 
 
 
@@ -123,9 +119,7 @@ void tch_port_disablePrivilegedThread(){
 	__set_CONTROL(mcu_control);
 }
 
-/**
- *
- */
+
 void tch_port_atomicBegin(void){
 	__set_BASEPRI(MODE_KERNEL);
 }
@@ -161,9 +155,7 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),
-						"r"(&((tch_thread_kheader*) nth)->ctx),
-						"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
 }
 
 
@@ -276,18 +268,19 @@ int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
 
 void SVC_Handler(void){
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernelOnSvCall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
+	tch_kernel_onSyscall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
 }
 
 int tch_port_clearFault(int type){
 	switch(type){
-	case FAULT_TYPE_HARD:
+	case FAULT_HARD:
 		break;
-	case FAULT_TYPE_BUS:
+	case FAULT_BUS:
 		break;
-	case FAULT_TYPE_USG:
+	case FAULT_ILLSTATE:
 		break;
 	}
+	return 0;
 }
 
 void inline tch_port_updateProtectionEntry(struct pte* ptep){
@@ -300,7 +293,7 @@ void inline tch_port_updateProtectionEntry(struct pte* ptep){
 }
 
 int tch_port_reset(){
-
+	return 0;
 }
 
 void tch_port_loadPageTable(pgd_t* pgd){
@@ -414,30 +407,49 @@ int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 }
 
 
-
 void HardFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_HARD);
+	tch_kernel_onHardException(FAULT_HARD,SPEC_UND);
 }
 
 void MemManage_Handler(){
-	uint32_t mfault = SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk;
+	uint32_t mfault = (SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) >> SCB_CFSR_MEMFAULTSR_Pos;
 	paddr_t pa = 0;
-	int fault = 0;
-	if(mfault & (1 << 7)){		// if fault address is valid
+	int spec = 0;
+	if(mfault & 2)
+		spec = SPEC_DACCESS;
+	else if(mfault & 1)
+		spec = SPEC_IACCESS;
+	else if(mfault & (1 << 4))
+		spec = SPEC_STK;
+	else if(mfault & (1 << 3))
+		spec = SPEC_UNSTK;
+	if(mfault & (1 << 7))	// if fault address is valid, handled in page fault
+	{
 		pa = (paddr_t) SCB->MMFAR;
+		tch_kernel_onMemFault(pa,FAULT_MEM,spec);
 	}
-	if(mfault & (1 << 1)){
-		fault = MEM_FAULT_DABORT;
-	}else if(mfault & (1)){
-		fault = MEM_FAULT_IABORT;
+	else
+	{
+		tch_kernel_onHardException(FAULT_MEM, spec);
 	}
-	tch_kernelOnMemFault(pa,fault);
 }
 
 void BusFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_BUS);
+	uint32_t bfault = (SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) >> SCB_CFSR_BUSFAULTSR_Pos;
+	int spec = 0;
+	if(bfault & (1 << 4))
+		spec = SPEC_STK;
+	else if(bfault & (1 << 3))
+		spec = SPEC_UNSTK;
+	else if(bfault & (1 << 2))
+		spec = SPEC_UND;
+	else if(bfault & 2)
+		spec = SPEC_DACCESS;
+	else if(bfault & 1)
+		spec = SPEC_IACCESS;
+	tch_kernel_onHardException(FAULT_BUS,spec);
 }
 
 void UsageFault_Handler(){
-	tch_kernel_handleHardFault(FAULT_TYPE_USG);
+	tch_kernel_onHardException(FAULT_ILLSTATE, SPEC_UND);
 }

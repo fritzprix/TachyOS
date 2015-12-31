@@ -51,7 +51,7 @@ void idle_init(){
 /**
  *  @brief notify idle thread that there is ongoing hardware task and keep system power up
  */
-void idle_set_busy(){
+void set_system_busy(){
 	if(tch_rti->Mtx->lock(idle_lock,tchWaitForever) != tchOK)
 		return;
 	busy_cnt++;
@@ -62,7 +62,7 @@ void idle_set_busy(){
  * @brief notify ongoing task is finished and can go lower power mode
  */
 
-void idle_clear_busy(){
+void clear_system_busy(){
 	if(tch_rti->Mtx->lock(idle_lock,tchWaitForever) != tchOK)
 		return;
 	busy_cnt--;
@@ -89,7 +89,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	while(TRUE){
 		// some function entering sleep mode
-		if((!busy_cnt) && (getThreadKHeader(current)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
+		if((!busy_cnt) && (get_thread_kheader(current)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;
 			parm.obj = rtc_handle;
 			tch_lwtsk_request(idle_tskid,&parm,FALSE);

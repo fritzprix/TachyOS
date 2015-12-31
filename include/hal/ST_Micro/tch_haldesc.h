@@ -23,6 +23,7 @@
 #include "tch.h"
 #include "tch_dma.h"
 #include "tch_rtc.h"
+#include "kernel/tch_rendezvu.h"
 
 
 
@@ -41,7 +42,7 @@ typedef struct _tch_gpio_descriptor {
 
 typedef struct _tch_ioInterrupt_descriptor {
 	void*                     io_occp;
-	tch_barId                 evbar;
+	tch_rendzvCb			  rendezv;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 

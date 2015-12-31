@@ -15,14 +15,15 @@
 extern "C" {
 #endif
 
-typedef struct tch_bar_cb_t {
+typedef struct tch_bar_cb {
 	tch_kobj                 __obj;
 	uint32_t                 status;
+	uint8_t 				 th_cnt;
 	cdsl_dlistNode_t         wq;
 }tch_barCb;
 
 extern tch_kernel_service_barrier Barrier_IX;
-extern tchStatus tch_barInit(tch_barCb* bar);
+extern tchStatus tch_barInit(tch_barCb* bar,uint8_t th_cnt);
 extern tchStatus tch_barDeinit(tch_barCb* bar);
 
 #if defined(__cplusplus)

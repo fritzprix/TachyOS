@@ -549,7 +549,7 @@ tchStatus tch_lock_add(lock_t* lock,unlock_fn fn)
 
 	cdsl_dlistInit(&lock->lock_ln);
 	lock->unlock_fn = fn;
-	cdsl_dlistPutHead(&getThreadKHeader(current)->lockables,&lock->lock_ln);
+	cdsl_dlistPutHead(&get_thread_kheader(current)->lockables,&lock->lock_ln);
 	return tchOK;
 }
 

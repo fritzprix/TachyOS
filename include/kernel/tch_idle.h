@@ -10,8 +10,8 @@
 
 
 extern void idle_init();
-extern void idle_set_busy();
-extern void idle_clear_busy();
-extern BOOL idle_is_busy();
+extern void set_system_busy();
+extern void clear_system_busy();
+extern BOOL is_system_busy();
 
 #endif /* TCH_IDLE_H_ */

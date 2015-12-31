@@ -738,5 +738,5 @@ void tch_hal_resumeSysClock()
 
 void SysTick_Handler(void)
 {
-	tch_KernelOnSystick();
+	tch_kernel_onSystick();
 }

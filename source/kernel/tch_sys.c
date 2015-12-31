@@ -32,6 +32,7 @@
 #include "kernel/tch_mpool.h"
 #include "kernel/tch_event.h"
 #include "kernel/tch_err.h"
+#include "kernel/tch_rendezvu.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mailq.h"
 #include "kernel/tch_msgq.h"
@@ -63,6 +64,7 @@ __USER_RODATA__ const tch RuntimeInterface = {
 		.Time = &Time_IX,
 		.Condv = &CondVar_IX,
 		.Barrier = &Barrier_IX,
+		.Rendezvous = &Rendezvous_IX,
 		.Mempool = &MPool_IX,
 		.MailQ = &MailQ_IX,
 		.MsgQ = &MsgQ_IX,
@@ -83,7 +85,7 @@ volatile BOOL __VALID_SYSCALL;
  *  1. initialize kernel stack and dyanmic memory region @ tch_kernelMemInit()
  *  2. perform cpu specific initialization
  */
-void tch_kernelInit(void* arg){
+void tch_kernel_init(void* arg){
 
 	kernel_ready = FALSE;
 	tch_klog_init();
@@ -104,11 +106,11 @@ void tch_kernelInit(void* arg){
 }
 
 
-void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3){
+void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg3){
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
-		tch_kernel_raiseError(current,tchErrorIllegalAccess,"Illegal System call route detected");
+		tch_kernel_onSoftException(current,tchErrorIllegalAccess,"Illegal System call route detected");
 
 
 	tch_thread_kheader* cth = NULL;
@@ -135,7 +137,7 @@ void tch_kernelOnSvCall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t arg
 			else
 				tch_port_disablePrivilegedThread();
 	}else{
-		tchk_kernelSetResult(current,(*((tch_syscall*) ((uint32_t) __syscall_table + sv_id)))(arg1,arg2,arg3));
+		tch_kernel_set_result(current,(*((tch_syscall*) ((uint32_t) __syscall_table + sv_id)))(arg1,arg2,arg3));
 	}
 }
 

@@ -336,7 +336,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 }
 
 
-void tch_kernelOnMemFault(paddr_t pa, int fault){
+void tch_kernel_onMemFault(paddr_t pa, int fault,int spec){
 	struct mem_region* region = tch_segmentGetRegionFromPtr(pa);
 	if(perm_is_only_priv(region->flags) && !perm_is_public(region->flags) && region->owner != &current->kthread->mm){
 		//kill thread

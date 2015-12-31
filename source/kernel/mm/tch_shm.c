@@ -95,7 +95,7 @@ DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 }
 
 DEFINE_SYSCALL_1(shmem_cleanup,tch_threadId,tid,tchStatus){
-	tch_thread_kheader* kth = getThreadKHeader(tid);
+	tch_thread_kheader* kth = get_thread_kheader(tid);
 	cdsl_dlistNode_t* shm_alc = &kth->mm.shm_list;
 	struct shmalloc_header* chnk = NULL;
 	while(!cdsl_dlistIsEmpty(shm_alc)){

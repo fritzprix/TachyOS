@@ -37,6 +37,7 @@ typedef void* tch_mtxId;
 typedef void* tch_semId;
 typedef void* tch_barId;
 typedef void* tch_timerId;
+typedef void* tch_rendvId;
 /*! \brief condition variable identifier
  */
 typedef void* tch_condvId;
@@ -59,6 +60,7 @@ typedef struct tch_kernel_service_mailbox tch_kernel_service_mailQ;
 typedef struct tch_kernel_service_mempool tch_kernel_service_mempool;
 typedef struct tch_kernel_service_mem tch_kernel_service_mem;
 typedef struct tch_kernel_service_barrier tch_kernel_service_barrier;
+typedef struct tch_kernel_service_rendezvu tch_kernel_service_rendezvu;
 typedef struct tch_kernel_service_event tch_kernel_service_event;
 typedef struct tch_kernel_service_svcmanager tch_kernel_service_svcmanager;
 
@@ -92,6 +94,7 @@ typedef struct tch_runtime {
 	const tch_kernel_service_mtx* Mtx;
 	const tch_kernel_service_semaphore* Sem;
 	const tch_kernel_service_barrier* Barrier;
+	const tch_kernel_service_rendezvu* Rendezvous;
 	const tch_kernel_service_messageQ* MsgQ;
 	const tch_kernel_service_mailQ* MailQ;
 	const tch_kernel_service_mempool* Mempool;

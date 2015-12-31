@@ -77,84 +77,68 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 
 __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
-				0,
-				NULL,
-				EXTI0_IRQn
+				.io_occp = 0,
+				.irq = EXTI0_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI1_IRQn
+				.io_occp = 0,
+				.irq = EXTI1_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI2_IRQn
+				.io_occp = 0,
+				.irq = EXTI2_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI3_IRQn
+				.io_occp = 0,
+				.irq = EXTI3_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI4_IRQn
+				.io_occp = 0,
+				.irq = EXTI4_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		}
 };
 
@@ -733,5 +717,5 @@ void tch_hal_resumeSysClock(){
 
 
 void SysTick_Handler(void){
-	tch_KernelOnSystick();
+	tch_kernel_onSystick();
 }
