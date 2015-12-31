@@ -77,84 +77,68 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 
 __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
-				0,
-				NULL,
-				EXTI0_IRQn
+				.io_occp = 0,
+				.irq = EXTI0_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI1_IRQn
+				.io_occp = 0,
+				.irq = EXTI1_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI2_IRQn
+				.io_occp = 0,
+				.irq = EXTI2_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI3_IRQn
+				.io_occp = 0,
+				.irq = EXTI3_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI4_IRQn
+				.io_occp = 0,
+				.irq = EXTI4_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		}
 };
 
@@ -666,23 +650,22 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 };
 
 
-
-void tch_hal_enableSystick()
-{
-	SysTick_Config(SYS_CLK / 1000);
+/**
+ *  implementation of HAL interface on which kernel depends
+ */
+void tch_hal_enableSystick(uint32_t mills){
+	SysTick_Config(mills * (SYS_CLK / 1000));
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_EnableIRQ(SysTick_IRQn);
 }
 
-void tch_hal_disableSystick()
-{
+void tch_hal_disableSystick(){
 	NVIC_DisableIRQ(SysTick_IRQn);
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
 
-void tch_hal_setSleepMode(tch_lplvl lplvl)
-{
+void tch_hal_setSleepMode(tch_lplvl lplvl){
 	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
 	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
 	switch(lplvl){
@@ -700,8 +683,7 @@ void tch_hal_setSleepMode(tch_lplvl lplvl)
 }
 
 
-void tch_hal_enterSleepMode()
-{
+void tch_hal_enterSleepMode(){
 	__DMB();
 	__ISB();
 	__WFI();
@@ -709,15 +691,13 @@ void tch_hal_enterSleepMode()
 	__ISB();
 }
 
-void tch_hal_pauseSysClock()
-{
+void tch_hal_pauseSysClock(){
 	/**
 	 * STM32F4/2x handles main clock suspension when system enter sleep mode
 	 */
 }
 
-void tch_hal_resumeSysClock()
-{
+void tch_hal_resumeSysClock(){
 	uint32_t tmp = 0;
 	RCC->CR |= RCC_CR_HSEON;
 	while(!(RCC->CR & RCC_CR_HSERDY))
@@ -736,7 +716,6 @@ void tch_hal_resumeSysClock()
 }
 
 
-void SysTick_Handler(void)
-{
+void SysTick_Handler(void){
 	tch_kernel_onSystick();
 }

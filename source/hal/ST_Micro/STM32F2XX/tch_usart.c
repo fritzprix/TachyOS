@@ -56,28 +56,28 @@
 
 #define UART_SET_RXBUSY(ins)\
 	do{\
-		idle_set_busy();\
+		set_system_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_RXBUSY;\
 	}while(0)
 
 #define UART_CLR_RXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_RXBUSY;\
-		idle_clear_busy();\
+		clear_system_busy();\
 	}while(0)
 
 #define UART_IS_RXBUSY(ins)         ((tch_usartHandlePrototype) ins)->status & UART_RXBUSY
 
 #define UART_SET_TXBUSY(ins)\
 	do{\
-		idle_set_busy();\
+		set_system_busy();\
 		((tch_usartHandlePrototype) ins)->status |= UART_TXBUSY;\
 	}while(0)
 
 #define UART_CLR_TXBUSY(ins)\
 	do{\
 		((tch_usartHandlePrototype) ins)->status &= ~UART_TXBUSY;\
-		idle_clear_busy();\
+		clear_system_busy();\
 	}while(0)
 
 #define UART_IS_TXBUSY(ins)          ((tch_usartHandlePrototype) ins)->status & UART_TXBUSY
@@ -106,13 +106,6 @@ typedef struct tch_usart_handle_prototype_s {
 	const tch*                       env;
 }* tch_usartHandlePrototype;
 
-struct tch_usart_prototype_s {
-	tch_device_service_usart                     pix;
-	tch_mtxId                         mtx;
-	tch_condvId                       condv;
-	uint16_t                          occp_state;
-	uint16_t                          lpoccp_state;
-};
 
 __USER_API__ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 __USER_API__ static tchStatus tch_usart_close(tch_usartHandle handle);
@@ -128,7 +121,7 @@ static inline void tch_usart_invalidate(tch_usartHandlePrototype _handle);
 static inline BOOL tch_usart_isValid(tch_usartHandlePrototype _handle);
 
 
-__USER_RODATA__ struct tch_lld_usart UART_Ops = {
+__USER_RODATA__ tch_device_service_usart UART_Ops = {
 		.count = MFEATURE_UART,
 		.allocate = tch_usart_open
 };

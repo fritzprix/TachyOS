@@ -71,7 +71,7 @@ typedef struct tch_gpio_manager_internal_t {
 	const uint8_t                 io_cnt;
 }tch_gpio_manager;
 
-typedef struct _tch_gpio_handle_prototype {
+typedef struct tch_gpio_handle_prototype_t {
 	tch_gpioHandle               _pix;
 	uint8_t                       idx;
 	uint32_t                      state;
@@ -80,6 +80,7 @@ typedef struct _tch_gpio_handle_prototype {
 	tch_IoEventCallback_t         cb;
 	const tch*                    env;
 }tch_gpio_handle_prototype;
+
 
 
 /////////////////////////////////////    public function     //////////////////////////////////
@@ -133,12 +134,14 @@ static int tch_gpio_init(void)
 	tch_mutexInit(&lock);
 	tch_condvInit(&condv);
 	tch_kmod_register(MODULE_TYPE_GPIO,GPIO_CLASS_KEY,&GPIO_Ops,FALSE);
+	uint32_t i;
 	return TRUE;
 }
 
 static void tch_gpio_exit(void)
 {
 	tch_kmod_unregister(MODULE_TYPE_GPIO,GPIO_CLASS_KEY);
+	uint32_t i;
 	tch_mutexDeinit(&lock);
 	tch_condvDeinit(&condv);
 }
@@ -249,8 +252,6 @@ static tchStatus tch_gpio_free(tch_gpioHandle* self){
 	return tchOK;
 }
 
-
-
 static void tch_gpio_out(tch_gpioHandle* self,uint32_t pmsk,tch_bState nstate){
 	tch_gpio_handle_prototype* ins = (tch_gpio_handle_prototype*) self;
 	if(!ins)
@@ -307,7 +308,7 @@ static tchStatus tch_gpio_registerEvent(tch_gpioHandle* self,pin p,const gpio_ev
 		env->Mtx->unlock(&lock);
 		return tchErrorResource;
 	}
-	ioIrqObj->evbar = env->Barrier->create();
+	tch_rendzvInit(&ioIrqObj->rendezv);
 
 	ioIrqObj->io_occp = ins;
 	SET_INTERRUPT(ins);
@@ -341,7 +342,9 @@ static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p)
 
 	uint16_t pmsk = (1 << p);
 	ioIntrDesc->io_occp = NULL;
-	api->Barrier->destroy(ioIntrDesc->evbar);
+	tch_rendzvDeinit(&ioIntrDesc->rendezv);
+
+	// TODO: replace barrier
 	tch_disableInterrupt(ioIntrDesc->irq);
 	//NVIC_DisableIRQ(ioIntrDesc->irq);
 	SYSCFG->EXTICR[p >> 2] = 0;
@@ -349,7 +352,6 @@ static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p)
 	EXTI->IMR &= ~pmsk;
 	EXTI->FTSR &= ~pmsk;
 	EXTI->RTSR &= ~pmsk;
-	api->Barrier->signal(ioIntrDesc->evbar,tchErrorResource);
 	ins->cb = NULL;
 	CLR_INTERRUPT(ins);    // clear interrupt flag in status
 	api->Mtx->unlock(&lock);   // release mtx of singleton
@@ -425,7 +427,7 @@ static BOOL tch_gpio_waitEvent(tch_gpioHandle* self,uint8_t pin,uint32_t timeout
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[pin];
 	if(ioIrqObj->io_occp != self)
 		return FALSE;
-	return env->Barrier->wait(ioIrqObj->evbar,timeout) == tchOK;
+	return env->Rendezvous->sleep(&ioIrqObj->rendezv,timeout) == tchOK;
 }
 
 
@@ -503,7 +505,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt)
 			if(_handle->cb)
 				_handle->cb((tch_gpioHandle*)_handle,base_idx + pos);
 			EXTI->PR |= pMsk;
-			_handle->env->Barrier->signal(ioIntObj->evbar,tchOK);
+			_handle->env->Rendezvous->wake(&ioIntObj->rendezv);
 		}
 		ext_pr >>= 1;
 		pMsk <<= 1;

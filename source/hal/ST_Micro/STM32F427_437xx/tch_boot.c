@@ -12,39 +12,6 @@
 #include "kernel/tch_boot.h"
 #include "kernel/tch_err.h"
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_TypesDefinitions
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Defines
-  * @{
-  */
-
-/************************* Miscellaneous Configuration ************************/
-/*!< Uncomment the following line if you need to use external SRAM or SDRAM mounted
-     on STM324xG_EVAL/STM324x7I_EVAL/STM324x9I_EVAL boards as data memory  */
-#if defined (STM32F40_41xxx) || defined (STM32F427_437xx) || defined (STM32F429_439xx)
-/* #define DATA_IN_ExtSRAM */
-#endif /* STM32F40_41xxx || STM32F427_437x || STM32F429_439xx */
-
-#if defined (STM32F427_437xx) || defined (STM32F429_439xx)
-/* #define DATA_IN_ExtSDRAM */
-#endif /* STM32F427_437x || STM32F429_439xx */
-
-/*!< Uncomment the following line if you need to relocate your vector Table in
-     Internal SRAM. */
-/* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
-                                   This value must be a multiple of 0x200. */
-/******************************************************************************/
 
 /************************* PLL Parameters *************************************/
 /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
@@ -72,21 +39,6 @@
 
 /******************************************************************************/
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Macros
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_Variables
-  * @{
-  */
 
 #if defined (STM32F40_41xxx)
   uint32_t SystemCoreClock = 168000000;
@@ -102,13 +54,6 @@
 
   __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F4xx_System_Private_FunctionPrototypes
-  * @{
-  */
 
 void tch_boot_setSystemClock(){
 	  /* FPU settings ------------------------------------------------------------*/

@@ -54,13 +54,13 @@ typedef struct tch_spi_request_s tch_spi_request;
 
 
 #define SPI_setBusy(ins)             do{\
-	idle_set_busy();\
+	set_system_busy();\
 	((tch_spi_handle_prototype*) ins)->status |= TCH_SPI_BUSY_FLAG;\
 }while(0)
 
 #define SPI_clrBusy(ins)             do{\
 	((tch_spi_handle_prototype*) ins)->status &= ~TCH_SPI_BUSY_FLAG;\
-	idle_clear_busy();\
+	clear_system_busy();\
 }while(0)
 
 #define SPI_isBusy(ins)              ((tch_spi_handle_prototype*) ins)->status & TCH_SPI_BUSY_FLAG

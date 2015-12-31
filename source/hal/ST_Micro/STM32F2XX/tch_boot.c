@@ -20,32 +20,6 @@
 #include "kernel/tch_err.h"
 
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F2xx_System_Private_TypesDefinitions
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F2xx_System_Private_Defines
-  * @{
-  */
-
-/*!< Uncomment the following line if you need to use external SRAM mounted
-     on STM322xG_EVAL board as data memory  */
-/* #define DATA_IN_ExtSRAM */
-
-/*!< Uncomment the following line if you need to relocate your vector Table in
-     Internal SRAM. */
-/* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
-                                   This value must be a multiple of 0x200. */
-
 
 /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
 #define PLL_M      (SYS_MCLK_FREQ / 1000000)

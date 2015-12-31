@@ -39,127 +39,111 @@ __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 		},
 		{
 				._hw = GPIOB,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOBEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOBLPEN,
-				0
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIOBEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIOBLPEN,
+				.io_ocpstate = 0
 		},
 		{
-				GPIOC,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOCEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOCLPEN,
-				0
+				._hw = GPIOC,
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIOCEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIOCLPEN,
+				.io_ocpstate = 0
 		},
 		{
-				GPIOD,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIODEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIODLPEN,
-				0
+				._hw = GPIOD,
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIODEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIODLPEN,
+				.io_ocpstate = 0
 		},
 		{
-				GPIOE,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOEEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOELPEN,
-				0
+				._hw = GPIOE,
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIOEEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIOELPEN,
+				.io_ocpstate = 0
 		},
 		{
-				GPIOF,
-				&RCC->AHB1ENR,
-				RCC_AHB1ENR_GPIOFEN,
-				&RCC->AHB1LPENR,
-				RCC_AHB1LPENR_GPIOFLPEN,
-				0
+				._hw = GPIOF,
+				._clkenr = &RCC->AHB1ENR,
+				.clkmsk = RCC_AHB1ENR_GPIOFEN,
+				._lpclkenr = &RCC->AHB1LPENR,
+				.lpclkmsk = RCC_AHB1LPENR_GPIOFLPEN,
+				.io_ocpstate = 0
 		}
 };
 
 
 __TCH_STATIC_INIT tch_ioInterrupt_descriptor IoInterrupt_HWs[] = {
 		{
-				0,
-				NULL,
-				EXTI0_IRQn
+				.io_occp = 0,
+				.irq = EXTI0_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI1_IRQn
+				.io_occp = 0,
+				.irq = EXTI1_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI2_IRQn
+				.io_occp = 0,
+				.irq = EXTI2_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI3_IRQn
+				.io_occp = 0,
+				.irq = EXTI3_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI4_IRQn
+				.io_occp = 0,
+				.irq = EXTI4_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI9_5_IRQn
+				.io_occp = 0,
+				.irq = EXTI9_5_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		},
 		{
-				0,
-				NULL,
-				EXTI15_10_IRQn
+				.io_occp = 0,
+				.irq = EXTI15_10_IRQn
 		}
 };
 

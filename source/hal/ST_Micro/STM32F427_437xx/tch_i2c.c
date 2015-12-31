@@ -48,18 +48,18 @@
 #define IIC_IO_MAX_TIMEOUT						((uint32_t) 50)
 #define IIC_SQ_ID_INIT							((uint32_t) 0)
 
-#define SET_SAFE_RETURN();                      __SAFE_RETURN:
+#define SET_SAFE_RETURN()                       __SAFE_RETURN:
 #define RETURN_SAFE()                           goto __SAFE_RETURN
 
 #define IIC_isBusy(ins)                        ((tch_iic_handle_prototype*) ins)->status & TCH_IIC_BUSY_FLAG
 #define IIC_setBusy(ins)                     do {\
-		idle_set_busy();\
+		set_system_busy();\
 		((tch_iic_handle_prototype*) ins)->status |= TCH_IIC_BUSY_FLAG;\
 }while(0)
 
 #define IIC_clrBusy(ins)                     do {\
 		((tch_iic_handle_prototype*) ins)->status &= ~TCH_IIC_BUSY_FLAG;\
-		idle_clear_busy();\
+		clear_system_busy();\
 }while(0)
 
 
@@ -510,7 +510,7 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t a
 	}
 
 	result = tchOK;
-	SET_SAFE_RETURN();
+	SET_SAFE_RETURN()
 
 	while(iicHw->CR1 & I2C_CR1_STOP) __NOP();
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
@@ -600,7 +600,7 @@ __USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t add
 	}
 
 	ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
-	SET_SAFE_RETURN();
+	SET_SAFE_RETURN()
 
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	while(iicHw->SR2 & 7) __NOP();
@@ -646,7 +646,7 @@ __USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t ad
 
 
 	evt.status = tchOK;
-	SET_SAFE_RETURN();
+	SET_SAFE_RETURN()
 	iicHw->CR2 &= ~(I2C_CR2_ITBUFEN | I2C_CR2_ITEVTEN);
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	IIC_clrBusy(ins);
@@ -670,7 +670,7 @@ __USER_API__ static uint32_t tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr
 
 
 	evt.status = tchOK;
-	SET_SAFE_RETURN();
+	SET_SAFE_RETURN()
 
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	IIC_clrBusy(ins);
