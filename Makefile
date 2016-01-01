@@ -100,6 +100,10 @@ $(RELEASE_TARGET) : $(RELEASE_OBJS)
 
 $(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE) $(AUTOGEN_DIR):
 	$(MKDIR) $@
+	
+DEBUG/%.uo:%.c
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_APP) $(INC) $(DEFS) $(LIBS)  $(LDFLAG_APP:%=-Wl,%) -o $@
 
 DEBUG/%.ko:%.c
 	@echo 'compile.. $@'
@@ -108,6 +112,10 @@ DEBUG/%.ko:%.c
 DEBUG/%.sko:%.S
 	@echo 'compile.. $@'
 	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
+	
+RELEASE/%.uo:%.c
+	@echo 'compile.. $@'
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_APP) $(INC) $(DEFS) $(LIBS)  $(LDFLAG_APP:%=-Wl,%) -o $@	
 	
 RELEASE/%.ko:%.c
 	@echo 'compile.. $@'

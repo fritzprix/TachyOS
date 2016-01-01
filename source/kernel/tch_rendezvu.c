@@ -49,8 +49,6 @@ __USER_RODATA__ tch_kernel_service_rendezvu Rendezvous_IX = {
 
 DEFINE_SYSCALL_0(rendv_create,tch_rendvId)
 {
-	if(tch_port_isISR())
-		return NULL;
 	tch_rendzvCb* rndv = (tch_rendzvCb*) kmalloc(sizeof(tch_rendzvCb));
 	if(!rndv)
 		KERNEL_PANIC("tch_rendezvu.c", "rendezvous can't be created");

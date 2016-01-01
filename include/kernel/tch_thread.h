@@ -38,6 +38,7 @@ extern tch_threadId tch_threadCreateThread(thread_config_t* cfg,void* arg,BOOL i
 extern tchStatus tch_threadIsValid(tch_threadId thread);
 extern BOOL tch_threadIsPrivilidged(tch_threadId thread);
 extern BOOL tch_threadIsRoot(tch_threadId thread);
+extern BOOL tch_threadIsLive(tch_threadId thread);
 extern void tch_threadSetPriority(tch_threadId tid,tch_threadPrior nprior);
 extern tch_threadPrior tch_threadGetPriority(tch_threadId tid);
 extern tchStatus tch_thread_exit(tch_threadId thread,tchStatus err);

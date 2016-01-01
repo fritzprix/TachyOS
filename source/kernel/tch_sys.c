@@ -118,24 +118,26 @@ void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t a
 	tch_exc_stack* sp = NULL;
 
 	if(sv_id == SV_EXIT_FROM_SV){
-		sp = (tch_exc_stack*)tch_port_getUserSP();
-			sp++;
-			cth = (tch_thread_kheader*) current->kthread;
-			cth->tslot = 0;
-			cth->state = RUNNING;
-			current_mm = &current->kthread->mm;
+		sp = (tch_exc_stack*) tch_port_getUserSP();
+		sp++;
+		cth = (tch_thread_kheader*) current->kthread;
+		cth->tslot = 0;
+		cth->state = RUNNING;
+		current_mm = &current->kthread->mm;
 
-			tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
-			tch_port_setUserSP((uint32_t)sp);
-			if((arg1 = tch_threadIsValid(current)) == tchOK){
-				tch_port_atomicEnd();
-			}else{
-				tch_thread_exit(current,arg1);
-			}
-			if(tch_threadIsPrivilidged(current))
-				tch_port_enablePrivilegedThread();
-			else
-				tch_port_disablePrivilegedThread();
+		tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
+		tch_port_setUserSP((uint32_t) sp);
+		if ((tch_threadIsValid(current) == tchOK) && tch_threadIsLive(current)) {
+			tch_port_atomicEnd();
+		}
+		else
+		{
+			tch_thread_exit(current, current->kRet);
+		}
+		if (tch_threadIsPrivilidged(current))
+			tch_port_enablePrivilegedThread();
+		else
+			tch_port_disablePrivilegedThread();
 	}else{
 		tch_kernel_set_result(current,(*((tch_syscall*) ((uint32_t) __syscall_table + sv_id)))(arg1,arg2,arg3));
 	}

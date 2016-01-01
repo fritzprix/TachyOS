@@ -104,12 +104,15 @@ DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,err,tchStatus){
 		return tchErrorParameter;
 
 	tch_thread_uheader* thr = (tch_thread_uheader*) tid;
-	if (tid == current){
+	if (tid == current)
+	{
 		tch_thread_kheader* kth = get_thread_kheader(thr);
 		kth->flag &= ~THREAD_DEATH_BIT;
 		kth->prior = Low;
 		tch_port_enterPrivThread(__tch_thread_atexit, (uint32_t) tid, err, 0);
-	}else{
+	}
+	else
+	{
 		tch_thread_invalidate(tid, err);
 	}
 	return tchOK;
@@ -149,12 +152,11 @@ DEFINE_SYSCALL_2(thread_join,tch_threadId,id,uint32_t,timeout,tchStatus){
 tchStatus tch_threadIsValid(tch_threadId thread){
 	if(!thread)
 		return tchErrorParameter;
-	if(get_thread_header(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN)){
+	if(get_thread_header(thread)->chks != ((uint32_t) THREAD_CHK_PATTERN))
+	{
 		get_thread_header(thread)->kRet = tchErrorStackOverflow;
 		return tchErrorStackOverflow;
 	}
-	if(get_thread_header(thread)->kthread->flag & THREAD_DEATH_BIT)
-		return get_thread_header(thread)->kRet;
 	return tchOK;
 }
 
@@ -176,9 +178,16 @@ static void tch_thread_invalidate(tch_threadId thread,tchStatus reason){
 }
 
 
-BOOL tch_threadIsRoot(tch_threadId thread){
+BOOL tch_threadIsRoot(tch_threadId thread)
+{
 	return (get_thread_header(thread)->kthread->flag & THREAD_ROOT_BIT);
 }
+
+BOOL tch_threadIsLive(tch_threadId thread)
+{
+	return !(get_thread_header(thread)->kthread->flag & THREAD_DEATH_BIT);
+}
+
 
 
 void tch_threadSetPriority(tch_threadId tid,tch_threadPrior nprior){
@@ -354,7 +363,8 @@ __attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
 	tch_thread_kheader* th_p = get_thread_kheader(thread);
 	tch_thread_kheader* ch_p = NULL;
 
-	while(!cdsl_dlistIsEmpty(&th_p->child_list)){												// if has child, kill all of them
+	while(!cdsl_dlistIsEmpty(&th_p->child_list))
+	{												// if has child, kill all of them
 		ch_p = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->child_list);
 		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
 		tch_thread_exit(ch_p->uthread,status);
