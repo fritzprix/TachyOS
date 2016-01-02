@@ -125,7 +125,7 @@ typedef enum  {
   tchErrorStackOverflow    =  -17,			///< stack overflow error
   tchErrorHeapCorruption   =  -18,			/// <heap corrupted
   tchErrorOS               =  -19,			///< unspecified RTOS error: run-time error but no other error message fits.
-  tch_status_reserved      =  0xFFFFFFFF    ///< prevent from enum down-size compiler optimization.
+  tch_status_reserved      =  (uint32_t) 0xFFFFFF    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
 typedef enum {

@@ -130,7 +130,7 @@ tchStatus tch_schedWait(tch_thread_queue* wq,uint32_t timeout){
 }
 
 
-BOOL tch_schedWake(tch_thread_queue* wq,int cnt,tchStatus res,BOOL preemt){
+BOOL tch_schedWake(tch_thread_queue* wq,int cnt, tchStatus res, BOOL preemt){
 	tch_thread_kheader* nth = NULL;
 	tch_thread_kheader* tpreempt = NULL;
 	if(cdsl_dlistIsEmpty(wq))

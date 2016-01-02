@@ -31,7 +31,7 @@ tchStatus thread_performTest(tch* ctx){
 	while(cnt--){
 		threadStarted = FALSE;
 		ctx->Thread->initConfig(&tcfg,run,Normal,0,0,"test_run");
-		child = (tch_threadId) tch_threadCreateThread(&tcfg,bar,TRUE,TRUE,NULL);
+		child = (tch_threadId) tch_thread_createThread(&tcfg,bar,TRUE,TRUE,NULL);
 		ctx->Thread->start(child);
 		ctx->Barrier->wait(bar,tchWaitForever);
 		ctx->Thread->join(child,tchWaitForever);

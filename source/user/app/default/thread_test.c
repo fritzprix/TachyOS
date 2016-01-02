@@ -13,16 +13,22 @@ static DECLARE_THREADROUTINE(test_run);
 tchStatus do_test_thread(const tch* ctx)
 {
 	thread_config_t config;
-	ctx->Thread->initConfig(&config, test_run,Normal,720,0,"test_thread1");
-	tch_threadId child1 = ctx->Thread->create(&config,NULL);
+	uint32_t cnt = 0;
+	ctx->Thread->initConfig(&config, test_run,Normal,790,0,"test_thread1");
+	tch_threadId child1 = ctx->Thread->create(&config,&cnt);
 	ctx->Thread->start(child1);
-//	ctx->Thread->join(child1,tchWaitForever);
+	if(ctx->Thread->join(child1,tchWaitForever) != tchOK)
+		return tchErrorOS;
+	if(cnt != 100)
+		return tchErrorOS;
 	return tchOK;
 }
 
 
 static DECLARE_THREADROUTINE(test_run)
 {
-	ctx->Thread->sleep(1);
+	uint32_t* cnt = (uint32_t*) ctx->Thread->getArg();
+	while(*cnt != 100)
+		(*cnt)++;
 	return tchOK;
 }

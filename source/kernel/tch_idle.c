@@ -40,7 +40,7 @@ static tch_threadId mainThread;
 void idle_init(){
 	thread_config_t thcfg;
 	Thread->initConfig(&thcfg,idle,Idle,USER_MIN_STACK,0,"idle");
-	idleThread = (tch_threadId) tch_threadCreateThread(&thcfg,NULL,FALSE,TRUE,NULL);
+	idleThread = (tch_threadId) tch_thread_createThread(&thcfg,NULL,FALSE,TRUE,NULL);
 
 	busy_cnt = 0;
 	idle_lock = tch_rti->Mtx->create();
@@ -79,7 +79,7 @@ static DECLARE_THREADROUTINE(idle){
 
 	thread_config_t threadcfg;
 	Thread->initConfig(&threadcfg,main,Normal,0x800,0x800,"main");
-	mainThread = (tch_threadId) tch_threadCreateThread(&threadcfg,ctx,TRUE,TRUE,NULL);
+	mainThread = (tch_threadId) tch_thread_createThread(&threadcfg,ctx,TRUE,TRUE,NULL);
 
 
 	if((!mainThread))
@@ -87,7 +87,8 @@ static DECLARE_THREADROUTINE(idle){
 
 	Thread->start(mainThread);
 
-	while(TRUE){
+	while(TRUE)
+	{
 		// some function entering sleep mode
 		if((!busy_cnt) && (get_thread_kheader(current)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;
@@ -119,6 +120,7 @@ static DECLARE_LWTASK(idleTaskHandler){
 
 DECLARE_THREADROUTINE(__main){
 	while(TRUE) ctx->Thread->sleep(1);
+	return tchOK;
 }
 
 

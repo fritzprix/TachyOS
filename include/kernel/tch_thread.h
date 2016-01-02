@@ -34,13 +34,13 @@ extern "C"{
  *
  */
 extern tch_kernel_service_thread Thread_IX;
-extern tch_threadId tch_threadCreateThread(thread_config_t* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc);
-extern tchStatus tch_threadIsValid(tch_threadId thread);
-extern BOOL tch_threadIsPrivilidged(tch_threadId thread);
-extern BOOL tch_threadIsRoot(tch_threadId thread);
-extern BOOL tch_threadIsLive(tch_threadId thread);
-extern void tch_threadSetPriority(tch_threadId tid,tch_threadPrior nprior);
-extern tch_threadPrior tch_threadGetPriority(tch_threadId tid);
+extern tch_threadId tch_thread_createThread(thread_config_t* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc);
+extern tchStatus tch_thread_isValid(tch_threadId thread);
+extern BOOL tch_thread_isPrivilidged(tch_threadId thread);
+extern BOOL tch_thread_isRoot(tch_threadId thread);
+extern BOOL tch_thread_isLive(tch_threadId thread);
+extern void tch_thread_setPriority(tch_threadId tid,tch_threadPrior nprior);
+extern tch_threadPrior tch_thread_getPriority(tch_threadId tid);
 extern tchStatus tch_thread_exit(tch_threadId thread,tchStatus err);
 
 

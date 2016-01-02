@@ -170,9 +170,9 @@ DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus)
 	{
 		if(!timeout)
 			return tchErrorResource;
-		tch_threadPrior prior = tch_threadGetPriority(tid);
-		if (tch_threadGetPriority(mcb->own) < prior)
-			tch_threadSetPriority((tch_threadId) mcb->own, prior);
+		tch_threadPrior prior = tch_thread_getPriority(tid);
+		if (tch_thread_getPriority(mcb->own) < prior)
+			tch_thread_setPriority((tch_threadId) mcb->own, prior);
 		tch_schedWait(&mcb->que, timeout);
 	}
 	return tchOK;
@@ -185,7 +185,7 @@ DEFINE_SYSCALL_1(mutex_unlock,tch_mtxId, mtx, tchStatus)
 	if(!tch_port_exclusiveCompareUpdate(&mcb->own,(uword_t) current,(uword_t) NULL))
 		return tchErrorResource;
 	if(!(--current->kthread->lckCnt)){
-		tch_threadSetPriority(mcb->own,mcb->svdPrior);
+		tch_thread_setPriority(mcb->own,mcb->svdPrior);
 		mcb->svdPrior = Idle;
 	}
 	tch_lock_remove(&mcb->__unlockable);
@@ -237,7 +237,7 @@ static tchStatus mutex_deinit(tch_mtxCb* mcb)
 
 	MTX_INVALIDATE(mcb);
 	if(!(--current->kthread->lckCnt)){
-		tch_threadSetPriority(mcb->own,mcb->svdPrior);
+		tch_thread_setPriority(mcb->own,mcb->svdPrior);
 		mcb->svdPrior = Idle;
 	}
 	tch_schedWake(&mcb->que,SCHED_THREAD_ALL,tchErrorResource,FALSE);
@@ -287,7 +287,7 @@ static tchStatus tch_mutexUnlockFromCondv(tch_mtxId mtx)
 		return tchErrorParameter;			// current thread is not owner of mutex lock
 
 	if(!(--current->kthread->lckCnt)){
-		tch_threadSetPriority(lock->own,lock->svdPrior);
+		tch_thread_setPriority(lock->own,lock->svdPrior);
 		lock->svdPrior = Idle;
 	}
 	if(!cdsl_dlistIsEmpty(&lock->que))		// if valid owner , move waiting thread from mutex wait queue to ready queue not preemptive way
