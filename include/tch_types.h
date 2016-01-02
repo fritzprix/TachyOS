@@ -85,7 +85,6 @@ struct application_header {
 	uint64_t			chks;
 };
 
-
 typedef struct tch_runtime {
 	const tch_kernel_service_thread* Thread;
 	const tch_kernel_service_event* Event;
@@ -159,6 +158,7 @@ typedef enum {
 }tch_timezone;
 
 typedef uint64_t time_t;
+
 struct tm {
 	  int	tm_sec;
 	  int	tm_min;
@@ -170,7 +170,6 @@ struct tm {
 	  int	tm_yday;
 	  int	tm_isdst;
 };
-
 
 typedef struct mstat_t {
 	size_t total;
@@ -188,11 +187,9 @@ typedef struct  {
   void* def;
 } tchEvent;
 
-
 typedef enum {	TRUE = ((uint8_t)(1 > 0)),FALSE = ((uint8_t)!TRUE)  } BOOL;
 typedef enum {	ActOnSleep,NoActOnSleep }tch_PwrOpt;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
-
 
 
 /**
@@ -210,14 +207,6 @@ typedef enum {
 
 typedef int (*tch_thread_routine)(const tch* env);
 
-typedef struct tch_user_mem_cfg_s {
-	uint32_t 	stk_sz;				// user stack size
-	uint32_t 	heap_sz;			// user heap size
-	uint32_t 	pimg_sz;			// user process image size
-	uint32_t*	u_mem;				// supplied user memory chunk for build thread context (only needed in child creation)
-	uint32_t	u_memsz;			// size of supplied user memory (only needed in child creation)
-} tch_userMemDef_t;
-
 typedef struct thread_config {
 	size_t				 stksz;
 	size_t				 heapsz;
@@ -225,29 +214,6 @@ typedef struct thread_config {
 	tch_threadPrior      priority;
 	const char*          name;
 }thread_config_t;
-
-
-/**
- * type definition for mpool
- */
-typedef struct _tch_mpoolDef_t{
-	uint32_t count;
-	uint32_t align;
-	void*    pool;
-} tch_mpoolDef_t;
-
-
-typedef BOOL (*tch_eventHandler)(int ev_id,int ev_msg);
-
-/**
- * type definition for system timer
- */
-
-typedef void* (*tch_timer_callback)(void* arg);
-typedef enum {
-	Once,Periodic
-}tch_timer_type;
-
 
 
 
