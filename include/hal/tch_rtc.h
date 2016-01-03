@@ -40,8 +40,8 @@ typedef void (*tch_rtc_wkupHandler)(void);
 
 struct tch_rtc_handle {
 	tchStatus (*close)(tch_rtcHandle* self);
-	tchStatus (*setTime)(tch_rtcHandle* self,time_t gmt_epoch,tch_timezone tz,BOOL force);
-	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* ltm);
+	tchStatus (*setTime)(tch_rtcHandle* self,struct tm* localtm,BOOL force);
+	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* localtm);
 	tch_alrId (*setAlarm)(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution);
 	tchStatus (*cancelAlarm)(tch_rtcHandle* self,tch_alrId alrm);
 	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
@@ -49,7 +49,7 @@ struct tch_rtc_handle {
 };
 
 typedef struct tch_device_service_rtc {
-	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
+	tch_rtcHandle* (*open)(const tch* env,struct tm* localtm);
 }tch_device_service_rtc;
 
 #if defined(__cplusplus)

@@ -23,88 +23,45 @@
 
 
 
-static tch_rtcHandle* rtcHandle;
 static cdsl_dlistNode_t systimeWaitQ;
 static cdsl_dlistNode_t lpsystimeWaitQ;
-static tch_timezone current_tz;
 
-volatile uint64_t sysUpTimeSec;		/// time in second since system timer initialized
-volatile uint64_t systimeTick;		/// time in millisecond since system timer initialized
+__USER_DATA static tch_timezone current_tz;
 
-volatile uint64_t gmt_sec;			/// without time zone
-volatile uint32_t gmt_subsec;		/// millisec
+__USER_DATA volatile uint64_t systimeTick;		/// time in millisecond since system timer initialized
+__USER_DATA volatile uint64_t sysUpTimeSec;
+__USER_DATA volatile time_t gmt_epoch;			/// without time zone
+
+__USER_DATA static tch_rtcHandle* rtcHandle;
 
 
 /**
- *  user interface declaration (user accessible code)
  */
-__USER_API__ static struct tm* tch_systime_toBrokenTime(uint64_t ms,struct tm* result);
-__USER_API__ static tchStatus tch_systime_getLocalTime(struct tm* dest_tm);
-__USER_API__ static tchStatus tch_systime_setLocalTime(struct tm* time, tch_timezone ltz);
+
+__USER_API__ static tchStatus tch_systime_getWorldTime(time_t* tp);
+__USER_API__ static tchStatus tch_systime_setWorldTime(const time_t epoch_gmt);
 __USER_API__ static tch_timezone tch_systime_setTimezone(const tch_timezone tz);
 __USER_API__ static tch_timezone tch_systime_getTimezone(void);
 __USER_API__ static uint64_t tch_systime_getCurrentTimeMills(void);
 __USER_API__ static uint64_t tch_systime_uptimeMills(void);
+__USER_API__ static time_t tch_systime_fromBrokenTime(struct tm* tp);
+__USER_API__ static void tch_systime_fromEpochTime(const time_t time, struct tm* dest_tm,tch_timezone tz);
 
-
-/**
- *  system call declaration
- */
-DECLARE_SYSCALL_1(systime_get_local_time,struct tm*,tchStatus);
-DECLARE_SYSCALL_2(systime_set_local_time,struct tm*,tch_timezone,tchStatus);
-DECLARE_SYSCALL_1(systime_set_timezone,const tch_timezone,tch_timezone);
-DECLARE_SYSCALL_0(systime_get_timezone,tch_timezone);
-DECLARE_SYSCALL_0(systime_get_current_time_mills,uint64_t);
-DECLARE_SYSCALL_0(systime_uptime_mills,uint64_t);
-
-
-/**
- *  private method declaration
- */
-static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
-static struct tm* to_broken_time(const time_t* timep,struct tm* result,tch_timezone tz);
-static time_t to_gmt_epoch(struct tm* timep);
 
 
 
 __USER_RODATA__  tch_kernel_service_time Time_IX = {
-		.getLocaltime = tch_systime_getLocalTime,
-		.setLocaltime = tch_systime_setLocalTime,
+		.getWorldTime = tch_systime_getWorldTime,
+		.setWorldTime = tch_systime_setWorldTime,
 		.setTimezone = tch_systime_setTimezone,
 		.getTimezone = tch_systime_getTimezone,
 		.getCurrentTimeMills = tch_systime_getCurrentTimeMills,
 		.uptimeMills = tch_systime_uptimeMills,
-		.toBrokentime = tch_systime_toBrokenTime
+		.fromBrokenTime = tch_systime_fromBrokenTime,
+		.fromEpochTime = tch_systime_fromEpochTime
 };
 
 __USER_RODATA__ const tch_kernel_service_time* Time = &Time_IX;
-
-
-DEFINE_SYSCALL_1(systime_get_local_time,struct tm*, time, tchStatus){
-	if(!rtcHandle)
-		return tchErrorResource;
-
-}
-
-DEFINE_SYSCALL_2(systime_set_local_time,struct tm*,ltm,tch_timezone,ltz,tchStatus){
-
-}
-
-DEFINE_SYSCALL_1(systime_set_timezone,const tch_timezone,tz,tch_timezone){
-
-}
-
-DEFINE_SYSCALL_0(systime_get_timezone,tch_timezone){
-
-}
-
-DEFINE_SYSCALL_0(systime_get_current_time_mills,uint64_t){
-
-}
-
-DEFINE_SYSCALL_0(systime_uptime_mills,uint64_t){
-
-}
 
 
 
@@ -116,21 +73,19 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 	systimeTick = 0;
 	sysUpTimeSec = 0;
 	current_tz = init_tz;
+	gmt_epoch = init_tm;
 	tch_device_service_rtc* rtc = (tch_device_service_rtc*) tch_kmod_request(MODULE_TYPE_RTC);
-	if(!rtc){
+
+	if(!rtc)
+	{
 		KERNEL_PANIC("tch_time.c","rtc is not available");
 	}
 
-	gmt_sec = init_tm;
-	gmt_subsec = 0;
-	rtcHandle = rtc->open(env, init_tm, current_tz);
+	struct tm localtm;
+	tch_time_gmt_epoch_to_broken(&init_tm,&localtm,init_tz);	// get local time as broken time
+	rtcHandle = rtc->open(env, &localtm);
 	rtcHandle->enablePeriodicWakeup(rtcHandle, LSTICK_PERIOD, tch_kernel_onWakeup);
 	tch_hal_enableSystick(HSTICK_PERIOD);
-}
-
-
-tch_timezone tch_systimeSetTimeZone(tch_timezone itz){
-
 }
 
 
@@ -163,47 +118,77 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread) {
 	return tchOK;
 }
 
-static struct tm* tch_systime_toBrokenTime(uint64_t ms,struct tm* result){
-	return result;
-}
-
-
-static tchStatus tch_systime_getLocalTime(struct tm* dest_tm) {
-	if(tch_port_isISR())
-	{
-		return __systime_get_local_time(dest_tm);
-	}
-	return __SYSCALL_1(systime_get_local_time,dest_tm);
-}
-
-static tchStatus tch_systime_setLocalTime(struct tm* time, tch_timezone ltz) {
-	time_t tm;
-	if (!rtcHandle)
+static tchStatus tch_systime_getWorldTime(time_t* tp)
+{
+	if(!rtcHandle)
 		return tchErrorResource;
-	if (!time)
+	if(!tp)
 		return tchErrorParameter;
-	tm = tch_time_broken_to_gmt_epoch(time);
-	return rtcHandle->setTime(rtcHandle, tm, ltz, TRUE);
+	struct tm ltm;
+	rtcHandle->getTime(rtcHandle, &ltm);
+	*tp = tch_time_broken_to_gmt_epoch(&ltm,current_tz);
+	return tchOK;
+}
+
+static tchStatus tch_systime_setWorldTime(const time_t epoch_gmt)
+{
+	if(!rtcHandle)
+		return tchErrorResource;
+	struct tm ltm;
+	tchStatus res;
+	tch_time_gmt_epoch_to_broken(&epoch_gmt,&ltm,current_tz);
+	if((res = rtcHandle->setTime(rtcHandle,&ltm,TRUE)) == tchOK)
+	{
+		gmt_epoch = epoch_gmt;
+	}
+	return res;
 }
 
 
-static tch_timezone tch_systime_setTimezone(const tch_timezone tz){
-
+static tch_timezone tch_systime_setTimezone(const tch_timezone tz)
+{
+	tch_timezone prev_tz = current_tz;
+	current_tz = tz;
+	struct tm ltm;
+	tch_time_gmt_epoch_to_broken((time_t*) &gmt_epoch,&ltm,current_tz);
+	if(rtcHandle)
+	{
+		rtcHandle->setTime(rtcHandle,&ltm,TRUE);
+	}
+	return prev_tz;
 }
 
-static tch_timezone tch_systime_getTimezone(){
-
+static tch_timezone tch_systime_getTimezone()
+{
+	return current_tz;
 }
 
-static uint64_t tch_systime_getCurrentTimeMills() {
-
+static uint64_t tch_systime_getCurrentTimeMills()
+{
+	uint64_t world_mill_sec = gmt_epoch * 1000;
+	world_mill_sec += systimeTick % 1000;
+	return world_mill_sec;
 }
 
-static uint64_t tch_systime_uptimeMills() {
-
+static uint64_t tch_systime_uptimeMills()
+{
+	uint64_t uptime_mill_sec = sysUpTimeSec * 1000;
+	uptime_mill_sec += systimeTick % 1000;
+	return uptime_mill_sec;
 }
 
-BOOL tch_systimeIsPendingEmpty() {
+static time_t tch_systime_fromBrokenTime(struct tm* tp)
+{
+	return tch_time_broken_to_gmt_epoch(tp,current_tz);
+}
+
+static void tch_systime_fromEpochTime(const time_t time, struct tm* dest_tm,tch_timezone tz)
+{
+	tch_time_gmt_epoch_to_broken(&time,dest_tm,tz);
+}
+
+BOOL tch_systimeIsPendingEmpty()
+{
 	return cdsl_dlistIsEmpty(&systimeWaitQ);
 }
 

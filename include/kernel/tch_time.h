@@ -24,7 +24,6 @@ extern tch_kernel_service_time Time_IX;
 
 
 extern void tch_systimeInit(const tch* env,time_t itm,tch_timezone itz);
-extern tch_timezone tch_systimeSetTimeZone(tch_timezone itz);
 extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout,tch_timeunit tu);
 extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
 extern BOOL tch_systimeIsPendingEmpty();
