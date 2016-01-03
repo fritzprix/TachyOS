@@ -30,7 +30,7 @@ typedef struct tch_file_operations {
 	ssize_t (*write)(struct tch_file* filp,const char* bp,size_t len);
 	int (*close)(struct tch_file* filp);
 	ssize_t (*seek)(struct tch_file* filp,size_t offset,int whence);
-}file_operations;
+} file_operations_t;
 
 
 

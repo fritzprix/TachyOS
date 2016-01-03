@@ -1,23 +1,40 @@
 {
   "UART":{
     "type":"bool",
-    "default":"y"
+    "default":"y",
+    "gen-list":{
+    	"USART_CLASS_KEY":"rand(2)"
+    }
   },
   "ADC":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"ADC_CLASS_KEY":"rand(2)"
+    }
   },
   "SPI":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"SPI_CLASS_KEY":"rand(2)"
+    }
   },
   "IIC":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"IIC_CLASS_KEY":"rand(2)"
+    }
   },
   "TIMER":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"GPTIMER_CLASS_KEY":"rand(2)",
+    	"PWM_CLASS_KEY":"rand(2)",
+    	"CAPT_CLASS_KEY":"rand(2)"
+    }
   },
   "HAL_SUB_RECIPE":{
     "type":"recipe",

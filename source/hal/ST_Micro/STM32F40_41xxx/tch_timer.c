@@ -25,9 +25,17 @@
 
 
 /*     class identifier for checking validity of instance    */
+#ifndef TIMER_GP_CLASS_KEY
 #define TIMER_GP_CLASS_KEY       ((uint16_t) 0x6401)
+#endif
+
+#ifndef TIMER_PWM_CLASS_KEY
 #define TIMER_PWM_CLASS_KEY      ((uint16_t) 0x6411)
+#endif
+
+#ifndef TIMER_CAPTURE_CLASS_KEY
 #define TIMER_CAPTURE_CLASS_KEY  ((uint16_t) 0x6421)
+#endif
 
 #define TIMER_LP_ACTIVE    ((uint32_t) 0x10000)
 #define TIMER_IO_CNT_Msk   ((uint32_t) 0xE0000)

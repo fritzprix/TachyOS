@@ -30,8 +30,10 @@ typedef struct tch_spi_request_s tch_spi_request;
 #define SPI_ERR_OVR						((uint32_t) 0x10000000)     // SPI Overrun Error
 #define SPI_ERR_UDR						((uint32_t) 0x20000000)     // SPI Underrun Error
 
-
+#ifndef SPI_CLASS_KEY
 #define SPI_CLASS_KEY					((uint16_t) 0x41F5)
+#endif
+
 #define TCH_SPI_MASTER_FLAG				((uint32_t) 0x10000)
 #define TCH_SPI_BUSY_FLAG				((uint32_t) 0x20000)
 

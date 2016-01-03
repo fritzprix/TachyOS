@@ -17,6 +17,7 @@ tchStatus do_test_thread(const tch* ctx)
 	ctx->Thread->initConfig(&config, test_run,Normal,790,0,"test_thread1");
 	tch_threadId child1 = ctx->Thread->create(&config,&cnt);
 	ctx->Thread->start(child1);
+
 	if(ctx->Thread->join(child1,tchWaitForever) != tchOK)
 		return tchErrorOS;
 	if(cnt != 100)

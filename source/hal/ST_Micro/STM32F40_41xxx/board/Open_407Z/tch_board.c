@@ -6,6 +6,7 @@
  */
 
 #include "tch_board.h"
+#include "kernel/tch_fs.h"
 
 
 __TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
@@ -382,6 +383,61 @@ __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		}
 };
 
+struct tch_board_descriptor_s BOARD_DESCRIPTOR =
+{
+		.b_name = "Open_407Z",
+		.b_major = 1,
+		.b_minor = 0,
+		.b_vname = "wavetech",
+		.b_pdata = 0l
+};
+
+static int log_open(struct tch_file* filp);
+static ssize_t log_read(struct tch_file* filp, char* bp,size_t len);
+static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len);
+int  log_close(struct tch_file* filp);
+ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
+
+file_operations_t LOG_FILE = {
+		.open = log_open,
+		.read = log_read,
+		.write = log_write,
+		.close = log_close,
+		.seek = log_seek
+};
+
+
+tch_board_descriptor tch_board_init(const tch* ctx)
+{
+	BOARD_DESCRIPTOR.b_logfile = &LOG_FILE;
+	return &BOARD_DESCRIPTOR;
+}
+
+
+static int log_open(struct tch_file* filp)
+{
+
+}
+
+static ssize_t log_read(struct tch_file* filp, char* bp,size_t len)
+{
+
+}
+
+static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len)
+{
+
+}
+
+int  log_close(struct tch_file* filp)
+{
+
+}
+
+ssize_t log_seek(struct tch_file* filp, size_t offset, int whence)
+{
+
+}
 
 
 
