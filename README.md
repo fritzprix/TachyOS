@@ -5,7 +5,7 @@
 > This project is subjected to serious HOMEBREWING and still in INFANCY. So any experimental change can be made without any notice.  
 
 ## About
-> TachyOS is the RTOS based on microkernel architecture which includes only minimal components like thread / synchronization, memory management, inter-thread communication while supporting execution context / address space isolation(protection) and extensible modular interface. Name of this project comes from the hypothetical particle called 'tachyon' [tæki.ɒn], whose speed increases as its energy decreases theoretically, is thought to be the ideal of the real time application which runs in very constrained environment. 
+> TachyOS is the RTOS based on microkernel architecture which includes only minimal components like thread / synchronization, memory management, inter-thread communication while supporting execution context / address space isolation(protection) and extensible modular interface. Name of this project comes from the hypothetical particle called 'tachyon' [t챈ki.�뭤], whose speed increases as its energy decreases theoretically, is thought to be the ideal of the real time application which runs in very constrained environment. 
 
 ## Motivation   
 + Build modular architecture which supports both static linked(kernel mode) and dynamic-linked module(user mode).
@@ -33,7 +33,7 @@
 ## Target Supported  
  + STM32F40x (ARM Cortex-M4)   
  + STM32F41x (ARM Cortex-M4)   
- + STM32F20x (ARM Cortex-M3)   
+ + STM32F20x (ARM Cortex-M3)    
 
 ## Build Environment   
  project is developed with eclipse IDE with ARM Cross compile tool (toolchain and plugin)
@@ -44,7 +44,11 @@
  + For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)
 
 ## Configuration
- kernel build is configured by editing config.mk file in the root directory of the project. 
+> $> make config
+
+## To-Do
+ + Add SDIO HAL Implementation (~Feb.2016)
+ + Add Kernel Logging module   (~Feb.2016)	
  
 ## License 
  LGPL V3.0 

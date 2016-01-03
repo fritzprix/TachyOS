@@ -11,9 +11,7 @@
 #include <stdarg.h>
 
 #define KLOG_FILE_SIZE				((uint32_t) 0x0400)
-#define KLOG_BUFFER_SIZE			((uint32_t) 0x0100)
 
-static char log_buffer[KLOG_BUFFER_SIZE];
 static char log_file[KLOG_FILE_SIZE];
 static uint32_t p_idx;
 static uint32_t update_cnt;
@@ -24,7 +22,6 @@ static uint32_t arg_cnt;
 static void __klog(const char* fmt,va_list va);
 
 void tch_klog_init(void){
-	mset(log_buffer,0,sizeof(log_buffer));
 	mset(log_file,0,sizeof(log_file));
 	mset(args_type,0,sizeof(args_type));
 	update_cnt = 0;
@@ -71,6 +68,7 @@ size_t tch_klog_dump(char* rb)
 }
 
 static void __klog(const char* fmt,va_list va){
+	/*
 	size_t lsz = vformat(log_buffer,fmt,va);
 	update_cnt += lsz;
 	if((p_idx + lsz) > KLOG_FILE_SIZE)
@@ -85,6 +83,6 @@ static void __klog(const char* fmt,va_list va){
 		p_idx += lsz;
 	}
 	update_cnt &= (KLOG_FILE_SIZE - 1);			// can not bigger than log file size
-	p_idx &= (KLOG_FILE_SIZE - 1);
+	p_idx &= (KLOG_FILE_SIZE - 1);*/
 }
 

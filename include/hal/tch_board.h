@@ -10,6 +10,7 @@
 
 
 #include "tch.h"
+#include "tch_fs.h"
 #include "tch_halcfg.h"
 #include "tch_haldesc.h"
 
@@ -18,11 +19,12 @@ extern "C" {
 #endif
 
 typedef struct tch_board_descriptor_s {
-	const char* 	b_name;		// board name in c string
-	const char*		b_vname;	// vendor name in c string
-	long int		b_pdata;	// production time in epoch time
-	uint32_t		b_major;	// board major version
-	uint32_t		b_minor;	// board minor version
+	const char* 		b_name;		// board name in c string
+	const char*			b_vname;	// vendor name in c string
+	long int			b_pdata;	// production time in epoch time
+	uint32_t			b_major;	// board major version
+	uint32_t			b_minor;	// board minor version
+	file_operations_t*	b_logfile;	// io interface for kernel to print log
 }* tch_board_descriptor;
 
 
@@ -34,8 +36,15 @@ typedef struct tch_adc_bs tch_adc_bs_t;
 typedef struct tch_adc_ch_bs tch_adc_channel_bs_t;
 
 
+
 /**
- *  if you want to
+ *  ========  board specific hardware assignment ========
+ *  board implementation should supply below data structures
+ *  on which HAL components depend. all the structures are
+ *  specific to particular platform SoC and must be provided
+ *  by tch_haldesc.h header in hal sub-directory for each HAL
+ *  implementation.
+ *	======================================================
  */
 extern __TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO];
 extern __TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER];
@@ -43,6 +52,8 @@ extern __TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI];
 extern __TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC];
 extern __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC];
 extern __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch];
+
+extern tch_board_descriptor tch_board_init(const tch* ctx);
 
 #if defined(__cplusplus)
 }

@@ -25,7 +25,11 @@
 
 
 
+#ifndef UART_CLASS_KEY
 #define UART_CLASS_KEY						((uint16_t) 0x3D02)
+#endif
+
+
 #define TCH_URX_QSZ							((uint32_t) 10)
 
 #define USART_Parity_Pos_CR1                (uint8_t) (9)
