@@ -124,8 +124,9 @@ SECTIONS
 	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
-	    _sidata = .;
+	    _sidata = . ;
 	    _usidata = _sidata + SIZEOF(.data);
+	    . = _usidata;
     } >FLASH
     
    

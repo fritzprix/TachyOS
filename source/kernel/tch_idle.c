@@ -98,6 +98,7 @@ static DECLARE_THREADROUTINE(idle){
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
  	}
+	tch_lwtsk_unregisterTask(idle_tskid);
 	return 0;
 }
 

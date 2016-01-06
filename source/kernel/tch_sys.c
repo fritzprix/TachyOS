@@ -76,8 +76,10 @@ __USER_RODATA__ const tch RuntimeInterface = {
 const tch* tch_rti = &RuntimeInterface;
 
 static tch_threadId sysThread;
+
 volatile BOOL kernel_ready;
 volatile BOOL __VALID_SYSCALL;
+tch_board_descriptor board_desc;
 
 
 /***
@@ -88,9 +90,11 @@ volatile BOOL __VALID_SYSCALL;
 void tch_kernel_init(void* arg){
 
 	kernel_ready = FALSE;
-	tch_klog_init();
-	if(!tch_port_init())										// initialize port layer
-		KERNEL_PANIC("tch_sys.c","Port layer is not implmented");
+
+	// initialize port layer
+	tch_port_init();
+	board_desc = tch_board_init(tch_rti);
+	tch_klog_init(board_desc->b_logfile);
 
 	/*initialize kernel global variable*/
 	__VALID_SYSCALL = FALSE;
@@ -126,8 +130,11 @@ void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t a
 		current_mm = &current->kthread->mm;
 
 		tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
+
 		tch_port_setUserSP((uint32_t) sp);
-		if ((tch_thread_isValid(current) == tchOK) && tch_thread_isLive(current)) {
+
+		if ((tch_thread_isValid(current) == tchOK) && tch_thread_isLive(current))
+		{
 			tch_port_atomicEnd();
 		}
 		else
@@ -153,9 +160,10 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 
 
 
-
 	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 	idle_init();
+
+
 
 	while(TRUE){
 		__lwtsk_start_loop();			// start loop lwtask handler

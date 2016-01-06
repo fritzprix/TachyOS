@@ -48,6 +48,8 @@ __USER_API__ static time_t tch_systime_fromBrokenTime(struct tm* tp);
 __USER_API__ static void tch_systime_fromEpochTime(const time_t time, struct tm* dest_tm,tch_timezone tz);
 
 
+static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
+
 
 
 __USER_RODATA__  tch_kernel_service_time Time_IX = {
