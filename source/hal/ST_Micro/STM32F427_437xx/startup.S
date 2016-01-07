@@ -37,8 +37,8 @@
   */
     
   .syntax unified
-  .cpu cortex-m3
-  .fpu softvfp
+  .cpu cortex-m4
+  .fpu softvfp+vfp
   .thumb
 
 .global  g_pfnVectors
@@ -104,7 +104,7 @@ CopyDataInit:
     
 LoopCopyDataInit:
   ldr  r0, =_sdata
-  ldr  r3, =_edata
+  ldr  r3, =_eudata
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit

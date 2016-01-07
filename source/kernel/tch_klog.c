@@ -51,6 +51,11 @@ void tch_klog_print(const char* fmt,...)
 	}
 }
 
+void tch_klog_flush(BOOL force)
+{
+
+}
+
 
 static void __klog(const char* fmt,va_list va){
 

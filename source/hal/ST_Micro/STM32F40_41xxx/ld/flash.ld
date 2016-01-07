@@ -70,6 +70,33 @@ SECTIONS
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > FLASH
+    
+    /*size of section is evaluated immediately so if you want to make size of init section in flash ROM
+      same to size of data section in RAM, you must allocate region first */
+    
+    .data  : AT ( _sidata )
+    {
+	    . = ALIGN(PAGE_SIZE);
+        /* This is used by the startup in order to initialize the .data secion */
+        _sdata = . ;
+        
+        *(.data)
+        *(.data.*)
+
+	    . = ALIGN(PAGE_SIZE);
+	    /* This is used by the startup in order to initialize the .data secion */
+	    _edata = . ;
+	    
+    } >RAM
+    
+    .udata : AT ( _usidata)
+    {
+    	. = ALIGN(PAGE_SIZE);
+    	_sudata = . ;
+    	*(.udata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eudata = . ;
+    } >RAM
 
     __exidx_start = .;
     .ARM.exidx :
@@ -126,7 +153,6 @@ SECTIONS
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = . ;
 	    _usidata = _sidata + SIZEOF(.data);
-	    . = _usidata;
     } >FLASH
     
    
@@ -141,19 +167,7 @@ SECTIONS
     The program executes knowing that the data is in the RAM
     but the loader puts the initial values in the FLASH (inidata).
     It is one task of the startup to copy the initial values from FLASH to RAM. */
-    .data  : AT ( _sidata )
-    {
-	    . = ALIGN(PAGE_SIZE);
-        /* This is used by the startup in order to initialize the .data secion */
-        _sdata = . ;
-        
-        *(.data)
-        *(.data.*)
-
-	    . = ALIGN(4);
-	    /* This is used by the startup in order to initialize the .data secion */
-	    _edata = . ;
-    } >RAM
+    
     
     
 
@@ -173,14 +187,6 @@ SECTIONS
 	    _ebss = . ;
     } >RAM
     
-    .udata : AT ( _usidata )
-    {
-    	. = ALIGN(PAGE_SIZE);
-    	_sudata = .;
-    	*(.udata)
-    	. = ALIGN(PAGE_SIZE);
-    	_eudata = .;
-    } >RAM 
     
     .kheap :
     {

@@ -413,7 +413,7 @@ file_operations_t LOG_IO = {
 
 tch_board_descriptor tch_board_init(const tch* ctx)
 {
-	context = ctx;
+	context = (tch*) ctx;
 	BOARD_DESCRIPTOR.b_logfile = &LOG_IO;
 	context = NULL;
 	log_serial = NULL;
