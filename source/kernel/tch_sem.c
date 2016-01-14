@@ -155,7 +155,7 @@ tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic){
 	scb->count = count;
 	scb->state = 0;
 	cdsl_dlistInit(&scb->wq);
-	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) sem_deinit : (tch_kobjDestr) tch_semDestroy);
+	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) tch_semDeinit : (tch_kobjDestr) tch_semDestroy);
 	tch_semaphoreValidate(scb);
 	return scb;
 }

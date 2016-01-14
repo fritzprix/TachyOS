@@ -224,7 +224,7 @@ static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static)
 	mcb->svdPrior = Normal;
 	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
 	mcb->own = NULL;
-	tch_registerKobject(&mcb->__obj,is_static? (tch_kobjDestr) mutex_deinit :  (tch_kobjDestr) tch_mutexDestroy);
+	tch_registerKobject(&mcb->__obj,is_static? (tch_kobjDestr) tch_mutexDeinit :  (tch_kobjDestr) tch_mutexDestroy);
 	mcb->status = 0;
 	MTX_VALIDATE(mcb);
 	return mcb;
@@ -435,7 +435,7 @@ static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static)
 	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
 	condv->waitMtx = NULL;
 	CONDV_VALIDATE(condv);
-	tch_registerKobject(&condv->__obj,is_static? (tch_kobjDestr)condv_deint : (tch_kobjDestr)tch_condvDestroy);
+	tch_registerKobject(&condv->__obj,is_static? (tch_kobjDestr)tch_condvDeinit : (tch_kobjDestr)tch_condvDestroy);
 	return (tch_condvId) condv;
 }
 

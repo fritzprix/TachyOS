@@ -259,7 +259,7 @@ static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL is
 		Mempool->destroy(qcb->bpool);
 		return NULL;
 	}
-	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) mailq_deinit : (tch_kobjDestr) tch_mailqDestroy);
+	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) tch_mailqDeinit : (tch_kobjDestr) tch_mailqDestroy);
 	qcb->qlen = qlen;
 	qcb->gidx = qcb->gidx = 0;
 	qcb->bsz = sz;

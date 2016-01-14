@@ -94,7 +94,6 @@ void tch_kernel_init(void* arg){
 	// initialize port layer
 	tch_port_init();
 	board_desc = tch_board_init(tch_rti);
-	tch_klog_init(board_desc->b_logfile);
 
 	/*initialize kernel global variable*/
 	__VALID_SYSCALL = FALSE;
@@ -105,7 +104,6 @@ void tch_kernel_init(void* arg){
 	thread_config_t thcfg;
 	Thread->initConfig(&thcfg, systhreadRoutine, Kernel, 1 << 10, 0, "systhread");
 	sysThread = tch_thread_createThread(&thcfg,(void*) tch_rti,TRUE,TRUE,NULL);
-	tch_klog_print("Kernel Init Successful!! @ %d\n",0);
 	tch_schedInit(sysThread);
 }
 
@@ -114,7 +112,7 @@ void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t a
 	if(__VALID_SYSCALL)
 		__VALID_SYSCALL = FALSE;
 	else
-		tch_kernel_onSoftException(current,tchErrorIllegalAccess,"Illegal System call route detected");
+		tch_kernel_onSoftException(current,tchErrorIllegalAccess,"Illegal System call detected");
 
 
 	tch_thread_kheader* cth = NULL;
@@ -158,14 +156,15 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tch_port_enableISR();                   // interrupt enable
 	kernel_ready = TRUE;
 
-
+	tch_klog_init(board_desc->b_logfile);
 
 	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 	idle_init();
 
+	tch_klog_print("Kernel Init Successful!! @ %d\n",0);
 
-
-	while(TRUE){
+	while(TRUE)
+	{
 		__lwtsk_start_loop();			// start loop lwtask handler
 	}
 

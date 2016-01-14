@@ -38,6 +38,7 @@ typedef void* tch_semId;
 typedef void* tch_barId;
 typedef void* tch_timerId;
 typedef void* tch_rendvId;
+typedef void* tch_waitqId;
 /*! \brief condition variable identifier
  */
 typedef void* tch_condvId;
@@ -60,6 +61,7 @@ typedef struct tch_kernel_service_mailbox tch_kernel_service_mailQ;
 typedef struct tch_kernel_service_mempool tch_kernel_service_mempool;
 typedef struct tch_kernel_service_mem tch_kernel_service_mem;
 typedef struct tch_kernel_service_barrier tch_kernel_service_barrier;
+typedef struct tch_kernel_service_wait tch_kernel_service_wait;
 typedef struct tch_kernel_service_rendezvu tch_kernel_service_rendezvu;
 typedef struct tch_kernel_service_event tch_kernel_service_event;
 typedef struct tch_kernel_service_svcmanager tch_kernel_service_svcmanager;
@@ -158,6 +160,16 @@ typedef enum {
 }tch_timezone;
 
 typedef uint64_t time_t;
+
+typedef void*	alrm_Id;
+typedef enum {
+	alrmIntv_Year = ((uint8_t) 5),
+	alrmIntv_Month = ((uint8_t) 4),
+	alrmIntv_Week = ((uint8_t) 3),
+	alrmIntv_DAY = ((uint8_t) 2),
+	alrmIntv_HOUR = ((uint8_t) 1),
+	alrmIntv_NONE = ((uint8_t) 0)
+} alrmIntv;
 
 struct tm {
 	  int	tm_sec;

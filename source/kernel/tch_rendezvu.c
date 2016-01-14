@@ -112,7 +112,7 @@ static tchStatus rendv_init(tch_rendzvCb* rndv,BOOL is_static)
 		return tchErrorParameter;
 	mset(rndv, 0 ,sizeof(tch_rendzvCb));
 	cdsl_dlistInit((cdsl_dlistNode_t*) &rndv->wq);
-	tch_registerKobject(&rndv->__kobj,is_static? (tch_kobjDestr) rendv_deinit : (tch_kobjDestr) tch_rendvDestroy);
+	tch_registerKobject(&rndv->__kobj,is_static? (tch_kobjDestr) tch_rendzvDeinit : (tch_kobjDestr) tch_rendvDestroy);
 	RENDEZV_VALIDATE(rndv);
 	return tchOK;
 }

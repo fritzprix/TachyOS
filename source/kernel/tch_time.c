@@ -15,26 +15,31 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_time.h"
 #include "kernel/tch_err.h"
+#include "kernel/tch_kobj.h"
 #include "tch_port.h"
 
 #include "kernel/util/cdsl_dlist.h"
 #include "kernel/util/time.h"
 
 
-
-
 static cdsl_dlistNode_t systimeWaitQ;
 static cdsl_dlistNode_t lpsystimeWaitQ;
+static cdsl_dlistNode_t alrmQ;
+
 
 __USER_DATA static tch_timezone current_tz;
-
 __USER_DATA volatile uint64_t systimeTick;		/// time in millisecond since system timer initialized
 __USER_DATA volatile uint64_t sysUpTimeSec;
 __USER_DATA volatile time_t gmt_epoch;			/// without time zone
-
 __USER_DATA static tch_rtcHandle* rtcHandle;
 
-
+struct alrm_descriptor {
+	tch_kobj			__kobj;
+	cdsl_dlistNode_t 	alrq_wn;
+	tch_thread_queue	wait_q;
+	time_t				alrm_time;
+	alrmIntv			alrm_period;
+};
 /**
  */
 
@@ -42,36 +47,73 @@ __USER_API__ static tchStatus tch_systime_getWorldTime(time_t* tp);
 __USER_API__ static tchStatus tch_systime_setWorldTime(const time_t epoch_gmt);
 __USER_API__ static tch_timezone tch_systime_setTimezone(const tch_timezone tz);
 __USER_API__ static tch_timezone tch_systime_getTimezone(void);
+__USER_API__ static alrm_Id tch_systime_setAlarm(time_t time, alrmIntv period);
+__USER_API__ static tchStatus tch_systime_waitAlarm(alrm_Id alrm);
+__USER_API__ static tchStatus tch_systime_cancelAlarm(alrm_Id alrm);
 __USER_API__ static uint64_t tch_systime_getCurrentTimeMills(void);
 __USER_API__ static uint64_t tch_systime_uptimeMills(void);
 __USER_API__ static time_t tch_systime_fromBrokenTime(struct tm* tp);
 __USER_API__ static void tch_systime_fromEpochTime(const time_t time, struct tm* dest_tm,tch_timezone tz);
 
+DECLARE_SYSCALL_2(set_alarm,time_t*, alrmIntv, alrm_Id);
+DECLARE_SYSCALL_1(cancel_alarm,alrm_Id,tchStatus);
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
-
-
+static DECLARE_COMPARE_FN(tch_systimeAlrmQRule);
 
 __USER_RODATA__  tch_kernel_service_time Time_IX = {
 		.getWorldTime = tch_systime_getWorldTime,
 		.setWorldTime = tch_systime_setWorldTime,
 		.setTimezone = tch_systime_setTimezone,
 		.getTimezone = tch_systime_getTimezone,
+		.setAlarm = tch_systime_setAlarm,
+		.cancelAlarm = tch_systime_cancelAlarm,
 		.getCurrentTimeMills = tch_systime_getCurrentTimeMills,
 		.uptimeMills = tch_systime_uptimeMills,
 		.fromBrokenTime = tch_systime_fromBrokenTime,
 		.fromEpochTime = tch_systime_fromEpochTime
 };
 
+
 __USER_RODATA__ const tch_kernel_service_time* Time = &Time_IX;
 
+
+DEFINE_SYSCALL_2(set_alarm,time_t*, epoch_alrmtm, alrmIntv, period, alrm_Id)
+{
+	struct alrm_descriptor* alrm_desc = (struct alrm_descriptor*) kmalloc(sizeof(struct alrm_descriptor));
+	alrm_desc->alrm_period = period;
+	alrm_desc->alrm_time = *epoch_alrmtm;
+	cdsl_dlistInit(&alrm_desc->alrq_wn);
+	cdsl_dlistInit((cdsl_dlistNode_t*) &alrm_desc->wait_q);
+
+	cdsl_dlistEnqueuePriority(&alrmQ,&alrm_desc->alrq_wn,tch_systimeAlrmQRule);
+	tch_registerKobject(&alrm_desc->__kobj,(tch_kobjDestr) tch_systime_cancelAlarm);
+
+	return (alrm_Id) alrm_desc;
+}
+
+DEFINE_SYSCALL_1(cancel_alarm,alrm_Id,id,tchStatus)
+{
+	if(!id)
+		return tchErrorParameter;
+	struct alrm_descriptor* alrm_desc = (struct alrm_descriptor*) id;
+
+	cdsl_dlistRemove((cdsl_dlistNode_t*) &alrm_desc->alrq_wn);	// remove alrm from alrm queue
+	tch_schedWake(&alrm_desc->wait_q,SCHED_THREAD_ALL,tchErrorResource,FALSE);
+	tch_unregisterKobject(&alrm_desc->__kobj);
+
+	return tchOK;
+}
 
 
 void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 
 	tch_hal_disableSystick();
+
 	cdsl_dlistInit(&systimeWaitQ);
 	cdsl_dlistInit(&lpsystimeWaitQ);
+	cdsl_dlistInit(&alrmQ);
+
 	systimeTick = 0;
 	sysUpTimeSec = 0;
 	current_tz = init_tz;
@@ -160,6 +202,26 @@ static tch_timezone tch_systime_setTimezone(const tch_timezone tz)
 	return prev_tz;
 }
 
+static alrm_Id tch_systime_setAlarm(time_t time, alrmIntv period)
+{
+	if(tch_port_isISR())
+		return __set_alarm(&time, period);
+	return (alrm_Id) __SYSCALL_2(set_alarm,&time,period);
+}
+
+static tchStatus tch_systime_waitAlarm(alrm_Id alrm)
+{
+
+}
+
+
+static tchStatus tch_systime_cancelAlarm(alrm_Id alrm)
+{
+	if(tch_port_isISR())
+		return __cancel_alarm(alrm);
+	return __SYSCALL_1(cancel_alarm,alrm);
+}
+
 static tch_timezone tch_systime_getTimezone()
 {
 	return current_tz;
@@ -197,6 +259,7 @@ BOOL tch_systimeIsPendingEmpty()
 void tch_kernel_onWakeup() {
 	tch_thread_kheader* nth = NULL;
 	sysUpTimeSec += LSTICK_PERIOD;
+	gmt_epoch++;
 	while ((!cdsl_dlistIsEmpty(&lpsystimeWaitQ)) && (((tch_thread_kheader*) lpsystimeWaitQ.next)->to	<= sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&lpsystimeWaitQ);
 		nth->to = 0;
@@ -227,7 +290,14 @@ void tch_kernel_onSystick() {
 	tch_schedUpdate();
 }
 
-static DECLARE_COMPARE_FN(tch_systimeWaitQRule) {
+static DECLARE_COMPARE_FN(tch_systimeWaitQRule)
+{
 	return ((tch_thread_kheader*)a)->to < ((tch_thread_kheader*) b)->to? a : b;
 }
+
+static DECLARE_COMPARE_FN(tch_systimeAlrmQRule)
+{
+	return ((struct alrm_descriptor*) a)->alrm_time < ((struct alrm_descriptor*) b)->alrm_time? a : b;
+}
+
 

@@ -44,7 +44,6 @@ void idle_init(){
 
 	busy_cnt = 0;
 	idle_lock = tch_rti->Mtx->create();
-
 	tch_rti->Thread->start(idleThread);
 }
 

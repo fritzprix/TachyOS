@@ -127,7 +127,7 @@ static tch_barId bar_init(tch_barCb* bar,uint8_t cnt,BOOL is_static){
 	BAR_SET_MAX(bar,cnt);
 	bar->th_cnt = 0;
 	cdsl_dlistInit(&bar->wq);
-	tch_registerKobject(&bar->__obj,is_static? (tch_kobjDestr) bar_deinit : (tch_kobjDestr) tch_barDestroy);
+	tch_registerKobject(&bar->__obj,is_static? (tch_kobjDestr) tch_barDeinit : (tch_kobjDestr) tch_barDestroy);
 
 	return bar;
 }
