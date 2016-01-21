@@ -17,8 +17,10 @@
 #include "kernel/tch_event.h"
 #include "kernel/tch_kobj.h"
 
-
+#ifndef EVENT_CLASS_KEY
 #define EVENT_CLASS_KEY                        ((uint16_t )0xDABC)
+#error "might not configured properly"
+#endif
 
 #define EVENT_VALIDATE(ins)                 do {\
 	((tch_eventCb*) ins)->status = (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF);\
@@ -36,6 +38,7 @@ __USER_API__ static int32_t tch_eventSet(tch_eventId ev,int32_t ev_signal);
 __USER_API__ static int32_t tch_eventClear(tch_eventId ev,int32_t ev_signal);
 __USER_API__ static tchStatus tch_eventWait(tch_eventId ev,int32_t signal_msk,uint32_t millisec);
 __USER_API__ static tchStatus tch_eventDestroy(tch_eventId ev);
+
 
 static tch_eventId event_init(tch_eventCb* evcb,BOOL is_static);
 static tchStatus event_deinit(tch_eventCb* evcb);
@@ -123,13 +126,14 @@ DEFINE_SYSCALL_1(event_init,tch_eventCb*,ep,tchStatus){
 DEFINE_SYSCALL_1(event_deinit,tch_eventCb*,ep,tchStatus){
 	if(!ep || !EVENT_ISVALID(ep))
 		return tchErrorParameter;
+	event_deinit(ep);
 	return tchOK;
 }
 
 
 tch_eventId event_init(tch_eventCb* evcb,BOOL is_static){
 	mset(evcb,0,sizeof(tch_eventCb));
-	tch_registerKobject(&evcb->__obj,is_static? (tch_kobjDestr) event_deinit :  (tch_kobjDestr) tch_eventDestroy);
+	tch_registerKobject(&evcb->__obj,is_static? (tch_kobjDestr) tch_eventDeinit :  (tch_kobjDestr) tch_eventDestroy);
 	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
 	EVENT_VALIDATE(evcb);
 	return evcb;
@@ -188,18 +192,25 @@ __USER_API__ static tchStatus tch_eventDestroy(tch_eventId ev){
 	return __SYSCALL_1(event_destroy,ev);
 }
 
-tchStatus tch_eventInit(tch_eventCb* evcb){
+
+tchStatus tch_evnetInit(tch_eventCb* evcb)
+{
 	if(!evcb)
-		return tchErrorParameter;
-	if(tch_port_isISR())
+		return  tchErrorParameter;
+	if(tch_port_isISR() || !kernel_ready)
+	{
 		return __event_init(evcb);
+	}
 	return __SYSCALL_1(event_init,evcb);
 }
 
-tchStatus tch_eventDeinit(tch_eventCb* evcb){
+tchStatus tch_eventDeinit(tch_eventCb* evcb)
+{
 	if(!evcb)
 		return tchErrorParameter;
-	if(tch_port_isISR())
+	if(tch_port_isISR() || !kernel_ready)
+	{
 		return __event_deinit(evcb);
+	}
 	return __SYSCALL_1(event_deinit,evcb);
 }

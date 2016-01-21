@@ -44,7 +44,6 @@ void idle_init(){
 
 	busy_cnt = 0;
 	idle_lock = tch_rti->Mtx->create();
-
 	tch_rti->Thread->start(idleThread);
 }
 
@@ -98,6 +97,7 @@ static DECLARE_THREADROUTINE(idle){
 		tch_hal_enterSleepMode();
 		// some function waking up from sleep mode
  	}
+	tch_lwtsk_unregisterTask(idle_tskid);
 	return 0;
 }
 

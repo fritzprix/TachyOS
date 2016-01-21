@@ -20,6 +20,7 @@
 #define LWSTATUS_RUN			((uint8_t) 4)
 
 struct lw_task {
+	tch_kobj			__kobj;
 	rb_treeNode_t		rbn;
 	lwtask_routine 		do_job;
 	uint8_t				prior;
@@ -58,7 +59,8 @@ void __lwtsk_start_loop(){
 			tch_port_atomicEnd();
 
 			if (!tsk) {
-				if (tch_rti->Rendezvous->sleep(looper_rendv, tchWaitForever) != tchOK) {
+				if (tch_rti->Rendezvous->sleep(looper_rendv, tchWaitForever) != tchOK)
+				{
 					return;	//break loop and return (means system termination)
 				}
 			}
@@ -66,21 +68,22 @@ void __lwtsk_start_loop(){
 
 		tsk = container_of(tsk,struct lw_task,tsk_qn);
 		tch_rti->Mtx->lock(tsk->lock,tchWaitForever);
-		if (tsk->status != LWSTATUS_DONE) {
+		if (tsk->status != LWSTATUS_DONE)
+		{
 			tsk->status = LWSTATUS_RUN;
 			tsk->do_job(tsk->rbn.key, tch_rti, tsk->arg);// dead lock alert!! (any invocation of lwtask function causes dead lock
 														 // note : task struct is locked at every lwtask interface
 			tsk->status = LWSTATUS_DONE;
 			tch_rti->Condv->wakeAll(tsk->condv);
-		}
+		}	// else there is nothing to do with task
 		tch_rti->Mtx->unlock(tsk->lock);
 	}
-
 }
 
 
 
-int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior){
+int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior)
+{
 	if(!fnp)
 		return -1;
 	struct lw_task* tsk = (struct lw_task*) kmalloc(sizeof(struct lw_task));
@@ -100,7 +103,8 @@ int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior){
 	return tsk->rbn.key;
 }
 
-void tch_lwtsk_unregisterTask(int tsk_id){
+void tch_lwtsk_unregisterTask(int tsk_id)
+{
 	if(tsk_id < 0)
 		return;
 	struct lw_task* tsk = (struct lw_task*) cdsl_rbtreeDelete(&tsk_root,tsk_id);
@@ -109,7 +113,8 @@ void tch_lwtsk_unregisterTask(int tsk_id){
 	tsk = container_of(tsk,struct lw_task,rbn);
 	if(tch_rti->Mtx->lock(tsk->lock,tchWaitForever) != tchOK)
 		return;		// may be this task is already destroyed or invalid
-	while(tsk->status != LWSTATUS_DONE){			//wait until done
+	while(tsk->status != LWSTATUS_DONE)
+	{			//wait until done
 		if(tch_rti->Condv->wait(tsk->condv,tsk->lock,tchWaitForever) != tchOK)
 			return;
 	}
@@ -123,7 +128,8 @@ void tch_lwtsk_unregisterTask(int tsk_id){
 }
 
 
-void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
+void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock)
+{
 	if((tsk_id > tsk_cnt) || (tsk_id < 0))
 		return;
 
@@ -132,11 +138,13 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
 		return;
 
 	tsk = container_of(tsk,struct lw_task,rbn);
-	if(tch_port_isISR()){
+	if(tch_port_isISR())
+	{
 		canblock = FALSE;
 	}
 
-	if (canblock) {
+	if (canblock)
+	{
 		if (tch_rti->Mtx->lock(tsk->lock, tchWaitForever) != tchOK)
 			return;
 		while (tsk->status != LWSTATUS_DONE) {
@@ -145,7 +153,9 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
 		tsk->status = LWSTATUS_PENDING;
 		tsk->arg = arg;
 		tch_rti->Mtx->unlock(tsk->lock);
-	}else{
+	}
+	else
+	{
 		tch_port_atomicBegin();
 		if(tsk->status != LWSTATUS_DONE){
 			tch_port_atomicEnd();
@@ -164,7 +174,8 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock){
 	tch_rti->Rendezvous->wake(looper_rendv);
 
 
-	if(canblock){
+	if(canblock)
+	{
 		if (tch_rti->Mtx->lock(tsk->lock, tchWaitForever) != tchOK)
 			return;
 		while (tsk->status != LWSTATUS_DONE) {

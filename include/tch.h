@@ -113,6 +113,10 @@ struct tch_kernel_service_barrier {
 	tchStatus (*destroy)(tch_barId bar);
 };
 
+struct tch_kernel_service_waitq {
+	tch_waitqId (*create)();
+};
+
 struct tch_kernel_service_rendezvu {
 	tch_rendvId (*create)();
 	tchStatus (*sleep)(tch_rendvId rendv,uint32_t timeout);
@@ -122,13 +126,17 @@ struct tch_kernel_service_rendezvu {
 
 
 struct tch_kernel_service_time {
-	tchStatus (*getLocaltime)(struct tm* tm);
-	tchStatus (*setLocaltime)(struct tm* tm,const tch_timezone tz);
-	tch_timezone (*setTimezone)(const tch_timezone tz);
-	tch_timezone (*getTimezone)();
-	uint64_t (*getCurrentTimeMills)();
-	uint64_t (*uptimeMills)();
-	struct tm* (*toBrokentime)(uint64_t timeinmills,struct tm* result);
+	tchStatus (*getWorldTime)(time_t* tp);								//< return GMT time
+	tchStatus (*setWorldTime)(time_t epoch_gmt);						//< set GMT time for system
+	alrm_Id (*setAlarm)(time_t epoch_gmt,alrmIntv period);				//< set alarm in GMT time
+	tchStatus (*waitAlarm)(alrm_Id alrm);
+	tchStatus (*cancelAlarm)(alrm_Id alrm);								//< cancel alarm
+	tch_timezone (*setTimezone)(const tch_timezone tz);					//< set standard time zone
+	tch_timezone (*getTimezone)();										//< get standard time zone
+	uint64_t (*getCurrentTimeMills)();									//< get system-wise time in mills (Not guaranteed time)
+	uint64_t (*uptimeMills)();											//< get elapsed time in millisec after system init
+	time_t (*fromBrokenTime)(struct tm* tp);
+	void (*fromEpochTime)(const time_t time, struct tm* dest_tm,tch_timezone tz);
 };
 
 

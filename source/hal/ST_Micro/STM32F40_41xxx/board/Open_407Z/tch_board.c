@@ -395,10 +395,13 @@ struct tch_board_descriptor_s BOARD_DESCRIPTOR =
 static int log_open(struct tch_file* filp);
 static ssize_t log_read(struct tch_file* filp, char* bp,size_t len);
 static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len);
-int  log_close(struct tch_file* filp);
-ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
+static int  log_close(struct tch_file* filp);
+static ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
 
-file_operations_t LOG_FILE = {
+static tch* context;
+static tch_usartHandle log_serial;
+
+file_operations_t LOG_IO = {
 		.open = log_open,
 		.read = log_read,
 		.write = log_write,
@@ -407,36 +410,58 @@ file_operations_t LOG_FILE = {
 };
 
 
+
 tch_board_descriptor tch_board_init(const tch* ctx)
 {
-	BOARD_DESCRIPTOR.b_logfile = &LOG_FILE;
+	context = (tch*) ctx;
+	BOARD_DESCRIPTOR.b_logfile = &LOG_IO;
+	context = NULL;
+	log_serial = NULL;
 	return &BOARD_DESCRIPTOR;
 }
 
 
 static int log_open(struct tch_file* filp)
 {
+	tch_device_service_usart* uart = context->Service->request(MODULE_TYPE_UART);
+	tch_UartCfg uart_config;
+	uart_config.Buadrate = 115200;
+	uart_config.FlowCtrl = FALSE;
+	uart_config.Parity = USART_Parity_NON;
+	uart_config.StopBit = USART_StopBit_1B;
+
+	//tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	log_serial = uart->allocate(context, tch_USART2,&uart_config,tchWaitForever,ActOnSleep);
+	if(!log_serial)
+		return FALSE;
+	return TRUE;
 
 }
 
 static ssize_t log_read(struct tch_file* filp, char* bp,size_t len)
 {
-
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->read(log_serial,bp,len,tchWaitForever);
 }
 
 static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len)
 {
-
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->write(log_serial,bp,len);
 }
 
 int  log_close(struct tch_file* filp)
 {
-
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->close(log_serial) == tchOK? TRUE : FALSE;
 }
 
 ssize_t log_seek(struct tch_file* filp, size_t offset, int whence)
 {
-
+	return 0;
 }
 
 

@@ -28,28 +28,18 @@ extern "C"{
 
 
 typedef struct tch_rtc_handle tch_rtcHandle;
-typedef uint32_t tch_alrId;
-typedef enum {
-	alrRes_DAY = ((uint8_t) 3),
-	alrRes_HOUR = ((uint8_t) 2),
-	alrRes_MIN = ((uint8_t) 1),
-	alrRes_SEC = ((uint8_t) 0)
-} tch_alrRes;
+
 typedef void (*tch_rtc_wkupHandler)(void);
-
-
 struct tch_rtc_handle {
 	tchStatus (*close)(tch_rtcHandle* self);
-	tchStatus (*setTime)(tch_rtcHandle* self,time_t gmt_epoch,tch_timezone tz,BOOL force);
-	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* ltm);
-	tch_alrId (*setAlarm)(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution);
-	tchStatus (*cancelAlarm)(tch_rtcHandle* self,tch_alrId alrm);
+	tchStatus (*setTime)(tch_rtcHandle* self,struct tm* localtm,BOOL force);
+	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* localtm);
 	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
 };
 
 typedef struct tch_device_service_rtc {
-	tch_rtcHandle* (*open)(const tch* env,time_t gmt_epoch,tch_timezone tz);
+	tch_rtcHandle* (*open)(const tch* env,struct tm* localtm);
 }tch_device_service_rtc;
 
 #if defined(__cplusplus)

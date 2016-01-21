@@ -1,37 +1,14 @@
 /*
-Default linker script for STM32F4xx_1024K_192K
+Default linker script for STM32F2xx_1024K_192K
 */
+
 
 /* include the common STM32F4xx  sub-script */
 
 /* Common part of the linker scripts for STM32F devices*/
 
+__stack_init = KERNEL_STACK_LIMIT  - KERNEL_STACK_SIZE ;
 
-/* default stack sizes. 
-
-These are used by the startup in order to allocate stacks for the different modes.
-*/
-
-__Stack_Size = 1024 ;
-
-PROVIDE ( _Stack_Size = __Stack_Size ) ;
-
-__Stack_Init = _estack  - CONFIG_KERNEL_STACKSIZE ;
-
-/*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
-PROVIDE ( _Stack_Init = __Stack_Init ) ;
-
-/*
-There will be a link error if there is not this amount of RAM free at the end.
-*/
-_Minimum_Stack_Size = 0x100 ;
-
-
-/* include the memory spaces definitions sub-script */
-/*
-Linker subscript for STM32F4xx definitions with 1024 Flash and 192 Onchip SRAM */
-
-/* Memory Spaces Definitions */
 
 MEMORY
 {
@@ -46,8 +23,6 @@ MEMORY
   MEMORY_ARRAY (xrw)  : ORIGIN = 0x20002000, LENGTH = 32
 }
 
-/* higher address of the user mode stack (end of 128K RAM on AHB bus)*/
-_estack = CONFIG_KERNEL_STACKLIMIT;
 
 
 
@@ -78,6 +53,33 @@ SECTIONS
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > FLASH
+    
+    /*size of section is evaluated immediately so if you want to make size of init section in flash ROM
+      same to size of data section in RAM, you must allocate region first */
+    
+    .data  : AT ( _sidata )
+    {
+	    . = ALIGN(PAGE_SIZE);
+        /* This is used by the startup in order to initialize the .data secion */
+        _sdata = . ;
+        
+        *(.data)
+        *(.data.*)
+
+	    . = ALIGN(PAGE_SIZE);
+	    /* This is used by the startup in order to initialize the .data secion */
+	    _edata = . ;
+	    
+    } >RAM
+    
+    .udata : AT ( _usidata)
+    {
+    	. = ALIGN(PAGE_SIZE);
+    	_sudata = . ;
+    	*(.udata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eudata = . ;
+    } >RAM
 
     __exidx_start = .;
     .ARM.exidx :
@@ -86,7 +88,6 @@ SECTIONS
     } > FLASH
     __exidx_end = .;
     /* the program code is stored in the .text section, which goes to Flash */
-    
     .text :
     {
 	    . = ALIGN(4);
@@ -100,25 +101,48 @@ SECTIONS
         *(.glue_7t)
 
 	    . = ALIGN(4);
-	    _etext = .;
-	    
-	    . = ALIGN(4);
     	__syscall_entry = . ;
     	*(.sysc.table) 
+    	. = ALIGN(4);
+    	__syscall_end = . ;
+    	
+    	_initv_begin = . ;
+    	KEEP(*(.sinitv))  
+    	KEEP(*(.sinitv*)) 
     	. = ALIGN(4); 
-    	__syscall_end = . ;   
+    	_initv_end = . ;
+    	
+    	_exitv_begin = . ;
+    	KEEP(*(.sexitv))
+    	KEEP(*(.sexitv*))
+    	. = ALIGN(4);
+    	_exitv_end = . ;    	
+	    _etext = . ;
+	    
+    	
+    	/* user executable part of kernel binary */
+    	. = ALIGN(PAGE_SIZE);
+    	_surox = .;
+    	*(.urodata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eurox = .;
+    	. = ALIGN(PAGE_SIZE);
+    	_utext_begin = . ;
+    	*(.utext)
+    	. = ALIGN(PAGE_SIZE);
+    	_utext_end = . ;    
+	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
-	    . = ALIGN(4);
 	    _sidata = . ;
+	    _usidata = _sidata + SIZEOF(.data);
     } >FLASH
     
-    
-    
+   
     /* MEMORY_ARRAY */
     .ROarraySection :
     {
-          *(.ROarraySection)                          
+            *(.ROarraySection)                          
     } >MEMORY_ARRAY
      
 
@@ -126,19 +150,8 @@ SECTIONS
     The program executes knowing that the data is in the RAM
     but the loader puts the initial values in the FLASH (inidata).
     It is one task of the startup to copy the initial values from FLASH to RAM. */
-    .data  : AT ( _sidata )
-    {
-	    . = ALIGN(CONFIG_PAGE_SIZE);
-        /* This is used by the startup in order to initialize the .data secion */
-        _sdata = . ;
-        
-        *(.data)
-        *(.data.*)
-
-	    . = ALIGN(4);
-	    /* This is used by the startup in order to initialize the .data secion */
-	    _edata = . ;
-    } >RAM
+    
+    
     
 
     /* This is the uninitialized data section */
@@ -152,33 +165,31 @@ SECTIONS
         *(.bss.*)
         *(COMMON)
         
-	    . = ALIGN(CONFIG_PAGE_SIZE);
+	    . = ALIGN(PAGE_SIZE);
 	    /* This is used by the startup in order to initialize the .bss secion */
 	    _ebss = . ;
     } >RAM
     
-    PROVIDE ( end = _ebss );
-    PROVIDE ( _end = _ebss );
     
-
     .kheap :
     {
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_skheap = .;
-    	. += CONFIG_KERNEL_DYNAMICSIZE;
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. += KERNEL_DYNAMIC_SIZE;
+    	. = ALIGN(PAGE_SIZE);
     } >RAM
     
-    .kstack __Stack_Init :
+    .kstack __stack_init :
     {	
-    	. = ALIGN(CONFIG_PAGE_SIZE);
+    	. = ALIGN(PAGE_SIZE);
     	_ekheap = .;
     	_sstack = .;
 	   	KEEP(*(.kernel.stack))
-    	. = . + CONFIG_KERNEL_STACKSIZE;
+    	. = . + KERNEL_STACK_SIZE;
     	_estack = .;
     } >RAM
-
+    
+    
     
     /* this is the FLASH Bank1 */
     /* the C or assembly source must explicitly place the code or data there

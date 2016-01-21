@@ -12,7 +12,7 @@
 #include "tch_types.h"
 
 
-extern struct tm* tch_time_epoch_to_broken(const time_t* timep,struct tm* result,tch_timezone tz);
-extern time_t tch_time_broken_to_gmt_epoch(struct tm* timep);
+extern struct tm* tch_time_gmt_epoch_to_broken(const time_t* timep,struct tm* result,tch_timezone tz);
+extern time_t tch_time_broken_to_gmt_epoch(struct tm* timep,tch_timezone tz);
 
 #endif /* TIME_H_ */

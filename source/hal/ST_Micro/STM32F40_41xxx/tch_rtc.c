@@ -50,26 +50,30 @@
 
 
 typedef struct tch_rtc_handle_prototype_t {
-	tch_rtcHandle                         pix;
-	uint32_t                              status;
-	tch_mtxId                             mtx;
-	const tch*                            env;
-	tch_rtc_wkupHandler                   wkup_handler;
-	time_t                                gmt_epoch;
-	tch_timezone                          local_tz;
-	uint32_t*                             bkp_regs;
-	uint16_t                              wkup_period;
+	tch_rtcHandle 						pix;
+	uint32_t  							status;
+	tch_mtxId 							mtx;
+	const tch* 							env;
+	tch_rtc_wkupHandler					wkup_handler;
+	uint16_t							wkup_period;
+	cdsl_dlistNode_t					alrm_queue;
 }tch_rtc_handle_prototype;
+
+struct rtc_alarm_event
+{
+	cdsl_dlistNode_t					alrm_wnode;
+	tch_thread_queue 					wait_queue;
+	time_t								alrm_epoch_time;
+};
 
 static int tch_rtc_init(void);
 static void tch_rtc_exit(void);
 
-static tch_rtcHandle* tch_rtc_open(const tch* env,time_t lt,tch_timezone tz);
+
+static tch_rtcHandle* tch_rtc_open(const tch* env,struct tm* localtm);
 static tchStatus tch_rtc_close(tch_rtcHandle* self);
-static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone tz,BOOL force);
-static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm);
-static tch_alrId tch_rtc_setAlarm(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution);
-static tchStatus tch_rtc_cancelAlarm(tch_rtcHandle* self,tch_alrId alrm);
+static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* localtm,BOOL force);
+static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* localtm);
 static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self);
 
@@ -91,6 +95,7 @@ static int tch_rtc_init(void)
 	RCC->APB1RSTR |= RCC_APB1RSTR_PWRRST;
 	RCC->APB1RSTR &= ~RCC_APB1RSTR_PWRRST;
 
+
 	tch_mutexInit(&mtx);
 	tch_condvInit(&condv);
 	return tch_kmod_register(MODULE_TYPE_RTC,RTC_CLASS_KEY,&RTC_Ops,TRUE);
@@ -110,10 +115,9 @@ MODULE_EXIT(tch_rtc_exit);
 
 
 
-static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone tz)
+static tch_rtcHandle* tch_rtc_open(const tch* env,struct tm* ltm)
 {
 	tch_rtc_handle_prototype* ins = NULL;
-
 	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK)
 		return NULL;
 
@@ -122,6 +126,7 @@ static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone 
 		if(env->Condv->wait(&condv,&mtx,tchWaitForever) != tchOK)
 			return NULL;
 	}
+
 
 	_handle = ins = (tch_rtc_handle_prototype*) env->Mem->alloc(sizeof(tch_rtc_handle_prototype));
 	if(env->Mtx->unlock(&mtx) != tchOK)
@@ -150,19 +155,19 @@ static tch_rtcHandle* tch_rtc_open(const tch* env,time_t gmt_epoch,tch_timezone 
 		RTC->PRER |= (127 << RTC_PRERA_Pos);  // setup rtc prescaler to obtain 1 Hz
 	}
 
+	cdsl_dlistInit(&ins->alrm_queue);
+
 	ins->mtx = env->Mtx->create();
-	ins->pix.cancelAlarm = tch_rtc_cancelAlarm;
 	ins->pix.close = tch_rtc_close;
 	ins->pix.disablePeriodicWakeup = tch_rtc_disablePeriodicWakeup;
 	ins->pix.enablePeriodicWakeup = tch_rtc_enablePeriodicWakeup;
 	ins->pix.getTime = tch_rtc_getTime;
 	ins->pix.setTime = tch_rtc_setTime;
-	ins->pix.setAlarm = tch_rtc_setAlarm;
 
 	ins->env = env;
 	tch_rtcValidate(ins);
 
-	tch_rtc_setTime((tch_rtcHandle*) ins,gmt_epoch,tz,TRUE);
+	tch_rtc_setTime((tch_rtcHandle*) ins,ltm,TRUE);
 	RTC->ISR &= ~RTC_ISR_INIT;
 	return (tch_rtcHandle*) ins;
 }
@@ -202,10 +207,9 @@ static tchStatus tch_rtc_close(tch_rtcHandle* self)
 	return tchOK;
 }
 
-static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone tz,BOOL force)
+static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* ltm,BOOL force)
 {
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
-	struct tm localTm;
 	uint32_t dr = 0;
 	uint32_t tr = 0;
 	uint32_t tmp = 0;
@@ -215,7 +219,6 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 		return tchErrorParameter;
 	if((RTC->ISR & RTC_ISR_INITS) || !force)   // RTC is already initialized or not forced, it'll not be updated
 		return tchOK;
-	tch_time_epoch_to_broken(&gmt_tm,&localTm,tz);
 	if(ins->env->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return tchErrorResource;
 	RTC->ISR |= RTC_ISR_INIT;
@@ -223,24 +226,22 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,time_t gmt_tm,tch_timezone 
 		/*NOP*/;
 	RTC->TR = 0;
 	RTC->DR = 0;
-	ins->local_tz = tz;
-	ins->gmt_epoch = gmt_tm;
-	tmp =  localTm.tm_hour / 10;
-	tr |= ((tmp << 20) | ((localTm.tm_hour - (tmp * 10)) << 16));
-	tmp = localTm.tm_min / 10;
-	tr |= ((tmp << 12) | ((localTm.tm_min - (tmp * 10)) << 8));
-	tmp = localTm.tm_sec / 10;
-	tr |= ((tmp << 4) | (localTm.tm_sec - (tmp * 10)));
+	tmp =  ltm->tm_hour / 10;
+	tr |= ((tmp << 20) | ((ltm->tm_hour - (tmp * 10)) << 16));
+	tmp = ltm->tm_min / 10;
+	tr |= ((tmp << 12) | ((ltm->tm_min - (tmp * 10)) << 8));
+	tmp = ltm->tm_sec / 10;
+	tr |= ((tmp << 4) | (ltm->tm_sec - (tmp * 10)));
 	RTC->TR = tr;
 
-	tmp = localTm.tm_year / 10;
-	dr |= ((tmp << 20) | ((localTm.tm_year - (tmp * 10)) << 16));
-	tmp = localTm.tm_wday == 0? 7 : localTm.tm_wday;
+	tmp = ltm->tm_year / 10;
+	dr |= ((tmp << 20) | ((ltm->tm_year - (tmp * 10)) << 16));
+	tmp = ltm->tm_wday == 0? 7 : ltm->tm_wday;
 	dr |= (tmp << 13);
-	tmp = (localTm.tm_mon + 1) / 10;
-	dr |= ((tmp << 12) | (((localTm.tm_mon + 1) - (tmp * 10)) << 8));
-	tmp = localTm.tm_mday / 10;
-	dr |= ((tmp << 4) | (localTm.tm_mday - (tmp * 10)));
+	tmp = (ltm->tm_mon + 1) / 10;
+	dr |= ((tmp << 12) | (((ltm->tm_mon + 1) - (tmp * 10)) << 8));
+	tmp = ltm->tm_mday / 10;
+	dr |= ((tmp << 4) | (ltm->tm_mday - (tmp * 10)));
 	RTC->DR = dr;
 
 
@@ -272,8 +273,7 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
 	date = RTC->DR;
 	time = RTC->TR;
 
-	if(time & RTC_TR_PM)
-		RTC->TR &= ~RTC_TR_PM;
+	RTC->TR &= ~RTC_TR_PM;
 	mset(ltm,0,sizeof(struct tm));
 
 	ltm->tm_hour += ((time & RTC_TR_HT) >> 20) * 10;
@@ -295,24 +295,12 @@ static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
 	ltm->tm_mday += ((date & RTC_DR_DT) >> 4) * 10;
 	ltm->tm_mday += (date & RTC_DR_DU);
 
-	lt = tch_time_broken_to_gmt_epoch(ltm);                                     // get updated ltm and epoch
-	ins->gmt_epoch = lt - (HOUR_IN_SEC * ins->local_tz);   // update gmt epoch
-
 	if(time & RTC_TR_PM)
 		RTC->TR |= RTC_TR_PM;
 	ins->env->Mtx->unlock(ins->mtx);
 	return tchOK;
 }
 
-static tch_alrId tch_rtc_setAlarm(tch_rtcHandle* self,time_t alrtm,tch_alrRes resolution)
-{
-
-}
-
-static tchStatus tch_rtc_cancelAlarm(tch_rtcHandle* self,tch_alrId alrm)
-{
-
-}
 
 static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler wkup_handler)
 {
@@ -380,8 +368,6 @@ void RTC_WKUP_IRQHandler()
 		return;
 	if(!tch_rtcIsValid(ins))
 		return;
-	ins->gmt_epoch += ins->wkup_period;
-	*((time_t*)ins->bkp_regs) = ins->gmt_epoch;
 	if(ins->wkup_handler)
 		ins->wkup_handler();
 	EXTI->PR |= (1 << 22);

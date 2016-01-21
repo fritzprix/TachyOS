@@ -59,7 +59,7 @@ void* kmalloc(size_t sz){
 		if((rsz * PAGE_SIZE) < sz){
 			tch_port_atomicEnd();
 			return NULL;		// not able to satisfies memory request
-								// otherwise, allocate new region and add it to kernel heap
+								// allocate new region and add it to kernel heap
 		}
 
 		rsz = ((rsz * PAGE_SIZE) > KERNEL_DYNAMIC_SIZE) ? (rsz * PAGE_SIZE) : KERNEL_DYNAMIC_SIZE;

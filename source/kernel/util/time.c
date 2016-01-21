@@ -26,7 +26,11 @@ const uint8_t NORMAL_YEAR_DAY_PER_MONTH[] = {
 		31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-struct tm* tch_time_epoch_to_broken(const time_t* timep,struct tm* result,tch_timezone tz){
+
+/***
+ *  gmt epoch time to broken time
+ */
+struct tm* tch_time_gmt_epoch_to_broken(const time_t* timep,struct tm* result,tch_timezone tz){
 	if(!result || !timep)
 		return NULL;
 	time_t time = *timep;
@@ -56,7 +60,11 @@ struct tm* tch_time_epoch_to_broken(const time_t* timep,struct tm* result,tch_ti
 	return result;
 }
 
-time_t tch_time_broken_to_gmt_epoch(struct tm* timep){
+
+/**
+ *  Local broken time to gmt epoch time (world time)
+ */
+time_t tch_time_broken_to_gmt_epoch(struct tm* timep,tch_timezone tz){
 	if(!timep)
 		return 0;
 
@@ -71,6 +79,7 @@ time_t tch_time_broken_to_gmt_epoch(struct tm* timep){
 	result += timep->tm_hour * SEC_PER_HOUR;
 	result += timep->tm_min * 60;
 	result += timep->tm_sec;
+	result -= (tz * SEC_PER_HOUR);
 	return result;
 }
 

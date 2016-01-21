@@ -52,7 +52,7 @@ struct _tch_exc_stack {
 	uint32_t LR14;
 	uint32_t Return;
 	uint32_t xPSR;
-#if MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 	float S0;
 	float S1;
 	float S2;
@@ -84,7 +84,7 @@ struct _tch_thread_context {
 	uint32_t R10;
 	uint32_t R11;
 	uint32_t LR;
-#if MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 	float S16;
 	float S17;
 	float S18;

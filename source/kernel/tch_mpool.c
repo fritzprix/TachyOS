@@ -19,8 +19,10 @@
 #include "kernel/tch_mpool.h"
 #include "kernel/tch_kernel.h"
 
-
-#define TCH_MPOOL_CLASS_KEY             ((uint16_t) 0x2D05)
+#ifndef MPOOL_CLASS_KEY
+#define MPOOL_CLASS_KEY             ((uint16_t) 0x2D05)
+#error "might not configured properly"
+#endif
 
 
 typedef struct tch_mpoolCb tch_mpoolCb;
@@ -125,7 +127,7 @@ __USER_API__ tchStatus tch_mpoolDestroy(tch_mpoolId mpool){
 
 
 static inline void tch_mpoolValidate(tch_mpoolId mp){
-	((tch_mpoolCb*) mp)->bstate |= (((uint32_t) mp & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY);
+	((tch_mpoolCb*) mp)->bstate |= (((uint32_t) mp & 0xFFFF) ^ MPOOL_CLASS_KEY);
 }
 
 static inline void tch_mpoolInvalidate(tch_mpoolId mp){
@@ -133,6 +135,6 @@ static inline void tch_mpoolInvalidate(tch_mpoolId mp){
 }
 
 static inline BOOL tch_mpoolIsValid(tch_mpoolId mp){
-	return (((tch_mpoolCb*) mp)->bstate & 0xFFFF) == (((uint32_t) mp & 0xFFFF) ^ TCH_MPOOL_CLASS_KEY);
+	return (((tch_mpoolCb*) mp)->bstate & 0xFFFF) == (((uint32_t) mp & 0xFFFF) ^ MPOOL_CLASS_KEY);
 }
 

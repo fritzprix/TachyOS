@@ -19,8 +19,10 @@
 #include "kernel/tch_kobj.h"
 
 
-
-#define TCH_MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
+#ifndef MAILQ_CLASS_KEY
+#define MAILQ_CLASS_KEY              ((uint16_t) 0x2D0D)
+#error "might not configured properly"
+#endif
 
 
 
@@ -259,7 +261,7 @@ static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL is
 		Mempool->destroy(qcb->bpool);
 		return NULL;
 	}
-	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) mailq_deinit : (tch_kobjDestr) tch_mailqDestroy);
+	tch_registerKobject(&qcb->__obj,isstatic? (tch_kobjDestr) tch_mailqDeinit : (tch_kobjDestr) tch_mailqDestroy);
 	qcb->qlen = qlen;
 	qcb->gidx = qcb->gidx = 0;
 	qcb->bsz = sz;
@@ -303,7 +305,7 @@ tchStatus tch_mailqDeinit(tch_mailqCb* qcb){
 }
 
 static inline void tch_mailqValidate(tch_mailqId qid){
-	((tch_mailqCb*) qid)->bstatus |= (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
+	((tch_mailqCb*) qid)->bstatus |= (((uint32_t) qid & 0xFFFF) ^ MAILQ_CLASS_KEY);
 }
 
 static inline void tch_mailqInvalidate(tch_mailqId qid){
@@ -311,5 +313,5 @@ static inline void tch_mailqInvalidate(tch_mailqId qid){
 }
 
 static inline BOOL tch_mailqIsValid(tch_mailqId qid){
-	return (((tch_mailqCb*) qid)->bstatus & 0xFFFF) == (((uint32_t) qid & 0xFFFF) ^ TCH_MAILQ_CLASS_KEY);
+	return (((tch_mailqCb*) qid)->bstatus & 0xFFFF) == (((uint32_t) qid & 0xFFFF) ^ MAILQ_CLASS_KEY);
 }

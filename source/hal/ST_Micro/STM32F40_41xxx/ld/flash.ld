@@ -2,23 +2,6 @@
 Default linker script for STM32F4xx_1024K_192K
 */
 
-/*
-HSTICK_PERIOD 
-LSTICK_PERIOD 
-RR_TIMESLOT 
-USE_ROUNDROBIN 
-XMEM_SIZE 
-PAGE_SIZE 
-PAGE_OFFSET 
-KERNEL_DYNAMIC_SIZE 
-KERNEL_STACK_SIZE 
-SHM_SIZE 
-MM_TYPE nommu
-HEAP_SIZE 
-KERNEL_STACK_LIMIT 
-MAX_CACHE_SIZE 
-USE_XMEM
-*/
 
 /* include the common STM32F4xx  sub-script */
 
@@ -70,6 +53,33 @@ SECTIONS
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > FLASH
+    
+    /*size of section is evaluated immediately so if you want to make size of init section in flash ROM
+      same to size of data section in RAM, you must allocate region first */
+    
+    .data  : AT ( _sidata )
+    {
+	    . = ALIGN(PAGE_SIZE);
+        /* This is used by the startup in order to initialize the .data secion */
+        _sdata = . ;
+        
+        *(.data)
+        *(.data.*)
+
+	    . = ALIGN(PAGE_SIZE);
+	    /* This is used by the startup in order to initialize the .data secion */
+	    _edata = . ;
+	    
+    } >RAM
+    
+    .udata : AT ( _usidata)
+    {
+    	. = ALIGN(PAGE_SIZE);
+    	_sudata = . ;
+    	*(.udata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eudata = . ;
+    } >RAM
 
     __exidx_start = .;
     .ARM.exidx :
@@ -124,7 +134,7 @@ SECTIONS
 	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
-	    _sidata = .;
+	    _sidata = . ;
 	    _usidata = _sidata + SIZEOF(.data);
     } >FLASH
     
@@ -140,19 +150,7 @@ SECTIONS
     The program executes knowing that the data is in the RAM
     but the loader puts the initial values in the FLASH (inidata).
     It is one task of the startup to copy the initial values from FLASH to RAM. */
-    .data  : AT ( _sidata )
-    {
-	    . = ALIGN(PAGE_SIZE);
-        /* This is used by the startup in order to initialize the .data secion */
-        _sdata = . ;
-        
-        *(.data)
-        *(.data.*)
-
-	    . = ALIGN(4);
-	    /* This is used by the startup in order to initialize the .data secion */
-	    _edata = . ;
-    } >RAM
+    
     
     
 
@@ -172,14 +170,6 @@ SECTIONS
 	    _ebss = . ;
     } >RAM
     
-    .udata : AT ( _usidata )
-    {
-    	. = ALIGN(PAGE_SIZE);
-    	_sudata = .;
-    	*(.udata)
-    	. = ALIGN(PAGE_SIZE);
-    	_eudata = .;
-    } >RAM 
     
     .kheap :
     {
