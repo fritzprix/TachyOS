@@ -85,7 +85,7 @@ BOOL tch_port_init(){
 	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
 #endif
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
-#ifdef MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 	/***
 	 *   FPU Activation
 	 */
@@ -149,7 +149,7 @@ void tch_port_disableISR(void){
 
 void tch_port_switch(uaddr_t nth,uaddr_t cth){
 	asm volatile(
-#ifdef MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 			"vpush {s16-s31}\n"
 #endif
 			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
@@ -157,7 +157,7 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 
 			"ldr sp,[%1]\n"
 			"pop {r4-r11,lr}\n"
-#ifdef MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
@@ -219,7 +219,7 @@ void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t 
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = (uint32_t) uthread_header;
 	exc_sp->R1 = tchOK;
-#if MFEATURE_HFLOAT
+#if FEATURE_FLOAT > 0
 	exc_sp->S0 = (float)0.2f;
 #endif
 	exc_sp = (tch_exc_stack*)((uint32_t*) exc_sp + 2);

@@ -16,10 +16,12 @@
 #include "kernel/tch_kobj.h"
 
 
-
-#define TCH_MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
+#ifndef MSGQ_CLASS_KEY
+#define MSGQ_CLASS_KEY            ((uint16_t) 0x2D03)
+#error "might not configured properly"
+#endif
 #define MSGQ_VALIDATE(msgq)		do{\
-	((tch_msgq_cb*) msgq)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF);\
+	((tch_msgq_cb*) msgq)->status |= MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF);\
 }
 
 __USER_API__ static tch_msgqId tch_msgqCreate(uint32_t len);
@@ -232,7 +234,7 @@ tchStatus tch_msgqDeinit(tch_msgqCb* mq){
 
 
 static inline void tch_msgqValidate(tch_msgqId mqId){
-	((tch_msgqCb*) mqId)->status |= TCH_MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
+	((tch_msgqCb*) mqId)->status |= MSGQ_CLASS_KEY ^ ((uint32_t)mqId & 0xFFFF);
 }
 
 static inline void tch_msgqInvalidate(tch_msgqId mqId){
@@ -240,7 +242,7 @@ static inline void tch_msgqInvalidate(tch_msgqId mqId){
 }
 
 static inline BOOL tch_msgqIsValid(tch_msgqId msgq){
-	return (((tch_msgqCb*)msgq)->status & 0xFFFF) == (TCH_MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
+	return (((tch_msgqCb*)msgq)->status & 0xFFFF) == (MSGQ_CLASS_KEY ^ ((uint32_t)msgq & 0xFFFF));
 
 }
 

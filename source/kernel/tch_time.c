@@ -57,6 +57,7 @@ __USER_API__ static void tch_systime_fromEpochTime(const time_t time, struct tm*
 
 DECLARE_SYSCALL_2(set_alarm,time_t*, alrmIntv, alrm_Id);
 DECLARE_SYSCALL_1(cancel_alarm,alrm_Id,tchStatus);
+DECLARE_SYSCALL_1(wait_alarm,alrm_Id,tchStatus);
 
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
 static DECLARE_COMPARE_FN(tch_systimeAlrmQRule);
@@ -90,6 +91,12 @@ DEFINE_SYSCALL_2(set_alarm,time_t*, epoch_alrmtm, alrmIntv, period, alrm_Id)
 	tch_registerKobject(&alrm_desc->__kobj,(tch_kobjDestr) tch_systime_cancelAlarm);
 
 	return (alrm_Id) alrm_desc;
+}
+
+DEFINE_SYSCALL_1(wait_alarm,alrm_Id,id,tchStatus)
+{
+	if(!id)
+		return tchErrorParameter;
 }
 
 DEFINE_SYSCALL_1(cancel_alarm,alrm_Id,id,tchStatus)
@@ -211,6 +218,8 @@ static alrm_Id tch_systime_setAlarm(time_t time, alrmIntv period)
 
 static tchStatus tch_systime_waitAlarm(alrm_Id alrm)
 {
+	if(tch_port_isISR())
+		return tchErrorISR;
 
 }
 

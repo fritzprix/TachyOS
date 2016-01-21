@@ -20,6 +20,7 @@
 #define LWSTATUS_RUN			((uint8_t) 4)
 
 struct lw_task {
+	tch_kobj			__kobj;
 	rb_treeNode_t		rbn;
 	lwtask_routine 		do_job;
 	uint8_t				prior;

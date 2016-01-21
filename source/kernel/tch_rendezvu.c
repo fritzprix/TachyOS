@@ -12,18 +12,21 @@
 #include "tch_rendezvu.h"
 #include "kernel/util/string.h"
 
-#define REDEZVOUS_CLASS_KEY			((uint16_t) 0xF53A)
+#ifndef RENDEZVOUS_CLASS_KEY
+#define RENDEZVOUS_CLASS_KEY			((uint16_t) 0xF53A)
+#error "might not configured properly"
+#endif
 
 
 #define RENDEZV_VALIDATE(rndv)			do {\
-	((tch_rendzvCb*) rndv)->status |= (((uint32_t) rndv ^ REDEZVOUS_CLASS_KEY) & 0xFFFF);\
+	((tch_rendzvCb*) rndv)->status |= (((uint32_t) rndv ^ RENDEZVOUS_CLASS_KEY) & 0xFFFF);\
 }while(0)
 
 #define RENDEZV_INVALIDATE(rndv)			do {\
 	((tch_rendzvCb*) rndv)->status &= ~0xFFFF;\
 }while(0)
 
-#define RENDEZV_ISVALID(rndv)			((((tch_rendzvCb*) rndv)->status & 0xFFFF) == (((uint32_t) rndv ^ REDEZVOUS_CLASS_KEY) & 0xFFFF))
+#define RENDEZV_ISVALID(rndv)			((((tch_rendzvCb*) rndv)->status & 0xFFFF) == (((uint32_t) rndv ^ RENDEZVOUS_CLASS_KEY) & 0xFFFF))
 
 DECLARE_SYSCALL_0(rendv_create,tch_rendvId);
 DECLARE_SYSCALL_2(rendv_sleep, tch_rendvId, uint32_t,tchStatus);

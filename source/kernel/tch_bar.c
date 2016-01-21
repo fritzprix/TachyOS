@@ -25,8 +25,10 @@
 #include "kernel/tch_err.h"
 #include "kernel/tch_kobj.h"
 
-
+#ifndef BARRIER_CLASS_KEY
 #define BARRIER_CLASS_KEY   	     ((uhword_t) 0x2D03)
+#error "might not configured properly"
+#endif
 
 #define BAR_VALIDATE(bar)			do {\
 	((tch_barCb*) bar)->status |= (((uint32_t) bar ^ BARRIER_CLASS_KEY) & 0xFFFF);\

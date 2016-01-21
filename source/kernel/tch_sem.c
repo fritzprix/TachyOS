@@ -20,7 +20,10 @@
 #include "kernel/util/cdsl_dlist.h"
 
 
-#define TCH_SEMAPHORE_CLASS_KEY                      ((uint16_t) 0x1A0A)
+#ifndef SEMAPHORE_CLASS_KEY
+#define SEMAPHORE_CLASS_KEY                      ((uint16_t) 0x1A0A)
+#error "might not configured properly"
+#endif
 
 
 DECLARE_SYSCALL_1(semaphore_create,uint32_t, tch_semId);
@@ -193,7 +196,7 @@ tchStatus tch_semDeinit(tch_semCb* scb){
 
 
 static void tch_semaphoreValidate(tch_semId sid){
-	((tch_semCb*) sid)->state |= (((uint32_t) sid & 0xFFFF) ^ TCH_SEMAPHORE_CLASS_KEY);
+	((tch_semCb*) sid)->state |= (((uint32_t) sid & 0xFFFF) ^ SEMAPHORE_CLASS_KEY);
 }
 
 static void tch_semaphoreInvalidate(tch_semId sid){
@@ -201,5 +204,5 @@ static void tch_semaphoreInvalidate(tch_semId sid){
 }
 
 static BOOL tch_semaphoreIsValid(tch_semId sid){
-	return (((tch_semCb*) sid)->state & 0xFFFF) == (((uint32_t) sid & 0xFFFF) ^ TCH_SEMAPHORE_CLASS_KEY);
+	return (((tch_semCb*) sid)->state & 0xFFFF) == (((uint32_t) sid & 0xFFFF) ^ SEMAPHORE_CLASS_KEY);
 }

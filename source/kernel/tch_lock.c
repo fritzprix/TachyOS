@@ -27,16 +27,19 @@
 /**
  *  macro for mutex
  */
-#define TCH_MTX_CLASS_KEY        ((uint16_t) 0x2D02)
+#ifndef MUTEX_CLASS_KEY
+#define MUTEX_CLASS_KEY        ((uint16_t) 0x2D02)
+#error "might not configured properly"
+#endif
 #define MTX_VALIDATE(mcb)	do{\
-	((tch_mtxCb*) mcb)->status = (((uint32_t) mcb ^ TCH_MTX_CLASS_KEY) & 0xFFFF);\
+	((tch_mtxCb*) mcb)->status = (((uint32_t) mcb ^ MUTEX_CLASS_KEY) & 0xFFFF);\
 }while(0);
 
 #define MTX_INVALIDATE(mcb)	do{\
 	((tch_mtxCb*) mcb)->status &= ~0xFFFF;\
 }while(0);
 
-#define MTX_ISVALID(mcb)	((((tch_mtxCb*) mcb)->status & 0xFFFF) == (((uint32_t) mcb ^ TCH_MTX_CLASS_KEY) & 0xFFFF))
+#define MTX_ISVALID(mcb)	((((tch_mtxCb*) mcb)->status & 0xFFFF) == (((uint32_t) mcb ^ MUTEX_CLASS_KEY) & 0xFFFF))
 
 
 
@@ -45,8 +48,12 @@
  */
 
 
-#define CONDV_WAIT         			  ((uint32_t) 2 << 16)
-#define TCH_CONDV_CLASS_KEY           ((uint16_t) 0x2D01)
+#define CONDV_WAIT						((uint32_t) 2 << 16)
+
+#ifndef CONDV_CLASS_KEY
+#define CONDV_CLASS_KEY					((uint16_t) 0x2D01)
+#error "might not configured properly"
+#endif
 
 #define tch_condvSetWait(condv)       ((tch_condvCb*) condv)->flags |= CONDV_WAIT
 #define tch_condvClrWait(condv)       ((tch_condvCb*) condv)->flags &= ~CONDV_WAIT
@@ -54,14 +61,14 @@
 
 
 #define CONDV_VALIDATE(condv)	do{\
-	((tch_condvCb*) condv)->flags = (((uint32_t) condv ^ TCH_CONDV_CLASS_KEY) & 0xFFFF);\
+	((tch_condvCb*) condv)->flags = (((uint32_t) condv ^ CONDV_CLASS_KEY) & 0xFFFF);\
 }while(0);
 
 #define CONDV_INVALIDATE(condv)	do{\
 	((tch_condvCb*) condv)->flags &= ~0xFFFF;\
 }while(0);
 
-#define CONDV_ISVALID(condv)	((((tch_condvCb*) condv)->flags & 0xFFFF) == (((uint32_t) condv ^ TCH_CONDV_CLASS_KEY) & 0xFFFF))
+#define CONDV_ISVALID(condv)	((((tch_condvCb*) condv)->flags & 0xFFFF) == (((uint32_t) condv ^ CONDV_CLASS_KEY) & 0xFFFF))
 
 
 

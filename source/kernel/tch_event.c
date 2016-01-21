@@ -17,8 +17,10 @@
 #include "kernel/tch_event.h"
 #include "kernel/tch_kobj.h"
 
-
+#ifndef EVENT_CLASS_KEY
 #define EVENT_CLASS_KEY                        ((uint16_t )0xDABC)
+#error "might not configured properly"
+#endif
 
 #define EVENT_VALIDATE(ins)                 do {\
 	((tch_eventCb*) ins)->status = (((uint32_t) ins ^ EVENT_CLASS_KEY) & 0xFFFF);\

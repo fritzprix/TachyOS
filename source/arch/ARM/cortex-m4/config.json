@@ -11,7 +11,10 @@
       "soft",
       "softfp",
       "hardfp"
-    ]
+    ],
+    "gen-list":{
+    	"FEATURE_FLOAT":"to_int(this)"
+    }
   },
   "ARCH_RECIPE":{
     "type":"recipe",
