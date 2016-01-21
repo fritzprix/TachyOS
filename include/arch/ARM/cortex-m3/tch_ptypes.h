@@ -33,9 +33,6 @@ typedef struct pte pte_t;
 typedef pte_t* pmd_t;
 typedef pmd_t* pgd_t;
 
-typedef struct _tch_exc_stack tch_exc_stack;
-typedef struct _tch_thread_context tch_thread_context;
-typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
 
 
 /**
@@ -102,7 +99,7 @@ struct _tch_thread_context {
 	float S30;
 	float S31;
 #endif
-}__attribute__((aligned(8)));
+};
 
 
 #if defined(__cplusplus)

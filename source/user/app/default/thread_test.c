@@ -29,6 +29,8 @@ tchStatus do_test_thread(const tch* ctx)
 static DECLARE_THREADROUTINE(test_run)
 {
 	uint32_t* cnt = (uint32_t*) ctx->Thread->getArg();
+	tch_mtxId mtx = ctx->Mtx->create();
+	tch_condvId condv = ctx->Condv->create();
 	while(*cnt != 100)
 		(*cnt)++;
 	return tchOK;

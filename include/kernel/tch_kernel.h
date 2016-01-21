@@ -125,7 +125,7 @@ extern void tch_kernel_onHardException(int fault,int spec);
 
 
 extern tchStatus __tch_noop_destr(tch_kobj* obj);
-extern void __tch_thread_atexit(tch_threadId thread,int res) __attribute__((naked));
+extern void __tch_thread_atexit(tch_threadId thread,int res) __attribute__((naked,noreturn));
 
 
 

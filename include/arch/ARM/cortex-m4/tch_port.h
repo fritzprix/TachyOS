@@ -96,7 +96,6 @@ extern BOOL tch_port_isISR();
  *
  */
 extern void tch_port_switch(void* nth,void* cth) __attribute__((naked,noreturn));
-extern void tch_port_nswitch(void* nctx,void* cctx);
 
 
 
@@ -130,7 +129,6 @@ extern int tch_port_clrMemPermission(int id);
 
 typedef struct _tch_exc_stack tch_exc_stack;
 typedef struct _tch_thread_context tch_thread_context;
-typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
 
 
 
