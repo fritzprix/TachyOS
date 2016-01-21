@@ -830,16 +830,16 @@ __USER_API__ static BOOL tch_pwm_setDuty(tch_pwmHandle* self,uint32_t ch,float d
 	dutyd = (uint32_t) ((float) dutyd * duty);
 	switch(ch)
 	{
-	case 1:
+	case 0:
 		timerHw->CCR1 = dutyd;
 		return TRUE;
-	case 2:
+	case 1:
 		timerHw->CCR2 = dutyd;
 		return TRUE;
-	case 3:
+	case 2:
 		timerHw->CCR3 = dutyd;
 		return TRUE;
-	case 4:
+	case 3:
 		timerHw->CCR4 = dutyd;
 		return TRUE;
 	}
@@ -850,7 +850,6 @@ __USER_API__ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,floa
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_descriptor* timDesc = (tch_timer_descriptor*) &TIMER_HWs[ins->timer];
 	tchStatus result = tchOK;
-	ch--;
 	if(!self)
 	{
 		return tchErrorParameter;
@@ -914,7 +913,6 @@ __USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[ins->timer];
 	gpio_config_t iocfg;
-	ch = ch - 1;
 	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
@@ -1149,7 +1147,7 @@ __USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uin
 	{
 		return tchErrorParameter;
 	}
-	ch = (ch - 1) / 2;
+	ch = ch / 2;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
 	tch_timer_bs_t* tbs = &TIMER_BD_CFGs[ins->timer];
 	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);

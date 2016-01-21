@@ -109,8 +109,11 @@ DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,reason,tchStatus){
 	if (tid == current)
 	{
 		kth->flag &= ~THREAD_DEATH_BIT;
+		kth->flag |= THREAD_PRIV_BIT;
 		kth->prior = Low;
-		tch_port_enterPrivThread(__tch_thread_atexit, (uint32_t) tid, reason, 0);
+
+		tch_port_enablePrivilegedThread();
+		tch_port_setJmp(__tch_thread_atexit, (uint32_t) tid, reason, 0);
 
 	}
 	else
@@ -363,9 +366,9 @@ __USER_API__ static void* tch_thread_getArg(){
 
 __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status){
 
-#ifdef MFEATURE_HFLOAT
-	float _force_fctx = 0.1f;
-	_force_fctx += 0.1f;
+#if FEATURE_FLOAT > 0
+	float _force_fctx = 0.0f;
+	_force_fctx += 0.0f;
 #endif
 	tchStatus res = thr_p->fn(&thr_p->ctx);
 	__SYSCALL_2(thread_exit,thr_p,res);
@@ -381,7 +384,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
  *
  *  note : this function should be called from the privilidged access context
  */
-__attribute__((naked)) void __tch_thread_atexit(tch_threadId thread,int status){
+__attribute__((naked,noreturn)) void __tch_thread_atexit(tch_threadId thread,int status){
 	if(!thread)
 		KERNEL_PANIC("tch_thread.c","invalid tid at atexit");
 	tch_thread_kheader* th_p = get_thread_kheader(thread);
