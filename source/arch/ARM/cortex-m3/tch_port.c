@@ -157,7 +157,7 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SV) :"r4","r5","r6","r8","r9","r10","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) :"r4","r5","r6","r8","r9","r10","lr");
 }
 
 
@@ -215,13 +215,9 @@ void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t 
 	exc_sp->xPSR = EPSR_THUMB_MODE;
 	exc_sp->R0 = (uint32_t) uthread_header;
 	exc_sp->R1 = tchOK;
-#if FEATURE_FLOAT > 0
-	exc_sp->S0 = (float)0.2f;
-#endif
-	exc_sp = (tch_exc_stack*)((uint32_t*) exc_sp + 2);
 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	mset(th_ctx,0,sizeof(tch_thread_context) - 8);
+	mset(th_ctx,0,sizeof(tch_thread_context));
 	return (uint32_t*) th_ctx;
 
 }

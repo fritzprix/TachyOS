@@ -119,7 +119,7 @@ void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t a
 	tch_thread_kheader* nth = NULL;
 	tch_exc_stack* sp = NULL;
 
-	if(sv_id == SV_EXIT_FROM_SV){
+	if(sv_id == SV_EXIT_FROM_SWITCH){
 		sp = (tch_exc_stack*) tch_port_getUserSP();
 		sp++;
 		cth = (tch_thread_kheader*) current->kthread;

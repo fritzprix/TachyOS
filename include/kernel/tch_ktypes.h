@@ -136,7 +136,7 @@ struct tch_thread_kheader_s {
 
 
 
-#define SV_EXIT_FROM_SV                  ((uint32_t) -1)
+#define SV_EXIT_FROM_SWITCH                  ((uint32_t) -1)
 
 
 #ifdef __cplusplus

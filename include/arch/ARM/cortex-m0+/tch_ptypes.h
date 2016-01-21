@@ -24,18 +24,14 @@ typedef uint32_t uword_t;
 typedef uint16_t uhword_t;
 typedef int32_t  word_t;
 typedef int16_t  hword_t;
-typedef void* uaddr_t;
+typedef void* 	uaddr_t;
+typedef void*	paddr_t;
 
 #define WORD_MAX ((uint32_t) -1)
 
 typedef struct pte pte_t;
 typedef pte_t* pmd_t;
 typedef pmd_t* pgd_t;
-
-typedef struct _tch_exc_stack tch_exc_stack;
-typedef struct _tch_thread_context tch_thread_context;
-typedef struct _arm_sbrtn_ctx arm_sbrtn_ctx;
-
 
 /**
  * follows arm v7m arch. ref.
@@ -101,7 +97,7 @@ struct _tch_thread_context {
 	float S30;
 	float S31;
 #endif
-}__attribute__((aligned(8)));
+};
 
 
 #if defined(__cplusplus)
