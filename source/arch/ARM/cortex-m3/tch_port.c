@@ -164,7 +164,7 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_enterPrivThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
+void tch_port_setJmp(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
 	                                                              //   prepare fake exception stack
 	                                                              //    - passing arguement to kernel mode thread

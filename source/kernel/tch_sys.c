@@ -130,12 +130,9 @@ void tch_kernel_onSyscall(uint32_t sv_id,uint32_t arg1, uint32_t arg2,uint32_t a
 		tch_port_loadPageTable(current->kthread->mm.pgd);/// apply page mapping
 
 		tch_port_setUserSP((uint32_t) sp);
+		tch_port_atomicEnd();
 
-		if ((tch_thread_isValid(current) == tchOK) && tch_thread_isLive(current))
-		{
-			tch_port_atomicEnd();
-		}
-		else
+		if ((tch_thread_isValid(current) != tchOK) || !tch_thread_isLive(current))
 		{
 			tch_thread_exit(current, current->kRet);
 		}

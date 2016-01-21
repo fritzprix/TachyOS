@@ -23,7 +23,6 @@
 
 /* =================  private internal function declaration   ========================== */
 
-#define getListNode(th_id)    ((cdsl_dlistNode_t*) th_id)
 /***
  *  Scheduling policy Implementation
  */
@@ -68,18 +67,28 @@ void tch_schedInit(void* init_thread){
 void tch_schedStart(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	tch_thread_kheader* kth = thr->kthread;
+	tch_thread_kheader* pkth = NULL;
 	if(tch_schedIsPreemptable(thr->kthread)){
-		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,getListNode(current->kthread),tch_schedReadyQRule);			///< put current thread in ready queue
-		getListNode(kth)->prev = (cdsl_dlistNode_t*) current->kthread; 	                                                            ///< set new thread as current thread
+		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,&current->kthread->t_schedNode,tch_schedReadyQRule);			///< put current thread in ready queue
+		pkth = current->kthread;
+		pkth->state = READY;
+
 		current = thr;
-		((tch_thread_kheader*)getListNode(kth)->prev)->state = READY;
 		tch_kernel_set_result(thread,tchOK);
-		tch_port_enterPrivThread((uaddr_t) tch_port_switch,(uword_t)kth,(uword_t) getListNode(kth)->prev,0);
+		tch_schedSwitch(kth, pkth);
+		// TODO: change switch
 	}else{
 		thr->kthread->state = READY;
 		tch_kernel_set_result(current,tchOK);
-		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,getListNode(thr->kthread),tch_schedReadyQRule);
+		cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,&thr->kthread->t_schedNode,tch_schedReadyQRule);
 	}
+}
+
+void tch_schedSwitch(tch_thread_kheader* next, tch_thread_kheader* cur)
+{
+	tch_port_enablePrivilegedThread();
+	tch_port_atomicBegin();
+	tch_port_setJmp((uaddr_t) tch_port_switch, (uword_t) next, (uword_t) cur, 0);
 }
 
 
@@ -89,7 +98,7 @@ void tch_schedStart(tch_threadId thread){
 void tch_schedReady(tch_threadId thread){
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	thr->kthread->state = READY;
-	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,getListNode(thr->kthread),tch_schedReadyQRule);
+	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*)&tch_readyQue,&thr->kthread->t_schedNode,tch_schedReadyQRule);
 }
 
 /** Note : should not called any other program except kernel mode program
@@ -97,6 +106,7 @@ void tch_schedReady(tch_threadId thread){
  */
 tchStatus tch_schedYield(uint32_t timeout,tch_timeunit tu,tch_threadState nextState){
 	tch_thread_kheader* nth = NULL;
+	tch_thread_kheader* pth = NULL;
 	if(timeout == tchWaitForever)
 		return tchErrorParameter;
 	tch_systimeSetTimeout(current,timeout,tu);
@@ -104,16 +114,17 @@ tchStatus tch_schedYield(uint32_t timeout,tch_timeunit tu,tch_threadState nextSt
 	if(!nth)
 		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
 	tch_kernel_set_result(current,tchEventTimeout);
-	getListNode(nth)->prev = (cdsl_dlistNode_t*) get_thread_kheader(current);
-	get_thread_kheader(current)->state = nextState;
+	pth = get_thread_kheader(current);
+	pth->state = nextState;
 	current = nth->uthread;
-	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,0);
+	tch_schedSwitch(nth, pth);
 	return tchOK;
 }
 
 
 tchStatus tch_schedWait(tch_thread_queue* wq,uint32_t timeout){
-	tch_thread_kheader* nth = NULL;
+	tch_thread_kheader* nth;
+	tch_thread_kheader* pth;
 	if(timeout != tchWaitForever){
 		tch_systimeSetTimeout(current,timeout,mSECOND);
 	}
@@ -121,11 +132,12 @@ tchStatus tch_schedWait(tch_thread_queue* wq,uint32_t timeout){
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);
 	if(!nth)
 		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
-	getListNode(nth)->prev = (cdsl_dlistNode_t*) get_thread_kheader(current);
-	get_thread_kheader(current)->state = WAIT;
-	get_thread_kheader(current)->t_waitQ = (cdsl_dlistNode_t*) wq;
+
+	pth = get_thread_kheader(current);
+	pth->state = WAIT;
+	pth->t_waitQ = (cdsl_dlistNode_t*) wq;
 	current = nth->uthread;
-	tch_port_enterPrivThread(tch_port_switch,(uint32_t)nth,(uint32_t)getListNode(nth)->prev,0);
+	tch_schedSwitch( nth, pth);
 	return tchOK;
 }
 
@@ -148,11 +160,10 @@ BOOL tch_schedWake(tch_thread_queue* wq,int cnt, tchStatus res, BOOL preemt){
 		}
 	}
 	if(tpreempt && preemt){
-		tpreempt->state = RUNNING;
 		tch_schedReady(current);
-		getListNode(tpreempt)->prev = getListNode(get_thread_kheader(current));
+		nth = get_thread_kheader(current);
 		current = tpreempt->uthread;
-		tch_port_enterPrivThread(tch_port_switch,(uint32_t)tpreempt,(uint32_t)getListNode(tpreempt)->prev,0);        ///< is new thread has higher priority, switch context and caller thread will get 'osOk' as a return value
+		tch_schedSwitch(tpreempt, nth);
 	}
 	return TRUE;
 }
@@ -164,11 +175,11 @@ void tch_schedUpdate(void){
 	if(cdsl_dlistIsEmpty(&tch_readyQue) || !tch_schedIsPreemptable((tch_thread_kheader*) tch_readyQue.thque.next))
 		return;
 	nth = (tch_thread_kheader*)cdsl_dlistDequeue((cdsl_dlistNode_t*)&tch_readyQue);
-	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) &tch_readyQue,getListNode(cth),tch_schedReadyQRule);
-	getListNode(nth)->prev = (cdsl_dlistNode_t*) cth;
+	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) &tch_readyQue,&cth->t_schedNode,tch_schedReadyQRule);
+	cth->state = READY;
 	current = nth->uthread;
-	get_thread_kheader(getListNode(nth)->prev)->state = SLEEP;
-	tch_port_enterPrivThread(tch_port_switch,(uint32_t) nth,(uint32_t)getListNode(nth)->prev,0);   // switch context without change
+
+	tch_schedSwitch(nth, cth);
 }
 
 BOOL tch_schedIsEmpty(){
@@ -193,7 +204,8 @@ void tch_schedTerminate(tch_threadId thread, int result){
 	}
 	jth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);									/// get new thread from readyque
 	current = jth->uthread;
-	tch_port_enterPrivThread(tch_port_switch,(uint32_t)jth,(uint32_t)thr,0);
+
+	tch_schedSwitch(jth,thr);
 }
 
 
