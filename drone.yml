@@ -1,8 +1,8 @@
 notify:
 	slack:
 		webhook_url : 'https://hooks.slack.com/services/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'
-		username: 'fritzprix'
-		channel: '#tachyos_dev'
+		username: 'doowoong'
+		channel: 'tachyos_dev'
 		on_started: false
 		on_success: true
 		on_failure: true
