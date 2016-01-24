@@ -3,7 +3,7 @@
     "type":"bool",
     "default":"y",
     "gen-list":{
-    	"USART_CLASS_KEY":"rand(2)"
+    	"UART_CLASS_KEY":"rand(2)"
     }
   },
   "ADC":{
@@ -31,9 +31,9 @@
     "type":"bool",
     "default":"n",
     "gen-list":{
-    	"GPTIMER_CLASS_KEY":"rand(2)",
-    	"PWM_CLASS_KEY":"rand(2)",
-    	"CAPT_CLASS_KEY":"rand(2)"
+    	"TIMER_GP_CLASS_KEY":"rand(2)",
+    	"TIMER_PWM_CLASS_KEY":"rand(2)",
+    	"TIMER_CAPTURE_CLASS_KEY":"rand(2)"
     }
   },
   "HAL_SUB_RECIPE":{

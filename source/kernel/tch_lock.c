@@ -342,7 +342,7 @@ DEFINE_SYSCALL_0(condv_create,tch_condvId)
 {
 	tch_condvCb* condv = (tch_condvCb*) kmalloc(sizeof(tch_condvCb));
 	if(!condv)
-		KERNEL_PANIC("tch_condv.c","can't create condition variable object");
+		KERNEL_PANIC("can't create condition variable object");
 	condv_init(condv,FALSE);
 	return (tch_condvId) condv;
 }

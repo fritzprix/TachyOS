@@ -89,7 +89,7 @@ void kfree(void* p){
 	result = wt_free(&kernel_heap_root,obj_entry);
 	tch_port_atomicEnd();
 	if(result == WT_ERROR)
-		KERNEL_PANIC("tch_kmalloc.c","kernel heap corrupted");
+		KERNEL_PANIC("kernel heap corrupted");
 }
 
 void kmstat(mstat* sp){

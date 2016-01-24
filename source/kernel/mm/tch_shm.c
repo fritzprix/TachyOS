@@ -39,11 +39,11 @@ struct shmalloc_header {
 
 void tch_shmInit(int seg_id){
 	if(seg_id < 0)
-		KERNEL_PANIC("tch_shm.c","Segment given in initialization is not valid");
+		KERNEL_PANIC("Segment given in initialization is not valid");
 
 	shm_init_segid = seg_id;
 	if(!(tch_segmentAllocRegion(seg_id,&shm_init_region,SHM_SIZE,PERM_OTHER_ALL | PERM_OWNER_ALL | PERM_KERNEL_ALL) > 0))
-		KERNEL_PANIC("tch_shm.c","Can't allocate region for shmem");
+		KERNEL_PANIC("Can't allocate region for shmem");
 
 	wt_heapNode_t* shm_node = (wt_heapNode_t*) kmalloc(sizeof(wt_heapNode_t));
 	wt_initRoot(&shm_root);

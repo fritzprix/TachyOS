@@ -74,7 +74,7 @@ DEFINE_SYSCALL_1(bar_create,uint8_t,th_cnt,tch_barId)
 {
 	tch_barCb* bar = (tch_barCb*) kmalloc(sizeof(tch_barCb));
 	if(!bar)
-		KERNEL_PANIC("tch_bar.c","can't allocate barrier");
+		KERNEL_PANIC("can't allocate barrier");
 	bar_init(bar,th_cnt,FALSE);
 	return (tch_barId) bar;
 }

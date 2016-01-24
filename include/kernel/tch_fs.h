@@ -20,7 +20,7 @@ struct tch_dentry {
 };
 
 typedef struct tch_file {
-	void*						data;				//
+	void*						data;
 	struct tch_file_operations*	ops;
 } file;
 

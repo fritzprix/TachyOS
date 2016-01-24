@@ -68,7 +68,7 @@ DEFINE_SYSCALL_2(mailq_create,uint32_t,sz,uint32_t,qlen,tch_mailqId){
 	tch_mailqCb* mailqcb = (tch_mailqCb*) kmalloc(sizeof(tch_mailqCb));
 	tch_mailqId id = mailq_init(mailqcb,sz,qlen,FALSE);
 	if(!id)
-		KERNEL_PANIC("tch_mailq.c","can't create  mailq object");
+		KERNEL_PANIC("can't create  mailq object");
 	return id;
 }
 

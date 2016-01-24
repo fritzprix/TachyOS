@@ -14,9 +14,9 @@
 extern "C" {
 #endif
 
-extern void tch_klog_init(file_operations_t* log_fio);
+extern void tch_klog_init(file* log_fio);
 extern void tch_klog_print(const char*,...);
-extern void tch_klog_flush(BOOL force);
+extern void tch_klog_flush(void);
 
 
 #if defined(__cplusplus)

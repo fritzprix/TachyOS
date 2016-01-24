@@ -106,7 +106,7 @@ size_t itostr(int val,char* str,int radix)
 			*str = NUM_CHAR[v / div];
 			str++;
 			v %= div;
-			div = radix;
+			div /= radix;
 		}
 	}
 	*(str++) = NUM_CHAR[v];

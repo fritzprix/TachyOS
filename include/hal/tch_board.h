@@ -24,7 +24,7 @@ typedef struct tch_board_descriptor_s {
 	long int			b_pdata;	// production time in epoch time
 	uint32_t			b_major;	// board major version
 	uint32_t			b_minor;	// board minor version
-	file_operations_t*	b_logfile;	// io interface for kernel to print log
+	file*				b_logfile;	// io interface for kernel to print log
 }* tch_board_descriptor;
 
 

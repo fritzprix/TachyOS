@@ -64,21 +64,21 @@
 
 
 typedef struct tch_gpio_manager_internal_t {
-	tch_device_service_gpio                 _pix;
-	tch_mtxId                     mtxId;
-	tch_condvId                   condvId;
-	const uint8_t                 port_cnt;
-	const uint8_t                 io_cnt;
+	tch_device_service_gpio			_pix;
+	tch_mtxId						mtxId;
+	tch_condvId						condvId;
+	const uint8_t					port_cnt;
+	const uint8_t 					io_cnt;
 }tch_gpio_manager;
 
 typedef struct tch_gpio_handle_prototype_t {
-	tch_gpioHandle               _pix;
-	uint8_t                       idx;
-	uint32_t                      state;
-	uint32_t                      pMsk;
-	tch_mtxId                     mtxId;
-	tch_IoEventCallback_t         cb;
-	const tch*                    env;
+	tch_gpioHandle					_pix;
+	uint8_t 						idx;
+	uint32_t 						state;
+	uint32_t 						pMsk;
+	tch_mtxId 						mtxId;
+	tch_IoEventCallback_t 			cb;
+	const tch* 						env;
 }tch_gpio_handle_prototype;
 
 

@@ -282,7 +282,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 
 BOOL tch_mmProcClean(tch_thread_kheader* thread){
 	if(!thread)
-		KERNEL_PANIC("tch_mm.c","thread clean-up fail : null reference");
+		KERNEL_PANIC("thread clean-up fail : null reference");
 	struct tch_mm* mmp = &thread->mm;
 	wt_cacheFlush(thread->uthread->heap,thread->uthread->cache);		// return cached chunk to per process heap
 	tch_segmentFreeRegion(mmp->stk_region);								// return user stack region
@@ -315,7 +315,7 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	int seg_id;
 	struct section_descriptor** section = &mdesc_tbl[0];		// firts section descriptor should be normal
 	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL)
-		KERNEL_PANIC("tch_mm.c","invalid section descriptor table");
+		KERNEL_PANIC("invalid section descriptor table");
 
 	mset(&init_mm,0,sizeof(struct tch_mm));
 	current_mm = &init_mm;

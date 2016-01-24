@@ -383,14 +383,7 @@ __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		}
 };
 
-struct tch_board_descriptor_s BOARD_DESCRIPTOR =
-{
-		.b_name = "Open_407Z",
-		.b_major = 1,
-		.b_minor = 0,
-		.b_vname = "wavetech",
-		.b_pdata = 0l
-};
+
 
 static int log_open(struct tch_file* filp);
 static ssize_t log_read(struct tch_file* filp, char* bp,size_t len);
@@ -401,7 +394,7 @@ static ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
 static tch* context;
 static tch_usartHandle log_serial;
 
-file_operations_t LOG_IO = {
+static file_operations_t LOG_IO = {
 		.open = log_open,
 		.read = log_read,
 		.write = log_write,
@@ -409,13 +402,26 @@ file_operations_t LOG_IO = {
 		.seek = log_seek
 };
 
+static file LOG_FILE = {
+		.ops = &LOG_IO
+};
+
+
+struct tch_board_descriptor_s BOARD_DESCRIPTOR =
+{
+		.b_name = "Open_407Z",
+		.b_major = 1,
+		.b_minor = 0,
+		.b_vname = "wavetech",
+		.b_pdata = 0l,
+		.b_logfile = &LOG_FILE
+};
+
 
 
 tch_board_descriptor tch_board_init(const tch* ctx)
 {
 	context = (tch*) ctx;
-	BOARD_DESCRIPTOR.b_logfile = &LOG_IO;
-	context = NULL;
 	log_serial = NULL;
 	return &BOARD_DESCRIPTOR;
 }
@@ -431,7 +437,7 @@ static int log_open(struct tch_file* filp)
 	uart_config.StopBit = USART_StopBit_1B;
 
 	//tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-	log_serial = uart->allocate(context, tch_USART2,&uart_config,tchWaitForever,ActOnSleep);
+	log_serial = uart->allocate(context, tch_USART1,&uart_config,tchWaitForever,ActOnSleep);
 	if(!log_serial)
 		return FALSE;
 	return TRUE;

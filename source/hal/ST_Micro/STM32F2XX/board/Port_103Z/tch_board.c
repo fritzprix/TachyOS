@@ -8,7 +8,7 @@
 #include "tch_board.h"
 
 
-__TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
+__TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
 				.txdma = DMA_NOT_USED,
 				.rxdma = DMA_NOT_USED,
@@ -68,7 +68,7 @@ __TCH_STATIC_INIT tch_uart_bs UART_BD_CFGs[MFEATURE_GPIO] = {
 	uint8_t        afv;
  */
 
-__TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
+__TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
 				.port = tch_gpio0,
 				{
@@ -172,7 +172,7 @@ __TCH_STATIC_INIT tch_timer_bs TIMER_BD_CFGs[MFEATURE_TIMER] = {
 };
 
 
-__TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
+__TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
 
 				.txdma = DMA_NOT_USED,
@@ -219,7 +219,7 @@ __TCH_STATIC_INIT tch_spi_bs SPI_BD_CFGs[MFEATURE_SPI] = {
 	uint8_t       afv;
  */
 
-__TCH_STATIC_INIT tch_iic_bs IIC_BD_CFGs[MFEATURE_IIC] = {
+__TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		{      // IIC 1
 				DMA_Str6,    // dma1_stream 6
 				DMA_Str5,    // dma1_stream 5
@@ -266,7 +266,7 @@ typedef struct _tch_adc_com_bs_t{
  */
 
 
-__TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
+__TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
 				DMA_Str12,
 				DMA_Ch0,
@@ -296,7 +296,7 @@ __TCH_STATIC_INIT tch_adc_bs ADC_BD_CFGs[MFEATURE_ADC] = {
 	uint8_t       adc_routemsk;
 	uint8_t       occp;
  */
-__TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+__TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch0
 		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch1
 		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch2
@@ -314,4 +314,88 @@ __TCH_STATIC_INIT tch_adc_channel_bs ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{{tch_gpio2,4},(ADC1_Bit | ADC2_Bit),0},
 		{{tch_gpio2,5},(ADC1_Bit | ADC2_Bit),0}
 };
+
+
+
+struct tch_board_descriptor_s BOARD_DESCRIPTOR =
+{
+		.b_name = "Port_103Z",
+		.b_major = 1,
+		.b_minor = 0,
+		.b_vname = "wavetech",
+		.b_pdata = 0l
+};
+
+
+static int log_open(struct tch_file* filp);
+static ssize_t log_read(struct tch_file* filp, char* bp,size_t len);
+static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len);
+static int  log_close(struct tch_file* filp);
+static ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
+
+static tch* context;
+static tch_usartHandle log_serial;
+
+file_operations_t LOG_IO = {
+		.open = log_open,
+		.read = log_read,
+		.write = log_write,
+		.close = log_close,
+		.seek = log_seek
+};
+
+
+
+tch_board_descriptor tch_board_init(const tch* ctx)
+{
+	context = (tch*) ctx;
+	BOARD_DESCRIPTOR.b_logfile = &LOG_IO;
+	context = NULL;
+	log_serial = NULL;
+	return &BOARD_DESCRIPTOR;
+}
+
+
+static int log_open(struct tch_file* filp)
+{
+	tch_device_service_usart* uart = context->Service->request(MODULE_TYPE_UART);
+	tch_UartCfg uart_config;
+	uart_config.Buadrate = 115200;
+	uart_config.FlowCtrl = FALSE;
+	uart_config.Parity = USART_Parity_NON;
+	uart_config.StopBit = USART_StopBit_1B;
+
+	//tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	log_serial = uart->allocate(context, tch_USART2,&uart_config,tchWaitForever,ActOnSleep);
+	if(!log_serial)
+		return FALSE;
+	return TRUE;
+
+}
+
+static ssize_t log_read(struct tch_file* filp, char* bp,size_t len)
+{
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->read(log_serial,bp,len,tchWaitForever);
+}
+
+static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len)
+{
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->write(log_serial,bp,len);
+}
+
+int  log_close(struct tch_file* filp)
+{
+	if(!log_serial)
+		return tchErrorResource;
+	return log_serial->close(log_serial) == tchOK? TRUE : FALSE;
+}
+
+ssize_t log_seek(struct tch_file* filp, size_t offset, int whence)
+{
+	return 0;
+}
 

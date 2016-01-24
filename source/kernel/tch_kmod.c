@@ -137,7 +137,7 @@ static void* _request_kmod(int type,BOOL ispriv){
 		return NULL;
 	module_header_t* module = (module_header_t*) cdsl_rbtreeLookup(&module_root,type);
 	if(!module)
-		KERNEL_PANIC("tch_kmod.c","module map is corrupted");
+		KERNEL_PANIC("module map is corrupted");
 	module = container_of(module,module_header_t,rbn);
 	if((module->flag & MODULE_FLAG_PRIV) && !ispriv)
 		return NULL;
