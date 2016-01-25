@@ -276,7 +276,7 @@ tch_threadId tch_thread_createThread(thread_config_t* cfg,void* arg,BOOL isroot,
 		}
 		cdsl_dlistPutTail(&kthread->parent->child_list,&kthread->t_siblingLn);
 	}else {
-		KERNEL_PANIC("tch_thread.c","Null Running Thread");
+		KERNEL_PANIC("Null Running Thread");
 	}
 	tch_thread_validate(kthread->uthread);
 	kthread->ctx = tch_port_makeInitialContext(kthread->uthread,(void*)((kthread->mm.stk_region->poff + kthread->mm.stk_region->psz) << PAGE_OFFSET),__tch_thread_entry);
@@ -386,7 +386,7 @@ __attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,
  */
 __attribute__((naked,noreturn)) void __tch_thread_atexit(tch_threadId thread,int status){
 	if(!thread)
-		KERNEL_PANIC("tch_thread.c","invalid tid at atexit");
+		KERNEL_PANIC("invalid tid at atexit");
 	tch_thread_kheader* th_p = get_thread_kheader(thread);
 	tch_thread_kheader* ch_p = NULL;
 

@@ -56,7 +56,9 @@ defined in linker script */
 /* end address for the .bss section. defined in linker script */
 .word  _ebss
 /* stack used for SystemInit_ExtMemCtl; always internal RAM used */
-
+.word _usidata
+.word _sudata
+.word _eudata
 
 
 

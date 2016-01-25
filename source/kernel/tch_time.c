@@ -129,7 +129,7 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 
 	if(!rtc)
 	{
-		KERNEL_PANIC("tch_time.c","rtc is not available");
+		KERNEL_PANIC("rtc is not available");
 	}
 
 	struct tm localtm;

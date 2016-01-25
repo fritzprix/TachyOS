@@ -29,4 +29,7 @@ CPFLAG_COMMON = -mlong-calls\
 
 CROSS_COMPILE=arm-none-eabi-
 # floating point option
-FLOAT_OPTION= -mfloat-abi=$(CONFIG_FPU_ABI) -mfpu=$(CONFIG_FPU_VERSION)
+FLOAT_OPTION= -mfloat-abi=$(CONFIG_FPU_ABI)
+ifneq ($(CONFIG_FPU_VERSION),)
+	FLOAT_OPTION+= -mfpu=$(CONFIG_FPU_VERSION)
+endif

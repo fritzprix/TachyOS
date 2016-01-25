@@ -70,7 +70,7 @@ DECLARE_SYSCALL_1(event_deinit,tch_eventCb*,tchStatus);
 DEFINE_SYSCALL_0(event_create,tch_eventId){
 	tch_eventCb* evcb = (tch_eventCb*) kmalloc(sizeof(tch_eventCb));
 	if(!evcb)
-		KERNEL_PANIC("tch_event.c","can't create event object");
+		KERNEL_PANIC("can't create event object");
 	return (tch_eventId) event_init(evcb,FALSE);
 }
 

@@ -1,9 +1,4 @@
-/*
-Default linker script for STM32F2xx_1024K_192K
-*/
 
-
-/* include the common STM32F4xx  sub-script */
 
 /* Common part of the linker scripts for STM32F devices*/
 

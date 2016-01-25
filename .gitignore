@@ -28,4 +28,6 @@
 
 *.ko
 
+*.uo
+
 include/kernel/autogen/*.*

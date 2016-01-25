@@ -62,7 +62,7 @@ DEFINE_SYSCALL_1(semaphore_create,uint32_t,count,tch_semId){
 	tch_semCb* semCb = (tch_semCb*) kmalloc(sizeof(tch_semCb));
 	tch_semId id = sem_init(semCb,count,FALSE);
 	if(!id)
-		KERNEL_PANIC("tch_sem.c","can't create semaphore");
+		KERNEL_PANIC("can't create semaphore");
 	return id;
 }
 

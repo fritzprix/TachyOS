@@ -42,14 +42,19 @@ static uint32_t			tsk_cnt;
 static tch_mtxId		tsk_lock;
 static tch_condvId		tsk_condv;
 
-void __lwtsk_start_loop(){
-
+void __lwtsk_init(void)
+{
 	looper_rendv = tch_rti->Rendezvous->create();
 	tsk_root = NULL;
 	tsk_cnt = 0;
 	cdsl_dlistInit(&tsk_queue);
 	tsk_lock = tch_rti->Mtx->create();
 	tsk_condv = tch_rti->Condv->create();
+}
+
+
+void __lwtsk_start_loop(void)
+{
 
 	struct lw_task* tsk = NULL;
 	while(TRUE){

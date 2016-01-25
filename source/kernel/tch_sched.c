@@ -112,7 +112,7 @@ tchStatus tch_schedYield(uint32_t timeout,tch_timeunit tu,tch_threadState nextSt
 	tch_systimeSetTimeout(current,timeout,tu);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*)&tch_readyQue);
 	if(!nth)
-		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
+		KERNEL_PANIC("Abnormal Task Queue : No Thread");
 	tch_kernel_set_result(current,tchEventTimeout);
 	pth = get_thread_kheader(current);
 	pth->state = nextState;
@@ -131,7 +131,7 @@ tchStatus tch_schedWait(tch_thread_queue* wq,uint32_t timeout){
 	cdsl_dlistEnqueuePriority((cdsl_dlistNode_t*) wq,&get_thread_kheader(current)->t_waitNode,tch_schedWqRule);
 	nth = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &tch_readyQue);
 	if(!nth)
-		KERNEL_PANIC("tch_sched.c","Abnormal Task Queue : No Thread");
+		KERNEL_PANIC("Abnormal Task Queue : No Thread");
 
 	pth = get_thread_kheader(current);
 	pth->state = WAIT;

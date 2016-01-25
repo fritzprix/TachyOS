@@ -82,12 +82,13 @@ static DECLARE_THREADROUTINE(idle){
 
 
 	if((!mainThread))
-		KERNEL_PANIC("tch_sys.c","Can't create init thread");
+		KERNEL_PANIC("Can't create init thread");
 
 	Thread->start(mainThread);
 
 	while(TRUE)
 	{
+		tch_klog_flush();
 		// some function entering sleep mode
 		if((!busy_cnt) && (get_thread_kheader(current)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;

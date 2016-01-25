@@ -24,8 +24,9 @@
 #include "kernel/tch_condv.h"
 #include "kernel/util/string.h"
 
-
+#ifndef IIC_CLASS_KEY
 #define IIC_CLASS_KEY							((uint16_t) 0x62D1)
+#endif
 #define TCH_IIC_BUSY_FLAG						((uint32_t) 0x10000)
 #define TCH_IIC_ADDMOD_FLAG						((uint32_t) 0x20000)
 #define TCH_IIC_MASTER_FLAG						((uint32_t) 0x40000)

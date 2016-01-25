@@ -54,7 +54,7 @@ DEFINE_SYSCALL_0(rendv_create,tch_rendvId)
 {
 	tch_rendzvCb* rndv = (tch_rendzvCb*) kmalloc(sizeof(tch_rendzvCb));
 	if(!rndv)
-		KERNEL_PANIC("tch_rendezvu.c", "rendezvous can't be created");
+		KERNEL_PANIC("rendezvous can't be created");
 	if(rendv_init(rndv,FALSE) != tchOK)
 	{
 		kfree(rndv);

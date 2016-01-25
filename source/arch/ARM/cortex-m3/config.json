@@ -1,11 +1,7 @@
 {
-  "FPU_VERSION":{
-    "type":"enum",
-    "default":0,
-    "enum":["fpv4-sp-d16"]
-  },
   "FPU_ABI":{
     "type":"enum",
+    "force":"y",
     "default":0,
     "enum":[
       "soft",

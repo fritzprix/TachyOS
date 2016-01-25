@@ -101,7 +101,7 @@ void tch_segmentUnregister(int seg_id){
 		return;
 	segment = container_of(segment,struct mem_segment,id_rbn);
 	if(segment == &init_seg)
-		KERNEL_PANIC("tch_segment.c","kernel init segment can't be unregistered");
+		KERNEL_PANIC("kernel init segment can't be unregistered");
 
 	cdsl_rbtreeDelete(&addr_root,segment->poff);												// delete segment from addr rbtree
 	struct mem_region* reg;
@@ -151,7 +151,7 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 
 	struct mem_region* region = kmalloc(sizeof(struct mem_region));
 	if(!region)
-		KERNEL_PANIC("tch_segment.c","mem_region can't created");
+		KERNEL_PANIC("mem_region can't created");
 	initRegion(region,segment,segment->poff,segment->psize,get_permission(segment->flags));		// region has same page offset and count to its parent segment
 	region->owner = mm;
 	cdsl_rbtreeInsert(&mm->dynamic->mregions,&region->mm_rbn);
@@ -244,7 +244,7 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 		return;
 
 	if(cdsl_rbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn)										// delete memory region structure from allocation tree
-		KERNEL_PANIC("tch_segment.c","region mapping broken");
+		KERNEL_PANIC("region mapping broken");
 
 	cdsl_dlistNode_t* phead = segment->pfree_list.next;
 	page_frame_t* frame = (page_frame_t*) (mreg->poff << PAGE_OFFSET); /*15.09.18 : poff shift */
@@ -371,7 +371,7 @@ static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr){
 	struct mem_region* region;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
 	if(!arb)
-		KERNEL_PANIC("tch_segment.c","Segment has no allocated region -> Invalid Use of Pointer");
+		KERNEL_PANIC("Segment has no allocated region -> Invalid Use of Pointer");
 	while(!cdsl_rbtreeIsNIL(arb)){
 		region = container_of(arb,struct mem_region,rbn);
 		if((region->poff <= pgidx) && (region->poff + region->psz >= pgidx)){
@@ -392,7 +392,7 @@ static struct mem_segment* findSegmentFromPtr(void* ptr){
 	struct mem_segment* segment;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
 	if(!arb)
-		KERNEL_PANIC("tch_segment.c","No Registered Segment in kernel -> Memory is not initialize properly");
+		KERNEL_PANIC("No Registered Segment in kernel -> Memory is not initialize properly");
 	while(!cdsl_rbtreeIsNIL(arb)){
 		segment = container_of(arb,struct mem_segment,addr_rbn);
 		if((segment->poff <= pgidx) && (segment->poff + segment->psize >= pgidx)){

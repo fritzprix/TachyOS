@@ -46,7 +46,7 @@
     "type":"config",
     "path":"./util/config.json"
   },
-  "BARRIER_CONFIG":{
+  "USE_BARRIER":{
   	"type":"bool",
    	"force":"y",
   	"default":"y",
@@ -54,7 +54,7 @@
   		"BARRIER_CLASS_KEY":"rand(2)"
   	}
   },
-  "EVENT_CONFIG":{
+  "USE_EVENT":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -62,7 +62,7 @@
   		"EVENT_CLASS_KEY":"rand(2)"
   	}
   },
-  "MUTEX_CONFIG":{
+  "USE_MUTEX":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -70,7 +70,7 @@
   		"MUTEX_CLASS_KEY":"rand(2)"
   	}
   },
-  "CONDV_CONFIG":{
+  "USE_CONDV":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -78,7 +78,7 @@
   		"CONDV_CLASS_KEY":"rand(2)"
   	}
   },
-  "MAILQ_CONFIG":{
+  "USE_MAILQ":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -86,7 +86,7 @@
   		"MAILQ_CLASS_KEY":"rand(2)"
   	}
   },
-  "MSGQ_CONFIG":{
+  "USE_MSGQ":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -94,7 +94,7 @@
   		"MSGQ_CLASS_KEY":"rand(2)"
   	}
   },
-  "MPOOL_CONFIG":{
+  "USE_MPOOL":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -102,7 +102,7 @@
   		"MPOOL_CLASS_KEY":"rand(2)"
   	}
   },
-  "REDEZVOUS_CONFIG":{
+  "USE_REDEZVOUS":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
@@ -110,12 +110,20 @@
   		"RENDEZVOUS_CLASS_KEY":"rand(2)"
   	}
   },
-  "SEMAPHORE_CONFIG":{
+  "USE_SEMAPHORE":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
   	"gen-list":{
   		"SEMAPHORE_CLASS_KEY":"rand(2)"
   	}
-  }
+  },
+  "EPOCH_TIME":{
+  	"type":"int",
+  	"force":"y",
+  	"default":0,
+  	"gen-list":{
+  		"__BUILD_TIME_EPOCH":"ctime()"
+  	}
+  }  
 }

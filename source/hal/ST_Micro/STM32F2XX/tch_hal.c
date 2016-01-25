@@ -655,8 +655,8 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 };
 
 
-void tch_hal_enableSystick(){
-	SysTick_Config(SYS_CLK / 1000);
+void tch_hal_enableSystick(uint32_t mills){
+	SysTick_Config(mills * (SYS_CLK / 1000));
 	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
 	NVIC_EnableIRQ(SysTick_IRQn);
 }

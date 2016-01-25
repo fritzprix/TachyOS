@@ -12,8 +12,6 @@
  *      Author: innocentevil
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "tch_kernel.h"
 #include "tch_fault.h"
@@ -161,12 +159,13 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 }
 
 
+
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
 void tch_port_setJmp(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
-	                                                              //   prepare fake exception stack
+	                                                              //   prepare exception entry stack
 	                                                              //    - passing arguement to kernel mode thread
 	                                                              //   - redirect kernel routine
 	                                                              //
@@ -187,8 +186,6 @@ void tch_port_setJmp(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	__DMB();
 	__ISB();
-	tch_port_enablePrivilegedThread();
-	tch_port_atomicBegin();                                       // 6. finally lock as kernel execution
 }
 
 
@@ -205,7 +202,13 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
 
 
 /**
- *  prepare initial context for start thread
+ *  prepare initial context to start thread
+ *                                 |                                           |                         |[pop exception entry]     |
+ *                                 | ====== after context switch enter svc==== |                         |==== exit system call ====| <-- artificial excetion return made in this function
+ *  [ pop thread context(r4-r11,lr]| [enter svc, push exception entry]         |[discard exception entry]|
+ *  =init stack pointer of thread= |                                           |==== at system call =====|
+ *
+ *
  */
 void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) stktop - 1;                // offset exc_stack size (size depends on floating point option)
@@ -219,7 +222,6 @@ void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t 
 	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
 	mset(th_ctx,0,sizeof(tch_thread_context));
 	return (uint32_t*) th_ctx;
-
 }
 /**
  * read
@@ -449,5 +451,5 @@ void BusFault_Handler(){
 }
 
 void UsageFault_Handler(){
-	tch_kernel_onHardException(FAULT_ILLSTATE);
+	tch_kernel_onHardException(FAULT_ILLSTATE, SPEC_UND);
 }

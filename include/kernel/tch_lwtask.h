@@ -24,7 +24,8 @@ typedef uint8_t tsk_prior_t;
 #define TSK_PRIOR_LOW			((uint8_t) 3)
 #define TSK_PRIOR_NG			((uint8_t) 2)
 
-extern void __lwtsk_start_loop();
+extern void __lwtsk_start_loop(void);
+extern void __lwtsk_init(void);
 
 int tch_lwtsk_registerTask(lwtask_routine fnp,tsk_prior_t prior);
 void tch_lwtsk_unregisterTask(int tsk_id);

@@ -151,14 +151,24 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	/** perform runtime initialization **/
 	tch_kmod_init();
 	tch_port_enableISR();                   // interrupt enable
+	idle_init();
 	kernel_ready = TRUE;
 
+	__lwtsk_init();
 	tch_klog_init(board_desc->b_logfile);
 
-	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
-	idle_init();
+	tch_klog_print("=== TachyOS Kernel Start === \n\r");
 
-	tch_klog_print("Kernel Init Successful!! @ %d\n",0);
+	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
+
+	struct tm localtime;
+	tch_rti->Time->fromEpochTime(__BUILD_TIME_EPOCH, &localtime, UTC_P9);
+
+
+	tch_klog_print("- Timer initialized\n\r");
+	tch_klog_print("  -> Current Local Date %d / %d / %d\n\r",1900 + localtime.tm_year, localtime.tm_mon + 1, localtime.tm_mday);
+	tch_klog_print("                   Time %d : %d : %d\n\r",localtime.tm_hour,localtime.tm_min, localtime.tm_sec);
+
 
 	while(TRUE)
 	{
