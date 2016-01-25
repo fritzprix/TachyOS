@@ -31,7 +31,7 @@ static tch_threadId child3Id;
 
 static tch_barId bid;
 
-tchStatus barrier_performTest(tch* ctx){
+tchStatus barrier_performTest(tch_core_api_t* ctx){
 
 
 	mstat init_mstat,fin_mstat;

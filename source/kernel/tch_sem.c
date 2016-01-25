@@ -49,14 +49,14 @@ static BOOL tch_semaphoreIsValid(tch_semId sid);
 
 
 
-__USER_RODATA__ tch_kernel_service_semaphore Semaphore_IX = {
+__USER_RODATA__ tch_semaphore_api_t Semaphore_IX = {
 		.create = tch_semCreate,
 		.lock = tch_semLock,
 		.unlock = tch_semUnlock,
 		.destroy = tch_semDestroy
 };
 
-__USER_RODATA__ const tch_kernel_service_semaphore* Sem = (const tch_kernel_service_semaphore*) &Semaphore_IX;
+__USER_RODATA__ const tch_semaphore_api_t* Sem = &Semaphore_IX;
 
 DEFINE_SYSCALL_1(semaphore_create,uint32_t,count,tch_semId){
 	tch_semCb* semCb = (tch_semCb*) kmalloc(sizeof(tch_semCb));

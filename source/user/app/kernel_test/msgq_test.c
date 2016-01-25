@@ -30,12 +30,12 @@ static tch_barId mBar;
 static tch_gpioHandle* out;
 static tch_gpioHandle* in;
 
-static volatile tch* Api;
+static volatile tch_core_api_t* Api;
 static int irqcnt;
 static int usrcnt;
 static int miscnt;
 
-tchStatus msgq_performTest(tch* api){
+tchStatus msgq_performTest(tch_core_api_t* api){
 	Api = api;
 	mBar = api->Barrier->create();
 	irqcnt = 0;

@@ -62,10 +62,10 @@ struct tch_usart_handle_s {
 };
 
 
-typedef struct tch_device_service_usart {
+typedef struct tch_hal_module_usart {
 	const uint8_t count;
-	tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
-}tch_device_service_usart;
+	tch_usartHandle (*const allocate)(const tch_core_api_t* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+}tch_hal_module_usart_t;
 
 #if defined(__cplusplus)
 }

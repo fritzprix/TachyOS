@@ -28,8 +28,8 @@ static DECLARE_THREADROUTINE(producerRoutine);
 static DECLARE_THREADROUTINE(consumerRoutine);
 
 
-static BOOL consume(const tch* api,struct VBuf* vb,uint32_t timeout);
-static BOOL produce(const tch* api,struct VBuf* vb,uint32_t timeout);
+static BOOL consume(const tch_core_api_t* api,struct VBuf* vb,uint32_t timeout);
+static BOOL produce(const tch_core_api_t* api,struct VBuf* vb,uint32_t timeout);
 
 static tch_mtxId mtid;
 
@@ -43,7 +43,7 @@ static tch_threadId producer1Thread;
 static tch_threadId producer2Thread;
 
 
-tchStatus monitor_performTest(tch* ctx){
+tchStatus monitor_performTest(tch_core_api_t* ctx){
 	mstat init_mstat,fin_mstat;
 
 	kmstat(&init_mstat);
@@ -111,7 +111,7 @@ tchStatus monitor_performTest(tch* ctx){
 }
 
 
-static BOOL consume(const tch* api,struct VBuf* vb,uint32_t timeout){
+static BOOL consume(const tch_core_api_t* api,struct VBuf* vb,uint32_t timeout){
 	if(api->Mtx->lock(mtid,tchWaitForever) != tchOK)
 		return FALSE;
 	while(vb->updated == 0){
@@ -123,7 +123,7 @@ static BOOL consume(const tch* api,struct VBuf* vb,uint32_t timeout){
 	return api->Mtx->unlock(mtid) == tchOK;
 }
 
-static BOOL produce(const tch* api,struct VBuf* vb,uint32_t timeout){
+static BOOL produce(const tch_core_api_t* api,struct VBuf* vb,uint32_t timeout){
 	 if(api->Mtx->lock(mtid,tchWaitForever) != tchOK)
 		 return FALSE;
 	 while(vb->updated == vb->size){

@@ -391,7 +391,7 @@ static ssize_t log_write(struct tch_file* filp, const char* bp, size_t len);
 static int  log_close(struct tch_file* filp);
 static ssize_t log_seek(struct tch_file* filp, size_t offset, int whence);
 
-static tch* context;
+static tch_core_api_t* context;
 static tch_usartHandle log_serial;
 
 static file_operations_t LOG_IO = {
@@ -419,9 +419,9 @@ struct tch_board_descriptor_s BOARD_DESCRIPTOR =
 
 
 
-tch_board_descriptor tch_board_init(const tch* ctx)
+tch_board_descriptor tch_board_init(const tch_core_api_t* ctx)
 {
-	context = (tch*) ctx;
+	context = (tch_core_api_t*) ctx;
 	log_serial = NULL;
 	return &BOARD_DESCRIPTOR;
 }
@@ -429,7 +429,7 @@ tch_board_descriptor tch_board_init(const tch* ctx)
 
 static int log_open(struct tch_file* filp)
 {
-	tch_device_service_usart* uart = context->Service->request(MODULE_TYPE_UART);
+	tch_hal_module_usart_t* uart = context->Module->request(MODULE_TYPE_UART);
 	tch_UartCfg uart_config;
 	uart_config.Buadrate = 115200;
 	uart_config.FlowCtrl = FALSE;

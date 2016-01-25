@@ -36,9 +36,9 @@ struct tch_sdio_handle_t {
 	tchStatus (*setProtection)(tch_sdioHandle sdio,BOOL protect,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 };
 
-typedef struct tch_lld_sdio_t {
+typedef struct tch_hal_module_sdio {
 	void (*initCfg)();
 	tch_sdioHandle (*allocSdio)();
-}tch_lld_sdio;
+}tch_hal_module_sdio_t;
 
 #endif /* TCH_SDIO_H_ */

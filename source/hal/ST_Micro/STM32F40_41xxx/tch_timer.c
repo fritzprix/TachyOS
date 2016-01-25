@@ -116,7 +116,7 @@ typedef struct tch_gptimer_handle_proto_t {
 	tch_gptimerHandle     _pix;
 	uint32_t               status;
 	tch_timer              timer;
-	const tch*             env;
+	const tch_core_api_t*             env;
 	tch_msgqId*            msgqs;
 }tch_gptimer_handle_proto;
 
@@ -124,7 +124,7 @@ typedef struct tch_pwm_handle_proto_t{
 	tch_pwmHandle         _pix;
 	uint32_t               status;
 	tch_timer              timer;
-	const tch*             env;
+	const tch_core_api_t*             env;
 	tch_gpioHandle**       iohandle;
 	tch_rendvId            uev_rndv;
 	tch_semId              uev_sem;
@@ -135,7 +135,7 @@ typedef struct tch_tcapt_handle_proto_t{
 	tch_tcaptHandle       _pix;
 	uint32_t               status;
 	tch_timer              timer;
-	const tch*             env;
+	const tch_core_api_t*             env;
 	tch_gpioHandle**       iohandle;
 	tch_msgqId*            msgqs;
 	tch_mtxId              mtx;
@@ -144,9 +144,9 @@ typedef struct tch_tcapt_handle_proto_t{
 
 
 ///////            Timer Manager Function               ///////
-__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* sys,tch_timer timer,gptimer_config_t* cfg,uint32_t timeout);
-__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* sys,tch_timer timer,pwm_config_t* cfg,uint32_t timeout);
-__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* sys,tch_timer timer,pcapt_config_t* cfg,uint32_t timeout);
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch_core_api_t* sys,tch_timer timer,gptimer_config_t* cfg,uint32_t timeout);
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* sys,tch_timer timer,pwm_config_t* cfg,uint32_t timeout);
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch_core_api_t* sys,tch_timer timer,pcapt_config_t* cfg,uint32_t timeout);
 __USER_API__ static uint32_t tch_timer_getChannelCount(tch_timer timer);
 __USER_API__ static uint8_t tch_timer_getPrecision(tch_timer timer);
 
@@ -181,7 +181,7 @@ static void tch_timer_handleInterrupt(tch_timer timer);
 
 
 
-__USER_RODATA__ tch_device_service_timer TIMER_Ops = {
+__USER_RODATA__ tch_hal_module_timer TIMER_Ops = {
 		.count = MFEATURE_TIMER,
 		.openGpTimer = tch_timer_allocGptimerUnit,
 		.openPWM = tch_timer_allocPWMUnit,
@@ -213,7 +213,7 @@ MODULE_EXIT(tch_timer_exit);
 
 
 ///////            Timer Manager Function               ///////
-__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout)
+__USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch_core_api_t* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout)
 {
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_gptimer_handle_proto* ins = NULL;
@@ -362,7 +362,7 @@ __USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch* env
 	return (tch_gptimerHandle*) ins;
 }
 
-__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout)
+__USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout)
 {
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_pwm_handle_proto* ins = NULL;
@@ -545,7 +545,7 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch* env,tch_tim
 /*!
  *
  */
-__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout)
+__USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch_core_api_t* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout)
 {
 	tchStatus result = tchOK;
 	uint16_t pmsk = 0;
@@ -722,7 +722,7 @@ __USER_API__ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick
 	TIM_TypeDef* timerHw = thw->_hw;
 	int id = 0;
 	uint8_t chmsk = thw->ch_occp;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	struct tch_gptimer_req_t req;
 	req.ins = self;
 	req.utick = utick;
@@ -776,7 +776,7 @@ __USER_API__ static tchStatus tch_gptimer_close(tch_gptimerHandle* self){
 	}
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	tchStatus result = tchOK;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 	timerHw->CR1 = 0;                // disable timer count
@@ -913,7 +913,7 @@ __USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
 	tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[ins->timer];
 	gpio_config_t iocfg;
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
 		return tchErrorResource;
@@ -1027,7 +1027,7 @@ __USER_API__ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 		return result;
 	}
 	tch_timer_descriptor* timDesc = &TIMER_HWs[ins->timer];
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	uint8_t chcnt = timDesc->channelCnt;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 	env->Mtx->destroy(ins->mtx);
@@ -1071,7 +1071,7 @@ __USER_API__ static tchStatus tch_tcapt_read(tch_tcaptHandle* self,uint8_t ch,ui
 	{
 		return tchErrorParameter;
 	}
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if(tch_port_isISR())
 	{
 		return tchErrorISR;
@@ -1150,7 +1150,7 @@ __USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uin
 	ch = ch / 2;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
 	tch_timer_bs_t* tbs = &TIMER_BD_CFGs[ins->timer];
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
 		return tchErrorResource;
@@ -1189,7 +1189,7 @@ __USER_API__ static tchStatus tch_tcapt_close(tch_tcaptHandle* self)
 	{
 		return tchErrorParameter;
 	}
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if(tch_port_isISR())
 	{
 		return tchErrorISR;
@@ -1275,7 +1275,7 @@ static BOOL tch_timer_handle_gptInterrupt(tch_gptimer_handle_proto* ins,tch_time
 {
 	uint8_t idx = 1;
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) desc->_hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	do{
 		if(timerHw->SR & (idx << 1))
 		{
@@ -1300,7 +1300,7 @@ static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_de
 static BOOL tch_timer_handle_tcaptInterrupt(tch_tcapt_handle_proto* ins, tch_timer_descriptor* desc)
 {
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) desc->_hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	uint32_t v = 0;
 	uint32_t sr = timerHw->SR;
 	if(sr & TIM_SR_CC1IF)

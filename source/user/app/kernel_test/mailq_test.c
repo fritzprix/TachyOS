@@ -29,7 +29,7 @@ static tch_threadId receiver_id;
 
 tch_mailqId testmailq_id;
 
-tchStatus mailq_performTest(tch* api){
+tchStatus mailq_performTest(tch_core_api_t* api){
 
 	mstat init_mstat,fin_mstat;
 

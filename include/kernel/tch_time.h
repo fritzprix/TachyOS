@@ -20,10 +20,10 @@
 extern "C"{
 #endif
 
-extern tch_kernel_service_time Time_IX;
+extern tch_time_api_t Time_IX;
 
 
-extern void tch_systimeInit(const tch* env,time_t itm,tch_timezone itz);
+extern void tch_systimeInit(const tch_core_api_t* env,time_t itm,tch_timezone itz);
 extern tchStatus tch_systimeSetTimeout(tch_threadId thread,uint32_t timeout,tch_timeunit tu);
 extern tchStatus tch_systimeCancelTimeout(tch_threadId thread);
 extern BOOL tch_systimeIsPendingEmpty();

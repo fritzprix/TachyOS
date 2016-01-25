@@ -11,7 +11,7 @@ OBJ-y+=tch_bar.ko\
 			 tch_init.ko\
 			 tch_interrupt.ko\
 			 tch_kdesc.ko\
-			 tch_klog.ko\
+			 tch_dbg.ko\
 			 tch_kmod.ko\
 			 tch_kobj.ko\
 			 tch_loader.ko\

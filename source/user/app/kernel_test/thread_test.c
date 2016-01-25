@@ -11,7 +11,7 @@
 
 static DECLARE_THREADROUTINE(run);
 
-tchStatus thread_performTest(tch* ctx){
+tchStatus thread_performTest(tch_core_api_t* ctx){
 
 	mstat init_mstat;
 	mstat fin_mstat;

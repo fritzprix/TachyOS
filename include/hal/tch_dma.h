@@ -119,7 +119,7 @@ typedef struct tch_dma_req_s {
  *  \brief DMA HAL Interface
  *   DMA HAL Interface which is accessible from \ref tch object
  */
-typedef struct tch_device_service_dma {
+typedef struct tch_hal_module_dma {
 	/*!
 	 * \brief Initialize DMA Configuration
 	 * \param cfg pointer of \ref tch_dma_cfg
@@ -137,11 +137,11 @@ typedef struct tch_device_service_dma {
 	 * \return dma handle which allows access dma H/W
 	 */
 	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-	tch_dmaHandle (*allocate)(const tch* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+	tch_dmaHandle (*allocate)(const tch_core_api_t* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	uint32_t (*beginXfer)(tch_dmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_dmaHandle handle);
 
-}tch_device_service_dma;
+}tch_hal_module_dma_t;
 
 
 /*

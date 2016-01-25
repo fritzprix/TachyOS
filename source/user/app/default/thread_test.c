@@ -10,7 +10,7 @@
 
 static DECLARE_THREADROUTINE(test_run);
 
-tchStatus do_test_thread(const tch* ctx)
+tchStatus do_test_thread(const tch_core_api_t* ctx)
 {
 	thread_config_t config;
 	uint32_t cnt = 0;

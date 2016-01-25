@@ -75,16 +75,16 @@ struct tch_adc_handle_t {
 	tchStatus (*readBurst)(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qblkSz,uint32_t convCnt);
 };
 
-typedef struct tch_device_service_adc {
+typedef struct tch_hal_module_adc {
 	const uint16_t count;
 	const uint8_t  max_precision;
 	const uint8_t  min_precision;
 	void (*initCfg)(tch_adcCfg* cfg);
 	void (*addChannel)(tch_adcCfg* chdef,uint8_t ch);
 	void (*removeChannel)(tch_adcCfg* chdef,uint8_t ch);
-	tch_adcHandle* (*open)(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
+	tch_adcHandle* (*open)(const tch_core_api_t* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 	BOOL (*available)(adc_t adc);
-}tch_device_service_adc;
+}tch_hal_module_adc_t;
 
 #if defined(__cplusplus)
 }

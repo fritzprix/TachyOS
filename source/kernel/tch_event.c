@@ -45,7 +45,7 @@ static tchStatus event_deinit(tch_eventCb* evcb);
 
 
 
-__USER_RODATA__ tch_kernel_service_event Event_IX = {
+__USER_RODATA__ tch_event_api_t Event_IX = {
 		tch_eventCreate,
 		tch_eventSet,
 		tch_eventClear,
@@ -54,7 +54,7 @@ __USER_RODATA__ tch_kernel_service_event Event_IX = {
 };
 
 
-__USER_RODATA__ const tch_kernel_service_event* Event = &Event_IX;
+__USER_RODATA__ const tch_event_api_t* Event = &Event_IX;
 
 
 DECLARE_SYSCALL_0(event_create,tch_eventId);

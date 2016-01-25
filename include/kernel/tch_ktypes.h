@@ -68,7 +68,7 @@ typedef enum tch_thread_state_t {
 } tch_threadState;
 
 typedef void* tch_pageId;
-typedef void (*tch_sysTaskFn)(int id,const tch* env,void* arg);
+typedef void (*tch_sysTaskFn)(int id,const tch_core_api_t* env,void* arg);
 typedef struct tch_thread_kheader_s tch_thread_kheader;
 typedef struct tch_thread_uheader_s tch_thread_uheader;
 
@@ -105,7 +105,7 @@ struct tch_thread_uheader_s {
 	void*						heap;
 	tch_condvId 				condv;
 	tch_mtxId					mtx;
-	tch 						ctx;
+	tch_core_api_t 						ctx;
 	uword_t						kRet;				///<kernel return value
 	uint32_t					chks;				///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));

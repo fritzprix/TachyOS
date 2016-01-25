@@ -38,10 +38,10 @@
 #include "kernel/tch_msgq.h"
 #include "kernel/tch_thread.h"
 #include "kernel/tch_time.h"
+#include "kernel/tch_dbg.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/mm/tch_mm.h"
 #include "kernel/mm/tch_malloc.h"
-#include "kernel/tch_klog.h"
 
 
 
@@ -57,7 +57,7 @@ static DECLARE_THREADROUTINE(systhreadRoutine);
 
 
 static tch_syscall* __syscall_table = (tch_syscall*) &__syscall_entry;
-__USER_RODATA__ const tch RuntimeInterface = {
+__USER_RODATA__ const tch_core_api_t RuntimeInterface = {
 		.Thread = &Thread_IX,
 		.Mtx = &Mutex_IX,
 		.Sem = &Semaphore_IX,
@@ -70,10 +70,11 @@ __USER_RODATA__ const tch RuntimeInterface = {
 		.MsgQ = &MsgQ_IX,
 		.Mem = &UMem_IX,
 		.Event = &Event_IX,
-		.Service = &Service_IX
+		.Module = &Module_IX,
+		.Dbg = &Debug_IX
 };
 
-const tch* tch_rti = &RuntimeInterface;
+const tch_core_api_t* tch_rti = &RuntimeInterface;
 
 static tch_threadId sysThread;
 
@@ -155,9 +156,9 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	kernel_ready = TRUE;
 
 	__lwtsk_init();
-	tch_klog_init(board_desc->b_logfile);
+	tch_dbg_init(board_desc->b_logfile);
 
-	tch_klog_print("=== TachyOS Kernel Start === \n\r");
+	print_dbg("=== TachyOS Kernel Start === \n\r");
 
 	tch_systimeInit(&RuntimeInterface,__BUILD_TIME_EPOCH,UTC_P9);
 
@@ -165,9 +166,9 @@ static DECLARE_THREADROUTINE(systhreadRoutine){
 	tch_rti->Time->fromEpochTime(__BUILD_TIME_EPOCH, &localtime, UTC_P9);
 
 
-	tch_klog_print("- Timer initialized\n\r");
-	tch_klog_print("  -> Current Local Date %d / %d / %d\n\r",1900 + localtime.tm_year, localtime.tm_mon + 1, localtime.tm_mday);
-	tch_klog_print("                   Time %d : %d : %d\n\r",localtime.tm_hour,localtime.tm_min, localtime.tm_sec);
+	print_dbg("- Timer initialized\n\r");
+	print_dbg("  -> Current Local Date %d / %d / %d\n\r",1900 + localtime.tm_year, localtime.tm_mon + 1, localtime.tm_mday);
+	print_dbg("                   Time %d : %d : %d\n\r",localtime.tm_hour,localtime.tm_min, localtime.tm_sec);
 
 
 	while(TRUE)

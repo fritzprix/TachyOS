@@ -14,7 +14,7 @@
 static DECLARE_THREADROUTINE(child1Routine);
 static DECLARE_THREADROUTINE(child2Routine);
 static DECLARE_THREADROUTINE(child3Routine);
-static void race(const tch* api);
+static void race(const tch_core_api_t* api);
 
 
 static tch_threadId ch1Id;
@@ -26,7 +26,7 @@ static volatile BOOL spin;
 static tch_semId ts;
 static uint16_t shVar;
 
-tchStatus semaphore_performTest(tch* api){
+tchStatus semaphore_performTest(tch_core_api_t* api){
 
 	shVar = 0;
 	spin = TRUE;
@@ -103,7 +103,7 @@ static DECLARE_THREADROUTINE(child3Routine){
 	return tchOK;
 }
 
-void race(const tch* api){
+void race(const tch_core_api_t* api){
 	tchStatus res = tchOK;
 	if((res = api->Sem->lock(ts,tchWaitForever)) != tchOK)
 		return;

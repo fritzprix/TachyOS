@@ -57,7 +57,7 @@ static DECLARE_THREADROUTINE(btnHandler);
 tch_threadId btnHandleThread;
 tch_threadId childId;
 
-int main(const tch* ctx) {
+int main(const tch_core_api_t* ctx) {
 
 /*
 	tch_spiCfg spicfg;

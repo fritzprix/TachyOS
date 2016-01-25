@@ -62,7 +62,7 @@ DECLARE_SYSCALL_1(wait_alarm,alrm_Id,tchStatus);
 static DECLARE_COMPARE_FN(tch_systimeWaitQRule);
 static DECLARE_COMPARE_FN(tch_systimeAlrmQRule);
 
-__USER_RODATA__  tch_kernel_service_time Time_IX = {
+__USER_RODATA__  tch_time_api_t Time_IX = {
 		.getWorldTime = tch_systime_getWorldTime,
 		.setWorldTime = tch_systime_setWorldTime,
 		.setTimezone = tch_systime_setTimezone,
@@ -76,7 +76,7 @@ __USER_RODATA__  tch_kernel_service_time Time_IX = {
 };
 
 
-__USER_RODATA__ const tch_kernel_service_time* Time = &Time_IX;
+__USER_RODATA__ const tch_time_api_t* Time = &Time_IX;
 
 
 DEFINE_SYSCALL_2(set_alarm,time_t*, epoch_alrmtm, alrmIntv, period, alrm_Id)
@@ -113,7 +113,7 @@ DEFINE_SYSCALL_1(cancel_alarm,alrm_Id,id,tchStatus)
 }
 
 
-void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
+void tch_systimeInit(const tch_core_api_t* env, time_t init_tm, tch_timezone init_tz) {
 
 	tch_hal_disableSystick();
 
@@ -125,7 +125,7 @@ void tch_systimeInit(const tch* env, time_t init_tm, tch_timezone init_tz) {
 	sysUpTimeSec = 0;
 	current_tz = init_tz;
 	gmt_epoch = init_tm;
-	tch_device_service_rtc* rtc = (tch_device_service_rtc*) tch_kmod_request(MODULE_TYPE_RTC);
+	tch_hal_module_rtc_t* rtc = (tch_hal_module_rtc_t*) tch_kmod_request(MODULE_TYPE_RTC);
 
 	if(!rtc)
 	{

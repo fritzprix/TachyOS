@@ -111,7 +111,7 @@ struct tch_iic_handle_prototype_t {
 	tch_dmaHandle*                       rxdma;
 	tch_dmaHandle*                       txdma;
 	tch_eventId                          evId;
-	const tch*                           env;
+	const tch_core_api_t*                           env;
 	tch_mtxId                            mtx;
 	tch_condvId                          condv;
 	uint32_t                             isr_msg;
@@ -119,7 +119,7 @@ struct tch_iic_handle_prototype_t {
 
 
 __USER_API__ static void tch_IIC_initConfig(tch_iicCfg* cfg);
-__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 
 __USER_API__ static tchStatus tch_IIC_close(tch_iicHandle* self);
 __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
@@ -145,7 +145,7 @@ static BOOL tch_IIC_isValid(tch_iic_handle_prototype* hnd);
 static void tch_IIC_invalidate(tch_iic_handle_prototype* hnd);
 
 
-__USER_RODATA__ tch_device_service_iic IIC_Ops = {
+__USER_RODATA__ tch_hal_module_iic_t IIC_Ops = {
 		.count = MFEATURE_IIC,
 		.initCfg = tch_IIC_initConfig,
 		.allocIIC = tch_IIC_alloc
@@ -153,7 +153,7 @@ __USER_RODATA__ tch_device_service_iic IIC_Ops = {
 
 static tch_mtxCb 	lock;
 static tch_condvCb  condv;
-static tch_device_service_dma* dma;
+static tch_hal_module_dma_t* dma;
 
 
 
@@ -175,7 +175,7 @@ static void tch_IIC_exit(void)
 MODULE_INIT(tch_IIC_init);
 MODULE_EXIT(tch_IIC_exit);
 
-__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	if(!(i2c < MFEATURE_IIC))
 		return NULL;
 
@@ -188,7 +188,7 @@ __USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch* env,tch_iic i2c,tch_
 	I2C_TypeDef* iicHw = iicDesc->_hw;
 	tch_iic_handle_prototype* ins = NULL;
 
-	tch_device_service_gpio* gpio = (tch_device_service_gpio* ) Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t* ) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 
@@ -348,7 +348,7 @@ __USER_API__ static tchStatus tch_IIC_close(tch_iicHandle* self)
 		return tchErrorParameter;
 	if(!tch_IIC_isValid(ins))
 		return tchErrorParameter;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) iicDesc->_hw;
 
 	if((result = env->Mtx->lock(&lock,tchWaitForever)) != tchOK)
@@ -629,7 +629,7 @@ __USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t ad
 	tx_msg.bp = (uint8_t*) wb;
 	tx_msg.sz = sz;
 	tx_msg.mtype = IIc_SlaveTx;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) IIC_HWs[ins->iic]._hw;
 	if((evt.status = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
@@ -703,7 +703,7 @@ static BOOL tch_IIC_handleMasterEvent(tch_iic_handle_prototype* ins,tch_iic_desc
 	if(!ins)
 		return FALSE;
 	sr1 = iicHw->SR1;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	switch(iic_req->mtype){
 	case IIc_MasterRx:
 		if(sr1 & I2C_SR1_SB){
@@ -831,7 +831,7 @@ static BOOL tch_IIC_handleMasterError(tch_iic_handle_prototype* ins,tch_iic_desc
 		return FALSE;
 	if(!tch_IIC_isValid(ins))
 		return FALSE;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if(iicHw->SR1 & I2C_SR1_PECERR)
 	{
 		env->Event->set(ins->evId,TCH_IIC_EVENT_IOERROR);

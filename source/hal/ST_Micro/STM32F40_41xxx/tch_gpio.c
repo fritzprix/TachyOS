@@ -64,7 +64,7 @@
 
 
 typedef struct tch_gpio_manager_internal_t {
-	tch_device_service_gpio			_pix;
+	tch_hal_module_gpio_t			_pix;
 	tch_mtxId						mtxId;
 	tch_condvId						condvId;
 	const uint8_t					port_cnt;
@@ -78,7 +78,7 @@ typedef struct tch_gpio_handle_prototype_t {
 	uint32_t 						pMsk;
 	tch_mtxId 						mtxId;
 	tch_IoEventCallback_t 			cb;
-	const tch* 						env;
+	const tch_core_api_t* 						env;
 }tch_gpio_handle_prototype;
 
 
@@ -89,7 +89,7 @@ typedef struct tch_gpio_handle_prototype_t {
 /**********************************************************************************************/
 /************************************  gpio driver public function  ***************************/
 /**********************************************************************************************/
-__USER_API__ static tch_gpioHandle* tch_gpio_alloc(const tch* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout);
+__USER_API__ static tch_gpioHandle* tch_gpio_alloc(const tch_core_api_t* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout);
 __USER_API__ static tchStatus tch_gpio_free(tch_gpioHandle* self);
 __USER_API__ static void tch_gpio_initConfig(gpio_config_t* cfg);
 __USER_API__ static void tch_gpio_initEvConfig(gpio_event_config_t* evcfg);
@@ -118,7 +118,7 @@ static inline void tch_gpio_validate(tch_gpio_handle_prototype* _handle);
 static inline void tch_gpio_invalidate(tch_gpio_handle_prototype* _handle);
 static inline BOOL tch_gpio_isValid(tch_gpio_handle_prototype* _handle);
 
-__USER_RODATA__ tch_device_service_gpio GPIO_Ops = {
+__USER_RODATA__ tch_hal_module_gpio_t GPIO_Ops = {
 		.count = MFEATURE_GPIO,
 		.allocIo = tch_gpio_alloc,
 		.initCfg = tch_gpio_initConfig,
@@ -150,7 +150,7 @@ MODULE_INIT(tch_gpio_init);
 MODULE_EXIT(tch_gpio_exit);
 
 
-static tch_gpioHandle* tch_gpio_alloc(const tch* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout)
+static tch_gpioHandle* tch_gpio_alloc(const tch_core_api_t* env,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout)
 {
 	tch_gpio_descriptor* gpio = &GPIO_HWs[port];
 	if(!gpio->_clkenr)                   /// given GPIO port is not supported in this H/W
@@ -221,7 +221,7 @@ static tchStatus tch_gpio_free(tch_gpioHandle* self){
 	ins = (tch_gpio_handle_prototype*) self;
 	if(!tch_gpio_isValid(ins))
 		return tchErrorResource;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if(env->Mtx->lock(ins->mtxId,tchWaitForever) != tchOK)
 		return tchErrorTimeoutResource;
 
@@ -297,7 +297,7 @@ static tchStatus tch_gpio_registerEvent(tch_gpioHandle* self,pin p,const gpio_ev
 		return tchErrorISR;
 
 
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if(env->Mtx->lock(&lock,tchWaitForever) != tchOK)
 	{
 		return tchErrorResource;
@@ -336,7 +336,7 @@ static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p)
 	if(ioIntrDesc->io_occp != self)
 		return tchErrorParameter;
 
-	const tch* api = ins->env;
+	const tch_core_api_t* api = ins->env;
 	if(api->Mtx->lock(&lock,tchWaitForever) != tchOK)   // lock mtx of singleton
 		return tchErrorResource;
 
@@ -423,7 +423,7 @@ static BOOL tch_gpio_waitEvent(tch_gpioHandle* self,uint8_t pin,uint32_t timeout
 	uint32_t pmsk = (1 << pin);
 	if(!(ins->pMsk & pmsk))
 		return FALSE;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[pin];
 	if(ioIrqObj->io_occp != self)
 		return FALSE;

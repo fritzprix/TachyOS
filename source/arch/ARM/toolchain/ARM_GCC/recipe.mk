@@ -13,7 +13,8 @@ CFLAG_COMMON += -fsigned-char\
 				-T$(LDSCRIPT)\
 				$(FLOAT_OPTION)\
 				-mcpu=$(CONFIG_ARCH_NAME)\
-				-mthumb
+				-mthumb\
+				-std=gnu89
 
 # Cpp build option
 CPFLAG_COMMON = -mlong-calls\
@@ -25,7 +26,8 @@ CPFLAG_COMMON = -mlong-calls\
 				-T$(LDSCRIPT)\
 				$(FLOAT_OPTION)\
 				-mcpu=$(CONFIG_ARCH_NAME)\
-				-mthumb
+				-mthumb\
+				-std=gnu89
 
 CROSS_COMPILE=arm-none-eabi-
 # floating point option

@@ -53,7 +53,7 @@ extern __TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC];
 extern __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC];
 extern __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch];
 
-extern tch_board_descriptor tch_board_init(const tch* ctx);
+extern tch_board_descriptor tch_board_init(const tch_core_api_t* ctx);
 
 #if defined(__cplusplus)
 }

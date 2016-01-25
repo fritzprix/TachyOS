@@ -187,12 +187,12 @@ struct tch_gpio_handle {
 };
 
 
-typedef struct tch_device_service_gpio {
+typedef struct tch_hal_module_gpio {
 	const uint16_t count;
-	tch_gpioHandle* (*allocIo)(const tch* api,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout);
+	tch_gpioHandle* (*allocIo)(const tch_core_api_t* api,const gpIo_x port,uint32_t pmsk,const gpio_config_t* cfg,uint32_t timeout);
 	void (*initCfg)(gpio_config_t* cfg);
 	void (*initEvCfg)(gpio_event_config_t* evcfg);
-} tch_device_service_gpio;
+} tch_hal_module_gpio_t;
 
 
 #if defined(__cplusplus)
