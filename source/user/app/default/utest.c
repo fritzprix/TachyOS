@@ -22,36 +22,37 @@ static float sin[] = {0.5314f,0.5627f,0.5937f,0.6244f,0.6545f,0.6841f,0.7129f,0.
 
 static DECLARE_THREADROUTINE(led_shifter)
 {
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) ctx->Service->request(MODULE_TYPE_GPIO);
-		gpio_config_t iocfg;
-		gpio->initCfg(&iocfg);
-		iocfg.Mode = GPIO_Mode_OUT;
-		iocfg.Otype = GPIO_Otype_PP;
-		iocfg.PuPd = GPIO_PuPd_Float;
-		iocfg.popt = ActOnSleep;
-		tch_gpioHandle* handle = gpio->allocIo(ctx, tch_gpio5,(1 << 6 | 1 << 7 ),&iocfg,tchWaitForever);
-		tch_bState led = bSet;
-		while(TRUE)
-		{
-			handle->out(handle,1 << 6, led);
-			ctx->Thread->yield(100);
-			handle->out(handle,1 << 7, led);
-			led = !led;
-			ctx->Thread->yield(300);
-		}
-		return tchOK;
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) ctx->Module->request(MODULE_TYPE_GPIO);
+	gpio_config_t iocfg;
+	gpio->initCfg(&iocfg);
+	iocfg.Mode = GPIO_Mode_OUT;
+	iocfg.Otype = GPIO_Otype_PP;
+	iocfg.PuPd = GPIO_PuPd_Float;
+	iocfg.popt = ActOnSleep;
+	tch_gpioHandle* handle = gpio->allocIo(ctx, tch_gpio5, (1 << 6 | 1 << 7),
+			&iocfg, tchWaitForever);
+	tch_bState led = bSet;
+	uint32_t cnt = 0;
+	while (TRUE) {
+		handle->out(handle, 1 << 6, led);
+		ctx->Thread->yield(100);
+		handle->out(handle, 1 << 7, led);
+		led = !led;
+		print_dbg("Led Shifted  %d times\n\r",cnt++);
+		ctx->Thread->yield(300);
+	}
+	return tchOK;
 }
 
 DECLARE_THREADROUTINE(main)
 {
 	do_test_thread(ctx);
-
 	thread_config_t thread_cfg;
 	ctx->Thread->initConfig(&thread_cfg,led_shifter,Normal,0,0,"ledshifter");
 	tch_threadId child = ctx->Thread->create(&thread_cfg, NULL);
 	ctx->Thread->start(child);
 
-	tch_device_service_timer* timer = (tch_device_service_timer*) ctx->Service->request(MODULE_TYPE_TIMER);
+	tch_hal_module_timer* timer = (tch_hal_module_timer*) ctx->Module->request(MODULE_TYPE_TIMER);
 	pwm_config_t pcfg;
 	pcfg.UnitTime = TIMER_UNITTIME_uSEC;
 	pcfg.PeriodInUnitTime = 1000;
@@ -80,7 +81,6 @@ DECLARE_THREADROUTINE(main)
 			p1i = 0;
 		if(p2i == 99)
 			p2i = 0;
-
 		ctx->Thread->yield(10);
 
 	}

@@ -40,7 +40,7 @@ static inline void tch_mailqValidate(tch_mailqId qid);
 static inline void tch_mailqInvalidate(tch_mailqId qid);
 static inline BOOL tch_mailqIsValid(tch_mailqId qid);
 
-__USER_RODATA__ tch_kernel_service_mailQ MailQ_IX = {
+__USER_RODATA__ tch_mailQ_api_t MailQ_IX = {
 		.create = tch_mailqCreate,
 		.alloc = tch_mailqAlloc,
 		.put = tch_mailqPut,
@@ -49,7 +49,7 @@ __USER_RODATA__ tch_kernel_service_mailQ MailQ_IX = {
 		.destroy = tch_mailqDestroy
 };
 
-__USER_RODATA__  const tch_kernel_service_mailQ* MailQ = &MailQ_IX;
+__USER_RODATA__  const tch_mailQ_api_t* MailQ = &MailQ_IX;
 
 
 

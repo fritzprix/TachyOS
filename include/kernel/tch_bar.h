@@ -22,7 +22,7 @@ typedef struct tch_bar_cb {
 	cdsl_dlistNode_t         wq;
 }tch_barCb;
 
-extern tch_kernel_service_barrier Barrier_IX;
+extern tch_barrier_api_t Barrier_IX;
 extern tchStatus tch_barInit(tch_barCb* bar,uint8_t th_cnt);
 extern tchStatus tch_barDeinit(tch_barCb* bar);
 

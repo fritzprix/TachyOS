@@ -13,7 +13,7 @@ static DECLARE_THREADROUTINE(printerThreadRoutine);
 
 static int mcnt;
 static int pcnt;
-tchStatus uart_performTest(tch* ctx){
+tchStatus uart_performTest(tch_core_api_t* ctx){
 
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
@@ -21,7 +21,7 @@ tchStatus uart_performTest(tch* ctx){
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
 
-	tch_device_service_usart* uart = ctx->Service->request(MODULE_TYPE_UART);
+	tch_hal_module_usart_t* uart = ctx->Module\->request(MODULE_TYPE_UART);
 	if(!uart)
 		return tchErrorOS;
 

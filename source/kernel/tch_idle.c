@@ -83,12 +83,12 @@ static DECLARE_THREADROUTINE(idle){
 
 	if((!mainThread))
 		KERNEL_PANIC("Can't create init thread");
-
 	Thread->start(mainThread);
+	print_dbg("- Idle loop start\n\r");
 
 	while(TRUE)
 	{
-		tch_klog_flush();
+		tch_dbg_flush();
 		// some function entering sleep mode
 		if((!busy_cnt) && (get_thread_kheader(current)->tslot > 5) && tch_schedIsEmpty()  && tch_systimeIsPendingEmpty()){
 			parm.cmd = IDLE_CMD_GOSLEEP;
@@ -96,7 +96,6 @@ static DECLARE_THREADROUTINE(idle){
 			tch_lwtsk_request(idle_tskid,&parm,FALSE);
 		}
 		tch_hal_enterSleepMode();
-		// some function waking up from sleep mode
  	}
 	tch_lwtsk_unregisterTask(idle_tskid);
 	return 0;

@@ -38,9 +38,9 @@ struct tch_rtc_handle {
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
 };
 
-typedef struct tch_device_service_rtc {
-	tch_rtcHandle* (*open)(const tch* env,struct tm* localtm);
-}tch_device_service_rtc;
+typedef struct tch_hal_module_rtc {
+	tch_rtcHandle* (*open)(const tch_core_api_t* env,struct tm* localtm);
+}tch_hal_module_rtc_t;
 
 #if defined(__cplusplus)
 }

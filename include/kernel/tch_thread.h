@@ -33,7 +33,7 @@ extern "C"{
  * \param[in] root whether new thread is root or not
  *
  */
-extern tch_kernel_service_thread Thread_IX;
+extern tch_thread_api_t Thread_IX;
 extern tch_threadId tch_thread_createThread(thread_config_t* cfg,void* arg,BOOL isroot,BOOL ispriv,struct proc_header* proc);
 extern tchStatus tch_thread_isValid(tch_threadId thread);
 extern BOOL tch_thread_isPrivilidged(tch_threadId thread);

@@ -16,14 +16,14 @@ static DECLARE_THREADROUTINE(child2Routine);
 static tch_threadId child1;
 static tch_threadId child2;
 
-static void race(tch* api);
+static void race(tch_core_api_t* api);
 static tch_mtxId mmtx;
 
 
 /*!
  * \brief Mtx Unit Test
  */
-tchStatus mtx_performTest(tch* api){
+tchStatus mtx_performTest(tch_core_api_t* api){
 
 
 
@@ -50,7 +50,7 @@ tchStatus mtx_performTest(tch* api){
 }
 
 
-static void race(tch* api){
+static void race(tch_core_api_t* api){
 	uint32_t idx = 0;
 	const tch_kernel_service_mtx* Mtx = api->Mtx;
 	for(idx = 0;idx < 100;idx++){

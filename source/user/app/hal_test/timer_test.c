@@ -23,7 +23,7 @@ static float fvs[1000];
 static uint32_t ffvs[1000];
 static uint32_t ffvs1[1000];
 
-tchStatus timer_performTest(tch* ctx){
+tchStatus timer_performTest(tch_core_api_t* ctx){
 
 	tchStatus result = tchOK;
 

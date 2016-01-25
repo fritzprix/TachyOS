@@ -48,7 +48,7 @@
 
 typedef struct tch_adc_handle_prototype {
 	tch_adcHandle                        pix;
-	const tch*                           env;
+	const tch_core_api_t*                           env;
 	uint32_t                             status;
 	uint16_t                             isr_msk;
 	uint32_t                             ch_occp;
@@ -63,7 +63,7 @@ typedef struct tch_adc_handle_prototype {
 } tch_adc_handle_prototype;
 
 
-__USER_API__ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
+__USER_API__ static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 __USER_API__ static tchStatus tch_adc_close(tch_adcHandle* self);
 __USER_API__ static uint32_t tch_adc_read(const tch_adcHandle* self,uint8_t ch);
 __USER_API__ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch,tch_mailqId q,uint32_t qchnk,uint32_t convCnt);
@@ -86,7 +86,7 @@ static void tch_adc_setRegChannel(tch_adc_descriptor* ins,uint8_t ch,uint8_t ord
 static void tch_adc_setRegSampleHold(tch_adc_descriptor* ins,uint8_t ch,uint8_t ADC_SampleHold);
 
 
-__USER_RODATA__ tch_device_service_adc ADC_Ops = {
+__USER_RODATA__ tch_hal_module_adc_t ADC_Ops = {
 		.count = MFEATURE_ADC,
 		.max_precision = 12,
 		.min_precision = 6,
@@ -99,7 +99,7 @@ __USER_RODATA__ tch_device_service_adc ADC_Ops = {
 
 static tch_mtxCb ADC_Mutex;
 static tch_condvCb ADC_Condv;
-static tch_device_service_dma* dma;
+static tch_hal_module_dma_t* dma;
 
 static int tch_adc_init(void)
 {
@@ -126,7 +126,7 @@ static void tch_adc_exit(void)
 MODULE_INIT(tch_adc_init);
 MODULE_EXIT(tch_adc_exit);
 
-static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout)
+static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout)
 {
 	tch_adc_handle_prototype* ins = NULL;
 	uint8_t ch_idx = 0;
@@ -136,11 +136,11 @@ static tch_adcHandle* tch_adc_open(const tch* env,adc_t adc,tch_adcCfg* cfg,tch_
 	if(!(cfg->chdef.chselMsk > 0))
 		return NULL;
 
-	tch_device_service_timer* timer = (tch_device_service_timer*) Service->request(MODULE_TYPE_TIMER);
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_timer* timer = (tch_hal_module_timer*) Module->request(MODULE_TYPE_TIMER);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 
 	if(!dma)
-		dma = (tch_device_service_dma*) tch_kmod_request(MODULE_TYPE_DMA);
+		dma = (tch_hal_module_dma_t*) tch_kmod_request(MODULE_TYPE_DMA);
 
 	if(!timer || !gpio)
 		return NULL;
@@ -281,7 +281,7 @@ static tchStatus tch_adc_close(tch_adcHandle* self)
 		return tchErrorParameter;
 	if(!tch_adc_isValid(ins))
 		return tchErrorParameter;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	if((result = env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)
 		return result;
 

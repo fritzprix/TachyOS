@@ -43,12 +43,14 @@ __USER_API__ static tchStatus tch_rendvDestroy(tch_rendvId rendv);
 static tchStatus rendv_init(tch_rendzvCb* rndv,BOOL is_static);
 static tchStatus rendv_deinit(tch_rendzvCb* rndv);
 
-__USER_RODATA__ tch_kernel_service_rendezvu Rendezvous_IX = {
+__USER_RODATA__ tch_rendezvu_api_t Rendezvous_IX = {
 		.create = tch_rendvCreate,
 		.sleep = tch_rendvSleep,
 		.wake = tch_rendvWakeup,
 		.destroy = tch_rendvDestroy
 };
+
+__USER_RODATA__ const tch_rendezvu_api_t* Rendezvous = &Rendezvous_IX;
 
 DEFINE_SYSCALL_0(rendv_create,tch_rendvId)
 {

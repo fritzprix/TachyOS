@@ -67,7 +67,7 @@ typedef struct tch_spi_request_s tch_spi_request;
 
 
 __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg);
-__USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static tch_spiHandle* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
 
 __USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,size_t sz);
 __USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
@@ -94,7 +94,7 @@ struct tch_spi_request_s {
 struct tch_spi_handle_prototype {
 	tch_spiHandle             pix;
 	spi_t                     spi;
-	const tch*                env;
+	const tch_core_api_t*                env;
 	union {
 		tch_dmaHandle        dma;
 	}txCh;
@@ -110,7 +110,7 @@ struct tch_spi_handle_prototype {
 };
 
 
-__USER_RODATA__ tch_device_service_spi SPI_Ops = {
+__USER_RODATA__ tch_hal_module_spi_t SPI_Ops = {
 		.count = MFEATURE_SPI,
 		.initCfg = tch_spi_initConfig,
 		.allocSpi = tch_spi_open
@@ -118,7 +118,7 @@ __USER_RODATA__ tch_device_service_spi SPI_Ops = {
 
 static tch_mtxCb 	lock;
 static tch_condvCb  condv;
-static tch_device_service_dma* dma;
+static tch_hal_module_dma_t* dma;
 
 static int tch_spi_init(void)
 {
@@ -147,7 +147,7 @@ __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg)
 	cfg->Role = SPI_ROLE_MASTER;
 }
 
-__USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
+__USER_API__ static tch_spiHandle* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
 {
 
 	tch_spi_bs_t* spibs =  &SPI_BD_CFGs[spi];
@@ -166,7 +166,7 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch* env,spi_t spi,spi_con
 			return NULL;
 	}
 
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) tch_kmod_request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) tch_kmod_request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 
@@ -309,7 +309,7 @@ __USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void*
 	uint32_t sig = 0;
 	tch_spi_descriptor* spiDesc = &SPI_HWs[ins->spi];
 	SPI_TypeDef* spiHw = spiDesc->_hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	uint8_t offset = 1;
 	if(spiHw->CR1 & SPI_CR1_DFF)
 		offset = 2;
@@ -369,7 +369,7 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const vo
 	tchStatus result = tchOK;
 	tch_spi_descriptor* spiDesc = &SPI_HWs[ins->spi];
 	SPI_TypeDef* spiHw = (SPI_TypeDef*) spiDesc->_hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	tch_DmaReqDef dmaReq;
 
 	if((result = env->Mtx->lock(ins->mtx,timeout)) != tchOK)
@@ -430,7 +430,7 @@ __USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self)
 	spiHw = spiDesc->_hw;
 
 
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	tchStatus result = tchOK;
 	env->Mtx->lock(ins->mtx,tchWaitForever);
 	while(SPI_isBusy(ins))
@@ -484,7 +484,7 @@ static BOOL tch_spi_handleInterrupt(tch_spi_handle_prototype* ins,tch_spi_descri
 {
 	SPI_TypeDef* spiHw = spiDesc->_hw;
 	uint16_t readout;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	tch_spi_request* req = ins->req;
 	uint16_t sr = spiHw->SR;
 	if(!spiDesc->_handle)

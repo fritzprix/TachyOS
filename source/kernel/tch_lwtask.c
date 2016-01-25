@@ -57,6 +57,7 @@ void __lwtsk_start_loop(void)
 {
 
 	struct lw_task* tsk = NULL;
+	Debug->print(0,0,"- Task Loop Started\n\r");
 	while(TRUE){
 		do {
 			tch_port_atomicBegin();

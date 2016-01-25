@@ -103,11 +103,11 @@ typedef struct tch_usart_handle_prototype_s {
 	uint32_t                         status;
 	tch_usartRequest*                txreq;
 	tch_usartRequest*                rxreq;
-	const tch*                       env;
+	const tch_core_api_t*                       env;
 }* tch_usartHandlePrototype;
 
 
-__USER_API__ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static tch_usartHandle tch_usart_open(const tch_core_api_t* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 __USER_API__ static tchStatus tch_usart_close(tch_usartHandle handle);
 __USER_API__ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32_t sz);
 __USER_API__ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,uint32_t timeout);
@@ -121,7 +121,7 @@ static inline void tch_usart_invalidate(tch_usartHandlePrototype _handle);
 static inline BOOL tch_usart_isValid(tch_usartHandlePrototype _handle);
 
 
-__USER_RODATA__ tch_device_service_usart UART_Ops = {
+__USER_RODATA__ tch_hal_module_usart_t UART_Ops = {
 		.count = MFEATURE_UART,
 		.allocate = tch_usart_open
 };
@@ -130,7 +130,7 @@ static tch_mtxCb 		mtx;
 static tch_condvCb 		condv;
 static uint16_t			occp_state;
 static uint16_t			lpoccp_state;
-static tch_device_service_dma*		dma;
+static tch_hal_module_dma_t*		dma;
 
 
 static int tch_usart_init(void)
@@ -153,7 +153,7 @@ static void tch_usart_exit(void)
 MODULE_INIT(tch_usart_init);
 MODULE_EXIT(tch_usart_exit);
 
-static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt)
+static tch_usartHandle tch_usart_open(const tch_core_api_t* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt)
 {
 	tch_usartHandlePrototype uins = NULL;
 	gpio_config_t iocfg;
@@ -175,7 +175,7 @@ static tch_usartHandle tch_usart_open(const tch* env,uart_t port,tch_UartCfg* cf
 		return NULL;
 	}
 
-	tch_device_service_gpio* gpio = (tch_device_service_gpio*) Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
 		return NULL;
@@ -333,7 +333,7 @@ static tchStatus tch_usart_close(tch_usartHandle handle)
 	}
 	uDesc = &UART_HWs[ins->pno];
 	uhw = (USART_TypeDef*) uDesc->_hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 
 	// block tx / rx operation by setting busy
 	if(env->Mtx->lock(ins->txMtx,tchWaitForever) != tchOK)
@@ -414,7 +414,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
 	uint32_t idx = 0;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	result = tchOK;
 
 	if(env->Mtx->lock(ins->txMtx,tchWaitForever) != tchOK)
@@ -506,7 +506,7 @@ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,u
 	}
 
 	USART_TypeDef* uhw = UART_HWs[ins->pno]._hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 
 	*bp = '\0';
 	uint32_t idx = 0;
@@ -579,7 +579,7 @@ static inline BOOL tch_usart_isValid(tch_usartHandlePrototype _handle)
 static BOOL tch_usart_interruptHandler(tch_usartHandlePrototype ins,void* _hw)
 {
 	USART_TypeDef* uhw = (USART_TypeDef*) _hw;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	uint16_t dm = 0;
 	if(uhw->SR & USART_SR_RXNE)
 	{

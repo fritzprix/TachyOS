@@ -14,8 +14,8 @@ extern "C" {
 #endif
 
 
-#define DECLARE_LWTASK(fn)                  void fn(int id,const tch* env,void* arg)
-typedef void (*lwtask_routine)(int id,const tch* env,void* arg);
+#define DECLARE_LWTASK(fn)                  void fn(int id,const tch_core_api_t* env,void* arg)
+typedef void (*lwtask_routine)(int id,const tch_core_api_t* env,void* arg);
 typedef uint8_t tsk_prior_t;
 
 #define TSK_PRIOR_REALTIME		((uint8_t) 6)

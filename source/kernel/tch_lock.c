@@ -89,14 +89,14 @@ static tchStatus mutex_suspicious_unlock(lock_t* ulp);
 
 
 
-__USER_RODATA__ tch_kernel_service_mtx Mutex_IX = {
+__USER_RODATA__ tch_mutex_api_t Mutex_IX = {
 		tch_mutexCreate,
 		tch_mutexLock,
 		tch_mutexUnlock,
 		tch_mutexDestroy,
 };
 
-__USER_RODATA__ const tch_kernel_service_mtx* Mtx = &Mutex_IX;
+__USER_RODATA__ const tch_mutex_api_t* Mtx = &Mutex_IX;
 
 DECLARE_SYSCALL_0(mutex_create,tch_mtxId);
 DECLARE_SYSCALL_2(mutex_lock,tch_mtxId,uint32_t,tchStatus);
@@ -124,7 +124,7 @@ struct condv_param {
 	void*		arg;
 };
 
-__USER_RODATA__ tch_kernel_service_condv CondVar_IX = {
+__USER_RODATA__ tch_condvar_api_t CondVar_IX = {
 		.create = tch_condvCreate,
 		.wait = tch_condvWait,
 		.wake = tch_condvWake,
@@ -133,7 +133,7 @@ __USER_RODATA__ tch_kernel_service_condv CondVar_IX = {
 };
 
 
-__USER_RODATA__ const tch_kernel_service_condv* Condv = &CondVar_IX;
+__USER_RODATA__ const tch_condvar_api_t* Condv = &CondVar_IX;
 
 
 

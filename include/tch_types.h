@@ -51,20 +51,20 @@ typedef void* tch_eventTree;
 
 
 
-typedef struct tch_kernel_service_thread tch_kernel_service_thread;
-typedef struct tch_kernel_service_condvar tch_kernel_service_condv;
-typedef struct tch_kernel_service_mutex tch_kernel_service_mtx;
-typedef struct tch_kernel_service_semaphore tch_kernel_service_semaphore;
-typedef struct tch_kernel_service_time tch_kernel_service_time;
-typedef struct tch_kernel_service_msgque tch_kernel_service_messageQ;
-typedef struct tch_kernel_service_mailbox tch_kernel_service_mailQ;
-typedef struct tch_kernel_service_mempool tch_kernel_service_mempool;
-typedef struct tch_kernel_service_mem tch_kernel_service_mem;
-typedef struct tch_kernel_service_barrier tch_kernel_service_barrier;
-typedef struct tch_kernel_service_wait tch_kernel_service_wait;
-typedef struct tch_kernel_service_rendezvu tch_kernel_service_rendezvu;
-typedef struct tch_kernel_service_event tch_kernel_service_event;
-typedef struct tch_kernel_service_svcmanager tch_kernel_service_svcmanager;
+typedef struct tch_thread_api tch_thread_api_t;
+typedef struct tch_condvar_api tch_condvar_api_t;
+typedef struct tch_mutex_api tch_mutex_api_t;
+typedef struct tch_semaphore_api tch_semaphore_api_t;
+typedef struct tch_time_api tch_time_api_t;
+typedef struct tch_messageQ_api tch_messageQ_api_t;
+typedef struct tch_mailQ_api tch_mailQ_api_t;
+typedef struct tch_mempool_api tch_mempool_api_t;
+typedef struct tch_malloc_api tch_malloc_api_t;
+typedef struct tch_barrier_api tch_barrier_api_t;
+typedef struct tch_rendezvu_api tch_rendezvu_api_t;
+typedef struct tch_event_api tch_event_api_t;
+typedef struct tch_module_api tch_module_api_t;
+typedef struct tcn_dbg_api tch_dbg_api_t;
 
 
 /**
@@ -87,21 +87,22 @@ struct application_header {
 	uint64_t			chks;
 };
 
-typedef struct tch_runtime {
-	const tch_kernel_service_thread* Thread;
-	const tch_kernel_service_event* Event;
-	const tch_kernel_service_time* Time;
-	const tch_kernel_service_condv* Condv;
-	const tch_kernel_service_mtx* Mtx;
-	const tch_kernel_service_semaphore* Sem;
-	const tch_kernel_service_barrier* Barrier;
-	const tch_kernel_service_rendezvu* Rendezvous;
-	const tch_kernel_service_messageQ* MsgQ;
-	const tch_kernel_service_mailQ* MailQ;
-	const tch_kernel_service_mempool* Mempool;
-	const tch_kernel_service_mem* Mem;
-	const tch_kernel_service_svcmanager* Service;
-} tch;
+typedef struct tch_core_api {
+	const tch_thread_api_t* Thread;
+	const tch_event_api_t* Event;
+	const tch_time_api_t* Time;
+	const tch_condvar_api_t* Condv;
+	const tch_mutex_api_t* Mtx;
+	const tch_semaphore_api_t* Sem;
+	const tch_barrier_api_t* Barrier;
+	const tch_rendezvu_api_t* Rendezvous;
+	const tch_messageQ_api_t* MsgQ;
+	const tch_mailQ_api_t* MailQ;
+	const tch_mempool_api_t* Mempool;
+	const tch_malloc_api_t* Mem;
+	const tch_dbg_api_t* Dbg;
+	const tch_module_api_t* Module;
+} tch_core_api_t;
 
 /// Status code values returned by CMSIS-RTOS functions.
 /// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
@@ -217,7 +218,7 @@ typedef enum {
 	Idle = 1
 } tch_threadPrior;
 
-typedef int (*tch_thread_routine)(const tch* env);
+typedef int (*tch_thread_routine)(const tch_core_api_t* env);
 
 typedef struct thread_config {
 	size_t				 stksz;

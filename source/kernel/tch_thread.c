@@ -59,7 +59,7 @@ static void tch_thread_validate(tch_threadId thread);
 static void tch_thread_setDead(tch_threadId thread,tchStatus reason);
 
 
-__USER_RODATA__ tch_kernel_service_thread Thread_IX = {
+__USER_RODATA__ tch_thread_api_t Thread_IX = {
 		.create = tch_thread_create,
 		.start = tch_thread_start,
 		.self = tch_thread_self,
@@ -72,7 +72,7 @@ __USER_RODATA__ tch_kernel_service_thread Thread_IX = {
 };
 
 
-__USER_RODATA__ const tch_kernel_service_thread* Thread = &Thread_IX;
+__USER_RODATA__ const tch_thread_api_t* Thread = &Thread_IX;
 
 
 DECLARE_SYSCALL_2(thread_create,thread_config_t*,void*,tch_threadId);
@@ -289,7 +289,7 @@ tch_threadId tch_thread_createThread(thread_config_t* cfg,void* arg,BOOL isroot,
 	kthread->prior = cfg->priority;
 	kthread->to = 0;
 	kthread->uthread->name = cfg->name;
-	mcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch));
+	mcpy(&kthread->uthread->ctx,tch_rti,sizeof(tch_core_api_t));
 	return (tch_threadId) kthread->uthread;
 }
 

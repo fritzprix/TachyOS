@@ -54,13 +54,13 @@ __USER_API__ static tchStatus tch_barDestroy(tch_barId bar);
 static tch_barId bar_init(tch_barCb* bar,uint8_t cnt,BOOL is_static);
 static tchStatus bar_deinit(tch_barCb* bar);
 
-__USER_RODATA__ tch_kernel_service_barrier Barrier_IX = {
+__USER_RODATA__ tch_barrier_api_t Barrier_IX = {
 		.create = tch_barCreate,
 		.enter = tch_barEnter,
 		.destroy = tch_barDestroy
 };
 
-__USER_RODATA__ const tch_kernel_service_barrier* Barrier = &Barrier_IX;
+__USER_RODATA__ const tch_barrier_api_t* Barrier = &Barrier_IX;
 
 
 DECLARE_SYSCALL_1(bar_create,uint8_t,tch_barId);

@@ -53,7 +53,7 @@ typedef struct tch_rtc_handle_prototype_t {
 	tch_rtcHandle 						pix;
 	uint32_t  							status;
 	tch_mtxId 							mtx;
-	const tch* 							env;
+	const tch_core_api_t* 							env;
 	tch_rtc_wkupHandler					wkup_handler;
 	uint16_t							wkup_period;
 	cdsl_dlistNode_t					alrm_queue;
@@ -70,7 +70,7 @@ static int tch_rtc_init(void);
 static void tch_rtc_exit(void);
 
 
-static tch_rtcHandle* tch_rtc_open(const tch* env,struct tm* localtm);
+static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* localtm);
 static tchStatus tch_rtc_close(tch_rtcHandle* self);
 static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* localtm,BOOL force);
 static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* localtm);
@@ -79,7 +79,7 @@ static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self);
 
 
 
-__USER_RODATA__ tch_device_service_rtc RTC_Ops = {
+__USER_RODATA__ tch_hal_module_rtc_t RTC_Ops = {
 		.open = tch_rtc_open
 };
 
@@ -115,7 +115,7 @@ MODULE_EXIT(tch_rtc_exit);
 
 
 
-static tch_rtcHandle* tch_rtc_open(const tch* env,struct tm* ltm)
+static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* ltm)
 {
 	tch_rtc_handle_prototype* ins = NULL;
 	if(env->Mtx->lock(&mtx,tchWaitForever) != tchOK)

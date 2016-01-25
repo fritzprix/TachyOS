@@ -102,14 +102,14 @@ struct _tch_tcapt_def_t {
 	tch_PwrOpt pwrOpt;
 };
 
-typedef struct tch_device_service_timer {
+typedef struct tch_hal_module_timer {
 	const uint16_t count;
-	tch_gptimerHandle* (*openGpTimer)(const tch* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout);
-	tch_pwmHandle* (*openPWM)(const tch* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout);
-	tch_tcaptHandle* (*openTimerCapture)(const tch* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout);
+	tch_gptimerHandle* (*openGpTimer)(const tch_core_api_t* env,tch_timer timer,gptimer_config_t* gpt_def,uint32_t timeout);
+	tch_pwmHandle* (*openPWM)(const tch_core_api_t* env,tch_timer timer,pwm_config_t* tdef,uint32_t timeout);
+	tch_tcaptHandle* (*openTimerCapture)(const tch_core_api_t* env,tch_timer timer,pcapt_config_t* tdef,uint32_t timeout);
 	uint32_t (*getChannelCount)(tch_timer timer);
 	uint8_t (*getPrecision)(tch_timer timer);
-} tch_device_service_timer;
+} tch_hal_module_timer;
 
 
 #if defined(__cplusplus)

@@ -151,25 +151,26 @@ extern BOOL is_system_busy();
  * Kernel API Struct* List
  * - are bound statically in compile time
  */
-extern const tch_kernel_service_thread* Thread;
-extern const tch_kernel_service_condv* Condv;
-extern const tch_kernel_service_mtx* Mtx;
-extern const tch_kernel_service_semaphore* Sem;
-extern const tch_kernel_service_barrier* Barrier;
-extern const tch_kernel_service_messageQ* MsgQ;
-extern const tch_kernel_service_event* Event;
-extern const tch_kernel_service_mailQ* MailQ;
-extern const tch_kernel_service_mempool* Mempool;
-extern const tch_kernel_service_mem* uMem;
-extern const tch_kernel_service_svcmanager* Service;
-extern const tch_kernel_service_time* Time;
-
+extern const tch_thread_api_t* Thread;
+extern const tch_condvar_api_t* Condv;
+extern const tch_mutex_api_t* Mtx;
+extern const tch_semaphore_api_t* Sem;
+extern const tch_barrier_api_t* Barrier;
+extern const tch_messageQ_api_t* MsgQ;
+extern const tch_event_api_t* Event;
+extern const tch_mailQ_api_t* MailQ;
+extern const tch_mempool_api_t* Mempool;
+extern const tch_malloc_api_t* uMem;
+extern const tch_module_api_t* Module;
+extern const tch_time_api_t* Time;
+extern const tch_rendezvu_api_t* Rendezvous;
+extern const tch_dbg_api_t* Debug;
 
 
 
 
 extern const tch_kernel_descriptor kernel_descriptor;
-extern const tch* tch_rti;
+extern const tch_core_api_t* tch_rti;
 extern tch_thread_queue procList;
 extern tch_thread_uheader* current;
 extern volatile BOOL __VALID_SYSCALL;

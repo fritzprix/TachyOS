@@ -21,7 +21,7 @@ typedef struct tch_rendezv {
 	tch_thread_queue 		wq;
 }tch_rendzvCb;
 
-extern tch_kernel_service_rendezvu Rendezvous_IX;
+extern tch_rendezvu_api_t Rendezvous_IX;
 extern tchStatus tch_rendzvInit(tch_rendzvCb* rendvp);
 extern tchStatus tch_rendzvDeinit(tch_rendzvCb* rendvp);
 

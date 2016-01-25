@@ -41,7 +41,7 @@ static inline void tch_mpoolValidate(tch_mpoolId mp);
 static inline void tch_mpoolInvalidate(tch_mpoolId mp);
 static inline BOOL tch_mpoolIsValid(tch_mpoolId mp);
 
-__USER_RODATA__ tch_kernel_service_mempool MPool_IX = {
+__USER_RODATA__ tch_mempool_api_t MPool_IX = {
 		tch_mpoolCreate,
 		tch_mpoolAlloc,
 		tch_mpoolCalloc,
@@ -49,7 +49,7 @@ __USER_RODATA__ tch_kernel_service_mempool MPool_IX = {
 		tch_mpoolDestroy
 };
 
-__USER_RODATA__ const tch_kernel_service_mempool* Mempool = &MPool_IX;
+__USER_RODATA__ const tch_mempool_api_t* Mempool = &MPool_IX;
 
 __USER_API__ tch_mpoolId tch_mpoolCreate(size_t sz,uint32_t plen){
 	tch_mpoolCb* mpcb = (tch_mpoolCb*) tch_shmAlloc(sizeof(tch_mpoolCb) + sz * plen);

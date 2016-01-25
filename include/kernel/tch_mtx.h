@@ -37,7 +37,7 @@ typedef struct _tch_mtx_cb_t  {
 /***
  *  mutex  types
  */
-extern tch_kernel_service_mtx Mutex_IX;
+extern tch_mutex_api_t Mutex_IX;
 extern tchStatus tch_mutexInit(tch_mtxCb* mcb);
 extern tchStatus tch_mutexDeinit(tch_mtxCb* mcb);
 

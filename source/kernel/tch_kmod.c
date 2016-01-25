@@ -26,8 +26,6 @@ typedef struct module_header {
 } module_header_t;
 
 
-
-
 __USER_API__ void* kmod_usr_request(int);
 __USER_API__ BOOL kmod_usr_chkdep(module_map_t* map);
 
@@ -36,12 +34,12 @@ static module_map_t	module_map = {0};
 
 static void* _request_kmod(int type,BOOL ispriv);
 
-__USER_RODATA__ tch_kernel_service_svcmanager Service_IX = {
+__USER_RODATA__ tch_module_api_t Module_IX = {
 		.request = kmod_usr_request,
 		.chkdep = kmod_usr_chkdep
 };
 
-__USER_RODATA__ const tch_kernel_service_svcmanager* Service = &Service_IX;
+__USER_RODATA__ const tch_module_api_t* Module = &Module_IX;
 
 
 DECLARE_SYSCALL_1(kmod_usr_request,int,void*);

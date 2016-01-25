@@ -106,7 +106,7 @@ typedef struct tch_dma_req_t {
 
 typedef struct tch_dma_handle_prototype_t{
 	tch_kobjDestr               destr;
-	const tch*                  env;
+	const tch_core_api_t*                  env;
 	dma_t                       dma;
 	uint8_t                     ch;
 	tch_mtxCb                   lock;
@@ -123,7 +123,7 @@ typedef struct tch_dma_handle_prototype_t{
  */
 __USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg);
 __USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-__USER_API__ static tch_dmaHandle tch_dma_openStream(const tch* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
+__USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 __USER_API__ static uint32_t tch_dma_beginXfer(tch_dmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
 __USER_API__ static tchStatus tch_dma_close(tch_dmaHandle self);
 
@@ -137,7 +137,7 @@ static inline BOOL tch_dma_isValid(tch_dma_handle_prototype* _handle);
 static BOOL tch_dma_setDmaAttr(void* _dmaHw,tch_DmaReqDef* attr);
 
 
-__USER_RODATA__ tch_device_service_dma DMA_Ops = {
+__USER_RODATA__ tch_hal_module_dma_t DMA_Ops = {
 	.count = MFEATURE_DMA,
 	.initCfg = tch_dma_initConfig,
 	.initReq = tch_dma_initReq,
@@ -191,7 +191,7 @@ __USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr
 	attr->size = size;
 }
 
-__USER_API__ static tch_dmaHandle tch_dma_openStream(const tch* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
+__USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_dma_handle_prototype* ins;
 	if(dma == DMA_NOT_USED)
 		return NULL;
@@ -299,7 +299,7 @@ __USER_API__ static tchStatus tch_dma_close(tch_dmaHandle self){
 	tchStatus result = tchOK;
 	if(!tch_dma_isValid(ins))
 		return tchErrorResource;
-	const tch* env = ins->env;
+	const tch_core_api_t* env = ins->env;
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) DMA_HWs[ins->dma]._hw;
 	// wait until dma is busy
 	if((result = env->Mtx->lock(&ins->lock,tchWaitForever)) != tchOK)
@@ -382,7 +382,7 @@ static BOOL tch_dma_handleIrq(tch_dma_handle_prototype* handle,tch_dma_descripto
 		if(!handle->listener((tch_dmaHandle)handle,isr))
 			return FALSE;
 	}
-	const tch* env = handle->env;
+	const tch_core_api_t* env = handle->env;
 	if(isr & DMA_FLAG_EvTC){
 		*dma_desc->_icr = isrclr;
 		env->MsgQ->put(handle->dma_mq,tchOK,0);

@@ -8,7 +8,7 @@
 #include "tch.h"
 #include "spi_test.h"
 
-tchStatus spi_performTest(tch* ctx){
+tchStatus spi_performTest(tch_core_api_t* ctx){
 	tch_spiHandle* spihandle = NULL;
 	uaddr_t faddr = 0;
 	spi_config_t spiCfg;

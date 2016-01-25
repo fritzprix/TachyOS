@@ -64,10 +64,9 @@ extern "C" {
 
 #define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
 #define tch_assert(api,b,err) if(!b){api->Thread->exit(api->Thread->self(),err);}
-#define DECLARE_THREADROUTINE(fn)                    int fn(const tch* ctx)
+#define DECLARE_THREADROUTINE(fn)                    int fn(const tch_core_api_t* ctx)
 
-
-struct tch_kernel_service_thread {
+struct tch_thread_api {
 	/**
 	 *  Create Thread Object
 	 */
@@ -91,7 +90,7 @@ struct tch_kernel_service_thread {
 };
 
 
-struct tch_kernel_service_mutex {
+struct tch_mutex_api {
 	tch_mtxId (*create)();
 	tchStatus (*lock)(tch_mtxId mtx,uint32_t timeout);
 	tchStatus (*unlock)(tch_mtxId mtx);
@@ -99,7 +98,7 @@ struct tch_kernel_service_mutex {
 };
 
 
-struct tch_kernel_service_semaphore {
+struct tch_semaphore_api {
 	tch_semId (*create)(uint32_t count);
 	tchStatus (*lock)(tch_semId sid,uint32_t timeout);
 	tchStatus (*unlock)(tch_semId sid);
@@ -107,17 +106,14 @@ struct tch_kernel_service_semaphore {
 };
 
 
-struct tch_kernel_service_barrier {
+struct tch_barrier_api {
 	tch_barId (*create)(uint8_t thread_cnt);
 	tchStatus (*enter)(tch_barId bar,uint32_t timeout);
 	tchStatus (*destroy)(tch_barId bar);
 };
 
-struct tch_kernel_service_waitq {
-	tch_waitqId (*create)();
-};
 
-struct tch_kernel_service_rendezvu {
+struct tch_rendezvu_api {
 	tch_rendvId (*create)();
 	tchStatus (*sleep)(tch_rendvId rendv,uint32_t timeout);
 	tchStatus (*wake)(tch_rendvId rendv);
@@ -125,7 +121,7 @@ struct tch_kernel_service_rendezvu {
 };
 
 
-struct tch_kernel_service_time {
+struct tch_time_api {
 	tchStatus (*getWorldTime)(time_t* tp);								//< return GMT time
 	tchStatus (*setWorldTime)(time_t epoch_gmt);						//< set GMT time for system
 	alrm_Id (*setAlarm)(time_t epoch_gmt,alrmIntv period);				//< set alarm in GMT time
@@ -143,7 +139,7 @@ struct tch_kernel_service_time {
 /*!
  * \brief posix-like condition variable API struct
  */
-struct tch_kernel_service_condvar {
+struct tch_condvar_api {
 
 	/*! \brief create posix-like condition variable
 	 *  \return initiated \ref tch_condvId
@@ -162,7 +158,7 @@ struct tch_kernel_service_condvar {
 
 
 
-struct tch_kernel_service_mempool {
+struct tch_mempool_api {
 	tch_mpoolId (*create)(size_t sz,uint32_t plen);
 	void* (*alloc)(tch_mpoolId mpool);
 	void* (*calloc)(tch_mpoolId mpool);
@@ -170,7 +166,7 @@ struct tch_kernel_service_mempool {
 	tchStatus (*destroy)(tch_mpoolId mpool);
 };
 
-struct tch_kernel_service_event {
+struct tch_event_api {
 	tch_eventId (*create)(void);
 	int32_t (*set)(tch_eventId ev,int32_t signals);
 	int32_t (*clear)(tch_eventId ev,int32_t signals);
@@ -178,13 +174,9 @@ struct tch_kernel_service_event {
 	tchStatus (*destroy)(tch_eventId ev);
 };
 
-struct tch_kernel_service_usWait {
-
-};
 
 
-
-struct tch_kernel_service_msgque {
+struct tch_messageQ_api {
 	/**
 	 *  Create and initiate Message Queue instance
 	 *  ##Note : In CMSIS, this function actually has one more arguement, which is thread. however it is pointless
@@ -230,7 +222,7 @@ struct tch_kernel_service_msgque {
 };
 
 
-struct tch_kernel_service_mailbox {
+struct tch_mailQ_api {
 	tch_mailqId (*create)(uint32_t sz,uint32_t qlen);
 	void* (*alloc)(tch_mailqId qid,uint32_t timeout,tchStatus* result);
 	tchStatus (*put)(tch_mailqId qid,void* mail,uint32_t timeout);
@@ -239,16 +231,28 @@ struct tch_kernel_service_mailbox {
 	tchStatus (*destroy)(tch_mailqId qid);
 };
 
-struct tch_kernel_service_mem {
+struct tch_malloc_api {
 	void* (*alloc)(size_t size);
 	void (*free)(void*);
 	void (*mstat)(mstat* statp);
 };
 
 
-struct tch_kernel_service_svcmanager {
+struct tch_module_api {
 	void* (*request)(int);
 	BOOL (*chkdep)(module_map_t* service);
+};
+
+
+#define print_dbg( ...)			 ctx->Dbg->print(0, 0,  __VA_ARGS__)
+#define print_warn(...)			 ctx->Dbg->print(1, 0,  __VA_ARGS__)
+#define print_error(err, ...)	 ctx->Dbg->print(2, err,__VA_ARGS__)
+typedef uint8_t dbg_level;
+struct tcn_dbg_api {
+	const dbg_level Normal;
+	const dbg_level Warn;
+	const dbg_level Error;
+	void (*print)(dbg_level level,tchStatus code, const char* format, ...);
 };
 
 
