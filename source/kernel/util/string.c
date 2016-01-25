@@ -93,9 +93,15 @@ size_t itostr(int val,char* str,int radix)
 	if(!str || (radix < 2))
 		return 0;
 	char* init_str = str;
+	if(val < radix)
+	{
+		*str = NUM_CHAR[val];
+		str++;
+		return (size_t) (str - init_str);
+	}
 	int v = val;
 	int div = radix;
-	while(v > radix)
+	while(div != 1)
 	{
 		if((v / div) >= radix)
 		{

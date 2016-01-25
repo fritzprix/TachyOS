@@ -51,10 +51,10 @@ DEFINE_SYSCALL_3(dbg_print,struct dbg_info*,info, const char*, format, va_list*,
 	if(update_cnt > (DBG_LOG_FILE_SIZE >> 1))
 		tch_dbg_flush();
 	size_t lsz = vformat(dbg_log_buffer, format, *va);
-	if((p_idx + lsz) > DBG_LOG_FILE_SIZE)
+	if((p_idx + lsz) >= DBG_LOG_FILE_SIZE)
 	{
 		mcpy(&dbg_log_file[p_idx],dbg_log_buffer, DBG_LOG_FILE_SIZE - p_idx);
-		mcpy(dbg_log_file, dbg_log_buffer[DBG_LOG_FILE_SIZE - p_idx],p_idx + lsz - DBG_LOG_FILE_SIZE);
+		mcpy(dbg_log_file, &dbg_log_buffer[DBG_LOG_FILE_SIZE - p_idx],p_idx + lsz - DBG_LOG_FILE_SIZE);
 	}
 	else
 	{
@@ -100,7 +100,7 @@ void tch_dbg_flush(void)
 
 static __USER_API__ void tch_dbg_print(dbg_level level, tchStatus code, const char* fmt, ...)
 {
-	if(update_cnt > (DBG_LOG_FILE_SIZE) >> 1)
+	if(update_cnt >= (DBG_LOG_FILE_SIZE) >> 1)
 		tch_dbg_flush();
 
 	struct dbg_info info;
@@ -129,7 +129,7 @@ static DECLARE_LWTASK(dbg_flush)
 	update_cnt = 0;
 	tch_port_atomicEnd();
 
-	if((c_idx + cnt) > DBG_LOG_FILE_SIZE)
+	if((c_idx + cnt) >= DBG_LOG_FILE_SIZE)
 	{
 		dbg_log_fio->ops->write(dbg_log_fio, &dbg_log_file[c_idx], DBG_LOG_FILE_SIZE - c_idx);
 		dbg_log_fio->ops->write(dbg_log_fio, dbg_log_file, c_idx + cnt - DBG_LOG_FILE_SIZE);
