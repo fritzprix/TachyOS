@@ -69,13 +69,13 @@ typedef struct tch_spi_request_s tch_spi_request;
 
 
 __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg);
-__USER_API__ static tch_spiHandle* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
 
-__USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,size_t sz);
-__USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
-__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
-__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
-__USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self);
+__USER_API__ static tchStatus tch_spi_write(tch_spiHandle_t* self,const void* wb,size_t sz);
+__USER_API__ static tchStatus tch_spi_read(tch_spiHandle_t* self,void* rb,size_t sz, uint32_t timeout);
+__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle_t* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_spi_close(tch_spiHandle_t* self);
 
 static int tch_spi_init(void);
 static void tch_spi_exit(void);
@@ -94,7 +94,7 @@ struct tch_spi_request_s {
 };
 
 struct tch_spi_handle_prototype {
-	tch_spiHandle             pix;
+	tch_spiHandle_t             pix;
 	spi_t                     spi;
 	const tch_core_api_t*                env;
 	union {
@@ -149,7 +149,7 @@ __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg)
 	cfg->Role = SPI_ROLE_MASTER;
 }
 
-__USER_API__ static tch_spiHandle* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
+__USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
 {
 
 	tch_spi_bs_t* spibs =  &SPI_BD_CFGs[spi];
@@ -279,10 +279,10 @@ __USER_API__ static tch_spiHandle* tch_spi_open(const tch_core_api_t* env,spi_t 
 		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
 	}
 	tch_spi_validate((tch_spi_handle_prototype*) ins);
-	return (tch_spiHandle*) ins;
+	return (tch_spiHandle_t*) ins;
 }
 
-__USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,size_t sz)
+__USER_API__ static tchStatus tch_spi_write(tch_spiHandle_t* self,const void* wb,size_t sz)
 {
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spi_isValid(ins))
@@ -290,7 +290,7 @@ __USER_API__ static tchStatus tch_spi_write(tch_spiHandle* self,const void* wb,s
 	return ins->pix.transceive(self,wb,NULL,sz,tchWaitForever);
 }
 
-__USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout)
+__USER_API__ static tchStatus tch_spi_read(tch_spiHandle_t* self,void* rb,size_t sz, uint32_t timeout)
 {
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!tch_spi_isValid(ins))
@@ -298,7 +298,7 @@ __USER_API__ static tchStatus tch_spi_read(tch_spiHandle* self,void* rb,size_t s
 	return ins->pix.transceive(self,NULL,rb,sz,timeout);
 }
 
-__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
+__USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle_t* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
 {
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	void* twb = (void*) wb;
@@ -361,7 +361,7 @@ __USER_API__ static tchStatus tch_spi_transceive(tch_spiHandle* self,const void*
 	return result;
 }
 
-__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
+__USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const void* wb,void* rb,size_t sz,uint32_t timeout)
 {
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	if(!ins)
@@ -418,7 +418,7 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle* self,const vo
 }
 
 
-__USER_API__ static tchStatus tch_spi_close(tch_spiHandle* self)
+__USER_API__ static tchStatus tch_spi_close(tch_spiHandle_t* self)
 {
 	tch_spi_handle_prototype* ins = (tch_spi_handle_prototype*) self;
 	tch_spi_descriptor* spiDesc = NULL;

@@ -402,7 +402,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 	tch_usartHandlePrototype ins;
 	tchStatus result;
 	uint32_t ev;
-	if(!handle)
+	if(!handle || !sz)
 	{
 		return tchErrorParameter;
 	}
@@ -495,7 +495,7 @@ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,u
 {
 	tch_usartHandlePrototype ins;
 	uint32_t ev;
-	if(!handle)
+	if(!handle || !sz)
 	{
 		return 0;
 	}

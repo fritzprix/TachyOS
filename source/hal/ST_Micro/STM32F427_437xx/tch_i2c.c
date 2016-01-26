@@ -24,8 +24,9 @@
 #include "kernel/tch_condv.h"
 #include "kernel/util/string.h"
 
-
+#ifndef IIC_CLASS_KEY
 #define IIC_CLASS_KEY							((uint16_t) 0x62D1)
+#endif
 #define TCH_IIC_BUSY_FLAG						((uint32_t) 0x10000)
 #define TCH_IIC_ADDMOD_FLAG						((uint32_t) 0x20000)
 #define TCH_IIC_MASTER_FLAG						((uint32_t) 0x40000)
@@ -103,7 +104,7 @@ typedef struct tch_iic_op_desc_t {
 
 
 struct tch_iic_handle_prototype_t {
-	tch_iicHandle                        pix;
+	tch_iicHandle_t                        pix;
 	tch_iic                              iic;
 	uint32_t                             status;
 	tch_gpioHandle*                      iohandle;
@@ -118,13 +119,13 @@ struct tch_iic_handle_prototype_t {
 
 
 __USER_API__ static void tch_IIC_initConfig(tch_iicCfg* cfg);
-__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+__USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 
-__USER_API__ static tchStatus tch_IIC_close(tch_iicHandle* self);
-__USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
-__USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
-__USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
-__USER_API__ static uint32_t tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_IIC_close(tch_iicHandle_t* self);
+__USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t addr,const void* wb,int32_t sz);
+__USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle_t* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
+__USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle_t* self,uint16_t addr,const void* wb,int32_t sz);
+__USER_API__ static uint32_t tch_IIC_readSlave(tch_iicHandle_t* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
 
 static int tch_IIC_init(void);
 static void tch_IIC_exit(void);
@@ -174,7 +175,7 @@ static void tch_IIC_exit(void)
 MODULE_INIT(tch_IIC_init);
 MODULE_EXIT(tch_IIC_exit);
 
-__USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
+__USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch_iic i2c,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt){
 	if(!(i2c < MFEATURE_IIC))
 		return NULL;
 
@@ -334,10 +335,10 @@ __USER_API__ static tch_iicHandle* tch_IIC_alloc(const tch_core_api_t* env,tch_i
 	iicHw->CR1 |= I2C_CR1_STOP;
 	tch_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
 	tch_IIC_validate(ins);
-	return (tch_iicHandle*) ins;
+	return (tch_iicHandle_t*) ins;
 }
 
-__USER_API__ static tchStatus tch_IIC_close(tch_iicHandle* self)
+__USER_API__ static tchStatus tch_IIC_close(tch_iicHandle_t* self)
 {
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	tch_iic_descriptor* iicDesc = &IIC_HWs[ins->iic];
@@ -409,7 +410,7 @@ __USER_API__ static void tch_IIC_initConfig(tch_iicCfg* cfg){
 
 
 
-__USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz){
+__USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t addr,const void* wb,int32_t sz){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	tchStatus result = tchOK;
 	int32_t sig;
@@ -523,7 +524,7 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle* self,uint16_t a
 	return result;
 }
 
-__USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
+__USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle_t* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	tchStatus result = tchOK;
 	int32_t sig;
@@ -613,7 +614,7 @@ __USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle* self,uint16_t add
 }
 
 
-__USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz){
+__USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle_t* self,uint16_t addr,const void* wb,int32_t sz){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	if((!self) || (!addr) || (!sz))
 		return tchErrorParameter;
@@ -656,7 +657,7 @@ __USER_API__ static tchStatus tch_IIC_writeSlave(tch_iicHandle* self,uint16_t ad
 
 }
 
-__USER_API__ static uint32_t tch_IIC_readSlave(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
+__USER_API__ static uint32_t tch_IIC_readSlave(tch_iicHandle_t* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout){
 	tch_iic_handle_prototype* ins = (tch_iic_handle_prototype*) self;
 	if((!self) || (!addr) || (!sz))
 		return tchErrorParameter;

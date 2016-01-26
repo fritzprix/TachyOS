@@ -9,36 +9,47 @@
 #define TCH_SDIO_H_
 
 
-typedef struct tch_sdio_handle_t* tch_sdioHandle;
-typedef struct tch_sdio_device_id_t tch_sdioDevId;
+typedef struct tch_sdio_handle* tch_sdioHandle_t;
+typedef void* tch_sdioDevId;
+typedef struct tch_sdio_device_info tch_sdioDevInfo;
 typedef struct tch_sdio_cfg_t tch_sdioCfg;
 
 typedef enum {
 	MMC , SDC, SDIOC
 }tch_sdioDevType;
 
-struct tch_sdio_device_id_t {
-
+struct tch_sdio_device_info {
+	tch_sdioDevType			type;
+	uint16_t 				id;
+	BOOL 					is_protected;
+	BOOL					is_locked;
 };
 
-struct tch_sdio_cfg_t {
 
+struct tch_sdio_cfg {
+	uint8_t bus_width;
 };
 
-struct tch_sdio_handle_t {
-	void (*close) (tch_sdioHandle sdio);
-	tch_sdioDevId (*deviceId)(tch_sdioHandle sdio,tch_sdioDevType type);
-	tchStatus (*writeBlock)(tch_sdioHandle sdio,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-	tchStatus (*readBlock)(tch_sdioHandle sdio,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-	tchStatus (*writeBurst)(tch_sdioHandle sdio,const char* bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t sz);
-	tchStatus (*readBurst)(tch_sdioHandle sdio,char* bp,uint32_t blk_sz, uint32_t blk_offset,uint32_t sz);
-	tchStatus (*erase)(tch_sdioHandle sdio,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-	tchStatus (*setProtection)(tch_sdioHandle sdio,BOOL protect,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+
+struct tch_sdio_handle {
+	/**
+	 *  perform device id
+	 */
+	uint32_t (*deviceId)(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+	tchStatus (*deviceInfo)(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
+	tchStatus (*writeBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+	tchStatus (*readBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+	tchStatus (*erase)(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+	tchStatus (*eraseForce)(tch_sdioHandle_t sdio, tch_sdioDevId device);
+	tchStatus (*setPassword)(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* opwd, const char* npwd, BOOL lock);
+	tchStatus (*lock)(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
+	tchStatus (*unlock)(tch_sdioHandle_t sdio, tch_sdioDevId device, const char* pwd);
 };
 
 typedef struct tch_hal_module_sdio {
-	void (*initCfg)();
-	tch_sdioHandle (*allocSdio)();
+	void (*initCfg)(tch_sdioCfg* cfg);
+	tch_sdioHandle_t (*allocSdio)(const tch_sdioCfg* cfg);
+	tchStatus (*releaseSdio)(tch_sdioHandle_t sdio);
 }tch_hal_module_sdio_t;
 
 #endif /* TCH_SDIO_H_ */

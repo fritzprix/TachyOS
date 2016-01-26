@@ -39,7 +39,7 @@ static DECLARE_THREADROUTINE(led_shifter)
 		handle->out(handle, 1 << 7, led);
 		led = !led;
 		print_dbg("Led Shifted  %d times\n\r",cnt++);
-		ctx->Thread->yield(300);
+		ctx->Thread->yield(100);
 	}
 	return tchOK;
 }
@@ -47,6 +47,8 @@ static DECLARE_THREADROUTINE(led_shifter)
 DECLARE_THREADROUTINE(main)
 {
 	do_test_thread(ctx);
+
+
 	thread_config_t thread_cfg;
 	ctx->Thread->initConfig(&thread_cfg,led_shifter,Normal,0,0,"ledshifter");
 	tch_threadId child = ctx->Thread->create(&thread_cfg, NULL);
@@ -81,7 +83,7 @@ DECLARE_THREADROUTINE(main)
 			p1i = 0;
 		if(p2i == 99)
 			p2i = 0;
-		ctx->Thread->yield(10);
+		ctx->Thread->yield(20);
 
 	}
 	return tchOK;

@@ -50,7 +50,7 @@ extern "C"{
 #define SPI_BAUDRATE_LOW             ((uint8_t) 4)
 
 typedef uint8_t spi_t;
-typedef struct tch_spi_handle_t tch_spiHandle;
+typedef struct tch_spi_handle tch_spiHandle_t;
 
 
 typedef struct tch_spi_cfg_t {
@@ -61,17 +61,17 @@ typedef struct tch_spi_cfg_t {
 	uint8_t Baudrate;
 }spi_config_t;
 
-struct tch_spi_handle_t {
-	tchStatus (*close)(tch_spiHandle* self);
-	tchStatus (*write)(tch_spiHandle* self,const void* wb,size_t sz);
-	tchStatus (*read)(tch_spiHandle* self,void* rb,size_t sz, uint32_t timeout);
-	tchStatus (*transceive)(tch_spiHandle* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
+struct tch_spi_handle {
+	tchStatus (*close)(tch_spiHandle_t* self);
+	tchStatus (*write)(tch_spiHandle_t* self,const void* wb,size_t sz);
+	tchStatus (*read)(tch_spiHandle_t* self,void* rb,size_t sz, uint32_t timeout);
+	tchStatus (*transceive)(tch_spiHandle_t* self,const void* wb,void* rb,size_t sz,uint32_t timeout);
 };
 
 typedef struct tch_hal_module_spi {
 	const uint16_t count;
 	void (*initCfg)(spi_config_t* cfg);
-	tch_spiHandle* (*allocSpi)(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tch_spiHandle_t* (*allocSpi)(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_hal_module_spi_t;
 
 #if defined(__cplusplus)

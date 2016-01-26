@@ -36,6 +36,37 @@
     	"TIMER_CAPTURE_CLASS_KEY":"rand(2)"
     }
   },
+  "SDIO":{
+  	"type":"bool",
+  	"default":"n",
+  	"gen-list":{
+  		"SDIO_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "RTC":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"RTC_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "DMA":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"DMA_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "GPIO":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"GPIO_CLASS_KEY":"rand(2)"
+  	}
+  },
   "HAL_SUB_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
