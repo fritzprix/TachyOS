@@ -49,13 +49,12 @@ struct tm* tch_time_gmt_epoch_to_broken(const time_t* timep,struct tm* result,tc
 	result->tm_min = (time % 3600) / 60;
 	result->tm_sec = time % 60;
 
-	result->tm_mday = result->tm_yday;
+	result->tm_mday = result->tm_yday + 1;
 	result->tm_mon = 0;
 	const uint8_t* month_vec = _ISLEAP(result->tm_year)? LEAP_YEAR_DAY_PER_MONTH : NORMAL_YEAR_DAY_PER_MONTH;
 	while(result->tm_mday > month_vec[result->tm_mon]) {
 		result->tm_mday -= month_vec[result->tm_mon++];
 	}
-	result->tm_mday++;
 	result->tm_isdst = -1;
 	return result;
 }

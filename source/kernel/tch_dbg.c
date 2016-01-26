@@ -53,7 +53,7 @@ DEFINE_SYSCALL_3(dbg_print,struct dbg_info*,info, const char*, format, va_list*,
 	size_t lsz = vformat(dbg_log_buffer, format, *va);
 	if((p_idx + lsz) >= DBG_LOG_FILE_SIZE)
 	{
-		mcpy(&dbg_log_file[p_idx],dbg_log_buffer, DBG_LOG_FILE_SIZE - p_idx);
+		mcpy(&dbg_log_file[p_idx],dbg_log_buffer, DBG_LOG_FILE_SIZE - p_idx );
 		mcpy(dbg_log_file, &dbg_log_buffer[DBG_LOG_FILE_SIZE - p_idx],p_idx + lsz - DBG_LOG_FILE_SIZE);
 	}
 	else

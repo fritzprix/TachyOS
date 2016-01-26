@@ -41,7 +41,7 @@ extern "C"{
 
 
 
-typedef struct tch_iic_handle_t tch_iicHandle;
+typedef struct tch_iic_handle tch_iicHandle_t;
 typedef uint8_t tch_iic;
 typedef struct tch_iic_cfg_t tch_iicCfg;
 
@@ -55,17 +55,17 @@ struct tch_iic_cfg_t {
 	BOOL        Filter;
 };
 
-struct tch_iic_handle_t{
-	tchStatus (*close)(tch_iicHandle* self);
-	tchStatus (*write)(tch_iicHandle* self,uint16_t addr,const void* wb,int32_t sz);
-	uint32_t (*read)(tch_iicHandle* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
+struct tch_iic_handle{
+	tchStatus (*close)(tch_iicHandle_t* self);
+	tchStatus (*write)(tch_iicHandle_t* self,uint16_t addr,const void* wb,int32_t sz);
+	uint32_t (*read)(tch_iicHandle_t* self,uint16_t addr,void* rb,int32_t sz,uint32_t timeout);
 };
 
 
 typedef struct tch_hal_module_iic {
 	uint8_t	count;
 	void (*initCfg)(tch_iicCfg* cfg);
-	tch_iicHandle* (*allocIIC)(const tch_core_api_t* env,tch_iic iic,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
+	tch_iicHandle_t* (*allocIIC)(const tch_core_api_t* env,tch_iic iic,tch_iicCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 }tch_hal_module_iic_t;
 
 

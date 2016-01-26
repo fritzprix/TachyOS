@@ -88,7 +88,7 @@ typedef struct tch_dma_req_t {
 }tch_DmaReqArgs;
 
 
-#define DMA_CLASS_KEY             ((uint16_t) 0x3D01)
+#define DMA_CLASS_KEY   	          ((uint16_t) 0x3D01)
 #define TCH_DMA_BUSY                  ((uint32_t) 1 << 16)
 
 #define DMA_SET_BUSY(ins)\

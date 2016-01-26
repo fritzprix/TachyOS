@@ -84,7 +84,7 @@ static DECLARE_THREADROUTINE(idle){
 	if((!mainThread))
 		KERNEL_PANIC("Can't create init thread");
 	Thread->start(mainThread);
-	print_dbg("- Idle loop start\n\r");
+	print_dbg("- Idle loop begin\n\r");
 
 	while(TRUE)
 	{
