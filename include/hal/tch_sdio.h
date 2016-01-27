@@ -8,6 +8,8 @@
 #ifndef TCH_SDIO_H_
 #define TCH_SDIO_H_
 
+#include "kernel/tch_ktypes.h"
+
 
 typedef struct tch_sdio_handle* tch_sdioHandle_t;
 typedef void* tch_sdioDevId;

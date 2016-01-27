@@ -1,23 +1,71 @@
 {
   "UART":{
     "type":"bool",
-    "default":"y"
+    "default":"y",
+    "gen-list":{
+    	"UART_CLASS_KEY":"rand(2)"
+    }
   },
   "ADC":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"ADC_CLASS_KEY":"rand(2)"
+    }
   },
   "SPI":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"SPI_CLASS_KEY":"rand(2)"
+    }
   },
   "IIC":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"IIC_CLASS_KEY":"rand(2)"
+    }
   },
   "TIMER":{
     "type":"bool",
-    "default":"n"
+    "default":"n",
+    "gen-list":{
+    	"TIMER_GP_CLASS_KEY":"rand(2)",
+    	"TIMER_PWM_CLASS_KEY":"rand(2)",
+    	"TIMER_CAPTURE_CLASS_KEY":"rand(2)"
+    }
+  },
+  "SDIO":{
+  	"type":"bool",
+  	"default":"n",
+  	"gen-list":{
+  		"SDIO_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "RTC":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"RTC_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "DMA":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"DMA_CLASS_KEY":"rand(2)"
+  	}
+  },
+  "GPIO":{
+  	"type":"bool",
+  	"default":"y",
+  	"force":"y",
+  	"gen-list":{
+  		"GPIO_CLASS_KEY":"rand(2)"
+  	}
   },
   "HAL_SUB_RECIPE":{
     "type":"recipe",

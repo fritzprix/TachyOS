@@ -15,4 +15,5 @@ OBJ-$(CONFIG_ADC)+=tch_adc.ko
 OBJ-$(CONFIG_SPI)+=tch_spi.ko
 OBJ-$(CONFIG_IIC)+=tch_i2c.ko
 OBJ-$(CONFIG_TIMER)+=tch_timer.ko
+OBJ-$(CONFIG_TIMER)+=tch_sdio.ko
 
