@@ -344,12 +344,16 @@ file_operations_t LOG_IO = {
 		.seek = log_seek
 };
 
+file LOG_FILE = {
+		.ops = &LOG_IO
+};
+
 
 
 tch_board_descriptor tch_board_init(const tch_core_api_t* ctx)
 {
 	context = (tch_core_api_t*) ctx;
-	BOARD_DESCRIPTOR.b_logfile = &LOG_IO;
+	BOARD_DESCRIPTOR.b_logfile = &LOG_FILE;
 	context = NULL;
 	log_serial = NULL;
 	return &BOARD_DESCRIPTOR;
@@ -358,7 +362,7 @@ tch_board_descriptor tch_board_init(const tch_core_api_t* ctx)
 
 static int log_open(struct tch_file* filp)
 {
-	tch_hal_module_usart_t* uart = context->Module\->request(MODULE_TYPE_UART);
+	tch_hal_module_usart_t* uart = context->Module->request(MODULE_TYPE_UART);
 	tch_UartCfg uart_config;
 	uart_config.Buadrate = 115200;
 	uart_config.FlowCtrl = FALSE;

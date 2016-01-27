@@ -55,7 +55,10 @@
 
 #define GPIO_INTERRUPT_INIT      ((uint32_t) 0xF8 << 16)
 #define GPIO_INTERRUPT_INIT_MSK  ((uint32_t) 0xFF << 16)
+
+#ifndef GPIO_CLASS_KEY
 #define GPIO_CLASS_KEY  	     ((uint16_t) 0x3D03)
+#endif
 
 
 #define SET_INTERRUPT(gpio_handle)  ((tch_gpio_handle_prototype*) gpio_handle)->state |= GPIO_INTERRUPT_INIT
