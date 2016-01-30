@@ -7,7 +7,7 @@
 
 
 #include "tch.h"
-#include "gpio_test.h"
+#include "test.h"
 
 static DECLARE_THREADROUTINE(evgenRoutine);
 static DECLARE_THREADROUTINE(evconsRoutine);
@@ -15,7 +15,7 @@ static DECLARE_THREADROUTINE(evconsRoutine);
 uint16_t outp = 1 << 8;
 uint16_t inp = 1 << 2;
 
-tchStatus gpio_performTest(const tch_core_api_t* api){
+tchStatus do_gpio_test(const tch_core_api_t* api){
 
 
 	thread_config_t thcfg;
@@ -44,7 +44,7 @@ tchStatus gpio_performTest(const tch_core_api_t* api){
 static DECLARE_THREADROUTINE(evgenRoutine){
 
 	gpio_config_t iocfg;
-	tch_hal_module_gpio_t* gpio = ctx->Service->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = ctx->Module->request(MODULE_TYPE_GPIO);
 	iocfg.Mode = GPIO_Mode_OUT;
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_Float;
@@ -55,7 +55,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 	out->out(out,outp,bSet);
 	ctx->Thread->yield(50);
 	out->out(out,outp,bClear);
-//	out->close(out);
+	out->close(out);
 	return tchOK;
 }
 
@@ -83,6 +83,6 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	if(in->listen(in,2,tchWaitForever))
 		return tchErrorOS;
 	in->unregisterIoEvent(in,inp);
-//	in->close(in);
+	in->close(in);
 	return tchOK;
 }

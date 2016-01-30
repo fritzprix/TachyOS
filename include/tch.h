@@ -20,9 +20,6 @@
 
 #ifndef TCH_H_
 #define TCH_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "tch_types.h"
 
@@ -33,6 +30,13 @@ extern "C" {
 #include "tch_timer.h"
 #include "tch_gpio.h"
 #include "tch_sdio.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 
 /**
@@ -62,9 +66,9 @@ extern "C" {
  *   */
 
 
-#define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
-#define tch_assert(api,b,err) if(!b){api->Thread->exit(api->Thread->self(),err);}
-#define DECLARE_THREADROUTINE(fn)                    int fn(const tch_core_api_t* ctx)
+#define tchWaitForever     			 0xFFFFFFFF     ///< wait forever timeout value
+#define tch_assert(api,b,err)		 if(!b){api->Thread->exit(api->Thread->self(),err);}
+#define DECLARE_THREADROUTINE(fn)    int fn(const tch_core_api_t* ctx)
 
 struct tch_thread_api {
 	/**

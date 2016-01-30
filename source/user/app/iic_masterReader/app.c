@@ -12,14 +12,13 @@
 
 DECLARE_THREADROUTINE(main){
 
+	tch_hal_module_iic_t i2c = ctx->Module->request(MODULE_TYPE_IIC);
+
 	tch_iicCfg iiccfg;
 	iiccfg.Addr = 0xF2;
 	iiccfg.AddrMode = IIC_ADDRMODE_7B;
 
-	//tch_iicHandle* iic = env->Device->i2c->allocIIC();
-
 	while(TRUE){
-		ctx->uStdLib->stdio->iprintf("\r\nI'm Wakeup\n");
 		ctx->Thread->sleep(1);
 	}
 }

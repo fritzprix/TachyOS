@@ -9,7 +9,7 @@
 #include "kernel/tch_fs.h"
 
 
-__TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
+const tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
 				.txdma = DMA_Str15,
 				.rxdma = DMA_NOT_USED,
@@ -60,16 +60,8 @@ __TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		}
 };
 
-/**
- * 	gpIo_x         port;
-	uint8_t        ch1p;
-	uint8_t        ch2p;
-	uint8_t        ch3p;
-	uint8_t        ch4p;
-	uint8_t        afv;
- */
 
-__TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
+const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
 				.port = tch_gpio0,
 				.chp = {
@@ -182,7 +174,7 @@ __TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 	uint8_t        sck;
  */
 
-__TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
+const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
 
 				.txdma = DMA_Str13,    //dma2_stream5
@@ -229,7 +221,7 @@ __TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 	uint8_t       afv;
  */
 
-__TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
+const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		{      // IIC 1
 				.txdma = DMA_Str6,    // dma1_stream 6
 				.rxdma = DMA_Str5,    // dma1_stream 5
@@ -263,14 +255,7 @@ __TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 };
 
 
-/**
- * 	dma_t         dma;
-	uint8_t       dmaCh;
-	tch_timer     timer;
-	uint8_t       timerCh;
-	uint8_t       timerExtsel;
- */
-__TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
+const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
 				.dma = DMA_Str12,
 				.dmaCh = DMA_Ch0,
@@ -295,91 +280,79 @@ __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 };
 
 
-/**
- * 	tch_port      port;
-	uint8_t       adc_routemsk;
-	uint8_t       occp;
- */
-__TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+const tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{
 				.port = {tch_gpio0,0},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch0
 		{
 				.port = {tch_gpio0,1},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch1
 		{
 				.port = {tch_gpio0,2},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch2
 		{
 				.port = {tch_gpio0,3},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch3
 		{
 				.port = {tch_gpio0,4},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch4
 		{
 				.port = {tch_gpio0,5},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch5
 		{
 				.port = {tch_gpio0,6},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch6
 		{
 				.port = {tch_gpio0,7},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch7
 		{
 				.port = {tch_gpio1,0},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch8
 		{
 				.port = {tch_gpio1,1},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},// ch9
 		{
 				.port = {tch_gpio2,0},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch10
 		{
 				.port = {tch_gpio2,1},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch11
 		{
 				.port = {tch_gpio2,2},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch12
 		{
 				.port = {tch_gpio2,3},
-				.adc_routemsk  = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
+				.adc_routemsk  = (ADC1_Bit | ADC2_Bit | ADC3_Bit)
 		},// ch13
 		{
 				.port = {tch_gpio2,4},
-				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk = (ADC1_Bit | ADC2_Bit)
 		},
 		{
 				.port = {tch_gpio2,5},
-				.adc_routemsk  = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
+				.adc_routemsk  = (ADC1_Bit | ADC2_Bit)
+		}
+};
+
+
+const tch_sdio_bs_t SDIO_BD_CFGs[MFEATURE_SDIO] = {
+		{
+				.dma = DMA_Str11,
+				.ch = DMA_Ch4,
+				.afv = 12
 		}
 };
 

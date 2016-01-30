@@ -46,6 +46,13 @@ int mcmp(const void* s1,const void* s2,size_t n)
 	return 0;
 }
 
+uint32_t strlen(const char* s)
+{
+	uint32_t cnt = 0;
+	while(*(s++) != '\0') cnt++;
+	return cnt;
+}
+
 char* strchar(const char* s,int c)
 {
 	uint32_t idx = 0;

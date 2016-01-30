@@ -1,9 +1,0 @@
-OBJ-y+=app.uo\
-			 bar_test.uo\
-			 mailq_test.uo\
-			 monitor_test.uo\
-			 mpool_test.uo\
-			 msgq_test.uo\
-			 mtx_test.uo\
-			 semaphore_test.uo\
-			 thread_test.uo

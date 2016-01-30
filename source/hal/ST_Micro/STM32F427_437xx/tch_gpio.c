@@ -55,7 +55,10 @@
 
 #define GPIO_INTERRUPT_INIT      ((uint32_t) 0xF8 << 16)
 #define GPIO_INTERRUPT_INIT_MSK  ((uint32_t) 0xFF << 16)
+
+#ifndef GPIO_CLASS_KEY
 #define GPIO_CLASS_KEY  	     ((uint16_t) 0x3D03)
+#endif
 
 
 #define SET_INTERRUPT(gpio_handle)  ((tch_gpio_handle_prototype*) gpio_handle)->state |= GPIO_INTERRUPT_INIT
@@ -64,21 +67,21 @@
 
 
 typedef struct tch_gpio_manager_internal_t {
-	tch_hal_module_gpio_t                 _pix;
-	tch_mtxId                     mtxId;
-	tch_condvId                   condvId;
-	const uint8_t                 port_cnt;
-	const uint8_t                 io_cnt;
+	tch_hal_module_gpio_t			_pix;
+	tch_mtxId						mtxId;
+	tch_condvId						condvId;
+	const uint8_t					port_cnt;
+	const uint8_t 					io_cnt;
 }tch_gpio_manager;
 
 typedef struct tch_gpio_handle_prototype_t {
-	tch_gpioHandle               _pix;
-	uint8_t                       idx;
-	uint32_t                      state;
-	uint32_t                      pMsk;
-	tch_mtxId                     mtxId;
-	tch_IoEventCallback_t         cb;
-	const tch_core_api_t*                    env;
+	tch_gpioHandle					_pix;
+	uint8_t 						idx;
+	uint32_t 						state;
+	uint32_t 						pMsk;
+	tch_mtxId 						mtxId;
+	tch_IoEventCallback_t 			cb;
+	const tch_core_api_t* 						env;
 }tch_gpio_handle_prototype;
 
 

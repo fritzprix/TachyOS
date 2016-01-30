@@ -10,7 +10,7 @@
 
 static DECLARE_THREADROUTINE(test_run);
 
-tchStatus do_test_thread(const tch_core_api_t* ctx)
+tchStatus do_thread_test(const tch_core_api_t* ctx)
 {
 	thread_config_t config;
 	uint32_t cnt = 0;
@@ -31,7 +31,8 @@ static DECLARE_THREADROUTINE(test_run)
 	uint32_t* cnt = (uint32_t*) ctx->Thread->getArg();
 	tch_mtxId mtx = ctx->Mtx->create();
 	tch_condvId condv = ctx->Condv->create();
-	while(*cnt != 100)
+	while(*cnt != 100){
 		(*cnt)++;
+	}
 	return tchOK;
 }

@@ -28,7 +28,10 @@
 #define ADC_Precision_Pos     ((uint8_t) 24)
 #define ADC_CR2_EXTSEL_Pos    ((uint8_t) 24)
 
+#ifndef ADC_CLASS_KEY
 #define ADC_CLASS_KEY         ((uint16_t) 0x4230)
+#endif
+
 #define ADC_BUSY_FLAG         ((uint32_t) 0x10000)
 
 

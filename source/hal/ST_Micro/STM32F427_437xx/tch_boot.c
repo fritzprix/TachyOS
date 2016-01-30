@@ -200,7 +200,7 @@ void tch_boot_setSystemClock(){
 	    else
 	    { /* If HSE fails to start-up, the application will have wrong clock
 	           configuration. User can add here some code to deal with this error */
-			KERNEL_PANIC("tch_boot.c","clock init failed");
+			KERNEL_PANIC("clock init failed");
 	    }
 
 }

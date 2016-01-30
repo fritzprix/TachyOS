@@ -25,6 +25,7 @@ extern "C"{
 #define MODULE_TYPE_TIMER				((uint32_t) 6)
 #define MODULE_TYPE_ANALOGIN			((uint32_t) 7)
 #define MODULE_TYPE_ANALOGOUT			((uint32_t) 8)
+#define MODULE_TYPE_SDIO				((uint32_t) 9)
 
 
 typedef struct module_map {
