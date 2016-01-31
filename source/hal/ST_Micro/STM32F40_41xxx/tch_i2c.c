@@ -187,7 +187,7 @@ __USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch
 
 	tch_DmaCfg dmaCfg;
 	tch_iic_descriptor* iicDesc = &IIC_HWs[i2c];
-	tch_iic_bs_t* iicbs = &IIC_BD_CFGs[i2c];
+	const tch_iic_bs_t* iicbs = &IIC_BD_CFGs[i2c];
 	I2C_TypeDef* iicHw = iicDesc->_hw;
 	tch_iic_handle_prototype* ins = NULL;
 

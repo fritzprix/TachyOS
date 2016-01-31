@@ -23,7 +23,7 @@
 #include "tch.h"
 #include "tch_dma.h"
 #include "tch_rtc.h"
-#include "kernel/tch_rendezvu.h"
+#include "kernel/tch_waitq.h"
 
 
 
@@ -42,7 +42,7 @@ typedef struct _tch_gpio_descriptor {
 
 typedef struct _tch_ioInterrupt_descriptor {
 	void*                     io_occp;
-	tch_rendzvCb			  rendezv;
+	tch_waitqCb				  waitq;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 

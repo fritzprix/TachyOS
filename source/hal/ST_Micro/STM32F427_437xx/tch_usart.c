@@ -200,7 +200,7 @@ static tch_usartHandle tch_usart_open(const tch_core_api_t* env,uart_t port,tch_
 	env->Mtx->unlock(&mtx); // exit critical section
 	tch_uart_descriptor* uDesc = &UART_HWs[port];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
-	tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
+	const tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
 
 	uDesc->_handle = uins = env->Mem->alloc(sizeof(struct tch_usart_handle_prototype_s));   // if successfully get io handle, create uart handle instance
 	mset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure

@@ -22,6 +22,7 @@
 #include "kernel/tch_condv.h"
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_waitq.h"
 
 
 
@@ -311,7 +312,8 @@ static tchStatus tch_gpio_registerEvent(tch_gpioHandle* self,pin p,const gpio_ev
 		env->Mtx->unlock(&lock);
 		return tchErrorResource;
 	}
-	tch_rendzvInit(&ioIrqObj->rendezv);
+
+	tch_waitqInit(&ioIrqObj->waitq, WAITQ_POL_THREADPRIORITY);
 
 	ioIrqObj->io_occp = ins;
 	SET_INTERRUPT(ins);
@@ -345,7 +347,7 @@ static tchStatus tch_gpio_unregisterEvent(tch_gpioHandle* self,pin p)
 
 	uint16_t pmsk = (1 << p);
 	ioIntrDesc->io_occp = NULL;
-	tch_rendzvDeinit(&ioIntrDesc->rendezv);
+	tch_waitqDeinit(&ioIntrDesc->waitq);
 
 	// TODO: replace barrier
 	tch_disableInterrupt(ioIntrDesc->irq);
@@ -430,7 +432,7 @@ static BOOL tch_gpio_waitEvent(tch_gpioHandle* self,uint8_t pin,uint32_t timeout
 	tch_ioInterrupt_descriptor* ioIrqObj = &IoInterrupt_HWs[pin];
 	if(ioIrqObj->io_occp != self)
 		return FALSE;
-	return env->Rendezvous->sleep(&ioIrqObj->rendezv,timeout) == tchOK;
+	return env->WaitQ->sleep(&ioIrqObj->waitq,timeout) == tchOK;
 }
 
 
@@ -508,7 +510,7 @@ static void tch_gpio_handleIrq(uint8_t base_idx,uint8_t group_cnt)
 			if(_handle->cb)
 				_handle->cb((tch_gpioHandle*)_handle,base_idx + pos);
 			EXTI->PR |= pMsk;
-			_handle->env->Rendezvous->wake(&ioIntObj->rendezv);
+			_handle->env->WaitQ->wakeAll(&ioIntObj->waitq);
 		}
 		ext_pr >>= 1;
 		pMsk <<= 1;

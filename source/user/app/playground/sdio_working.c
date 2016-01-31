@@ -11,6 +11,7 @@
 #include "tch.h"
 #include "sdio_working.h"
 
+
 tchStatus start_sdio_test(const tch_core_api_t* api)
 {
 	tch_sdioDevId devs[10];
@@ -20,8 +21,10 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 
 	tch_sdioCfg_t sdio_cfg;
 	sdio->initCfg(&sdio_cfg, 4, ActOnSleep);
-	tch_sdioHandle_t* sdio_handle = sdio->alloc(api, &sdio_cfg, tchWaitForever);
-	sdio_handle->deviceId(sdio_handle, SDC, devs, 10);
+	tch_sdioHandle_t sdio_handle = sdio->alloc(api, &sdio_cfg, tchWaitForever);
+//	uint32_t devcnt = sdio_handle->deviceId(sdio_handle, SDC, devs, 10);
+
+//	api->Dbg->print(api->Dbg->Normal, 0 ,"device identification complete : %d\n\r", devcnt);
 
 	return tchOK;
 }

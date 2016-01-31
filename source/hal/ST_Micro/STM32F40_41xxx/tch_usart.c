@@ -200,7 +200,7 @@ static tch_usartHandle tch_usart_open(const tch_core_api_t* env,uart_t port,tch_
 	env->Mtx->unlock(&mtx); // exit critical section
 	tch_uart_descriptor* uDesc = &UART_HWs[port];
 	USART_TypeDef* uhw = (USART_TypeDef*) uDesc->_hw;
-	tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
+	const tch_uart_bs_t* ubs = &UART_BD_CFGs[port];
 
 	uDesc->_handle = uins = env->Mem->alloc(sizeof(struct tch_usart_handle_prototype_s));   // if successfully get io handle, create uart handle instance
 	mset(uins,0,sizeof(struct tch_usart_handle_prototype_s));       // clear instance data structure
@@ -470,7 +470,8 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
 		uhw->SR &= ~USART_SR_TC;    // clear tc
-		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
+		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result))
+		{  // if dma fails, try again
 			result = tchErrorIo;
 			RETURN_SAFELY();
 		}

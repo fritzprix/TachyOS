@@ -61,6 +61,9 @@
 
 #define SDIO_CMD_PIN		((uint8_t) 2)
 
+#define SDIO_DETECT_PIN		((uint8_t) 8)
+
+#define SDIO_DETECT_PORT	tch_gpio0
 #define SDIO_DATA_PORT		tch_gpio2
 #define SDIO_CMD_PORT		tch_gpio3
 
@@ -69,6 +72,7 @@ struct tch_sdio_handle_prototype  {
 	uint32_t 							status;
 	tch_gpioHandle*						data_port;
 	tch_gpioHandle*						cmd_port;
+	tch_gpioHandle*						detect_port;
 	tch_dmaHandle*						dma;
 	tch_eventId							evId;
 	const tch_core_api_t*				api;
@@ -140,7 +144,6 @@ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpo
 	cfg->lpopt = lpopt;
 }
 
-
 static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdioCfg_t* config,uint32_t timeout)
 {
 	if(!config)
@@ -151,21 +154,21 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 
 	if(api->Mtx->lock(&mtx,timeout) != tchOK)
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	while(sdio_hw->_handle != NULL)
 	{
 		if(api->Condv->wait(&condv,&mtx,timeout) != tchOK)
 		{
 			DBG_PRINT("SDIO Allocation Timeout\n\r");
-			goto RESOURCE_FAIL;
+			goto INIT_FAIL;
 		}
 	}
 	ins = (struct tch_sdio_handle_prototype*) api->Mem->alloc(sizeof(struct tch_sdio_handle_prototype));
-
+	sdio_hw->_handle = ins;
 	if(!ins)
 	{
 		DBG_PRINT("Out of Memory\n\r");
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	}
 
 	mset(ins,0, sizeof(struct tch_sdio_handle_prototype));
@@ -174,14 +177,14 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	if(!dma && sdio_bs->dma != DMA_NOT_USED)
 	{
 		DBG_PRINT("No DMA available\n\r");
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	}
 
 	gpio = api->Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
 		DBG_PRINT("GPIO is not Available\n\r");
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	}
 
 	gpio_config_t ioconfig;
@@ -198,14 +201,11 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	ins->cmd_port = gpio->allocIo(api, SDIO_CMD_PORT, 1 << SDIO_CMD_PIN, &ioconfig, timeout);
 
-
 	if(!ins->data_port || !ins->cmd_port)
 	{
 		DBG_PRINT("GPIO(s) are not available for SDIO\n\r");
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	}
-
-
 
 	if(sdio_bs->dma != DMA_NOT_USED)
 	{
@@ -227,10 +227,9 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		if(!ins->dma)
 		{
 			DBG_PRINT("DMA is not abilable\n\r");
-			goto RESOURCE_FAIL;
+			goto INIT_FAIL;
 		}
 	}
-
 
 	// set ops for SDIO handle
 
@@ -244,14 +243,13 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	ins->pix.writeBlock = tch_sdio_handle_writeBlock;
 	ins->pix.setPassword = tch_sdio_handle_setPassword;
 
-
 	ins->mtx = api->Mtx->create();
 	ins->condv = api->Condv->create();
 	ins->evId = api->Event->create();
 
 	if(!ins->mtx || !ins->condv || !ins->evId)
 	{
-		goto RESOURCE_FAIL;
+		goto INIT_FAIL;
 	}
 
 	api->Mtx->unlock(&mtx);
@@ -290,7 +288,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	return (tch_sdioHandle_t) ins;
 
-RESOURCE_FAIL:
+INIT_FAIL:
 	if(ins)
 	{
 		if(ins->mtx)
@@ -344,7 +342,6 @@ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio)
 	*sdio_hw->_lpclkenr &= ~sdio_hw->lpclkmsk;
 	*sdio_hw->_clkenr &= ~sdio_hw->clkmsk;
 
-
 	SDIO_INVALIDATE(ins);
 	CLR_BUSY(ins);
 	api->Mtx->destroy(ins->mtx);
@@ -353,7 +350,6 @@ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio)
 	api->Mem->free(ins);
 	return tchOK;
 }
-
 
 
 static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt)
@@ -417,7 +413,6 @@ static tchStatus tch_sdio_handle_unlock(tch_sdioHandle_t sdio, tch_sdioDevId dev
 
 }
 
-
 static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
 
@@ -425,6 +420,24 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
+	if(!ins)
+		return 0;
+	const tch_core_api_t* api = ins->api;
+	if(api->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
+		return 0;
+	while(IS_BUSY(ins))
+	{
+		if(api->Condv->wait(ins->condv, ins->mtx, tchWaitForever) != tchOK)
+			return 0;
+	}
+	SET_BUSY(ins);
+	if(api->Mtx->unlock(ins->mtx) != tchOK)
+		return 0;
+
+	const tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
+	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
+
+	sdio_reg->CMD |= (1 & SDIO_CMD_CMDINDEX) | SDIO_CMD_CPSMEN;			// send SEND_OP_CMD
 
 }
 
@@ -433,11 +446,13 @@ static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_
 
 }
 
-
-
-
 // interrupt handler
-void SDIO_IRQHandler(){
-
+void SDIO_IRQHandler()
+{
+	const tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
+	struct tch_sdio_handle_prototype* sdio_ins = sdio_hw->_handle;
+	const tch_core_api_t* api = sdio_ins->api;
+	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
+	api->Dbg->print(api->Dbg->Normal,0, "SDIO Interrupted with %d\n\r",sdio_reg->RESPCMD);
 }
 

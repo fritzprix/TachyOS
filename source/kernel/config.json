@@ -102,12 +102,12 @@
   		"MPOOL_CLASS_KEY":"rand(2)"
   	}
   },
-  "USE_REDEZVOUS":{
+  "USE_WAITQ":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
   	"gen-list":{
-  		"RENDEZVOUS_CLASS_KEY":"rand(2)"
+  		"WAITQ_CLASS_KEY":"rand(2)"
   	}
   },
   "USE_SEMAPHORE":{

@@ -32,8 +32,8 @@
 #include "kernel/tch_mpool.h"
 #include "kernel/tch_event.h"
 #include "kernel/tch_err.h"
-#include "kernel/tch_rendezvu.h"
 #include "kernel/tch_kernel.h"
+#include "kernel/tch_waitq.h"
 #include "kernel/tch_mailq.h"
 #include "kernel/tch_msgq.h"
 #include "kernel/tch_thread.h"
@@ -64,7 +64,7 @@ __USER_RODATA__ const tch_core_api_t RuntimeInterface = {
 		.Time = &Time_IX,
 		.Condv = &CondVar_IX,
 		.Barrier = &Barrier_IX,
-		.Rendezvous = &Rendezvous_IX,
+		.WaitQ = &WaitQ_IX,
 		.Mempool = &MPool_IX,
 		.MailQ = &MailQ_IX,
 		.MsgQ = &MsgQ_IX,
