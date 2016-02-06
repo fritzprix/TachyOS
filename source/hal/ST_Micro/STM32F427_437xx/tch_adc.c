@@ -28,7 +28,10 @@
 #define ADC_Precision_Pos     ((uint8_t) 24)
 #define ADC_CR2_EXTSEL_Pos    ((uint8_t) 24)
 
+#ifndef ADC_CLASS_KEY
 #define ADC_CLASS_KEY         ((uint16_t) 0x4230)
+#endif
+
 #define ADC_BUSY_FLAG         ((uint32_t) 0x10000)
 
 
@@ -146,7 +149,7 @@ static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCf
 		return NULL;
 
 	tch_adc_descriptor* adcDesc = &ADC_HWs[adc];
-	tch_adc_bs_t* adcBs = &ADC_BD_CFGs[adc];
+	tch_adc_bs_t* adcBs = (tch_adc_bs_t*) &ADC_BD_CFGs[adc];
 	tch_adc_channel_bs_t* adcChBs = NULL;
 	ADC_TypeDef* adcHw = adcDesc->_hw;
 	uint8_t smphld = 0;
@@ -206,7 +209,7 @@ static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCf
 		if(cfg->chdef.chselMsk & 1)
 		{
 			cfg->chdef.chcnt--;
-			adcChBs = &ADC_CH_BD_CFGs[ch_idx];
+			adcChBs = (tch_adc_channel_bs_t*) &ADC_CH_BD_CFGs[ch_idx];
 			if(adcChBs->adc_routemsk & (1 << adc))
 			{
 				ins->io_handle[ins->chcnt++] = gpio->allocIo(env,adcChBs->port.port,(1 << adcChBs->port.pin),&iocfg,timeout);
@@ -358,7 +361,7 @@ static uint32_t tch_adc_read(const tch_adcHandle* self,uint8_t ch)
 static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_mailqId q, uint32_t chnksz, uint32_t convCnt){
 	tch_adc_handle_prototype* ins = (tch_adc_handle_prototype*) self;
 	ADC_TypeDef* adcHw = NULL;
-	tch_adc_bs_t* adcBs = NULL;
+	const tch_adc_bs_t* adcBs = &ADC_BD_CFGs[ins->adc];
 	tchEvent evt;
 	tchStatus result = tchOK;
 	tch_adc_descriptor* adcDesc = NULL;
@@ -367,7 +370,6 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 	if(!tch_adc_isValid(ins))
 		return tchErrorParameter;
 
-	adcBs = &ADC_BD_CFGs[ins->adc];
 	adcDesc = &ADC_HWs[ins->adc];
 	adcHw = (ADC_TypeDef*) adcDesc->_hw;
 	if((result = ins->env->Mtx->lock(ins->mtx,tchWaitForever)) != tchOK)

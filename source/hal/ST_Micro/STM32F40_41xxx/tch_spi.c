@@ -152,7 +152,7 @@ __USER_API__ static void tch_spi_initConfig(spi_config_t* cfg)
 __USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_t spi,spi_config_t* cfg,uint32_t timeout,tch_PwrOpt popt)
 {
 
-	tch_spi_bs_t* spibs =  &SPI_BD_CFGs[spi];
+	const tch_spi_bs_t* spibs =  &SPI_BD_CFGs[spi];
 	tch_spi_descriptor* spiDesc = &SPI_HWs[spi];
 	tch_spi_handle_prototype* ins = NULL;
 	SPI_TypeDef* spiHw = NULL;
@@ -168,7 +168,7 @@ __USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_
 			return NULL;
 	}
 
-	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) tch_kmod_request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) env->Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 

@@ -6,7 +6,8 @@
  */
 
 #include "tch.h"
-#include "uart_test.h"
+#include "test.h"
+#include "kernel/util/string.h"
 
 
 static DECLARE_THREADROUTINE(printerThreadRoutine);
@@ -21,9 +22,9 @@ tchStatus uart_performTest(tch_core_api_t* ctx){
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
 
-	tch_hal_module_usart_t* uart = ctx->Module\->request(MODULE_TYPE_UART);
+	tch_hal_module_usart_t* uart = ctx->Module->request(MODULE_TYPE_UART);
 	if(!uart)
-		return tchErrorOS;
+		return tchErrorResource;
 
 	tch_usartHandle serial = NULL;
 
@@ -37,11 +38,11 @@ tchStatus uart_performTest(tch_core_api_t* ctx){
 	mcnt = 50;
 	const char* openMsg = "UART Opened By Main Thread \n\r";
 	const char* myname = "I'm Main Thread \n\r";
-	int size = ctx->uStdLib->string->strlen(myname);
+	int size = strlen(myname);
 
 	while(mcnt--){
-		serial = ctx->Device->usart->allocate(ctx,tch_USART2,&ucfg,tchWaitForever,ActOnSleep);
-		serial->write(serial,openMsg,ctx->uStdLib->string->strlen(openMsg));
+		serial = uart->allocate(ctx,tch_USART2,&ucfg,tchWaitForever,ActOnSleep);
+		serial->write(serial,openMsg,strlen(openMsg));
 		ctx->Thread->yield(0);
 		serial->write(serial,myname,size);
 		ctx->Thread->yield(0);
@@ -59,16 +60,15 @@ static DECLARE_THREADROUTINE(printerThreadRoutine){
 	pcnt = 50;
 	const char* openedMsg = "UART Opened by Printer \r\n";
 	const char* myname = "I'm Printer Thread \r\n";
-	int size = ctx->uStdLib->string->strlen(myname);
+	int size = strlen(myname);
 	tch_UartCfg ucfg;
 	ucfg.Buadrate = 115200;
 	ucfg.FlowCtrl = FALSE;
 	ucfg.Parity = USART_Parity_NON;
 	ucfg.StopBit = USART_StopBit_1B;
-	tch_usartHandle serial = NULL;
+	tch_usartHandle serial = (tch_usartHandle) ctx->Thread->getArg();
 	while(pcnt--){
-		serial = ctx->Device->usart->allocate(ctx,tch_USART2,&ucfg,tchWaitForever,ActOnSleep);
-		serial->write(serial,openedMsg,ctx->uStdLib->string->strlen(openedMsg));
+		serial->write(serial,openedMsg,strlen(openedMsg));
 		ctx->Thread->yield(0);
 		serial->write(serial,myname,size);
 		ctx->Thread->yield(0);

@@ -34,6 +34,7 @@ typedef struct tch_spi_bs tch_spi_bs_t;
 typedef struct tch_iic_bs tch_iic_bs_t;
 typedef struct tch_adc_bs tch_adc_bs_t;
 typedef struct tch_adc_ch_bs tch_adc_channel_bs_t;
+typedef struct tch_sdio_bs tch_sdio_bs_t;
 
 
 
@@ -46,12 +47,16 @@ typedef struct tch_adc_ch_bs tch_adc_channel_bs_t;
  *  implementation.
  *	======================================================
  */
-extern __TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO];
-extern __TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER];
-extern __TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI];
-extern __TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC];
-extern __TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC];
-extern __TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch];
+
+
+extern const tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO];
+extern const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER];
+extern const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI];
+extern const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC];
+extern const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC];
+extern const tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch];
+extern const tch_sdio_bs_t SDIO_BD_CFGs[MFEATURE_SDIO];
+
 
 extern tch_board_descriptor tch_board_init(const tch_core_api_t* ctx);
 

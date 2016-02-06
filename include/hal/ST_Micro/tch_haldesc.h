@@ -23,7 +23,7 @@
 #include "tch.h"
 #include "tch_dma.h"
 #include "tch_rtc.h"
-#include "kernel/tch_rendezvu.h"
+#include "kernel/tch_waitq.h"
 
 
 
@@ -42,7 +42,7 @@ typedef struct _tch_gpio_descriptor {
 
 typedef struct _tch_ioInterrupt_descriptor {
 	void*                     io_occp;
-	tch_rendzvCb			  rendezv;
+	tch_waitqCb				  waitq;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 
@@ -214,18 +214,11 @@ struct tch_adc_bs {
 struct tch_adc_ch_bs {
 	tch_port      port;
 	uint8_t       adc_routemsk;
-	uint8_t       occp;
 };
 
 struct tch_sdio_bs {
-	dma_t		rx_dma;
-	dma_t		tx_dma;
-	uint8_t		rx_ch;
-	uint8_t		tx_ch;
-	gpIo_x		port;			// gpio port
-	uint8_t 	clk;			// clock pin
-	uint8_t		cmd;			// cmd pin
-	uint8_t		d[8];			// data pin
+	dma_t		dma;
+	uint8_t		ch;
 	uint8_t 	afv;
 } ;
 
