@@ -18,15 +18,7 @@ typedef struct tch_sdio_cfg tch_sdioCfg_t;
 
 typedef enum {
 	MMC , SDC, SDIOC
-}tch_sdioDevType;
-
-
-struct tch_sdio_device_info {
-	tch_sdioDevType			type;
-	uint16_t 				id;
-	BOOL 					is_protected;
-	BOOL					is_locked;
-};
+}SdioDevType;
 
 
 struct tch_sdio_cfg {
@@ -36,7 +28,7 @@ struct tch_sdio_cfg {
 
 
 struct tch_sdio_handle {
-	uint32_t (*deviceId)(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+	uint32_t (*deviceId)(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 	tchStatus (*deviceInfo)(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
 	tchStatus (*writeBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 	tchStatus (*readBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);

@@ -16,12 +16,28 @@
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_dbg.h"
 
+
+
 #ifndef SDIO_CLASS_KEY
 #define SDIO_CLASS_KEY				(uint16_t) 0x3F65
 #endif
 
+#define MAX_SDIO_DEVCNT				10
+#define CMD_CLEAR_MASK              ((uint32_t)0xFFFFF800)
+#define SDIO_ACMD41_ARG_HCS			(1 << 30)
+#define SDIO_ACMD41_ARG_XPC			(1 << 28)
+#define SDIO_ACMD41_ARG_S18R		(1 << 24)
+
+#define SDIO_R3_CMD					((1 << 6) - 1)
+
+#define SDIO_R3_IDLE				((uint32_t) 1 << 31)
+#define SDIO_R3_CCS					((uint32_t) 1 << 30)
+#define SDIO_R3_UHSII				((uint32_t) 1 << 29)
+#define SDIO_R3_S18A				((uint32_t) 1 << 24)
+
 #define SDIO_MODE_DMA				((uint32_t) 0x10000)
 #define SDIO_BUSY					((uint32_t) 0x20000)
+
 
 #define SDIO_VALIDATE(ins)	do {\
 	((struct tch_sdio_handle_prototype*) ins)->status |= (0xffff & ((uint32_t) ins ^ SDIO_CLASS_KEY));\
@@ -42,6 +58,7 @@
 }while(0)
 
 #define CLR_BUSY(sdio) do {\
+	clear_system_busy();\
 	((struct tch_sdio_handle_prototype*) sdio)->status &= ~SDIO_BUSY;\
 }while(0)
 
@@ -79,13 +96,36 @@ struct tch_sdio_handle_prototype  {
 	tch_mtxId							mtx;
 	tch_condvId							condv;
 };
+
+
+struct tch_sdio_device_info {
+	SdioDevType				type;
+#define SDIO_CAP_SDSC					((uint8_t) 0)
+#define SDIO_CAP_SDHXC					((uint8_t) 1)
+	uint8_t					cap;
+#define SDIO_S18A_SUPPORT_FLAG			((uint8_t) 1)
+#define SDIO_UHSII_SUPPORT_FLAG			((uint8_t) 2)
+#define SDIO_READY_FLAG					((uint8_t) 4)
+	uint8_t					status;
+	uint16_t 				id;
+	BOOL 					is_protected;
+	BOOL					is_locked;
+};
+
+typedef uint8_t		sdio_resp_t;
+#define SDIO_RESP_SHORT		((sdio_resp_t) 1)
+#define SDIO_RESP_LONG		((sdio_resp_t) 2)
+
+
 /*** private function declaration ***/
 static int tch_sdio_init();
 static void tch_sdio_exit();
 
+
 static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
+static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp, sdio_resp_t rtype, uint32_t* resp,uint32_t timeout);
 
 
 __USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt);
@@ -93,7 +133,7 @@ __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,co
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
 
-__USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+__USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 __USER_API__ static tchStatus tch_sdio_handle_deviceInfo(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
 __USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
@@ -115,6 +155,9 @@ static tch_condvCb condv;
 
 static tch_hal_module_dma_t* dma;
 static tch_hal_module_gpio_t* gpio;
+
+static tch_sdioDevInfo dev_infos[MAX_SDIO_DEVCNT];
+static uint8_t devcnt;
 
 
 static int tch_sdio_init()
@@ -173,7 +216,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	mset(ins,0, sizeof(struct tch_sdio_handle_prototype));
 
-	dma = api->Module->request(MODULE_TYPE_DMA);
+	dma = tch_kmod_request(MODULE_TYPE_DMA);
 	if(!dma && sdio_bs->dma != DMA_NOT_USED)
 	{
 		DBG_PRINT("No DMA available\n\r");
@@ -232,6 +275,9 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	}
 
 	// set ops for SDIO handle
+	mset(dev_infos, 0, sizeof(struct tch_sdio_device_info) * MAX_SDIO_DEVCNT);
+	devcnt = 0;
+
 
 	ins->pix.deviceId = tch_sdio_handle_device_id;
 	ins->pix.deviceInfo = tch_sdio_handle_deviceInfo;
@@ -275,7 +321,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		sdio_reg->CLKCR |= SDIO_CLKCR_HWFC_EN;		// hardware flow control enable
 	}
 	// enable error handling interrupt
-	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE);
+	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE | SDIO_MASK_CMDRENDIE | SDIO_MASK_CMDSENTIE | SDIO_MASK_CCRCFAILIE);
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;			// power save mode enabled
 	sdio_reg->CLKCR |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
 	sdio_reg->CLKCR |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
@@ -284,6 +330,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	// set clock register for Identification phase
 
 	ins->api = api;
+	tch_enableInterrupt(sdio_hw->irq, HANDLER_HIGH_PRIOR);
 	SDIO_VALIDATE(ins);
 
 	return (tch_sdioHandle_t) ins;
@@ -352,7 +399,7 @@ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio)
 }
 
 
-static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt)
+static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt)
 {
 	if(!sdio)
 		return 0;
@@ -420,11 +467,12 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
-	if(!ins)
+	if(!ins || !devIds)
 		return 0;
 	const tch_core_api_t* api = ins->api;
 	if(api->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
 		return 0;
+
 	while(IS_BUSY(ins))
 	{
 		if(api->Condv->wait(ins->condv, ins->mtx, tchWaitForever) != tchOK)
@@ -434,17 +482,86 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 	if(api->Mtx->unlock(ins->mtx) != tchOK)
 		return 0;
 
+	tchStatus res;
 	const tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
 
-	sdio_reg->CMD |= (1 & SDIO_CMD_CMDINDEX) | SDIO_CMD_CPSMEN;			// send SEND_OP_CMD
+	sdio_send_cmd(ins, 0, 0, FALSE, SDIO_RESP_SHORT, NULL, tchWaitForever);			// send reset
 
+	uint32_t resp[4];
+	sdio_send_cmd(ins, 8, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);		// send op cond
+
+	res = tchOK;
+	while(res != tchErrorTimeoutResource && (devcnt < max_idcnt))
+	{
+		sdio_send_cmd(ins, 55, 0, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
+		res = sdio_send_cmd(ins, 41, SDIO_ACMD41_ARG_HCS , TRUE, SDIO_RESP_SHORT, resp, 1000);
+
+		if(sdio_reg->RESPCMD == SDIO_R3_CMD)
+		{
+			if(!(resp[0] & SDIO_R3_IDLE))
+			{
+				mset(&dev_infos[devcnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
+				dev_infos[devcnt].type = SDC;
+				dev_infos[devcnt].cap = resp[0] >> 29;
+				if(resp[0] >> 23)
+					dev_infos[devcnt].status |= SDIO_S18A_SUPPORT_FLAG;
+				api->Dbg->print(api->Dbg->Normal,0 , "SDIO Ready");
+
+			}
+		}
+	}
+
+
+
+	if(api->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
+		return 0;
+	CLR_BUSY(ins);
+	api->Condv->wakeAll(ins->condv);
+	api->Mtx->unlock(ins->mtx);
 }
 
 static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
 
 }
+
+
+static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp,sdio_resp_t rtype, uint32_t* resp, uint32_t timeout)
+{
+	if(!ins)
+		return tchErrorParameter;
+	tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
+	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
+	int32_t ev;
+
+	sdio_reg->ARG = arg;
+	tchStatus res;
+	uint32_t cmd = (SDIO_CMD_CMDINDEX & cmdidx) | SDIO_CMD_CPSMEN;
+	if(waitresp)
+	{
+		cmd |= ((rtype == SDIO_RESP_SHORT)? SDIO_CMD_WAITRESP_0 : SDIO_CMD_WAITRESP);
+		sdio_reg->CMD = cmd;
+		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout)) != tchOK)
+			return res;
+		ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDREND);
+		mcpy(resp, &sdio_reg->RESP1, 4 * sizeof(uint32_t));
+		if((ev & ~SDIO_STA_CMDREND))
+		{
+			return tchErrorIo;
+		}
+	}
+	else
+	{
+		cmd |= SDIO_CMD_ENCMDCOMPL;
+		sdio_reg->CMD = cmd;
+		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout)) != tchOK)
+			return res;
+		ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT);
+	}
+	return res;
+}
+
 
 // interrupt handler
 void SDIO_IRQHandler()
@@ -453,6 +570,26 @@ void SDIO_IRQHandler()
 	struct tch_sdio_handle_prototype* sdio_ins = sdio_hw->_handle;
 	const tch_core_api_t* api = sdio_ins->api;
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
-	api->Dbg->print(api->Dbg->Normal,0, "SDIO Interrupted with %d\n\r",sdio_reg->RESPCMD);
+	if(sdio_reg->STA & SDIO_STA_CMDSENT)
+	{
+		sdio_reg->ICR |= SDIO_ICR_CMDSENTC;
+		api->Event->set(sdio_ins->evId,SDIO_STA_CMDSENT);
+		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Sent\n\r",(sdio_reg->CMD & SDIO_CMD_CMDINDEX));
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_CMDREND)
+	{
+		sdio_reg->ICR |= SDIO_ICR_CMDRENDC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_CMDREND);
+		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Responded\n\r",(sdio_reg->RESPCMD & SDIO_RESPCMD_RESPCMD));
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_CCRCFAIL)
+	{
+		sdio_reg->ICR |= SDIO_ICR_CCRCFAILC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_CMDREND | SDIO_STA_CCRCFAIL);
+		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Responded\n\r wiht CRC Error", (sdio_reg->RESPCMD & SDIO_RESPCMD_RESPCMD));
+		return;
+	}
 }
 

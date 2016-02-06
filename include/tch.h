@@ -228,6 +228,7 @@ struct tch_messageQ_api {
 	/*!
 	 * \brief destroy msg queue
 	 */
+	tchStatus (*reset)(tch_msgqId);
 	tchStatus (*destroy)(tch_msgqId);
 };
 

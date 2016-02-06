@@ -13,7 +13,7 @@
 DECLARE_THREADROUTINE(main)
 {
 	start_led_blink(ctx);
-//	start_sdio_test(ctx);
+	start_sdio_test(ctx);
 	while(TRUE)
 	{
 		ctx->Thread->sleep(1);

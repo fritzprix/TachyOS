@@ -93,7 +93,7 @@ __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,co
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
 
-__USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+__USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 __USER_API__ static tchStatus tch_sdio_handle_deviceInfo(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
 __USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
@@ -352,7 +352,7 @@ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio)
 }
 
 
-static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,tch_sdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt)
+static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt)
 {
 	if(!sdio)
 		return 0;
