@@ -649,6 +649,7 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 		}
 };
 
+
 __TCH_STATIC_INIT tch_sdio_descriptor SDIO_HWs[MFEATURE_SDIO] = {
 		{
 				._sdio = SDIO,

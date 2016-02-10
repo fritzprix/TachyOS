@@ -40,6 +40,8 @@ struct alrm_descriptor {
 	time_t				alrm_time;
 	alrmIntv			alrm_period;
 };
+/**
+ */
 
 __USER_API__ static tchStatus tch_systime_getWorldTime(time_t* tp);
 __USER_API__ static tchStatus tch_systime_setWorldTime(const time_t epoch_gmt);

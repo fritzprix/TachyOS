@@ -20,6 +20,9 @@
 
 #ifndef TCH_H_
 #define TCH_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "tch_types.h"
 
@@ -30,13 +33,6 @@
 #include "tch_timer.h"
 #include "tch_gpio.h"
 #include "tch_sdio.h"
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 
 
 /**
@@ -66,9 +62,9 @@ extern "C" {
  *   */
 
 
-#define tchWaitForever     			 0xFFFFFFFF     ///< wait forever timeout value
-#define tch_assert(api,b,err)		 if(!b){api->Thread->exit(api->Thread->self(),err);}
-#define DECLARE_THREADROUTINE(fn)    int fn(const tch_core_api_t* ctx)
+#define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
+#define tch_assert(api,b,err) if(!b){api->Thread->exit(api->Thread->self(),err);}
+#define DECLARE_THREADROUTINE(fn)                    int fn(const tch_core_api_t* ctx)
 
 struct tch_thread_api {
 	/**
@@ -116,18 +112,12 @@ struct tch_barrier_api {
 	tchStatus (*destroy)(tch_barId bar);
 };
 
-typedef uint16_t tch_waitqPolicy;
 
-#define WAITQ_POL_THREADPRIORITY	((tch_waitqPolicy) 1)
-#define WAITQ_POL_FIFO				((tch_waitqPolicy) 2)
-#define WAITQ_POL_LIFO				((tch_waitqPolicy) 3)
-
-struct tch_waitq_api {
-	tch_waitqId (*create)(tch_waitqPolicy policy);
-	tchStatus (*sleep)(tch_waitqId waitq,uint32_t timeout);
-	tchStatus (*wake)(tch_waitqId waitq);
-	tchStatus (*wakeAll)(tch_waitqId waitq);
-	tchStatus (*destroy)(tch_waitqId waitq);
+struct tch_rendezvu_api {
+	tch_rendvId (*create)();
+	tchStatus (*sleep)(tch_rendvId rendv,uint32_t timeout);
+	tchStatus (*wake)(tch_rendvId rendv);
+	tchStatus (*destroy)(tch_rendvId rendv);
 };
 
 
@@ -228,8 +218,22 @@ struct tch_messageQ_api {
 	/*!
 	 * \brief destroy msg queue
 	 */
-	tchStatus (*reset)(tch_msgqId);
 	tchStatus (*destroy)(tch_msgqId);
+};
+
+
+typedef uint16_t tch_waitqPolicy;
+
+#define WAITQ_POL_THREADPRIORITY	((tch_waitqPolicy) 1)
+#define WAITQ_POL_FIFO				((tch_waitqPolicy) 2)
+#define WAITQ_POL_LIFO				((tch_waitqPolicy) 3)
+
+struct tch_waitq_api {
+	tch_waitqId (*create)(tch_waitqPolicy policy);
+	tchStatus (*sleep)(tch_waitqId waitq,uint32_t timeout);
+	tchStatus (*wake)(tch_waitqId waitq);
+	tchStatus (*wakeAll)(tch_waitqId waitq);
+	tchStatus (*destroy)(tch_waitqId waitq);
 };
 
 
@@ -258,7 +262,6 @@ struct tch_module_api {
 #define print_dbg( ...)			 ctx->Dbg->print(0, 0,  __VA_ARGS__)
 #define print_warn(...)			 ctx->Dbg->print(1, 0,  __VA_ARGS__)
 #define print_error(err, ...)	 ctx->Dbg->print(2, err,__VA_ARGS__)
-
 typedef uint8_t dbg_level;
 struct tcn_dbg_api {
 	const dbg_level Normal;

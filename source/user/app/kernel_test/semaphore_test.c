@@ -6,8 +6,7 @@
  */
 
 
-#include "tch.h"
-#include "utest.h"
+#include "semaphore_test.h"
 
 #define TEST_CNT  ((uint8_t) 200)
 
@@ -27,7 +26,7 @@ static volatile BOOL spin;
 static tch_semId ts;
 static uint16_t shVar;
 
-tchStatus do_test_semaphore(const tch_core_api_t* api){
+tchStatus semaphore_performTest(tch_core_api_t* api){
 
 	shVar = 0;
 	spin = TRUE;

@@ -3,7 +3,6 @@ INC-y+=$(ROOT_DIR)/include/kernel/autogen
 SRC-y+=$(ROOT_DIR)/source/kernel
 
 OBJ-y+=tch_bar.ko\
-		tch_waitq.ko\
 			 tch_err.ko\
 			 tch_event.ko\
 			 tch_fs.ko\
@@ -24,4 +23,5 @@ OBJ-y+=tch_bar.ko\
 			 tch_sem.ko\
 			 tch_sys.ko\
 			 tch_thread.ko\
+			 tch_waitq.ko\
 			 tch_time.ko

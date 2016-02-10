@@ -1,0 +1,6 @@
+{
+  "DEFAULT_APP_RCP":{
+    "type":"recipe",
+    "path":"./recipe.mk"
+  }
+}

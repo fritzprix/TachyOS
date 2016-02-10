@@ -13,7 +13,7 @@
  */
 
 #include "tch.h"
-#include "utest.h"
+#include "mailq_test.h"
 
 typedef struct person {
 	uint32_t age;
@@ -29,7 +29,7 @@ static tch_threadId receiver_id;
 
 tch_mailqId testmailq_id;
 
-tchStatus do_mailq_test(const tch_core_api_t* api){
+tchStatus mailq_performTest(tch_core_api_t* api){
 
 	mstat init_mstat,fin_mstat;
 
@@ -37,7 +37,7 @@ tchStatus do_mailq_test(const tch_core_api_t* api){
 
 	testmailq_id = api->MailQ->create(sizeof(person),10);
 
-	const tch_thread_api_t* Thread = api->Thread;
+	const tch_kernel_service_thread* Thread = api->Thread;
 	thread_config_t tcfg;
 	Thread->initConfig(&tcfg,sender,Normal,1<<9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);

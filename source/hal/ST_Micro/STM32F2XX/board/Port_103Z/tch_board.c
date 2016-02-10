@@ -8,7 +8,7 @@
 #include "tch_board.h"
 
 
-const tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
+__TCH_STATIC_INIT tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		{
 				.txdma = DMA_NOT_USED,
 				.rxdma = DMA_NOT_USED,
@@ -59,8 +59,16 @@ const tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		}
 };
 
+/**
+ * 	gpIo_x         port;
+	uint8_t        ch1p;
+	uint8_t        ch2p;
+	uint8_t        ch3p;
+	uint8_t        ch4p;
+	uint8_t        afv;
+ */
 
-const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
+__TCH_STATIC_INIT tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
 				.port = tch_gpio0,
 				{
@@ -163,7 +171,8 @@ const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		}
 };
 
-const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
+
+__TCH_STATIC_INIT tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
 
 				.txdma = DMA_NOT_USED,
@@ -199,8 +208,18 @@ const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 				.afv = 6
 		}
 };
+/**
+ * 	dma_t         txdma;
+	dma_t         rxdma;
+	uint8_t       txch;
+	uint8_t       rxch;
+	gpIo_x        port;
+	uint8_t       scl;
+	uint8_t       sda;
+	uint8_t       afv;
+ */
 
-const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
+__TCH_STATIC_INIT tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		{      // IIC 1
 				DMA_Str6,    // dma1_stream 6
 				DMA_Str5,    // dma1_stream 5
@@ -233,8 +252,21 @@ const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		}
 };
 
+/**
+ * typedef struct _tch_adc_bs_t {
+	dma_t         dma;
+	uint8_t       dmach;
+	uint8_t       afv;
+}tch_adc_bs;
 
-const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
+typedef struct _tch_adc_com_bs_t{
+	tch_port ports[MFEATURE_ADC_Ch];
+	uint32_t occp_status;
+};
+ */
+
+
+__TCH_STATIC_INIT tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
 				DMA_Str12,
 				DMA_Ch0,
@@ -258,33 +290,30 @@ const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		}
 };
 
-const tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
-		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch0
-		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch1
-		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch2
-		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch3
-		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit)},// ch4
-		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit)},// ch5
-		{{tch_gpio0,6},(ADC1_Bit | ADC2_Bit)},// ch6
-		{{tch_gpio0,7},(ADC1_Bit | ADC2_Bit)},// ch7
-		{{tch_gpio1,0},(ADC1_Bit | ADC2_Bit)},// ch8
-		{{tch_gpio1,1},(ADC1_Bit | ADC2_Bit)},// ch9
-		{{tch_gpio2,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch10
-		{{tch_gpio2,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch11
-		{{tch_gpio2,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch12
-		{{tch_gpio2,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit)},// ch13
-		{{tch_gpio2,4},(ADC1_Bit | ADC2_Bit)},
-		{{tch_gpio2,5},(ADC1_Bit | ADC2_Bit)}
+/**
+ *
+ * 	tch_port      port;
+	uint8_t       adc_routemsk;
+	uint8_t       occp;
+ */
+__TCH_STATIC_INIT tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
+		{{tch_gpio0,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch0
+		{{tch_gpio0,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch1
+		{{tch_gpio0,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch2
+		{{tch_gpio0,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch3
+		{{tch_gpio0,4},(ADC1_Bit | ADC2_Bit),0},// ch4
+		{{tch_gpio0,5},(ADC1_Bit | ADC2_Bit),0},// ch5
+		{{tch_gpio0,6},(ADC1_Bit | ADC2_Bit),0},// ch6
+		{{tch_gpio0,7},(ADC1_Bit | ADC2_Bit),0},// ch7
+		{{tch_gpio1,0},(ADC1_Bit | ADC2_Bit),0},// ch8
+		{{tch_gpio1,1},(ADC1_Bit | ADC2_Bit),0},// ch9
+		{{tch_gpio2,0},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch10
+		{{tch_gpio2,1},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch11
+		{{tch_gpio2,2},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch12
+		{{tch_gpio2,3},(ADC1_Bit | ADC2_Bit | ADC3_Bit),0},// ch13
+		{{tch_gpio2,4},(ADC1_Bit | ADC2_Bit),0},
+		{{tch_gpio2,5},(ADC1_Bit | ADC2_Bit),0}
 };
-
-const tch_sdio_bs_t SDIO_BD_CFGs[MFEATURE_SDIO] = {
-		{
-				.dma = DMA_Str11,
-				.ch = DMA_Ch4,
-				.afv = 12
-		}
-};
-
 
 
 

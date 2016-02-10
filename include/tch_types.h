@@ -27,7 +27,6 @@ extern "C"{
 #define MODULE_TYPE_ANALOGOUT			((uint32_t) 8)
 #define MODULE_TYPE_SDIO				((uint32_t) 9)
 
-
 typedef struct module_map {
 	uint64_t _map[8];
 }module_map_t;
@@ -38,6 +37,7 @@ typedef void* tch_mtxId;
 typedef void* tch_semId;
 typedef void* tch_barId;
 typedef void* tch_timerId;
+typedef void* tch_rendvId;
 typedef void* tch_waitqId;
 /*! \brief condition variable identifier
  */
@@ -61,6 +61,7 @@ typedef struct tch_mailQ_api tch_mailQ_api_t;
 typedef struct tch_mempool_api tch_mempool_api_t;
 typedef struct tch_malloc_api tch_malloc_api_t;
 typedef struct tch_barrier_api tch_barrier_api_t;
+typedef struct tch_rendezvu_api tch_rendezvu_api_t;
 typedef struct tch_waitq_api tch_waitq_api_t;
 typedef struct tch_event_api tch_event_api_t;
 typedef struct tch_module_api tch_module_api_t;
@@ -95,6 +96,7 @@ typedef struct tch_core_api {
 	const tch_mutex_api_t* Mtx;
 	const tch_semaphore_api_t* Sem;
 	const tch_barrier_api_t* Barrier;
+//	const tch_rendezvu_api_t* Rendezvous;
 	const tch_waitq_api_t* WaitQ;
 	const tch_messageQ_api_t* MsgQ;
 	const tch_mailQ_api_t* MailQ;

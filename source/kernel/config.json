@@ -102,20 +102,20 @@
   		"MPOOL_CLASS_KEY":"rand(2)"
   	}
   },
-  "USE_WAITQ":{
-  	"type":"bool",
-  	"force":"y",
-  	"default":"y",
-  	"gen-list":{
-  		"WAITQ_CLASS_KEY":"rand(2)"
-  	}
-  },
   "USE_SEMAPHORE":{
   	"type":"bool",
   	"force":"y",
   	"default":"y",
   	"gen-list":{
   		"SEMAPHORE_CLASS_KEY":"rand(2)"
+  	}
+  },
+    "USE_WAITQ":{
+  	"type":"bool",
+  	"force":"y",
+  	"default":"y",
+  	"gen-list":{
+  		"WAITQ_CLASS_KEY":"rand(2)"
   	}
   },
   "EPOCH_TIME":{

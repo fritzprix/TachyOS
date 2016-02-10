@@ -11,7 +11,8 @@
  */
 
 #include "tch.h"
-#include "utest.h"
+#include "monitor_test.h"
+
 
 #define MAX_SZ    ((uint32_t) -1)
 #define MIN_SZ    ((uint32_t) 0)
@@ -42,7 +43,7 @@ static tch_threadId producer1Thread;
 static tch_threadId producer2Thread;
 
 
-tchStatus do_test_lock(const tch_core_api_t* ctx){
+tchStatus monitor_performTest(tch_core_api_t* ctx){
 	mstat init_mstat,fin_mstat;
 
 	kmstat(&init_mstat);

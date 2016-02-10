@@ -9,11 +9,14 @@
 #include "tch.h"
 #include "led_blinker.h"
 #include "sdio_working.h"
+#include "event_test.h"
 
 DECLARE_THREADROUTINE(main)
 {
 	start_led_blink(ctx);
-	start_sdio_test(ctx);
+	do_eventTest(ctx);
+	do_msgqTest(ctx);
+//	start_sdio_test(ctx);
 	while(TRUE)
 	{
 		ctx->Thread->sleep(1);

@@ -22,10 +22,7 @@
 #include "kernel/tch_condv.h"
 #include "kernel/util/string.h"
 
-#ifndef RTC_CLASS_KEY
 #define RTC_CLASS_KEY               ((uint16_t) 0xAB5D)
-#endif
-
 #define RTC_LPMODE_Msk              ((uint32_t) 0x30000)
 
 #define RTC_ACCESS_KEY1             ((uint8_t) 0xCA)

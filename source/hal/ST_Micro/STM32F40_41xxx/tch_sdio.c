@@ -202,7 +202,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	{
 		if(api->Condv->wait(&condv,&mtx,timeout) != tchOK)
 		{
-			DBG_PRINT("SDIO Allocation Timeout\n\r");
+			api->Dbg->print(api->Dbg->Normal, 0, "SDIO Allocation Timeout\n\r");
 			goto INIT_FAIL;
 		}
 	}
@@ -210,7 +210,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	sdio_hw->_handle = ins;
 	if(!ins)
 	{
-		DBG_PRINT("Out of Memory\n\r");
+		api->Dbg->print(api->Dbg->Normal, 0, "Out of Memory\n\r");
 		goto INIT_FAIL;
 	}
 
@@ -219,14 +219,15 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	dma = tch_kmod_request(MODULE_TYPE_DMA);
 	if(!dma && sdio_bs->dma != DMA_NOT_USED)
 	{
-		DBG_PRINT("No DMA available\n\r");
+
+		api->Dbg->print(api->Dbg->Normal, 0, "DMA is Not available\n\r");
 		goto INIT_FAIL;
 	}
 
 	gpio = api->Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
-		DBG_PRINT("GPIO is not Available\n\r");
+		api->Dbg->print(api->Dbg->Normal, 0, "GPIO is Not available\n\r");
 		goto INIT_FAIL;
 	}
 
@@ -246,7 +247,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	if(!ins->data_port || !ins->cmd_port)
 	{
-		DBG_PRINT("GPIO(s) are not available for SDIO\n\r");
+		api->Dbg->print(api->Dbg->Normal, 0, "GPIO(s) Not available\n\r");
 		goto INIT_FAIL;
 	}
 
@@ -269,7 +270,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		SET_DMA_MODE(ins);
 		if(!ins->dma)
 		{
-			DBG_PRINT("DMA is not abilable\n\r");
+			api->Dbg->print(api->Dbg->Normal, 0, "DMA is not abilable\n\r");
 			goto INIT_FAIL;
 		}
 	}
@@ -465,8 +466,12 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 }
 
+uint32_t loopcnt = 0;
+
+
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
+	loopcnt = 0;
 	if(!ins || !devIds)
 		return 0;
 	const tch_core_api_t* api = ins->api;
@@ -492,11 +497,15 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 	sdio_send_cmd(ins, 8, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);		// send op cond
 
 	res = tchOK;
+
 	while(res != tchErrorTimeoutResource && (devcnt < max_idcnt))
 	{
+		res = tchOK;
 		sdio_send_cmd(ins, 55, 0, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
-		res = sdio_send_cmd(ins, 41, SDIO_ACMD41_ARG_HCS , TRUE, SDIO_RESP_SHORT, resp, 1000);
+		devcnt++;
+		res = sdio_send_cmd(ins, 41, SDIO_ACMD41_ARG_HCS , TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
 
+		loopcnt++;
 		if(sdio_reg->RESPCMD == SDIO_R3_CMD)
 		{
 			if(!(resp[0] & SDIO_R3_IDLE))
@@ -506,12 +515,11 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 				dev_infos[devcnt].cap = resp[0] >> 29;
 				if(resp[0] >> 23)
 					dev_infos[devcnt].status |= SDIO_S18A_SUPPORT_FLAG;
-				api->Dbg->print(api->Dbg->Normal,0 , "SDIO Ready");
+	//			api->Dbg->print(api->Dbg->Normal,0 , "SDIO Ready");
 
 			}
 		}
 	}
-
 
 
 	if(api->Mtx->lock(ins->mtx,tchWaitForever) != tchOK)
@@ -525,7 +533,6 @@ static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_
 {
 
 }
-
 
 static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp,sdio_resp_t rtype, uint32_t* resp, uint32_t timeout)
 {

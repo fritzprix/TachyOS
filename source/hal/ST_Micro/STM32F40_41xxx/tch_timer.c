@@ -126,7 +126,7 @@ typedef struct tch_pwm_handle_proto_t{
 	tch_timer              timer;
 	const tch_core_api_t*             env;
 	tch_gpioHandle**       iohandle;
-	tch_waitqId            uev_waitq;
+	tch_rendvId            uev_rndv;
 	tch_semId              uev_sem;
 	tch_mtxId              mtx;
 }tch_pwm_handle_proto;
@@ -135,7 +135,7 @@ typedef struct tch_tcapt_handle_proto_t{
 	tch_tcaptHandle       _pix;
 	uint32_t               status;
 	tch_timer              timer;
-	const tch_core_api_t*  env;
+	const tch_core_api_t*             env;
 	tch_gpioHandle**       iohandle;
 	tch_msgqId*            msgqs;
 	tch_mtxId              mtx;
@@ -397,7 +397,8 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* 
 	ins->_pix.setOutputEnable = tch_pwm_setOutputEnable;
 	ins->timer = timer;
 	ins->env = env;
-	ins->uev_waitq = env->WaitQ->create(WAITQ_POL_FIFO);
+	//ins->uev_rndv = env->Rendezvous->create();
+	ins->uev_rndv = env->WaitQ->create(WAITQ_POL_FIFO);
 	// TODO : replace barrier
 	ins->uev_sem = env->Sem->create(timDesc->channelCnt);
 	ins->mtx = env->Mtx->create();
@@ -890,7 +891,8 @@ __USER_API__ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,floa
 		*ccr = (uint32_t) (*(fduty++) * dutyd);
 		if(sz)
 		{
-			result = ins->env->WaitQ->sleep(ins->uev_waitq,tchWaitForever);
+			//result = ins->env->Rendezvous->sleep(ins->uev_rndv,tchWaitForever);
+			result = ins->env->WaitQ->sleep(ins->uev_rndv, tchWaitForever);
 			// TODO : replace barrier
 		}
 	}
@@ -1032,7 +1034,8 @@ __USER_API__ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 	env->Mtx->destroy(ins->mtx);
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
-	env->WaitQ->destroy(ins->uev_waitq);
+	//env->Rendezvous->destroy(ins->uev_rndv);
+	env->WaitQ->destroy(ins->uev_rndv);
 	// TODO: replace barrier
 	env->Sem->destroy(ins->uev_sem);
 	while(chcnt--)
@@ -1292,8 +1295,9 @@ static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_de
 {
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)desc->_hw;
 	timerHw->SR &= ~TIM_SR_UIF;
-	return ins->env->WaitQ->wakeAll(ins->uev_waitq) == tchOK;
+	//return ins->env->Rendezvous->wake(ins->uev_rndv) == tchOK;
 	// TODO: replace barrier
+	return ins->env->WaitQ->wake(ins->uev_rndv) == tchOK;
 }
 
 

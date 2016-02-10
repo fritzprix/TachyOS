@@ -13,8 +13,8 @@
  */
 
 
+#include "mpool_test.h"
 #include "tch.h"
-#include "utest.h"
 
 
 typedef struct person {
@@ -26,7 +26,7 @@ typedef struct person {
 tch_mpoolId person_mpool;
 person* ps[10];
 
-tchStatus do_test_mpool(const tch_core_api_t* api){
+tchStatus mpool_performTest(tch_core_api_t* api){
 	person_mpool = api->Mempool->create(sizeof(person),10);
 	uint32_t i = 0;
 	/***

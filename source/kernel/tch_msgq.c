@@ -27,7 +27,6 @@
 __USER_API__ static tch_msgqId tch_msgqCreate(uint32_t len);
 __USER_API__ static tchStatus tch_msgqPut(tch_msgqId,uint32_t msg,uint32_t millisec);
 __USER_API__ static tchEvent tch_msgqGet(tch_msgqId,uint32_t millisec);
-__USER_API__ static tchStatus tch_msgqReset(tch_msgqId);
 __USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId);
 
 static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstatic);
@@ -40,11 +39,10 @@ static BOOL tch_msgqIsValid(tch_msgqId);
 
 
 __USER_RODATA__ tch_messageQ_api_t MsgQ_IX = {
-		.create = tch_msgqCreate,
-		.put = tch_msgqPut,
-		.get = tch_msgqGet,
-		.reset = tch_msgqReset,
-		.destroy = tch_msgqDestroy
+		tch_msgqCreate,
+		tch_msgqPut,
+		tch_msgqGet,
+		tch_msgqDestroy
 };
 
 __USER_RODATA__ const tch_messageQ_api_t* MsgQ = &MsgQ_IX;
@@ -53,7 +51,6 @@ __USER_RODATA__ const tch_messageQ_api_t* MsgQ = &MsgQ_IX;
 DECLARE_SYSCALL_1(messageQ_create,uint32_t,tch_msgqId);
 DECLARE_SYSCALL_3(messageQ_put,tch_msgqId,uword_t,uint32_t,tchStatus);
 DECLARE_SYSCALL_3(messageQ_get,tch_msgqId,tchEvent*,uint32_t,tchStatus);
-DECLARE_SYSCALL_1(messageQ_reset, tch_msgqId,tchStatus);
 DECLARE_SYSCALL_1(messageQ_destroy,tch_msgqId,tchStatus);
 DECLARE_SYSCALL_3(messageQ_init,tch_msgqCb*,uint32_t*,uint32_t,tchStatus);
 DECLARE_SYSCALL_1(messageQ_deinit,tch_msgqCb*,tchStatus);
@@ -98,17 +95,6 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 	msgqcb->updated--;
 	tch_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	return eventp->status = tchEventMessage;
-}
-
-DEFINE_SYSCALL_1(messageQ_reset, tch_msgqId, qid,tchStatus)
-{
-	if(!qid || !tch_msgqIsValid(qid))
-		return tchErrorParameter;
-	tch_msgqCb* qcb = (tch_msgqCb*) qid;
-	mset(qcb->bp, 0, qcb->sz * sizeof(uint32_t));
-	tch_schedWake((tch_thread_queue*) &qcb->cwq,SCHED_THREAD_ALL, tchErrorResource, FALSE);
-	tch_schedWake((tch_thread_queue*) &qcb->pwq,SCHED_THREAD_ALL, tchErrorResource, FALSE);
-	return tchOK;
 }
 
 
@@ -196,16 +182,10 @@ __USER_API__ static tchEvent tch_msgqGet(tch_msgqId mqId,uint32_t millisec){
 	}
 }
 
-__USER_API__ static tchStatus tch_msgqReset(tch_msgqId mqId)
-{
-	if(tch_port_isISR())
-		return __messageQ_reset(mqId);
-	return __SYSCALL_1(messageQ_reset,mqId);
-}
 
 
-__USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId mqId)
-{
+__USER_API__ static tchStatus tch_msgqDestroy(tch_msgqId mqId){
+	tch_thread_uheader* nth = NULL;
 	if(tch_port_isISR())
 		return tchErrorISR;
 	return __SYSCALL_1(messageQ_destroy,mqId);

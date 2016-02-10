@@ -7,7 +7,7 @@
 
 
 #include "tch.h"
-#include "test.h"
+#include "timer_test.h"
 
 
 static DECLARE_THREADROUTINE(waiter1Run);
@@ -32,11 +32,7 @@ tchStatus timer_performTest(tch_core_api_t* ctx){
 	gptDef.UnitTime = TIMER_UNITTIME_mSEC;
 	gptDef.pwrOpt = ActOnSleep;
 
-	tch_hal_module_timer* timer = ctx->Module->request(MODULE_TYPE_TIMER);
-	if(!timer)
-		return tchErrorResource;
-
-	tch_gptimerHandle* gptimer = timer->openGpTimer(ctx,tch_TIMER0,&gptDef,tchWaitForever);
+	tch_gptimerHandle* gptimer = ctx->Device->timer->openGpTimer(ctx,tch_TIMER0,&gptDef,tchWaitForever);
 
 	tch_threadId waiterThread1;
 	tch_threadId waiterThread2;
@@ -74,12 +70,12 @@ tchStatus timer_performTest(tch_core_api_t* ctx){
 	int cnt = 100000;
 	tch_pwmHandle* pwmDrv = NULL;
 	while(cnt--){
-		pwmDrv = timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
+		pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
 		if(pwmDrv)
 			pwmDrv->close(pwmDrv);
 	}
 
-	pwmDrv = timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
+	pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER0,&pwmDef,tchWaitForever);
 	ctx->Thread->initConfig(&thcfg,pulsDrv1Run,Normal,(1 << 9),0,"pulsedrv1");
 	waiterThread1 = ctx->Thread->create(&thcfg,pwmDrv);
 
@@ -106,7 +102,7 @@ tchStatus timer_performTest(tch_core_api_t* ctx){
 	pwmDef.UnitTime = TIMER_UNITTIME_uSEC;
 	pwmDef.pwrOpt = ActOnSleep;
 
-	pwmDrv = timer->openPWM(ctx,tch_TIMER2,&pwmDef,tchWaitForever);
+	pwmDrv = ctx->Device->timer->openPWM(ctx,tch_TIMER2,&pwmDef,tchWaitForever);
 	if(!pwmDrv)
 		return tchErrorOS;
 
@@ -116,7 +112,7 @@ tchStatus timer_performTest(tch_core_api_t* ctx){
 	captDef.periodInUnitTime = 1000;
 	captDef.pwrOpt = ActOnSleep;
 
-	tch_tcaptHandle* capt = timer->openTimerCapture(ctx,tch_TIMER0,&captDef,tchWaitForever);
+	tch_tcaptHandle* capt = ctx->Device->timer->openTimerCapture(ctx,tch_TIMER0,&captDef,tchWaitForever);
 	if(!capt)
 		return tchErrorOS;
 

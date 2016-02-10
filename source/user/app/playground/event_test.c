@@ -9,14 +9,14 @@
 
 
 #include "tch.h"
-#include "utest.h"
+#include "event_test.h"
 
 static DECLARE_THREADROUTINE(waiter);
 static DECLARE_THREADROUTINE(waker);
 
 
 
-tchStatus do_test_event(const tch_core_api_t* api)
+tchStatus do_eventTest(const tch_core_api_t* api)
 {
 	thread_config_t cfg;
 

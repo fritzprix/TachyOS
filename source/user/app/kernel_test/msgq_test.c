@@ -13,8 +13,8 @@
  */
 
 
-#include "tch.h"
-#include "utest.h"
+
+#include "msgq_test.h"
 
 static DECLARE_THREADROUTINE(sender);
 static tch_threadId sender_id;
@@ -22,32 +22,32 @@ static tch_threadId sender_id;
 static DECLARE_THREADROUTINE(receiver);
 static tch_threadId receiver_id;
 
+static DECLARE_IO_CALLBACK(ioEventListener);
 
 static tch_msgqId mid;
 static tch_barId mBar;
 
 static tch_gpioHandle* out;
 static tch_gpioHandle* in;
-tch_core_api_t* Api;
 
+static volatile tch_core_api_t* Api;
 static int irqcnt;
 static int usrcnt;
 static int miscnt;
 
-
-tchStatus do_test_msgq(const tch_core_api_t* api){
-	Api = (tch_core_api_t*) api;
+tchStatus msgq_performTest(tch_core_api_t* api){
+	Api = api;
 	mBar = api->Barrier->create();
 	irqcnt = 0;
 	miscnt = 0;
 	usrcnt = 0;
 
 
-	const tch_messageQ_api_t* MsgQ = api->MsgQ;
+	const tch_kernel_service_messageQ* MsgQ = api->MsgQ;
 	mid = MsgQ->create(10);
 
 
-	const tch_thread_api_t* Thread = api->Thread;
+	const tch_kernel_service_thread* Thread = api->Thread;
 	thread_config_t tcfg;
 	api->Thread->initConfig(&tcfg,sender,Normal,1 << 9,0,"sender");
 	sender_id = Thread->create(&tcfg,api);
@@ -84,6 +84,7 @@ static DECLARE_THREADROUTINE(sender){
 		ctx->Thread->yield(1);
 		cnt++;
 	}
+	ctx->Barrier->wait(mBar,tchWaitForever);
 	ctx->Thread->yield(10);
 	ctx->MsgQ->destroy(mid);
 	return tchOK;
@@ -112,10 +113,15 @@ static DECLARE_THREADROUTINE(receiver){
 	evt = ctx->MsgQ->get(mid,10);
 	if(evt.status != tchErrorTimeoutResource)
 		return tchErrorOS;
+	ctx->Barrier->signal(mBar,tchOK);
 	evt = ctx->MsgQ->get(mid,tchWaitForever);
 	if(evt.status != tchErrorResource)
 		return tchErrorResource;
 	return tchOK;
 }
 
+static DECLARE_IO_CALLBACK(ioEventListener){
+	Api->MsgQ->put(mid,0xF0,0);
+	return TRUE;
+}
 

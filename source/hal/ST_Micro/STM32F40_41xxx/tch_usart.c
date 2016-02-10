@@ -470,8 +470,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
 		uhw->SR &= ~USART_SR_TC;    // clear tc
-		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result))
-		{  // if dma fails, try again
+		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
 			result = tchErrorIo;
 			RETURN_SAFELY();
 		}

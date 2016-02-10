@@ -23,7 +23,7 @@
 #include "tch.h"
 #include "tch_dma.h"
 #include "tch_rtc.h"
-#include "kernel/tch_waitq.h"
+#include "tch_waitq.h"
 
 
 
@@ -42,7 +42,7 @@ typedef struct _tch_gpio_descriptor {
 
 typedef struct _tch_ioInterrupt_descriptor {
 	void*                     io_occp;
-	tch_waitqCb				  waitq;
+	tch_waitqCb				  rendezv;
 	IRQn_Type                 irq;
 }tch_ioInterrupt_descriptor;
 
@@ -214,6 +214,7 @@ struct tch_adc_bs {
 struct tch_adc_ch_bs {
 	tch_port      port;
 	uint8_t       adc_routemsk;
+	uint8_t       occp;
 };
 
 struct tch_sdio_bs {
@@ -221,6 +222,7 @@ struct tch_sdio_bs {
 	uint8_t		ch;
 	uint8_t 	afv;
 } ;
+
 
 
 extern __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[MFEATURE_GPIO];

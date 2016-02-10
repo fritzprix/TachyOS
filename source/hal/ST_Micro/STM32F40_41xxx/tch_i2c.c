@@ -104,7 +104,7 @@ typedef struct tch_iic_op_desc_t {
 
 
 struct tch_iic_handle_prototype_t {
-	tch_iicHandle_t                      pix;
+	tch_iicHandle_t                        pix;
 	tch_iic                              iic;
 	uint32_t                             status;
 	tch_gpioHandle*                      iohandle;
@@ -153,17 +153,13 @@ __USER_RODATA__ tch_hal_module_iic_t IIC_Ops = {
 
 static tch_mtxCb 	lock;
 static tch_condvCb  condv;
-
 static tch_hal_module_dma_t* dma;
-static tch_hal_module_gpio_t* gpio;
 
 
 
 
 static int tch_IIC_init(void)
 {
-	dma = NULL;
-	gpio = NULL;
 	tch_mutexInit(&lock);
 	tch_condvInit(&condv);
 	return tch_kmod_register(MODULE_TYPE_IIC,IIC_CLASS_KEY,&IIC_Ops,FALSE);
@@ -183,7 +179,8 @@ __USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch
 	if(!(i2c < MFEATURE_IIC))
 		return NULL;
 
-	dma = tch_kmod_request(MODULE_TYPE_DMA);
+	if(!dma)
+		dma = tch_kmod_request(MODULE_TYPE_DMA);
 
 	tch_DmaCfg dmaCfg;
 	tch_iic_descriptor* iicDesc = &IIC_HWs[i2c];
@@ -191,8 +188,7 @@ __USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch
 	I2C_TypeDef* iicHw = iicDesc->_hw;
 	tch_iic_handle_prototype* ins = NULL;
 
-
-	gpio = (tch_hal_module_gpio_t* ) Module->request(MODULE_TYPE_GPIO);
+	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t* ) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 		return NULL;
 
