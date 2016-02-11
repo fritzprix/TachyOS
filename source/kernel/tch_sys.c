@@ -64,7 +64,6 @@ __USER_RODATA__ const tch_core_api_t RuntimeInterface = {
 		.Time = &Time_IX,
 		.Condv = &CondVar_IX,
 		.Barrier = &Barrier_IX,
-//		.Rendezvous = &Rendezvous_IX,
 		.WaitQ = &WaitQ_IX,
 		.Mempool = &MPool_IX,
 		.MailQ = &MailQ_IX,
