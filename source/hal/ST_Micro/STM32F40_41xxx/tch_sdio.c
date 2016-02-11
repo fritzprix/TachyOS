@@ -23,10 +23,22 @@
 #endif
 
 #define MAX_SDIO_DEVCNT				10
+#define MAX_TIMEOUT_MILLS			2000
 #define CMD_CLEAR_MASK              ((uint32_t)0xFFFFF800)
 #define SDIO_ACMD41_ARG_HCS			(1 << 30)
 #define SDIO_ACMD41_ARG_XPC			(1 << 28)
 #define SDIO_ACMD41_ARG_S18R		(1 << 24)
+
+#define SDIO_VO_TO_VW_SHIFT			15
+#define SDIO_OCR_VW27_28			(1 << 15)
+#define SDIO_OCR_VW28_29			(1 << 16)
+#define SDIO_OCR_VW29_30			(1 << 17)
+#define SDIO_OCR_VW30_31			(1 << 18)
+#define SDIO_OCR_VW31_32			(1 << 19)
+#define SDIO_OCR_VW32_33			(1 << 20)
+#define SDIO_OCR_VW33_34			(1 << 21)
+#define SDIO_OCR_VW34_35			(1 << 22)
+#define SDIO_OCR_VW35_36			(1 << 23)
 
 #define SDIO_R3_CMD					((1 << 6) - 1)
 
@@ -84,18 +96,7 @@
 #define SDIO_DATA_PORT		tch_gpio2
 #define SDIO_CMD_PORT		tch_gpio3
 
-struct tch_sdio_handle_prototype  {
-	struct tch_sdio_handle 				pix;
-	uint32_t 							status;
-	tch_gpioHandle*						data_port;
-	tch_gpioHandle*						cmd_port;
-	tch_gpioHandle*						detect_port;
-	tch_dmaHandle*						dma;
-	tch_eventId							evId;
-	const tch_core_api_t*				api;
-	tch_mtxId							mtx;
-	tch_condvId							condv;
-};
+
 
 
 struct tch_sdio_device_info {
@@ -106,11 +107,29 @@ struct tch_sdio_device_info {
 #define SDIO_S18A_SUPPORT_FLAG			((uint8_t) 1)
 #define SDIO_UHSII_SUPPORT_FLAG			((uint8_t) 2)
 #define SDIO_READY_FLAG					((uint8_t) 4)
-	uint8_t					status;
-	uint16_t 				id;
+	uint8_t					flags;
+	uint32_t				cid[4];
+	uint16_t 				rca;
 	BOOL 					is_protected;
 	BOOL					is_locked;
 };
+
+struct tch_sdio_handle_prototype  {
+	struct tch_sdio_handle 				pix;
+	uint32_t 							status;
+	uint16_t							vopt;
+	uint8_t								dev_cnt;
+	tch_sdioDevInfo 					dev_infos[MAX_SDIO_DEVCNT];
+	tch_gpioHandle*						data_port;
+	tch_gpioHandle*						cmd_port;
+	tch_gpioHandle*						detect_port;
+	tch_dmaHandle*						dma;
+	tch_eventId							evId;
+	const tch_core_api_t*				api;
+	tch_mtxId							mtx;
+	tch_condvId							condv;
+};
+
 
 typedef uint8_t		sdio_resp_t;
 #define SDIO_RESP_SHORT		((sdio_resp_t) 1)
@@ -156,9 +175,6 @@ static tch_condvCb condv;
 static tch_hal_module_dma_t* dma;
 static tch_hal_module_gpio_t* gpio;
 
-static tch_sdioDevInfo dev_infos[MAX_SDIO_DEVCNT];
-static uint8_t devcnt;
-
 
 static int tch_sdio_init()
 {
@@ -185,6 +201,7 @@ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpo
 {
 	cfg->bus_width = buswidth;
 	cfg->lpopt = lpopt;
+	cfg->v_opt = SDIO_VO31_32 | SDIO_VO32_33;
 }
 
 static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdioCfg_t* config,uint32_t timeout)
@@ -276,9 +293,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	}
 
 	// set ops for SDIO handle
-	mset(dev_infos, 0, sizeof(struct tch_sdio_device_info) * MAX_SDIO_DEVCNT);
-	devcnt = 0;
-
+	mset(ins->dev_infos, 0, sizeof(struct tch_sdio_device_info) * MAX_SDIO_DEVCNT);
 
 	ins->pix.deviceId = tch_sdio_handle_device_id;
 	ins->pix.deviceInfo = tch_sdio_handle_deviceInfo;
@@ -293,6 +308,8 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	ins->mtx = api->Mtx->create();
 	ins->condv = api->Condv->create();
 	ins->evId = api->Event->create();
+	ins->vopt = config->v_opt;
+	ins->dev_cnt = 0;
 
 	if(!ins->mtx || !ins->condv || !ins->evId)
 	{
@@ -466,12 +483,10 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 }
 
-uint32_t loopcnt = 0;
 
 
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
-	loopcnt = 0;
 	if(!ins || !devIds)
 		return 0;
 	const tch_core_api_t* api = ins->api;
@@ -491,32 +506,58 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 	const tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
 
-	sdio_send_cmd(ins, 0, 0, FALSE, SDIO_RESP_SHORT, NULL, tchWaitForever);			// send reset
+	sdio_send_cmd(ins, 0, 0, FALSE, SDIO_RESP_SHORT, NULL, MAX_TIMEOUT_MILLS);			// send reset
 
 	uint32_t resp[4];
-	sdio_send_cmd(ins, 8, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);		// send op cond
+	sdio_send_cmd(ins, 8, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);		// send op cond
 
 	res = tchOK;
 
-	while(res != tchErrorTimeoutResource && (devcnt < max_idcnt))
+	while(res != tchEventTimeout && (ins->dev_cnt < max_idcnt))
 	{
+		// send card initialization command with OCR setting
 		res = tchOK;
-		sdio_send_cmd(ins, 55, 0, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
-		devcnt++;
-		res = sdio_send_cmd(ins, 41, SDIO_ACMD41_ARG_HCS , TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
-
-		loopcnt++;
-		if(sdio_reg->RESPCMD == SDIO_R3_CMD)
+		sdio_send_cmd(ins, 55, 0, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
+		mset(resp,0, 4 * sizeof(uint32_t));
+		res = sdio_send_cmd(ins, 41, SDIO_ACMD41_ARG_HCS | (ins->vopt << SDIO_VO_TO_VW_SHIFT) , TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
+		if(sdio_reg->RESPCMD != SDIO_R3_CMD)
 		{
-			if(!(resp[0] & SDIO_R3_IDLE))
-			{
-				mset(&dev_infos[devcnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
-				dev_infos[devcnt].type = SDC;
-				dev_infos[devcnt].cap = resp[0] >> 29;
-				if(resp[0] >> 23)
-					dev_infos[devcnt].status |= SDIO_S18A_SUPPORT_FLAG;
-	//			api->Dbg->print(api->Dbg->Normal,0 , "SDIO Ready");
+			// unexpected response
+			return ins->dev_cnt;
+		}
 
+		uint32_t ocr = resp[0];
+		// check returned OCR and compare operating voltage
+		if(resp[0] & (ins->vopt << SDIO_VO_TO_VW_SHIFT))
+		{
+			// if operating condition is matched, finalize operating voltage
+			// by sending ACMD41 with setting OCR field with supporting voltage window
+			sdio_send_cmd(ins, 55, 0, TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
+			res = sdio_send_cmd(ins,41, SDIO_ACMD41_ARG_HCS | (ins->vopt << SDIO_VO_TO_VW_SHIFT), TRUE, SDIO_RESP_SHORT, resp, tchWaitForever);
+
+			//TODO: add optional voltage switch
+
+			if(sdio_reg->RESPCMD == SDIO_R3_CMD)
+			{
+				if((resp[0] & SDIO_R3_IDLE))
+				{
+					mset(&ins->dev_infos[ins->dev_cnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
+					ins->dev_infos[ins->dev_cnt].type = SDC;
+					ins->dev_infos[ins->dev_cnt].cap = resp[0] >> 29;
+
+					resp[0] = 0;
+					sdio_send_cmd(ins, 2, 0, TRUE, SDIO_RESP_LONG, resp, MAX_TIMEOUT_MILLS);
+
+					//copy CID of sd card
+					mcpy(ins->dev_infos[ins->dev_cnt].cid, resp, 4 * sizeof(uint32_t));
+
+
+					resp[0] = 0;
+					sdio_send_cmd(ins, 3, 0, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
+					ins->dev_infos[ins->dev_cnt].rca = (resp[0] >> 15);
+
+					ins->dev_cnt++;
+				}
 			}
 		}
 	}

@@ -11,10 +11,22 @@
 #include "kernel/tch_ktypes.h"
 
 
+
+#define SDIO_VO27_28			((uint16_t) 1)
+#define SDIO_VO28_29			((uint16_t) 1 << 1)
+#define SDIO_VO29_30			((uint16_t) 1 << 2)
+#define SDIO_VO30_31			((uint16_t) 1 << 3)
+#define SDIO_VO31_32			((uint16_t) 1 << 4)
+#define SDIO_VO32_33			((uint16_t) 1 << 5)
+#define SDIO_VO33_34			((uint16_t) 1 << 6)
+#define SDIO_VO34_35			((uint16_t) 1 << 7)
+#define SDIO_VO35_36			((uint16_t) 1 << 8)
+
 typedef struct tch_sdio_handle* tch_sdioHandle_t;
 typedef void* tch_sdioDevId;
 typedef struct tch_sdio_device_info tch_sdioDevInfo;
 typedef struct tch_sdio_cfg tch_sdioCfg_t;
+
 
 typedef enum {
 	MMC , SDC, SDIOC
@@ -23,6 +35,7 @@ typedef enum {
 
 struct tch_sdio_cfg {
 	uint8_t bus_width;
+	uint16_t v_opt;
 	tch_PwrOpt lpopt;
 };
 

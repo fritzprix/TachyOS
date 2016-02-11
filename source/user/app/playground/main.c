@@ -16,7 +16,7 @@ DECLARE_THREADROUTINE(main)
 	start_led_blink(ctx);
 	do_eventTest(ctx);
 //	do_msgqTest(ctx);
-//	start_sdio_test(ctx);
+	start_sdio_test(ctx);
 	while(TRUE)
 	{
 		ctx->Thread->sleep(1);
