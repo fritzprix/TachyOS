@@ -60,14 +60,6 @@ const tch_uart_bs_t UART_BD_CFGs[MFEATURE_GPIO] = {
 		}
 };
 
-/**
- * 	gpIo_x         port;
-	uint8_t        ch1p;
-	uint8_t        ch2p;
-	uint8_t        ch3p;
-	uint8_t        ch4p;
-	uint8_t        afv;
- */
 
 const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		{// TIM2
@@ -172,15 +164,6 @@ const tch_timer_bs_t TIMER_BD_CFGs[MFEATURE_TIMER] = {
 		}
 };
 
-/**
- * 	spi_t          spi;
-	dma_t          txdma;
-	dma_t          rxdma;
-	gpIo_x         port;
-	uint8_t        mosi;
-	uint8_t        miso;
-	uint8_t        sck;
- */
 
 const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 		{
@@ -218,16 +201,6 @@ const tch_spi_bs_t SPI_BD_CFGs[MFEATURE_SPI] = {
 				.afv = 6
 		}
 };
-/**
- * 	dma_t         txdma;
-	dma_t         rxdma;
-	uint8_t       txch;
-	uint8_t       rxch;
-	gpIo_x        port;
-	uint8_t       scl;
-	uint8_t       sda;
-	uint8_t       afv;
- */
 
 const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 		{      // IIC 1
@@ -263,13 +236,6 @@ const tch_iic_bs_t IIC_BD_CFGs[MFEATURE_IIC] = {
 };
 
 
-/**
- * 	dma_t         dma;
-	uint8_t       dmaCh;
-	tch_timer     timer;
-	uint8_t       timerCh;
-	uint8_t       timerExtsel;
- */
 const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 		{
 				.dma = DMA_Str12,
@@ -295,91 +261,70 @@ const tch_adc_bs_t ADC_BD_CFGs[MFEATURE_ADC] = {
 };
 
 
-/**
- * 	tch_port      port;
-	uint8_t       adc_routemsk;
-	uint8_t       occp;
- */
 const tch_adc_channel_bs_t ADC_CH_BD_CFGs[MFEATURE_ADC_Ch] = {
 		{
 				.port = {tch_gpio0,0},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch0
 		{
 				.port = {tch_gpio0,1},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch1
 		{
 				.port = {tch_gpio0,2},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch2
 		{
 				.port = {tch_gpio0,3},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch3
 		{
 				.port = {tch_gpio0,4},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch4
 		{
 				.port = {tch_gpio0,5},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch5
 		{
 				.port = {tch_gpio0,6},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch6
 		{
 				.port = {tch_gpio0,7},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch7
 		{
 				.port = {tch_gpio1,0},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch8
 		{
 				.port = {tch_gpio1,1},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},// ch9
 		{
 				.port = {tch_gpio2,0},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch10
 		{
 				.port = {tch_gpio2,1},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch11
 		{
 				.port = {tch_gpio2,2},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch12
 		{
 				.port = {tch_gpio2,3},
 				.adc_routemsk  = (ADC1_Bit | ADC2_Bit | ADC3_Bit),
-				.occp = 0
 		},// ch13
 		{
 				.port = {tch_gpio2,4},
 				.adc_routemsk = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		},
 		{
 				.port = {tch_gpio2,5},
 				.adc_routemsk  = (ADC1_Bit | ADC2_Bit),
-				.occp = 0
 		}
 };
 

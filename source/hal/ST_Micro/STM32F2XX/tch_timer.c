@@ -366,7 +366,7 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* 
 {
 	uint16_t tmpccer = 0, tmpccmr = 0;
 	tch_pwm_handle_proto* ins = NULL;
-	tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[timer];
+	const tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[timer];
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
 
 	if(env->Mtx->lock(&lock,timeout) != tchOK)
@@ -397,7 +397,8 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* 
 	ins->_pix.setOutputEnable = tch_pwm_setOutputEnable;
 	ins->timer = timer;
 	ins->env = env;
-	ins->uev_rndv = env->Rendezvous->create();
+	//ins->uev_rndv = env->Rendezvous->create();
+	ins->uev_rndv = env->WaitQ->create(WAITQ_POL_FIFO);
 	// TODO : replace barrier
 	ins->uev_sem = env->Sem->create(timDesc->channelCnt);
 	ins->mtx = env->Mtx->create();
@@ -553,7 +554,7 @@ __USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch_core_a
 	mset(ins,0,sizeof(tch_tcapt_handle_proto));
 
 	tch_timer_descriptor* timDesc = &TIMER_HWs[timer];
-	tch_timer_bs_t* tbs = &TIMER_BD_CFGs[timer];
+	const tch_timer_bs_t* tbs = &TIMER_BD_CFGs[timer];
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 
 	if((tbs->chp[0] != -1) && (timDesc->channelCnt > 1))
@@ -890,7 +891,8 @@ __USER_API__ static tchStatus tch_pwm_write(tch_pwmHandle* self,uint32_t ch,floa
 		*ccr = (uint32_t) (*(fduty++) * dutyd);
 		if(sz)
 		{
-			result = ins->env->Rendezvous->sleep(ins->uev_rndv,tchWaitForever);
+			//result = ins->env->Rendezvous->sleep(ins->uev_rndv,tchWaitForever);
+			result = ins->env->WaitQ->sleep(ins->uev_rndv, tchWaitForever);
 			// TODO : replace barrier
 		}
 	}
@@ -911,7 +913,7 @@ __USER_API__ static tchStatus tch_pwm_setOutputEnable(tch_pwmHandle* self,uint8_
 		return tchErrorParameter;
 	}
 	tch_pwm_handle_proto* ins = (tch_pwm_handle_proto*) self;
-	tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[ins->timer];
+	const tch_timer_bs_t* timBcfg = &TIMER_BD_CFGs[ins->timer];
 	gpio_config_t iocfg;
 	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
@@ -1032,7 +1034,8 @@ __USER_API__ static tchStatus tch_pwm_close(tch_pwmHandle* self){
 	TIM_TypeDef* timerHw = (TIM_TypeDef*) timDesc->_hw;
 	env->Mtx->destroy(ins->mtx);
 	timerHw->CR1 &= ~TIM_CR1_CEN;                // disable timer count
-	env->Rendezvous->destroy(ins->uev_rndv);
+	//env->Rendezvous->destroy(ins->uev_rndv);
+	env->WaitQ->destroy(ins->uev_rndv);
 	// TODO: replace barrier
 	env->Sem->destroy(ins->uev_sem);
 	while(chcnt--)
@@ -1149,7 +1152,7 @@ __USER_API__ static tchStatus tch_tcapt_setInputEnable(tch_tcaptHandle* self,uin
 	}
 	ch = ch / 2;
 	tch_tcapt_handle_proto* ins = (tch_tcapt_handle_proto*) self;
-	tch_timer_bs_t* tbs = &TIMER_BD_CFGs[ins->timer];
+	const tch_timer_bs_t* tbs = &TIMER_BD_CFGs[ins->timer];
 	tch_hal_module_gpio_t* gpio = (tch_hal_module_gpio_t*) Module->request(MODULE_TYPE_GPIO);
 	if(!gpio)
 	{
@@ -1292,8 +1295,9 @@ static BOOL tch_timer_handle_pwmInterrupt(tch_pwm_handle_proto* ins,tch_timer_de
 {
 	TIM_TypeDef* timerHw = (TIM_TypeDef*)desc->_hw;
 	timerHw->SR &= ~TIM_SR_UIF;
-	return ins->env->Rendezvous->wake(ins->uev_rndv) == tchOK;
+	//return ins->env->Rendezvous->wake(ins->uev_rndv) == tchOK;
 	// TODO: replace barrier
+	return ins->env->WaitQ->wake(ins->uev_rndv) == tchOK;
 }
 
 

@@ -214,7 +214,6 @@ struct tch_adc_bs {
 struct tch_adc_ch_bs {
 	tch_port      port;
 	uint8_t       adc_routemsk;
-	uint8_t       occp;
 };
 
 struct tch_sdio_bs {
