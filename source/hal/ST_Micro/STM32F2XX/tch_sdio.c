@@ -30,13 +30,13 @@
 
 #define SDIO_R3_CMD					((1 << 6) - 1)
 
-#define SDIO_R3_IDLE				((uint32_t) 1 << 31)
+#define SDIO_R3_READY				((uint32_t) 1 << 31)
 #define SDIO_R3_CCS					((uint32_t) 1 << 30)
 #define SDIO_R3_UHSII				((uint32_t) 1 << 29)
 #define SDIO_R3_S18A				((uint32_t) 1 << 24)
 
-#define SDIO_MODE_DMA				((uint32_t) 0x10000)
-#define SDIO_BUSY					((uint32_t) 0x20000)
+#define SDIO_HANDLE_FLAG_DMA				((uint32_t) 0x10000)
+#define SDIO_HANDLE_FLAG_BUSY					((uint32_t) 0x20000)
 
 
 #define SDIO_VALIDATE(ins)	do {\
@@ -54,19 +54,19 @@
 
 #define SET_BUSY(sdio) do {\
 	set_system_busy();\
-	((struct tch_sdio_handle_prototype*) sdio)->status |= SDIO_BUSY;\
+	((struct tch_sdio_handle_prototype*) sdio)->status |= SDIO_HANDLE_FLAG_BUSY;\
 }while(0)
 
 #define CLR_BUSY(sdio) do {\
 	clear_system_busy();\
-	((struct tch_sdio_handle_prototype*) sdio)->status &= ~SDIO_BUSY;\
+	((struct tch_sdio_handle_prototype*) sdio)->status &= ~SDIO_HANDLE_FLAG_BUSY;\
 }while(0)
 
-#define IS_BUSY(sdio) 		((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_BUSY
+#define IS_BUSY(sdio) 		((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_HANDLE_FLAG_BUSY
 
-#define SET_DMA_MODE(sdio)		sdio->status |= SDIO_MODE_DMA
-#define CLR_DMA_MODE(sdio)		sdio->status &= ~SDIO_MODE_DMA
-#define IS_DMA_MODE(sdio)		(sdio->status & SDIO_MODE_DMA)
+#define SET_DMA_MODE(sdio)		sdio->status |= SDIO_HANDLE_FLAG_DMA
+#define CLR_DMA_MODE(sdio)		sdio->status &= ~SDIO_HANDLE_FLAG_DMA
+#define IS_DMA_MODE(sdio)		(sdio->status & SDIO_HANDLE_FLAG_DMA)
 
 #define MAX_BUS_WIDTH		((uint8_t) 4)
 
@@ -508,7 +508,7 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 		loopcnt++;
 		if(sdio_reg->RESPCMD == SDIO_R3_CMD)
 		{
-			if(!(resp[0] & SDIO_R3_IDLE))
+			if(!(resp[0] & SDIO_R3_READY))
 			{
 				mset(&dev_infos[devcnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
 				dev_infos[devcnt].type = SDC;
