@@ -98,7 +98,7 @@ struct tch_sdio_handle_prototype  {
 };
 
 
-struct tch_sdio_device_info {
+struct tch_sdio_device {
 	SdioDevType				type;
 #define SDIO_CAP_SDSC					((uint8_t) 0)
 #define SDIO_CAP_SDHXC					((uint8_t) 1)
@@ -276,7 +276,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	}
 
 	// set ops for SDIO handle
-	mset(dev_infos, 0, sizeof(struct tch_sdio_device_info) * MAX_SDIO_DEVCNT);
+	mset(dev_infos, 0, sizeof(struct tch_sdio_device) * MAX_SDIO_DEVCNT);
 	devcnt = 0;
 
 
@@ -510,7 +510,7 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 		{
 			if(!(resp[0] & SDIO_R3_READY))
 			{
-				mset(&dev_infos[devcnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
+				mset(&dev_infos[devcnt], 0 ,sizeof(struct tch_sdio_device));			// clear device info
 				dev_infos[devcnt].type = SDC;
 				dev_infos[devcnt].cap = resp[0] >> 29;
 				if(resp[0] >> 23)

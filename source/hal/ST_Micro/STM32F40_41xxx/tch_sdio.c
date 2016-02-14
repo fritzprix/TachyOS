@@ -171,7 +171,7 @@
 #define SDIO_CMD_PORT			tch_gpio3
 
 
-struct tch_sdio_device_info {
+typedef struct tch_sdio_device {
  	SdioDevType				type;
 #define SDIO_DEV_FLAG_CAP_LARGE				((uint16_t) 1 << 1)
 #define SDIO_DEV_FLAG_S18A_SUPPORT			((uint16_t) 1 << 2)
@@ -179,19 +179,47 @@ struct tch_sdio_device_info {
 #define SDIO_DEV_FLAG_READY					((uint16_t) 1 << 4)
  	uint32_t				flags;
  	uint16_t 				caddr;
- 	uint8_t					wblen;
- 	uint8_t					rblen;
- 	BOOL					is_blk_erase_supported;
- 	BOOL 					is_protected;
- 	BOOL					is_locked;
-};
+#define CSD_VERSION				((uint32_t) 3 << 30)
+#define CSD_ACC_TIME			((uint32_t) 0xFF << 16)
+#define CSD_NSAC				((uint32_t) 0xFF << 8)
+#define CSD_TRANS_SPEED			((uint32_t) 0xFF << 0)
+
+#define CSD_CMD_CLASS			((uint32_t) ((1 << 12) - 1) << 20)
+#define CSD_RD_BLKLEN			((uint32_t) 0xF << 16)
+#define CSD_RD_PART_OK			((uint32_t) 1 << 15)
+#define CSD_WR_BLK_MIS			((uint32_t) 1 << 14)
+#define CSD_RD_BLK_MIS			((uint32_t) 1 << 13)
+#define CSD_DSR_IMPL			((uint32_t) 1 << 12)
+#define CSD_CSIZE_UPPER			((uint32_t) ((1 << 11) - 1))
+
+#define CSD_CSIZE_LOWER			((uint32_t) 3 << 30)
+#define CSD_VDD_RD_MIN			((uint32_t) 7 << 27)
+#define CSD_VDD_RD_MAX			((uint32_t) 7 << 24)
+#define CSD_VDD_WR_MIN			((uint32_t) 3 << 21)
+#define CSD_VDD_WR_MAX			((uint32_t) 3 << 18)
+#define CSD_CSIZE_MUL			((uint32_t) 3 << 15)
+#define CSD_ERASE_BLK_EN		((uint32_t) 1 << 14)
+#define CSD_SECT_SIZE			((uint32_t) 0x7F << 7)
+#define CSD_WP_GRP_SIZE			((uint32_t) 0x7F)
+
+#define CSD_WP_GRP_EN			((uint32_t) 1 << 31)
+#define CSD_R2W_FACTOR			((uint32_t) 7 << 26)
+#define CSD_WR_BLKLEN			((uint32_t) 0xF << 22)
+#define CSD_WR_PART_OK			((uint32_t) 1 << 21)
+#define CSD_FILE_FMT_GRP		((uint32_t) 1 << 15)
+#define CSD_COPY_FLAG			((uint32_t) 1 << 14)
+#define CSD_PERM_WP				((uint32_t) 1 << 13)
+#define CSD_TMP_WP				((uint32_t) 1 << 12)
+#define CSD_FILE_FMT			((uint32_t) 3 << 10)
+ 	uint32_t				csd[4];
+}tch_sdioDev_t;
 
 struct tch_sdio_handle_prototype  {
 	struct tch_sdio_handle 				pix;
 	uint32_t 							status;
 	uint16_t							vopt;
 	uint8_t								dev_cnt;
-	tch_sdioDevInfo 					dev_infos[MAX_SDIO_DEVCNT];
+	tch_sdioDev_t 						devs[MAX_SDIO_DEVCNT];
 	tch_gpioHandle*						data_port;
 	tch_gpioHandle*						cmd_port;
 	tch_gpioHandle*						detect_port;
@@ -240,14 +268,9 @@ __USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, t
 __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,const tch_sdioCfg_t* config,uint32_t timeout);
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
-
 __USER_API__ static tchStatus tch_sdio_handle_device_reset(tch_sdioHandle_t sdio);
 __USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
-//__USER_API__ static tchStatus tch_sdio_handle_deviceInfo(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
-__USER_API__ static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device);
-__USER_API__ static BOOL tch_sdio_handle_isProtectedEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device);
-__USER_API__ static uint64_t tch_sdio_handle_getMaxBitrate(tch_sdioHandle_t sdio, tch_sdioDevId device);
-__USER_API__ static uint64_t tch_sdio_handle_getCapacity(tch_sdioHandle_t sdio, tch_sdioDevId device);
+__USER_API__ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId device,uint8_t option);
 __USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_erase(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
@@ -256,6 +279,12 @@ __USER_API__ static tchStatus tch_sdio_handle_setPassword(tch_sdioHandle_t sdio,
 __USER_API__ static tchStatus tch_sdio_handle_lock(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
 __USER_API__ static tchStatus tch_sdio_handle_unlock(tch_sdioHandle_t sdio, tch_sdioDevId device, const char* pwd);
 
+__USER_API__ static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device);
+__USER_API__ static BOOL tch_sdio_handle_isProtectEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device);
+__USER_API__ static uint64_t tch_sdio_handle_getMaxBitrate(tch_sdioHandle_t sdio, tch_sdioDevId device);
+__USER_API__ static uint64_t tch_sdio_handle_getCapacity(tch_sdioHandle_t sdio, tch_sdioDevId device);
+
+
 __USER_RODATA__ tch_hal_module_sdio_t SDIO_Ops = {
 		.initCfg = tch_sdio_initCfg,
 		.alloc = tch_sdio_alloc,
@@ -263,12 +292,39 @@ __USER_RODATA__ tch_hal_module_sdio_t SDIO_Ops = {
 
 };
 
-
 static tch_mtxCb mtx;
 static tch_condvCb condv;
 
 static tch_hal_module_dma_t* dma;
 static tch_hal_module_gpio_t* gpio;
+
+// transfer rate unit
+const uint32_t TransferUnit[4] = {
+		100000,
+		1000000,
+		10000000,
+		100000000
+};
+
+const float TransferTv[16] = {
+	0,
+	1.0f,
+	1.2f,
+	1.3f,
+	1.5f,
+	2.0f,
+	2.5f,
+	3.0f,
+	3.5f,
+	4.0f,
+	4.5f,
+	5.0f,
+	5.5f,
+	6.0f,
+	7.0f,
+	8.0f
+};
+
 
 
 static int tch_sdio_init()
@@ -395,12 +451,13 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	}
 
 	// set ops for SDIO handle
-	mset(ins->dev_infos, 0, sizeof(struct tch_sdio_device_info) * MAX_SDIO_DEVCNT);
+	mset(ins->devs, 0, sizeof(struct tch_sdio_device) * MAX_SDIO_DEVCNT);
 
 	ins->pix.deviceReset = tch_sdio_handle_device_reset;
 	ins->pix.deviceId = tch_sdio_handle_device_id;
+	ins->pix.prepare = tch_sdio_handle_prepare;
 	ins->pix.getDeviceType = tch_sdio_handle_getDeviceType;
-	ins->pix.isProtectEnabled = tch_sdio_handle_isProtectedEnabled;
+	ins->pix.isProtectEnabled = tch_sdio_handle_isProtectEnabled;
 	ins->pix.getMaxBitrate = tch_sdio_handle_getMaxBitrate;
 	ins->pix.getCapacity = tch_sdio_handle_getCapacity;
 	ins->pix.erase = tch_sdio_handle_erase;
@@ -423,7 +480,6 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	}
 
 	api->Mtx->unlock(&mtx);
-
 	*sdio_hw->_clkenr |= sdio_hw->clkmsk;			// power main clock enable
 	if(config->lpopt == ActOnSleep)
 		*sdio_hw->_lpclkenr |= sdio_hw->lpclkmsk;	// if sdio should be operational in idle mode, enable SDIO lp clock
@@ -565,7 +621,6 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 	if(resp[0] != 0x1FF)
 		return 0;
 
-
 	switch(type){
 	case MMC:
 		resp[0] = sdio_mmc_device_id((struct tch_sdio_handle_prototype*)sdio, devIds, max_Idcnt);
@@ -587,12 +642,33 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 	return resp[0];
 }
 
-static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device)
+static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId device,uint8_t option)
 {
+	if(!sdio || !device)
+		return tchErrorParameter;
+	if(!SDIO_ISVALID(sdio))
+		return tchErrorParameter;
 
+	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	uint32_t spd = dev->csd[3] & CSD_TRANS_SPEED;
+	spd = TransferUnit[spd & 7] * TransferTv[spd >> 3];
+
+
+	return tchOK;
 }
 
-static BOOL tch_sdio_handle_isProtectedEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device)
+
+static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device)
+{
+	if(!sdio || !device)
+		return UNKNOWN;
+	if(!SDIO_ISVALID(sdio))
+		return UNKNOWN;
+	return ((tch_sdioDev_t*) device)->type;
+}
+
+static BOOL tch_sdio_handle_isProtectEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device)
 {
 
 }
@@ -682,51 +758,29 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 		if((resp[0] & SDIO_R3_READY))
 		{
-			mset(&ins->dev_infos[ins->dev_cnt], 0 ,sizeof(struct tch_sdio_device_info));			// clear device info
-			ins->dev_infos[ins->dev_cnt].type = SDC;
+			mset(&ins->devs[ins->dev_cnt], 0 ,sizeof(struct tch_sdio_device));			// clear device info
+			ins->devs[ins->dev_cnt].type = SDC;
 
 			if(resp[0] & SDIO_R3_UHSII)
-				ins->dev_infos[ins->dev_cnt].flags |= SDIO_DEV_FLAG_UHSII_SUPPORT;
+				ins->devs[ins->dev_cnt].flags |= SDIO_DEV_FLAG_UHSII_SUPPORT;
 			if(resp[0] & SDIO_R3_CCS)
-				ins->dev_infos[ins->dev_cnt].flags |= SDIO_DEV_FLAG_CAP_LARGE;
+				ins->devs[ins->dev_cnt].flags |= SDIO_DEV_FLAG_CAP_LARGE;
 
 			resp[0] = 0;
 			sdio_send_cmd(ins, CMD_ALL_SEND_CID, 0, TRUE, SDIO_RESP_LONG, resp, MAX_TIMEOUT_MILLS);		// request CID
 
 			resp[0] = 0;
 			sdio_send_cmd(ins, CMD_SEND_RCA, 0, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);		// request RCA Publish
-			ins->dev_infos[ins->dev_cnt].caddr = (resp[0] >> 16);
-			devIds[ins->dev_cnt] = &ins->dev_infos[ins->dev_cnt];
+			ins->devs[ins->dev_cnt].caddr = (resp[0] >> 16);
+			devIds[ins->dev_cnt] = &ins->devs[ins->dev_cnt];
 
 
-			// TODO : if UHS further initialization required
-			if(ins->dev_infos[ins->dev_cnt].flags & SDIO_DEV_FLAG_UHSII_SUPPORT)
+			if(ins->devs[ins->dev_cnt].flags & SDIO_DEV_FLAG_UHSII_SUPPORT)
 			{
-
+				// TODO : if UHS further initialization required
 			}
 
-
-			sdio_send_cmd(ins, CMD_SELECT, (ins->dev_infos[ins->dev_cnt].caddr << 16), TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-			if(resp[0] & SDC_STATUS_CARD_IS_LOCKED)
-			{
-				// TODO : handle card is locked
-			}
-
-			sdio_send_cmd(ins, CMD_SEND_STATUS,(ins->dev_infos[ins->dev_cnt].caddr << 16), TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-			if(((resp[0] & SDC_STATUS_CUR_STATE_MSK) >> 9) != 4)
-			{
-			}
-
-
-
-			sdio_send_cmd(ins, CMD_APP_CMD,0, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-			sdio_send_cmd(ins, ACMD_SET_BUS_WIDTH, 2, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-			//CMD7
-			//CMD42
-			//ACMD
-
-
-
+			sd_read_csd(ins, &ins->devs[ins->dev_cnt], ins->devs[ins->dev_cnt].csd);
 			ins->dev_cnt++;
 		}
 	}
@@ -780,22 +834,22 @@ static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdi
 {
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
-	struct tch_sdio_device_info* dinfo = (struct tch_sdio_device_info*) device;
-	return sdio_send_cmd(ins,7,(dinfo->caddr << 16),TRUE,SDIO_RESP_SHORT,NULL,MAX_TIMEOUT_MILLS);
+	struct tch_sdio_device* dinfo = (struct tch_sdio_device*) device;
+	return sdio_send_cmd(ins,CMD_SELECT,(dinfo->caddr << 16),TRUE,SDIO_RESP_SHORT,NULL,MAX_TIMEOUT_MILLS);
 }
 
 static tchStatus sd_deselect_device(struct tch_sdio_handle_prototype* ins)
 {
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
-	return sdio_send_cmd(ins,7,0,FALSE,SDIO_RESP_SHORT,NULL,MAX_TIMEOUT_MILLS);
+	return sdio_send_cmd(ins,CMD_SELECT,0,FALSE,SDIO_RESP_SHORT,NULL,MAX_TIMEOUT_MILLS);
 }
 static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint32_t* csd)
 {
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
-	struct tch_sdio_device_info* dinfo = (struct tch_sdio_device_info*) device;
-	return sdio_send_cmd(ins,9,(dinfo->caddr << 16), TRUE,SDIO_RESP_LONG, csd,MAX_TIMEOUT_MILLS);
+	struct tch_sdio_device* dinfo = (struct tch_sdio_device*) device;
+	return sdio_send_cmd(ins,CMD_SEND_CSD,(dinfo->caddr << 16), TRUE,SDIO_RESP_LONG, csd,MAX_TIMEOUT_MILLS);
 }
 
 

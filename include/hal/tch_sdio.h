@@ -22,13 +22,15 @@
 #define SDIO_VO34_35			((uint16_t) 1 << 7)
 #define SDIO_VO35_36			((uint16_t) 1 << 8)
 
+#define SDIO_PREPARE_OPT_SPEED		((uint8_t) 1)
+#define SDIO_PREPARE_OPT_MAX_COMPAT	((uint8_t) 2)
+
 typedef struct tch_sdio_handle* tch_sdioHandle_t;
 typedef void* tch_sdioDevId;
-typedef struct tch_sdio_device_info tch_sdioDevInfo;
 typedef struct tch_sdio_cfg tch_sdioCfg_t;
 
 typedef enum {
-	MMC , SDC, SDIOC
+	MMC , SDC, SDIOC, UNKNOWN
 }SdioDevType;
 
 
@@ -43,6 +45,7 @@ struct tch_sdio_cfg {
 struct tch_sdio_handle {
 	tchStatus (*deviceReset)(tch_sdioHandle_t sdio);
 	uint32_t (*deviceId)(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+	tchStatus (*prepare)(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t option);
 	SdioDevType (*getDeviceType)(tch_sdioHandle_t sdio, tch_sdioDevId device);
 	BOOL (*isProtectEnabled)(tch_sdioHandle_t sdio,tch_sdioDevId device);
 	uint64_t  (*getMaxBitrate)(tch_sdioHandle_t sdio, tch_sdioDevId device);
