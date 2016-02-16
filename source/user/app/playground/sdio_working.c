@@ -22,9 +22,17 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	tch_sdioCfg_t sdio_cfg;
 	sdio->initCfg(&sdio_cfg, 4, ActOnSleep);
 	tch_sdioHandle_t sdio_handle = sdio->alloc(api, &sdio_cfg, tchWaitForever);
-	uint32_t devcnt = sdio_handle->deviceId(sdio_handle, SDC, devs, 10);
 
-	api->Dbg->print(api->Dbg->Normal, 0 ,"device identification complete : %d\n\r", devcnt);
+	sdio_handle->deviceReset(sdio_handle);		// sdio send reset command
+
+	uint32_t sdc_devcnt = sdio_handle->deviceId(sdio_handle, SDC, devs, 10);
+	uint32_t mmc_devcnt = sdio_handle->deviceId(sdio_handle, MMC, devs, 10);
+
+	api->Dbg->print(api->Dbg->Normal, 0 ,"%d SD Memory Card Found!!\n\r", sdc_devcnt);
+	api->Dbg->print(api->Dbg->Normal, 0 ,"%d MMC Card Found!!\n\r",mmc_devcnt);
+
+	tch_sdio_info_t info;
+	sdio_handle->getDevInfo(sdio_handle, devs[0],&info);
 
 	return tchOK;
 }

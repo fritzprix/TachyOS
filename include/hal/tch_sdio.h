@@ -22,27 +22,50 @@
 #define SDIO_VO34_35			((uint16_t) 1 << 7)
 #define SDIO_VO35_36			((uint16_t) 1 << 8)
 
+#define SDIO_PREPARE_OPT_SPEED		((uint8_t) 1)
+#define SDIO_PREPARE_OPT_MAX_COMPAT	((uint8_t) 2)
+
 typedef struct tch_sdio_handle* tch_sdioHandle_t;
 typedef void* tch_sdioDevId;
-typedef struct tch_sdio_device_info tch_sdioDevInfo;
 typedef struct tch_sdio_cfg tch_sdioCfg_t;
 
-
 typedef enum {
-	MMC , SDC, SDIOC
+	MMC , SDC, SDIOC, UNKNOWN
 }SdioDevType;
+
+typedef struct tch_sdio_info {
+	uint8_t 		ver;
+	uint32_t 		tr_spd;
+	uint8_t			rd_blen;
+	uint8_t			wr_blen;
+	BOOL			is_partial_rd_allowed;
+	BOOL			is_partial_wr_allowed;
+	BOOL			is_erase_blk_enable;
+	BOOL			perm_wp;
+	BOOL			tmp_wp;
+	uint8_t			sect_size;
+	uint8_t			file_fmt;
+	uint64_t		capacity;
+}tch_sdio_info_t;
 
 
 struct tch_sdio_cfg {
-	uint8_t bus_width;
-	uint16_t v_opt;
-	tch_PwrOpt lpopt;
+	uint8_t 		bus_width;
+	uint16_t 		v_opt;
+	tch_PwrOpt 		lpopt;
+	BOOL			s18r_enable;		// sd card specific?
 };
 
 
 struct tch_sdio_handle {
+	tchStatus (*deviceReset)(tch_sdioHandle_t sdio);
 	uint32_t (*deviceId)(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
-	tchStatus (*deviceInfo)(tch_sdioHandle_t sdio,tch_sdioDevId device, tch_sdioDevInfo* info);
+	tchStatus (*getDevInfo)(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
+	tchStatus (*prepare)(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t option);
+	SdioDevType (*getDeviceType)(tch_sdioHandle_t sdio, tch_sdioDevId device);
+	BOOL (*isProtectEnabled)(tch_sdioHandle_t sdio,tch_sdioDevId device);
+	uint64_t  (*getMaxBitrate)(tch_sdioHandle_t sdio, tch_sdioDevId device);
+	uint64_t  (*getCapacity)(tch_sdioHandle_t sdio, tch_sdioDevId device);
 	tchStatus (*writeBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 	tchStatus (*readBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 	tchStatus (*erase)(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
