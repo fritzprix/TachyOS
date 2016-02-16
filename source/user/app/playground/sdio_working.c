@@ -31,6 +31,9 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	api->Dbg->print(api->Dbg->Normal, 0 ,"%d SD Memory Card Found!!\n\r", sdc_devcnt);
 	api->Dbg->print(api->Dbg->Normal, 0 ,"%d MMC Card Found!!\n\r",mmc_devcnt);
 
+	tch_sdio_info_t info;
+	sdio_handle->getDevInfo(sdio_handle, devs[0],&info);
+
 	return tchOK;
 }
 

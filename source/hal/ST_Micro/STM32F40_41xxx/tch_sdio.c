@@ -22,6 +22,7 @@
 #define SDIO_CLASS_KEY				(uint16_t) 0x3F65
 #endif
 
+
 #define MAX_SDIO_DEVCNT				10
 #define MAX_TIMEOUT_MILLS			1000
 #define CMD_CLEAR_MASK				((uint32_t)0xFFFFF800)
@@ -123,6 +124,12 @@
 #define SDC_STATUS_APP_CMD			((uint32_t) 1 << 5)
 #define SDC_STATUS_AKE_SEQ_ERR		((uint32_t) 1 << 3)
 
+#define SCR_DAT_BUS_WIDTH			((uint32_t) 0xF << 16)
+#define SCR_SPEC_VER				((uint32_t) 0xF << 24)
+
+#define BUS_WIDTH_1B				((uint8_t) 1)
+#define BUS_WIDTH_4B				((uint8_t) 1 << 2)
+
 
 
 #define SDIO_VALIDATE(ins)	do {\
@@ -171,6 +178,67 @@
 #define SDIO_CMD_PORT			tch_gpio3
 
 
+#define CSD_VERSION					((uint32_t) 3 << 30)
+#define CSDv1_ACC_TIME				((uint32_t) 0xFF << 16)
+#define CSDv1_NSAC					((uint32_t) 0xFF << 8)
+#define CSDv1_TRANS_SPEED			((uint32_t) 0xFF << 0)
+
+#define CSDv1_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv1_RD_BLKLEN				((uint32_t) 0xF << 16)
+#define CSDv1_RD_PART_OK			((uint32_t) 1 << 15)
+#define CSDv1_WR_BLK_MIS			((uint32_t) 1 << 14)
+#define CSDv1_RD_BLK_MIS			((uint32_t) 1 << 13)
+#define CSDv1_DSR_IMPL				((uint32_t) 1 << 12)
+#define CSDv1_CSIZE_UPPER			((uint32_t) ((1 << 10) - 1))
+
+#define CSDv1_CSIZE_LOWER			((uint32_t) 3 << 30)
+#define CSDv1_VDD_RD_MIN			((uint32_t) 7 << 27)
+#define CSDv1_VDD_RD_MAX			((uint32_t) 7 << 24)
+#define CSDv1_VDD_WR_MIN			((uint32_t) 3 << 21)
+#define CSDv1_VDD_WR_MAX			((uint32_t) 3 << 18)
+#define CSDv1_CSIZE_MUL				((uint32_t) 7 << 15)
+#define CSDv1_ERASE_BLK_EN			((uint32_t) 1 << 14)
+#define CSDv1_SECT_SIZE				((uint32_t) 0x7F << 7)
+#define CSDv1_WP_GRP_SIZE			((uint32_t) 0x7F)
+
+#define CSDv1_WP_GRP_EN				((uint32_t) 1 << 31)
+#define CSDv1_R2W_FACTOR			((uint32_t) 7 << 26)
+#define CSDv1_WR_BLKLEN				((uint32_t) 0xF << 22)
+#define CSDv1_WR_PART_OK			((uint32_t) 1 << 21)
+#define CSDv1_FILE_FMT_GRP			((uint32_t) 1 << 15)
+#define CSDv1_COPY_FLAG				((uint32_t) 1 << 14)
+#define CSDv1_PERM_WP				((uint32_t) 1 << 13)
+#define CSDv1_TMP_WP				((uint32_t) 1 << 12)
+#define CSDv1_FILE_FMT				((uint32_t) 3 << 10)
+
+
+#define CSDv2_ACC_TIME				((uint32_t) 0xFF << 16)
+#define CSDv2_NSAC					((uint32_t) 0xFF << 8)
+#define CSDv2_TRANS_SPEED			((uint32_t) 0xFF << 0)
+
+#define CSDv2_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv2_RD_BLKLEN				((uint32_t) 0xF << 16)
+#define CSDv2_RD_PART_OK			((uint32_t) 1 << 15)
+#define CSDv2_WR_BLK_MIS			((uint32_t) 1 << 14)
+#define CSDv2_RD_BLK_MIS			((uint32_t) 1 << 13)
+#define CSDv2_DSR_IMPL				((uint32_t) 1 << 12)
+#define CSDv2_CSIZE_UPPER			((uint32_t) ((1 << 6) - 1))
+
+#define CSDv2_CSIZE_LOWER			((uint32_t) (((1 << 16) - 1) << 16))
+#define CSDv2_ERASE_BLK_EN			((uint32_t) 1 << 14)
+#define CSDv2_SECT_SIZE				((uint32_t) 0x7F << 7)
+#define CSDv2_WP_GRP_SIZE			((uint32_t) 0x7F)
+
+#define CSDv2_WP_GRP_EN				((uint32_t) 1 << 31)
+#define CSDv2_R2W_FACTOR			((uint32_t) 7 << 26)
+#define CSDv2_WR_BLKLEN				((uint32_t) 0xF << 22)
+#define CSDv2_WR_PART_OK			((uint32_t) 1 << 21)
+#define CSDv2_FILE_FMT_GRP			((uint32_t) 1 << 15)
+#define CSDv2_COPY_FLAG				((uint32_t) 1 << 14)
+#define CSDv2_PERM_WP				((uint32_t) 1 << 13)
+#define CSDv2_TMP_WP				((uint32_t) 1 << 12)
+#define CSDv2_FILE_FMT				((uint32_t) 3 << 10)
+
 typedef struct tch_sdio_device {
  	SdioDevType				type;
 #define SDIO_DEV_FLAG_CAP_LARGE				((uint16_t) 1 << 1)
@@ -179,39 +247,10 @@ typedef struct tch_sdio_device {
 #define SDIO_DEV_FLAG_READY					((uint16_t) 1 << 4)
  	uint32_t				flags;
  	uint16_t 				caddr;
-#define CSD_VERSION				((uint32_t) 3 << 30)
-#define CSD_ACC_TIME			((uint32_t) 0xFF << 16)
-#define CSD_NSAC				((uint32_t) 0xFF << 8)
-#define CSD_TRANS_SPEED			((uint32_t) 0xFF << 0)
-
-#define CSD_CMD_CLASS			((uint32_t) ((1 << 12) - 1) << 20)
-#define CSD_RD_BLKLEN			((uint32_t) 0xF << 16)
-#define CSD_RD_PART_OK			((uint32_t) 1 << 15)
-#define CSD_WR_BLK_MIS			((uint32_t) 1 << 14)
-#define CSD_RD_BLK_MIS			((uint32_t) 1 << 13)
-#define CSD_DSR_IMPL			((uint32_t) 1 << 12)
-#define CSD_CSIZE_UPPER			((uint32_t) ((1 << 11) - 1))
-
-#define CSD_CSIZE_LOWER			((uint32_t) 3 << 30)
-#define CSD_VDD_RD_MIN			((uint32_t) 7 << 27)
-#define CSD_VDD_RD_MAX			((uint32_t) 7 << 24)
-#define CSD_VDD_WR_MIN			((uint32_t) 3 << 21)
-#define CSD_VDD_WR_MAX			((uint32_t) 3 << 18)
-#define CSD_CSIZE_MUL			((uint32_t) 3 << 15)
-#define CSD_ERASE_BLK_EN		((uint32_t) 1 << 14)
-#define CSD_SECT_SIZE			((uint32_t) 0x7F << 7)
-#define CSD_WP_GRP_SIZE			((uint32_t) 0x7F)
-
-#define CSD_WP_GRP_EN			((uint32_t) 1 << 31)
-#define CSD_R2W_FACTOR			((uint32_t) 7 << 26)
-#define CSD_WR_BLKLEN			((uint32_t) 0xF << 22)
-#define CSD_WR_PART_OK			((uint32_t) 1 << 21)
-#define CSD_FILE_FMT_GRP		((uint32_t) 1 << 15)
-#define CSD_COPY_FLAG			((uint32_t) 1 << 14)
-#define CSD_PERM_WP				((uint32_t) 1 << 13)
-#define CSD_TMP_WP				((uint32_t) 1 << 12)
-#define CSD_FILE_FMT			((uint32_t) 3 << 10)
+ 	uint8_t					bus_width;
+ 	uint8_t					spec;
  	uint32_t				csd[4];
+ 	uint32_t				scr[2];
 }tch_sdioDev_t;
 
 struct tch_sdio_handle_prototype  {
@@ -270,6 +309,7 @@ __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
 __USER_API__ static tchStatus tch_sdio_handle_device_reset(tch_sdioHandle_t sdio);
 __USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+__USER_API__ tchStatus tch_sdio_handle_getDevInfo(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
 __USER_API__ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId device,uint8_t option);
 __USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
@@ -455,6 +495,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	ins->pix.deviceReset = tch_sdio_handle_device_reset;
 	ins->pix.deviceId = tch_sdio_handle_device_id;
+	ins->pix.getDevInfo = tch_sdio_handle_getDevInfo;
 	ins->pix.prepare = tch_sdio_handle_prepare;
 	ins->pix.getDeviceType = tch_sdio_handle_getDeviceType;
 	ins->pix.isProtectEnabled = tch_sdio_handle_isProtectEnabled;
@@ -642,6 +683,59 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 	return resp[0];
 }
 
+tchStatus tch_sdio_handle_getDevInfo(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info)
+{
+	if(!sdio || !device || !info)
+		return tchErrorParameter;
+	if(!SDIO_ISVALID(sdio))
+		return tchErrorParameter;
+
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	if((info->ver = (dev->csd[0] & CSD_VERSION) >> 30) == 0)
+	{
+		info->tr_spd = dev->csd[0] & CSDv1_TRANS_SPEED;
+		info->tr_spd = TransferUnit[info->tr_spd & 7] * TransferTv[info->tr_spd >> 3];
+
+		info->rd_blen = (dev->csd[1] & CSDv1_RD_BLKLEN) >> 16;
+		info->is_partial_rd_allowed = (dev->csd[1] & CSDv1_RD_PART_OK) >> 15;
+		info->capacity = (dev->csd[1] & CSDv1_CSIZE_UPPER) << 2;
+		info->capacity |= ((dev->csd[2] & CSDv1_CSIZE_LOWER) >> 30);
+		info->capacity++;
+		info->capacity *= (1 << (((dev->csd[2] & CSDv1_CSIZE_MUL) >> 15) + 2));
+		info->capacity *= (1 << info->rd_blen);
+		info->sect_size = ((dev->csd[2] & CSDv1_SECT_SIZE) >> 7);
+		info->is_erase_blk_enable = ((dev->csd[2] & CSDv1_ERASE_BLK_EN) != 0);
+
+		info->wr_blen = ((dev->csd[3] & CSDv1_WR_BLKLEN) >> 22);
+		info->is_partial_wr_allowed = ((dev->csd[3] & CSDv1_WR_PART_OK) >> 21);
+		info->tmp_wp = ((dev->csd[3] & CSDv1_TMP_WP) != 0);
+		info->perm_wp = ((dev->csd[3] & CSDv1_PERM_WP) != 0);
+		info->file_fmt = ((dev->csd[3] & CSDv1_FILE_FMT) >> 10);
+	}
+	else
+	{
+		info->tr_spd = dev->csd[0] & CSDv2_TRANS_SPEED;
+		info->tr_spd = TransferUnit[info->tr_spd & 7] * TransferTv[info->tr_spd >> 3];
+
+		info->rd_blen = (dev->csd[1] & CSDv2_RD_BLKLEN) >> 16;
+		info->is_partial_rd_allowed = (dev->csd[1] & CSDv2_RD_PART_OK) >> 15;
+		info->capacity = ((dev->csd[1] & CSDv2_CSIZE_UPPER) << 16);
+		info->capacity |= ((dev->csd[2] & CSDv2_CSIZE_LOWER) >> 16);
+		info->capacity++;
+		info->capacity *= (512 * 1024);
+		info->sect_size = ((dev->csd[2] & CSDv2_SECT_SIZE) >> 7);
+		info->is_erase_blk_enable = ((dev->csd[2] & CSDv2_ERASE_BLK_EN) != 0);
+
+		info->wr_blen = ((dev->csd[3] & CSDv2_WR_BLKLEN) >> 22);
+		info->is_partial_wr_allowed = ((dev->csd[3] & CSDv2_WR_PART_OK) >> 21);
+		info->tmp_wp = ((dev->csd[3] & CSDv2_TMP_WP) != 0);
+		info->file_fmt = ((dev->csd[3] & CSDv2_FILE_FMT) >> 10);
+	}
+
+	return tchOK;
+}
+
+
 static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId device,uint8_t option)
 {
 	if(!sdio || !device)
@@ -649,11 +743,38 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 	if(!SDIO_ISVALID(sdio))
 		return tchErrorParameter;
 
+	tchStatus res;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
-	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
-	uint32_t spd = dev->csd[3] & CSD_TRANS_SPEED;
-	spd = TransferUnit[spd & 7] * TransferTv[spd >> 3];
+	tch_sdio_info_t sdio_info;
+	tch_sdio_handle_getDevInfo(sdio, device, &sdio_info);
+	if((res = ins->api->Mtx->lock(ins->mtx, tchWaitForever)) != tchOK)
+		return res;
+	while(IS_BUSY(sdio))
+	{
+		if((res = ins->api->Condv->wait(ins->condv, ins->mtx, tchWaitForever) != tchOK))
+		{
+			return res;
+		}
+	}
+	SET_BUSY(sdio);
+	if((res = ins->api->Mtx->unlock(ins->mtx)) != tchOK)
+		return res;
 
+	switch(option)
+	{
+	case SDIO_PREPARE_OPT_MAX_COMPAT:
+		// TODO : sdio prepare for max compatibility
+		break;
+	case SDIO_PREPARE_OPT_SPEED:
+		// TODO : sdio
+		break;
+	}
+
+	if((res = ins->api->Mtx->lock(ins->mtx, tchWaitForever)) != tchOK)
+		return res;
+	CLR_BUSY(sdio);
+	ins->api->Condv->wake(ins->condv);
+	ins->api->Mtx->unlock(ins->mtx);
 
 	return tchOK;
 }
@@ -781,6 +902,17 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 			}
 
 			sd_read_csd(ins, &ins->devs[ins->dev_cnt], ins->devs[ins->dev_cnt].csd);
+
+			sd_select_device(ins, &ins->devs[ins->dev_cnt]);
+
+			sdio_send_cmd(ins, CMD_APP_CMD, ins->devs[ins->dev_cnt].caddr << 16, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
+			sdio_send_cmd(ins, ACMD_SEND_SCR, ins->devs[ins->dev_cnt].caddr << 16, TRUE, SDIO_RESP_LONG, resp, MAX_TIMEOUT_MILLS);
+
+			ins->devs[ins->dev_cnt].bus_width = ((resp[0] & SCR_DAT_BUS_WIDTH) >> 16);
+			ins->devs[ins->dev_cnt].spec = ((resp[0] & SCR_SPEC_VER) >> 24);
+
+
+			mcpy(ins->devs[ins->dev_cnt].scr,resp, 2 * sizeof(uint32_t));
 			ins->dev_cnt++;
 		}
 	}

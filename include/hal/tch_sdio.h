@@ -33,6 +33,21 @@ typedef enum {
 	MMC , SDC, SDIOC, UNKNOWN
 }SdioDevType;
 
+typedef struct tch_sdio_info {
+	uint8_t 		ver;
+	uint32_t 		tr_spd;
+	uint8_t			rd_blen;
+	uint8_t			wr_blen;
+	BOOL			is_partial_rd_allowed;
+	BOOL			is_partial_wr_allowed;
+	BOOL			is_erase_blk_enable;
+	BOOL			perm_wp;
+	BOOL			tmp_wp;
+	uint8_t			sect_size;
+	uint8_t			file_fmt;
+	uint64_t		capacity;
+}tch_sdio_info_t;
+
 
 struct tch_sdio_cfg {
 	uint8_t 		bus_width;
@@ -45,6 +60,7 @@ struct tch_sdio_cfg {
 struct tch_sdio_handle {
 	tchStatus (*deviceReset)(tch_sdioHandle_t sdio);
 	uint32_t (*deviceId)(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
+	tchStatus (*getDevInfo)(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
 	tchStatus (*prepare)(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t option);
 	SdioDevType (*getDeviceType)(tch_sdioHandle_t sdio, tch_sdioDevId device);
 	BOOL (*isProtectEnabled)(tch_sdioHandle_t sdio,tch_sdioDevId device);
