@@ -465,7 +465,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 	{
 		uhw->CR3 |= USART_CR3_DMAT;
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz);
+		dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz,DMA_Dir_MemToPeriph);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
@@ -548,7 +548,7 @@ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,u
 	{
 		uhw->CR3 |= USART_CR3_DMAR;
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz);
+		dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz, DMA_Dir_PeriphToMem);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		sz -= dma->beginXfer(ins->rxDma,&req,timeout,NULL);

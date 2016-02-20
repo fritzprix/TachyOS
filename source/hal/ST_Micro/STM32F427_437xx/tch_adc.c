@@ -395,7 +395,7 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 	while(convCnt--)
 	{
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,tchWaitForever,NULL);
-		dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2));    // burst unit is half word
+		dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2),DMA_Dir_PeriphToMem);    // burst unit is half word
 		ins->timer->start(ins->timer);
 		dma->beginXfer(ins->dma,&dmaReq,0,&result);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);

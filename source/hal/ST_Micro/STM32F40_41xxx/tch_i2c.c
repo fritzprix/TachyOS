@@ -463,12 +463,7 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t
 	{
 		// prepare DMA request
 		tch_DmaReqDef txreq;
-		txreq.MemAddr[0] = (uaddr_t) wb;
-		txreq.MemInc = TRUE;
-		txreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
-		txreq.PeriphInc = FALSE;
-		txreq.size = sz;
-
+		dma->initReq(&txreq, (uaddr_t) wb, (uaddr_t) &iicHw->DR,sz,DMA_Dir_MemToPeriph);
 
 		// wait for addressing complete
 		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,100) != tchOK)
@@ -575,11 +570,7 @@ __USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle_t* self,uint16_t a
 	if(ins->rxdma)
 	{
 		tch_DmaReqDef rxreq;
-		rxreq.MemAddr[0] = rb;
-		rxreq.MemInc = TRUE;
-		rxreq.PeriphAddr[0] = (uaddr_t)&iicHw->DR;
-		rxreq.PeriphInc = FALSE;
-		rxreq.size = sz;
+		dma->initReq(&rxreq,(uaddr_t) rb, (uaddr_t) &iicHw->DR, sz, DMA_Dir_PeriphToMem);
 
 		// wait for addressing complete
 		if((result = ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,100)) != tchOK)

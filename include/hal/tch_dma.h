@@ -106,6 +106,7 @@ typedef struct tch_dma_req_s {
 	BOOL        MemInc;
 	uaddr_t     PeriphAddr[2];
 	BOOL        PeriphInc;
+	uint8_t 	Dir;
 }tch_DmaReqDef;
 
 
@@ -130,13 +131,13 @@ typedef struct tch_hal_module_dma {
 
 	/*!
 	 * \brief open dma stream
-	 * \param dma dma stream from \ref DMA_Str0 to \ref DMA_Str15
+	 * \param[in] dma dma stream from \ref DMA_Str0 to \ref DMA_Str15
 	 * \param cfg dma configuration type. \ref tch_dma_cfg
 	 * \param timeout any number of time in millisec or \ref osWaitForever
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
+	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir);
 	tch_dmaHandle (*allocate)(const tch_core_api_t* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	uint32_t (*beginXfer)(tch_dmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 	tchStatus (*freeDma)(tch_dmaHandle handle);
