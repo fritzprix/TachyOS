@@ -125,7 +125,7 @@ typedef struct tch_dma_handle_prototype_t{
  *  User Accessible Stubs
  */
 __USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg);
-__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
+__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir);
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 __USER_API__ static uint32_t tch_dma_beginXfer(tch_dmaHandle self,tch_DmaReqDef* attr,uint32_t timeout,tchStatus* result);
 __USER_API__ static tchStatus tch_dma_close(tch_dmaHandle self);
@@ -186,12 +186,13 @@ __USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg){
 	cfg->pBurstSize = DMA_Burst_Single;
 }
 
-__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size){
+__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir){
 	attr->MemAddr[0] = maddr;
 	attr->PeriphAddr[0] = paddr;
 	attr->MemInc = TRUE;
 	attr->PeriphInc = FALSE;
 	attr->size = size;
+	attr->Dir = dir;
 }
 
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
@@ -354,8 +355,6 @@ static inline BOOL tch_dma_isValid(tch_dma_handle_prototype* _handle){
 
 static BOOL tch_dma_setDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) _dmaHw;
-	if(!attr->size)
-		return FALSE;
 	dmaHw->NDTR = attr->size;
 	dmaHw->M0AR = (uint32_t)attr->MemAddr[0];
 	dmaHw->M1AR = (uint32_t)attr->MemAddr[1];
@@ -365,6 +364,7 @@ static BOOL tch_dma_setDmaAttr(void* _dmaHw,tch_DmaReqDef* attr){
 		dmaHw->CR |= DMA_SxCR_MINC;
 	else
 		dmaHw->CR &= ~DMA_SxCR_MINC;
+	dmaHw->CR = ((dmaHw->CR & ~DMA_SxCR_DIR) | (attr->Dir << 6));
 
 	if(attr->PeriphInc)
 		dmaHw->CR |= DMA_SxCR_PINC;

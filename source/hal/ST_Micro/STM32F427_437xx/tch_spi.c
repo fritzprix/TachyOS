@@ -385,28 +385,23 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const 
 		return result;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
-	dmaReq.MemAddr[0] = rb;
+	dma->initReq(&dmaReq, (uaddr_t) rb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_PeriphToMem);
 	if(rb)
 		dmaReq.MemInc = TRUE;
 	else
 		dmaReq.MemInc = FALSE;
-	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
-	dmaReq.PeriphInc = FALSE;
-	dmaReq.size = sz;
+
 	if(dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
 
-	dmaReq.MemAddr[0] = (uaddr_t)wb;
-	dmaReq.MemInc = TRUE;
-	dmaReq.PeriphAddr[0] = (uaddr_t)&spiHw->DR;
-	dmaReq.PeriphInc = FALSE;
-	dmaReq.size = sz;
+	dma->initReq(&dmaReq, (uaddr_t) wb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_MemToPeriph);
 	if(dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
+
 	result = tchOK;
 	SET_SAFE_RETURN();
 	env->Mtx->lock(ins->mtx,tchWaitForever);
