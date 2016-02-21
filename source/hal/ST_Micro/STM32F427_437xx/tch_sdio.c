@@ -90,7 +90,6 @@
 #define ACMD_SET_CLR_CARD_DETECT	((uint8_t) 42)
 #define ACMD_SEND_SCR				((uint8_t) 51)
 
-
 /*
  * Flags for SDIO Handle
  * */
@@ -142,7 +141,6 @@
 
 
 #define SDIO_ISVALID(ins)			((((struct tch_sdio_handle_prototype*) ins)->status & 0xffff) == (((uint32_t) ins ^ SDIO_CLASS_KEY) & 0xffff))
-
 
 
 #define SET_BUSY(sdio) do {\
@@ -248,10 +246,16 @@ typedef struct tch_sdio_device {
  	uint32_t				flags;
  	uint16_t 				caddr;
  	uint8_t					bus_width;
- 	uint8_t					spec;
+ 	uint8_t					blksz;
  	uint32_t				csd[4];
- 	uint32_t				scr[2];
 }tch_sdioDev_t;
+
+typedef struct tch_sdio_req {
+	void					*buffer;
+	uint32_t				 bsz;
+	uint32_t				 bidx;
+	uint32_t				 req_type;
+}tch_sdio_req_t;
 
 struct tch_sdio_handle_prototype  {
 	struct tch_sdio_handle 				pix;
@@ -265,6 +269,7 @@ struct tch_sdio_handle_prototype  {
 	tch_dmaHandle*						dma;
 	tch_eventId							evId;
 	const tch_core_api_t*				api;
+	tch_sdio_req_t*						req;
 	tch_mtxId							mtx;
 	tch_condvId							condv;
 };
@@ -282,6 +287,7 @@ typedef struct sdio_lock_blk {
 
 
 
+
 #define SDIO_RESP_SHORT		((sdio_resp_t) 1)
 #define SDIO_RESP_LONG		((sdio_resp_t) 2)
 typedef uint8_t		sdio_resp_t;
@@ -289,6 +295,8 @@ typedef uint8_t		sdio_resp_t;
 
 
 /*** private function declaration ***/
+
+static tch_hal_module_dma_t* DMA;
 static int tch_sdio_init();
 static void tch_sdio_exit();
 
@@ -298,6 +306,7 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 
 
+static tchStatus sdio_set_bus_width(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint8_t bw);
 static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp, sdio_resp_t rtype, uint32_t* resp,uint32_t timeout);
 static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device);
 static tchStatus sd_deselect_device(struct tch_sdio_handle_prototype* ins);
@@ -306,17 +315,12 @@ static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevI
 
 
 /**
- * read stream helper function
- */
-static tchStatus sdio_read_stream(struct tch_sdio_handle_prototype* ins,uint8_t cmdIdx,  void* buffer,uint32_t len, uint32_t timeout);
-
-/**
  * read block helper function
  */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout);
 
 
-
+static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address,const void* buffer, uint32_t blk_cnt,uint32_t blk_size, uint32_t timeout);
 
 
 
@@ -328,9 +332,9 @@ __USER_API__ static tchStatus tch_sdio_handle_device_reset(tch_sdioHandle_t sdio
 __USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 __USER_API__ tchStatus tch_sdio_handle_getDevInfo(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
 __USER_API__ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId device,uint8_t option);
-__USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-__USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-__USER_API__ static tchStatus tch_sdio_handle_erase(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+__USER_API__ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout);
+__USER_API__ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout);
+__USER_API__ static tchStatus tch_sdio_handle_erase(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_offset,uint32_t blk_cnt);
 __USER_API__ static tchStatus tch_sdio_handle_eraseForce(tch_sdioHandle_t sdio, tch_sdioDevId device);
 __USER_API__ static tchStatus tch_sdio_handle_setPassword(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* opwd, const char* npwd, BOOL lock);
 __USER_API__ static tchStatus tch_sdio_handle_lock(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
@@ -559,7 +563,11 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		sdio_reg->CLKCR |= SDIO_CLKCR_HWFC_EN;		// hardware flow control enable
 	}
 	// enable error handling interrupt
-	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE | SDIO_MASK_CMDRENDIE | SDIO_MASK_CMDSENTIE | SDIO_MASK_CCRCFAILIE | SDIO_MASK_DBCKENDIE | SDIO_MASK_DATAENDIE);
+	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE |
+						SDIO_MASK_CMDRENDIE | SDIO_MASK_CMDSENTIE |
+						SDIO_MASK_CCRCFAILIE | SDIO_MASK_DBCKENDIE |
+						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE);
+
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;			// power save mode enabled
 	sdio_reg->CLKCR |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
 	sdio_reg->CLKCR |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
@@ -671,12 +679,15 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 	}
 	SET_BUSY(ins);
 	if(ins->api->Mtx->unlock(ins->mtx) != tchOK)
+	{
+		CLR_BUSY(ins);
 		return 0;
+	}
 	uint32_t resp[4];
 
 	sdio_send_cmd(ins, CMD_SEND_IF_COND, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);		// send op cond
 	if(resp[0] != 0x1FF)
-		return 0;
+		goto ID_SAFERET;
 
 	switch(type){
 	case MMC:
@@ -692,6 +703,7 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 		resp[0] = 0;
 	}
 
+ID_SAFERET:
 	ins->api->Mtx->lock(ins->mtx,tchWaitForever);
 	CLR_BUSY(ins);
 	ins->api->Condv->wakeAll(ins->condv);
@@ -761,8 +773,7 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 
 	tchStatus res;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
-	tch_sdio_info_t sdio_info;
-	tch_sdio_handle_getDevInfo(sdio, device, &sdio_info);
+
 	if((res = ins->api->Mtx->lock(ins->mtx, tchWaitForever)) != tchOK)
 		return res;
 	while(IS_BUSY(sdio))
@@ -776,13 +787,31 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 	if((res = ins->api->Mtx->unlock(ins->mtx)) != tchOK)
 		return res;
 
+	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
+	uint32_t clkcr;
+
 	switch(option)
 	{
 	case SDIO_PREPARE_OPT_MAX_COMPAT:
 		// TODO : sdio prepare for max compatibility
+		// set data bus 1
+		// set clock 24mhz
+		clkcr = sdio_reg->CLKCR;
+		clkcr &= ~(SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
+		sdio_set_bus_width(ins, device, 4);
+		clkcr |=  ((1 << 11) | SDIO_CLKCR_CLKEN);
+		sdio_reg->CLKCR = clkcr;
 		break;
 	case SDIO_PREPARE_OPT_SPEED:
 		// TODO : sdio
+		//try to set data bus width to 4
+		// if fail set data bus width to 1
+		//set clock 48mhz
+		clkcr = sdio_reg->CLKCR;
+		clkcr &= ~(SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
+		sdio_set_bus_width(ins, device, 4);
+		clkcr |= ((1 << 11) | SDIO_CLKCR_BYPASS | SDIO_CLKCR_CLKEN);
+		sdio_reg->CLKCR = clkcr;
 		break;
 	}
 
@@ -820,17 +849,51 @@ static uint64_t tch_sdio_handle_getCapacity(tch_sdioHandle_t sdio, tch_sdioDevId
 }
 
 
-static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt)
+static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
 {
 
 }
 
-static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt)
+static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
 {
+	tchStatus res;
+	if(!sdio || !SDIO_ISVALID(sdio))
+		return tchErrorParameter;
+	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
+	const tch_core_api_t* api = ins->api;
+	tch_sdioDev_t *dev = (tch_sdioDev_t*) device;
+	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
+		return res;
+	while(IS_BUSY(sdio))
+	{
+		if((res = api->Condv->wait(ins->condv, ins->mtx, timeout)) != tchOK)
+			return res;
+	}
+	SET_BUSY(sdio);
+	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
+		return res;
 
+
+	res = sd_select_device(ins, dev);
+	uint32_t cnt = 0;
+	uint32_t blksize = 1 << dev->blksz;
+	do{
+		res = sdio_read_block(ins, CMD_READ_SBLK,  blk_offset, &blk_bp[blksize * cnt++] ,1, dev->blksz, timeout);
+		if(res != tchOK)
+			goto READ_SAFERET;
+	}while(cnt < blk_cnt);
+
+	res = tchOK;
+
+READ_SAFERET:
+	api->Mtx->lock(ins->mtx,tchWaitForever);
+	CLR_BUSY(sdio);
+	api->Condv->wake(ins->condv);
+	api->Mtx->unlock(ins->mtx);
+	return res;
 }
 
-static tchStatus tch_sdio_handle_erase(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt)
+static tchStatus tch_sdio_handle_erase(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_offset,uint32_t blk_cnt)
 {
 
 }
@@ -860,7 +923,6 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 }
 
-static uint8_t sbuffer[1024];
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
 	const tch_core_api_t* api = ins->api;
@@ -912,34 +974,13 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 			ins->devs[ins->dev_cnt].caddr = (resp[0] >> 16);
 			devIds[ins->dev_cnt] = &ins->devs[ins->dev_cnt];
 
-
 			if(ins->devs[ins->dev_cnt].flags & SDIO_DEV_FLAG_UHSII_SUPPORT)
 			{
 				// TODO : if UHS further initialization required
 			}
 
 			sd_read_csd(ins, &ins->devs[ins->dev_cnt], ins->devs[ins->dev_cnt].csd);
-
-			sd_select_device(ins, &ins->devs[ins->dev_cnt]);
-
-/*			sdio_send_cmd(ins, CMD_APP_CMD, ins->devs[ins->dev_cnt].caddr << 16, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-
-			sdio_reg->DLEN = 8;
-			sdio_reg->DTIMER = 2000;
-			sdio_reg->DCTRL |= (SDIO_DCTRL_DTDIR |  SDIO_DCTRL_DTMODE);
-			sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
-
-
-			sdio_send_cmd(ins, ACMD_SEND_SCR, ins->devs[ins->dev_cnt].caddr << 16, TRUE, SDIO_RESP_LONG, resp, MAX_TIMEOUT_MILLS);
-*/
-//			sdio_read_block(ins, ACMD_SEND_SCR, ins->devs[ins->dev_cnt].caddr << 16, resp,8,0,MAX_TIMEOUT_MILLS);
-			sdio_read_block(ins, CMD_READ_SBLK, 0x00,sbuffer,1, 10, MAX_TIMEOUT_MILLS);
-
- 			ins->devs[ins->dev_cnt].bus_width = ((resp[0] & SCR_DAT_BUS_WIDTH) >> 16);
-			ins->devs[ins->dev_cnt].spec = ((resp[0] & SCR_SPEC_VER) >> 24);
-
-
-			mcpy(ins->devs[ins->dev_cnt].scr,resp, 2 * sizeof(uint32_t));
+			ins->devs[ins->dev_cnt].blksz = (ins->devs[ins->dev_cnt].csd[1] & CSDv1_RD_BLKLEN) >> 16;
 			ins->dev_cnt++;
 		}
 	}
@@ -950,6 +991,29 @@ static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_
 {
 
 }
+
+static tchStatus sdio_set_bus_width(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint8_t bw)
+{
+	if(!ins || !SDIO_ISVALID(ins) || !device)
+		return tchErrorParameter;
+
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	uint32_t resp;
+	tchStatus result = tchOK;
+	if((result = sd_select_device(ins,dev)) != tchOK)
+		return result;
+	if((result = sdio_send_cmd(ins,CMD_APP_CMD, (dev->caddr) << 16,TRUE,SDIO_RESP_SHORT,&resp,MAX_TIMEOUT_MILLS)) != tchOK)
+		return result;
+	if((result = sdio_send_cmd(ins,ACMD_SET_BUS_WIDTH, (bw >> 1),TRUE,SDIO_RESP_SHORT,&resp,MAX_TIMEOUT_MILLS)) != tchOK)
+		return result;
+
+	if((result = sd_deselect_device(ins)) != tchOK)
+		return result;
+
+	dev->bus_width = bw;
+	return result;
+}
+
 
 static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp,sdio_resp_t rtype, uint32_t* resp, uint32_t timeout)
 {
@@ -971,12 +1035,21 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 		ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDREND);
 
 		if(resp)
-			mcpy(resp, &sdio_reg->RESP1, 4 * sizeof(uint32_t));
+		{
+			switch(rtype){
+			case SDIO_RESP_SHORT:
+				resp[0] = sdio_reg->RESP1;
+				break;
+			case SDIO_RESP_LONG:
+				mcpy(resp, &sdio_reg->RESP1, 4 * sizeof(uint32_t));
+				break;
+			}
+		}
 
-		if((ev & ~SDIO_STA_CMDREND))
+/*		if((ev & ~SDIO_STA_CMDREND))
 		{
 			return tchErrorIo;
-		}
+		}*/
 	}
 	else
 	{
@@ -994,7 +1067,13 @@ static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdi
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
 	struct tch_sdio_device* dinfo = (struct tch_sdio_device*) device;
-	return sdio_send_cmd(ins,CMD_SELECT,(dinfo->caddr << 16),TRUE,SDIO_RESP_SHORT,NULL,MAX_TIMEOUT_MILLS);
+	uint32_t cstatus = 0;
+
+	sdio_send_cmd(ins,CMD_SELECT, (dinfo->caddr << 16),
+						TRUE,SDIO_RESP_SHORT, &cstatus, MAX_TIMEOUT_MILLS);
+	if(cstatus & SDC_STATUS_DATA_RDY)
+		return tchOK;
+	return tchErrorIo;
 }
 
 static tchStatus sd_deselect_device(struct tch_sdio_handle_prototype* ins)
@@ -1012,15 +1091,6 @@ static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevI
 }
 
 
-/**
- * read stream helper function
- */
-static tchStatus sdio_read_stream(struct tch_sdio_handle_prototype* ins,uint8_t cmdIdx,  void* buffer,uint32_t len, uint32_t timeout)
-{
-
-}
-
-
 
 /**
  * read block helper function
@@ -1033,50 +1103,108 @@ static tchStatus sdio_read_stream(struct tch_sdio_handle_prototype* ins,uint8_t 
  */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout)
 {
+
+
 	if(!ins || !SDIO_ISVALID(ins))
-			return tchErrorParameter;
+		return tchErrorParameter;
+
+	uint32_t resp = 0;
+	tchStatus ret;
+	SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
+
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
 			// DMA Used to receive data
-		SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
-		tch_hal_module_dma_t* DMA = tch_kmod_request(MODULE_TYPE_DMA);
 		tch_DmaReqDef req;
-
-			//	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size);
-
 		sdio_reg->DCTRL = 0;		// data state machine disable
 
-		tchStatus ret;
-	// TODO : should non-blocking op.
-
-		DMA->initReq(&req, buffer, (char*) &sdio_reg->FIFO, 0,DMA_Dir_PeriphToMem);
-		ret = DMA->beginXfer(ins->dma,&req,0,NULL);
+		dma->initReq(&req, buffer, (char*) &sdio_reg->FIFO, 0,DMA_Dir_PeriphToMem);
+		ret = dma->beginXfer(ins->dma,&req,0,NULL);
 
 		sdio_reg->DTIMER = timeout << 4;
 		sdio_reg->DLEN = blk_cnt * (1 << blk_size);
 
-		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
-		{
-				// TODO : reset DMA
-			sdio_reg->DCTRL = 0;
-		}
-
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN |  SDIO_DCTRL_DTDIR |(blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-		if((ret = ins->api->Event->wait(ins->evId,SDIO_STA_DATAEND,timeout)) != tchOK){
+
+		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
+		{
+			sdio_reg->DCTRL = 0;
+			return tchErrorIo;
+		}
+
+		if((ret = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
+		{
 			return ret;
 		}
-		DMA2_Stream3->CR = 0;
+		ins->api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
 		return tchOK;
 	}
 	else
 	{
 			// Read Operation performed without DMA
+		sdio_reg->DCTRL = 0;
+
+		sdio_reg->DTIMER = timeout << 4;
+		sdio_reg->DLEN = blk_cnt * (1 << blk_size);
+
+		sdio_reg->DCTRL = (SDIO_DCTRL_DTDIR | (blk_size << 4));
+		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
+
+		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
+		{
+			sdio_reg->DCTRL;
+		}
 		return tchOK;
 	}
 }
+
+
+static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address,const void* buffer, uint32_t blk_cnt,uint32_t blk_size, uint32_t timeout)
+{
+	if(!ins || !SDIO_ISVALID(ins))
+		return tchErrorParameter;
+
+	tchStatus result;
+	uint32_t resp;
+	tch_core_api_t* api = ins->api;
+	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
+
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size,TRUE, SDIO_RESP_SHORT, &resp,timeout);
+
+	if(ins->status & SDIO_HANDLE_FLAG_DMA)
+	{
+		sdio_reg->DCTRL = 0;
+
+		tch_DmaReqDef req;
+		dma->initReq(&req,buffer,&sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
+		dma->beginXfer(ins->dma,&req,timeout,NULL);
+
+		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
+		sdio_send_cmd(ins,CMD_WRITE_SBLK,address, TRUE, SDIO_RESP_SHORT, &resp, timeout);
+
+		sdio_reg->DTIMER = timeout << 4;
+		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
+		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
+
+		if((result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
+		{
+			return result;
+		}
+		api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
+	}
+	else
+	{
+
+	}
+
+	return tchOK;
+
+}
+
 
 
 // interrupt handler
@@ -1118,6 +1246,13 @@ void SDIO_IRQHandler()
 	{
 		sdio_reg->ICR |= SDIO_ICR_DATAENDC;
 		api->Event->set(sdio_ins->evId, SDIO_STA_DATAEND);
+		return;
+	}
+
+	if(sdio_reg->STA & SDIO_STA_DCRCFAIL)
+	{
+		sdio_reg->ICR |= SDIO_ICR_DCRCFAILC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
 		return;
 	}
 }
