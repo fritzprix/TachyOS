@@ -34,10 +34,10 @@ typedef enum {
 }SdioDevType;
 
 typedef struct tch_sdio_info {
-	uint8_t 		ver;
-	uint32_t 		tr_spd;
-	uint8_t			rd_blen;
-	uint8_t			wr_blen;
+	uint8_t 		ver;			// CSD Version   0 : SC  /  1 : HC XC
+	uint32_t 		tr_spd;			// max speed in MHz
+	uint8_t			rd_blen;		// block size for read
+	uint8_t			wr_blen;		// block size for write
 	BOOL			is_partial_rd_allowed;
 	BOOL			is_partial_wr_allowed;
 	BOOL			is_erase_blk_enable;
@@ -46,7 +46,7 @@ typedef struct tch_sdio_info {
 	uint8_t			sect_size;
 	uint8_t			file_fmt;
 	uint64_t		capacity;
-}tch_sdio_info_t;
+}__attribute__((packed)) tch_sdio_info_t;
 
 
 struct tch_sdio_cfg {
@@ -54,7 +54,7 @@ struct tch_sdio_cfg {
 	uint16_t 		v_opt;
 	tch_PwrOpt 		lpopt;
 	BOOL			s18r_enable;		// sd card specific?
-};
+}__attribute__((packed));
 
 
 struct tch_sdio_handle {
@@ -66,9 +66,9 @@ struct tch_sdio_handle {
 	BOOL (*isProtectEnabled)(tch_sdioHandle_t sdio,tch_sdioDevId device);
 	uint64_t  (*getMaxBitrate)(tch_sdioHandle_t sdio, tch_sdioDevId device);
 	uint64_t  (*getCapacity)(tch_sdioHandle_t sdio, tch_sdioDevId device);
-	tchStatus (*writeBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device ,const char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-	tchStatus (*readBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device,char* blk_bp,uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
-	tchStatus (*erase)(tch_sdioHandle_t sdio,tch_sdioDevId device, uint32_t blk_sz,uint32_t blk_offset,uint32_t blk_cnt);
+	tchStatus (*writeBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device ,const uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout);
+	tchStatus (*readBlock)(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout);
+	tchStatus (*erase)(tch_sdioHandle_t sdio,tch_sdioDevId device,uint32_t blk_offset,uint32_t blk_cnt);
 	tchStatus (*eraseForce)(tch_sdioHandle_t sdio, tch_sdioDevId device);
 	tchStatus (*setPassword)(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* opwd, const char* npwd, BOOL lock);
 	tchStatus (*lock)(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
