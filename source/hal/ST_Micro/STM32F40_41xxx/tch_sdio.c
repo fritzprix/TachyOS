@@ -19,116 +19,193 @@
 
 
 #ifndef SDIO_CLASS_KEY
-#define SDIO_CLASS_KEY				(uint16_t) 0x3F65
+#define SDIO_CLASS_KEY					(uint16_t) 0x3F65
 #endif
 
 
-#define MAX_SDIO_DEVCNT				10
-#define MAX_TIMEOUT_MILLS			1000
-#define CMD_CLEAR_MASK				((uint32_t)0xFFFFF800)
-#define SDIO_ACMD41_ARG_HCS			(1 << 30)
-#define SDIO_ACMD41_ARG_XPC			(1 << 28)
-#define SDIO_ACMD41_ARG_S18R		(1 << 24)
+#define MAX_SDIO_DEVCNT					10
+#define MAX_TIMEOUT_MILLS				1000
+#define CMD_CLEAR_MASK					((uint32_t)0xFFFFF800)
+#define SDIO_ACMD41_ARG_HCS				(1 << 30)
+#define SDIO_ACMD41_ARG_XPC				(1 << 28)
+#define SDIO_ACMD41_ARG_S18R			(1 << 24)
 
-#define SDIO_VO_TO_VW_SHIFT			15
-#define SDIO_OCR_VW27_28			(1 << 15)
-#define SDIO_OCR_VW28_29			(1 << 16)
-#define SDIO_OCR_VW29_30			(1 << 17)
-#define SDIO_OCR_VW30_31			(1 << 18)
-#define SDIO_OCR_VW31_32			(1 << 19)
-#define SDIO_OCR_VW32_33			(1 << 20)
-#define SDIO_OCR_VW33_34			(1 << 21)
-#define SDIO_OCR_VW34_35			(1 << 22)
-#define SDIO_OCR_VW35_36			(1 << 23)
+#define SDIO_VO_TO_VW_SHIFT				15
+#define SDIO_OCR_VW27_28				(1 << 15)
+#define SDIO_OCR_VW28_29				(1 << 16)
+#define SDIO_OCR_VW29_30				(1 << 17)
+#define SDIO_OCR_VW30_31				(1 << 18)
+#define SDIO_OCR_VW31_32				(1 << 19)
+#define SDIO_OCR_VW32_33				(1 << 20)
+#define SDIO_OCR_VW33_34				(1 << 21)
+#define SDIO_OCR_VW34_35				(1 << 22)
+#define SDIO_OCR_VW35_36				(1 << 23)
 
-#define SDIO_R3_READY				((uint32_t) 1 << 31)
-#define SDIO_R3_CCS					((uint32_t) 1 << 30)
-#define SDIO_R3_UHSII				((uint32_t) 1 << 29)
-#define SDIO_R3_S18A				((uint32_t) 1 << 24)
+#define SDIO_R3_READY					((uint32_t) 1 << 31)
+#define SDIO_R3_CCS						((uint32_t) 1 << 30)
+#define SDIO_R3_UHSII					((uint32_t) 1 << 29)
+#define SDIO_R3_S18A					((uint32_t) 1 << 24)
 
 /*
  * SDIO CMD index List
  * */
-#define CMD_GO_IDLE_STATE			((uint8_t) 0)
-#define CMD_ALL_SEND_CID			((uint8_t) 2)
-#define CMD_SEND_RCA				((uint8_t) 3)
-#define CMD_SET_DSR					((uint8_t) 4)		// program the DSR of all cards
-#define CMD_SELECT					((uint8_t) 7)		// command toggle a card between stand-by and transfer state
-#define CMD_SEND_IF_COND			((uint8_t) 8)		// send interface condition
-#define CMD_SEND_CSD				((uint8_t) 9)		// query card specific data(CSD)
-#define CMD_SEND_CID				((uint8_t) 10)		// query card identification(CID)
-#define CMD_SIGVL_SW				((uint8_t) 11)		// switch to 1.8V bus signal level
-#define CMD_STOP_TRANS				((uint8_t) 12)		// forces the card to stop transmission
-#define CMD_SEND_STATUS				((uint8_t) 13)		// addressed card send its status
-#define CMD_GO_INACTIVE				((uint8_t) 15)		// make an addressed card into the inactive state
+#define CMD_GO_IDLE_STATE				((uint8_t) 0)
+#define CMD_ALL_SEND_CID				((uint8_t) 2)
+#define CMD_SEND_RCA					((uint8_t) 3)
+#define CMD_SET_DSR						((uint8_t) 4)		// program the DSR of all cards
+#define CMD_SELECT						((uint8_t) 7)		// command toggle a card between stand-by and transfer state
+#define CMD_SEND_IF_COND				((uint8_t) 8)		// send interface condition
+#define CMD_SEND_CSD					((uint8_t) 9)		// query card specific data(CSD)
+#define CMD_SEND_CID					((uint8_t) 10)		// query card identification(CID)
+#define CMD_SIGVL_SW					((uint8_t) 11)		// switch to 1.8V bus signal level
+#define CMD_STOP_TRANS					((uint8_t) 12)		// forces the card to stop transmission
+#define CMD_SEND_STATUS					((uint8_t) 13)		// addressed card send its status
+#define CMD_GO_INACTIVE					((uint8_t) 15)		// make an addressed card into the inactive state
 
-#define CMD_SET_BLKLEN				((uint8_t) 16)
-#define CMD_READ_SBLK				((uint8_t) 17)
-#define CMD_READ_MBLK				((uint8_t) 18)
-#define CMD_SEND_TUNE				((uint8_t) 19)
-#define CMD_SPD_CLS_CTRL			((uint8_t) 20)
-#define CMD_SET_BLKCNT				((uint8_t) 23)
-#define CMD_WRITE_SBLK				((uint8_t) 24)
-#define CMD_WRITE_MBLK				((uint8_t) 25)
-#define CMD_PROG_CSD				((uint8_t) 27)
-#define CMD_SET_WP					((uint8_t) 28)
-#define CMD_CLR_WP					((uint8_t) 29)
-#define CMD_SEND_WP					((uint8_t) 30)
-#define CMD_ERASE_WBLK_START		((uint8_t) 32)
-#define CMD_ERASE_WBLK_END			((uint8_t) 33)
-#define CMD_ERASE					((uint8_t) 38)
-#define CMD_DEF_DPS					((uint8_t) 40)
-#define CMD_LOCK_UNLOCK				((uint8_t) 42)
-#define CMD_APP_CMD					((uint8_t) 55)
-#define CMD_GEN_CMD					((uint8_t) 56)
+#define CMD_SET_BLKLEN					((uint8_t) 16)
+#define CMD_READ_SBLK					((uint8_t) 17)
+#define CMD_READ_MBLK					((uint8_t) 18)
+#define CMD_SEND_TUNE					((uint8_t) 19)
+#define CMD_SPD_CLS_CTRL				((uint8_t) 20)
+#define CMD_SET_BLKCNT					((uint8_t) 23)
+#define CMD_WRITE_SBLK					((uint8_t) 24)
+#define CMD_WRITE_MBLK					((uint8_t) 25)
+#define CMD_PROG_CSD					((uint8_t) 27)
+#define CMD_SET_WP						((uint8_t) 28)
+#define CMD_CLR_WP						((uint8_t) 29)
+#define CMD_SEND_WP						((uint8_t) 30)
+#define CMD_ERASE_WBLK_START			((uint8_t) 32)
+#define CMD_ERASE_WBLK_END				((uint8_t) 33)
+#define CMD_ERASE						((uint8_t) 38)
+#define CMD_DEF_DPS						((uint8_t) 40)
+#define CMD_LOCK_UNLOCK					((uint8_t) 42)
+#define CMD_APP_CMD						((uint8_t) 55)
+#define CMD_GEN_CMD						((uint8_t) 56)
 
-#define ACMD_SET_BUS_WIDTH			((uint8_t) 6)
-#define ACMD_SD_STATUS				((uint8_t) 13)
-#define ACMD_SEND_NUM_WR_BLK		((uint8_t) 22)
-#define ACMD_SEND_WR_BLK_ERASE_CNT	((uint8_t) 23)
-#define ACMD_SEND_OP_COND			((uint8_t) 41)
-#define ACMD_SET_CLR_CARD_DETECT	((uint8_t) 42)
-#define ACMD_SEND_SCR				((uint8_t) 51)
+#define ACMD_SET_BUS_WIDTH				((uint8_t) 6)
+#define ACMD_SD_STATUS					((uint8_t) 13)
+#define ACMD_SEND_NUM_WR_BLK			((uint8_t) 22)
+#define ACMD_SEND_WR_BLK_ERASE_CNT		((uint8_t) 23)
+#define ACMD_SEND_OP_COND				((uint8_t) 41)
+#define ACMD_SET_CLR_CARD_DETECT		((uint8_t) 42)
+#define ACMD_SEND_SCR					((uint8_t) 51)
 
 /*
  * Flags for SDIO Handle
  * */
-#define SDIO_HANDLE_FLAG_DMA		((uint32_t) 0x10000)
-#define SDIO_HANDLE_FLAG_BUSY		((uint32_t) 0x20000)
-#define SDIO_HANDLE_FLAG_S18R		((uint32_t) 0x40000)
+#define SDIO_HANDLE_FLAG_DMA			((uint32_t) 0x10000)
+#define SDIO_HANDLE_FLAG_BUSY			((uint32_t) 0x20000)
+#define SDIO_HANDLE_FLAG_S18R			((uint32_t) 0x40000)
 
 
 /*
  * Flags of SD Card Status Field @ R1 response
  * */
-#define SDC_STATUS_OOR				((uint32_t) 1 << 31)
-#define SDC_STATUS_ADDRESS_ERR		((uint32_t) 1 << 30)
-#define SDC_STATUS_BLEN_ERR			((uint32_t) 1 << 29)
-#define SDC_STATUS_ERASE_SEQ_ERR	((uint32_t) 1 << 28)
-#define SDC_STATUS_ERASE_PARM_ERR	((uint32_t) 1 << 27)
-#define SDC_STATUS_WP_VIOLATION_ERR	((uint32_t) 1 << 26)
-#define SDC_STATUS_CARD_IS_LOCKED	((uint32_t) 1 << 25)
-#define SDC_STATUS_LOCK_FAIL		((uint32_t) 1 << 24)
-#define SDC_STATUS_CMDCRC_ERR		((uint32_t) 1 << 23)
-#define SDC_STATUS_ILLCMD_ERR		((uint32_t) 1 << 22)
-#define SDC_STATUS_CARDECC_ERR		((uint32_t) 1 << 21)
-#define SDC_STATUS_CC_ERR			((uint32_t) 1 << 20)
-#define SDC_STATUS_ERR				((uint32_t) 1 << 19)
-#define SDC_STATUS_CSD_OVW_ERR		((uint32_t) 1 << 16)
-#define SDC_STATUS_WP_ERASE_SKIP	((uint32_t) 1 << 15)
-#define SDC_STATUS_CARD_ECC_DIS		((uint32_t) 1 << 14)
-#define SDC_STATUS_ERASE_RESET		((uint32_t) 1 << 13)
-#define SDC_STATUS_CUR_STATE_MSK	((uint32_t) 0xF << 9)
-#define SDC_STATUS_DATA_RDY			((uint32_t) 1 << 8)
-#define SDC_STATUS_APP_CMD			((uint32_t) 1 << 5)
-#define SDC_STATUS_AKE_SEQ_ERR		((uint32_t) 1 << 3)
+#define SDC_STATUS_OOR					((uint32_t) 1 << 31)
+#define SDC_STATUS_ADDRESS_ERR			((uint32_t) 1 << 30)
+#define SDC_STATUS_BLEN_ERR				((uint32_t) 1 << 29)
+#define SDC_STATUS_ERASE_SEQ_ERR		((uint32_t) 1 << 28)
+#define SDC_STATUS_ERASE_PARM_ERR		((uint32_t) 1 << 27)
+#define SDC_STATUS_WP_VIOLATION_ERR		((uint32_t) 1 << 26)
+#define SDC_STATUS_CARD_IS_LOCKED		((uint32_t) 1 << 25)
+#define SDC_STATUS_LOCK_FAIL			((uint32_t) 1 << 24)
+#define SDC_STATUS_CMDCRC_ERR			((uint32_t) 1 << 23)
+#define SDC_STATUS_ILLCMD_ERR			((uint32_t) 1 << 22)
+#define SDC_STATUS_CARDECC_ERR			((uint32_t) 1 << 21)
+#define SDC_STATUS_CC_ERR				((uint32_t) 1 << 20)
+#define SDC_STATUS_ERR					((uint32_t) 1 << 19)
+#define SDC_STATUS_CSD_OVW_ERR			((uint32_t) 1 << 16)
+#define SDC_STATUS_WP_ERASE_SKIP		((uint32_t) 1 << 15)
+#define SDC_STATUS_CARD_ECC_DIS			((uint32_t) 1 << 14)
+#define SDC_STATUS_ERASE_RESET			((uint32_t) 1 << 13)
+#define SDC_STATUS_CUR_STATE_MSK		((uint32_t) 0xF << 9)
+#define SDC_STATUS_DATA_RDY				((uint32_t) 1 << 8)
+#define SDC_STATUS_APP_CMD				((uint32_t) 1 << 5)
+#define SDC_STATUS_AKE_SEQ_ERR			((uint32_t) 1 << 3)
 
-#define SCR_DAT_BUS_WIDTH			((uint32_t) 0xF << 16)
-#define SCR_SPEC_VER				((uint32_t) 0xF << 24)
 
-#define BUS_WIDTH_1B				((uint8_t) 1)
-#define BUS_WIDTH_4B				((uint8_t) 1 << 2)
+#define SCR_DAT_BUS_WIDTH				((uint32_t) 0xF << 16)
+#define SCR_SPEC_VER					((uint32_t) 0xF << 24)
 
+#define BUS_WIDTH_1B					((uint8_t) 1)
+#define BUS_WIDTH_4B					((uint8_t) 1 << 2)
+#define MAX_BUS_WIDTH					((uint8_t) 4)
+
+#define SDIO_D0_PIN						((uint8_t) 8)
+#define SDIO_D1_PIN						((uint8_t) 9)
+#define SDIO_D2_PIN						((uint8_t) 10)
+#define SDIO_D3_PIN						((uint8_t) 11)
+#define SDIO_CK_PIN						((uint8_t) 12)
+
+#define SDIO_CMD_PIN					((uint8_t) 2)
+
+#define SDIO_DETECT_PIN					((uint8_t) 8)
+
+#define SDIO_DETECT_PORT				tch_gpio0
+#define SDIO_DATA_PORT					tch_gpio2
+#define SDIO_CMD_PORT					tch_gpio3
+
+
+#define CSD_VERSION						((uint32_t) 3 << 30)
+#define CSDv1_ACC_TIME					((uint32_t) 0xFF << 16)
+#define CSDv1_NSAC						((uint32_t) 0xFF << 8)
+#define CSDv1_TRANS_SPEED				((uint32_t) 0xFF << 0)
+
+#define CSDv1_CMD_CLASS					((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv1_RD_BLKLEN					((uint32_t) 0xF << 16)
+#define CSDv1_RD_PART_OK				((uint32_t) 1 << 15)
+#define CSDv1_WR_BLK_MIS				((uint32_t) 1 << 14)
+#define CSDv1_RD_BLK_MIS				((uint32_t) 1 << 13)
+#define CSDv1_DSR_IMPL					((uint32_t) 1 << 12)
+#define CSDv1_CSIZE_UPPER				((uint32_t) ((1 << 10) - 1))
+
+#define CSDv1_CSIZE_LOWER				((uint32_t) 3 << 30)
+#define CSDv1_VDD_RD_MIN				((uint32_t) 7 << 27)
+#define CSDv1_VDD_RD_MAX				((uint32_t) 7 << 24)
+#define CSDv1_VDD_WR_MIN				((uint32_t) 3 << 21)
+#define CSDv1_VDD_WR_MAX				((uint32_t) 3 << 18)
+#define CSDv1_CSIZE_MUL					((uint32_t) 7 << 15)
+#define CSDv1_ERASE_BLK_EN				((uint32_t) 1 << 14)
+#define CSDv1_SECT_SIZE					((uint32_t) 0x7F << 7)
+#define CSDv1_WP_GRP_SIZE				((uint32_t) 0x7F)
+
+#define CSDv1_WP_GRP_EN					((uint32_t) 1 << 31)
+#define CSDv1_R2W_FACTOR				((uint32_t) 7 << 26)
+#define CSDv1_WR_BLKLEN					((uint32_t) 0xF << 22)
+#define CSDv1_WR_PART_OK				((uint32_t) 1 << 21)
+#define CSDv1_FILE_FMT_GRP				((uint32_t) 1 << 15)
+#define CSDv1_COPY_FLAG					((uint32_t) 1 << 14)
+#define CSDv1_PERM_WP					((uint32_t) 1 << 13)
+#define CSDv1_TMP_WP					((uint32_t) 1 << 12)
+#define CSDv1_FILE_FMT					((uint32_t) 3 << 10)
+
+
+#define CSDv2_ACC_TIME					((uint32_t) 0xFF << 16)
+#define CSDv2_NSAC						((uint32_t) 0xFF << 8)
+#define CSDv2_TRANS_SPEED				((uint32_t) 0xFF << 0)
+
+#define CSDv2_CMD_CLASS					((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv2_RD_BLKLEN					((uint32_t) 0xF << 16)
+#define CSDv2_RD_PART_OK				((uint32_t) 1 << 15)
+#define CSDv2_WR_BLK_MIS				((uint32_t) 1 << 14)
+#define CSDv2_RD_BLK_MIS				((uint32_t) 1 << 13)
+#define CSDv2_DSR_IMPL					((uint32_t) 1 << 12)
+#define CSDv2_CSIZE_UPPER				((uint32_t) ((1 << 6) - 1))
+
+#define CSDv2_CSIZE_LOWER				((uint32_t) (((1 << 16) - 1) << 16))
+#define CSDv2_ERASE_BLK_EN				((uint32_t) 1 << 14)
+#define CSDv2_SECT_SIZE					((uint32_t) 0x7F << 7)
+#define CSDv2_WP_GRP_SIZE				((uint32_t) 0x7F)
+
+#define CSDv2_WP_GRP_EN					((uint32_t) 1 << 31)
+#define CSDv2_R2W_FACTOR				((uint32_t) 7 << 26)
+#define CSDv2_WR_BLKLEN					((uint32_t) 0xF << 22)
+#define CSDv2_WR_PART_OK				((uint32_t) 1 << 21)
+#define CSDv2_FILE_FMT_GRP				((uint32_t) 1 << 15)
+#define CSDv2_COPY_FLAG					((uint32_t) 1 << 14)
+#define CSDv2_PERM_WP					((uint32_t) 1 << 13)
+#define CSDv2_TMP_WP					((uint32_t) 1 << 12)
+#define CSDv2_FILE_FMT					((uint32_t) 3 << 10)
 
 
 #define SDIO_VALIDATE(ins)	do {\
@@ -140,7 +217,7 @@
 }while(0)
 
 
-#define SDIO_ISVALID(ins)			((((struct tch_sdio_handle_prototype*) ins)->status & 0xffff) == (((uint32_t) ins ^ SDIO_CLASS_KEY) & 0xffff))
+#define SDIO_ISVALID(ins)	((((struct tch_sdio_handle_prototype*) ins)->status & 0xffff) == (((uint32_t) ins ^ SDIO_CLASS_KEY) & 0xffff))
 
 
 #define SET_BUSY(sdio) do {\
@@ -153,102 +230,29 @@
 	((struct tch_sdio_handle_prototype*) sdio)->status &= ~SDIO_HANDLE_FLAG_BUSY;\
 }while(0)
 
-#define IS_BUSY(sdio) 		((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_HANDLE_FLAG_BUSY
+#define IS_BUSY(sdio) 					((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_HANDLE_FLAG_BUSY
 
-#define SET_DMA_MODE(sdio)		sdio->status |= SDIO_HANDLE_FLAG_DMA
-#define CLR_DMA_MODE(sdio)		sdio->status &= ~SDIO_HANDLE_FLAG_DMA
-#define IS_DMA_MODE(sdio)		(sdio->status & SDIO_HANDLE_FLAG_DMA)
-
-#define MAX_BUS_WIDTH			((uint8_t) 4)
-
-#define SDIO_D0_PIN				((uint8_t) 8)
-#define SDIO_D1_PIN				((uint8_t) 9)
-#define SDIO_D2_PIN				((uint8_t) 10)
-#define SDIO_D3_PIN				((uint8_t) 11)
-#define SDIO_CK_PIN				((uint8_t) 12)
-
-#define SDIO_CMD_PIN			((uint8_t) 2)
-
-#define SDIO_DETECT_PIN			((uint8_t) 8)
-
-#define SDIO_DETECT_PORT		tch_gpio0
-#define SDIO_DATA_PORT			tch_gpio2
-#define SDIO_CMD_PORT			tch_gpio3
-
-
-#define CSD_VERSION					((uint32_t) 3 << 30)
-#define CSDv1_ACC_TIME				((uint32_t) 0xFF << 16)
-#define CSDv1_NSAC					((uint32_t) 0xFF << 8)
-#define CSDv1_TRANS_SPEED			((uint32_t) 0xFF << 0)
-
-#define CSDv1_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
-#define CSDv1_RD_BLKLEN				((uint32_t) 0xF << 16)
-#define CSDv1_RD_PART_OK			((uint32_t) 1 << 15)
-#define CSDv1_WR_BLK_MIS			((uint32_t) 1 << 14)
-#define CSDv1_RD_BLK_MIS			((uint32_t) 1 << 13)
-#define CSDv1_DSR_IMPL				((uint32_t) 1 << 12)
-#define CSDv1_CSIZE_UPPER			((uint32_t) ((1 << 10) - 1))
-
-#define CSDv1_CSIZE_LOWER			((uint32_t) 3 << 30)
-#define CSDv1_VDD_RD_MIN			((uint32_t) 7 << 27)
-#define CSDv1_VDD_RD_MAX			((uint32_t) 7 << 24)
-#define CSDv1_VDD_WR_MIN			((uint32_t) 3 << 21)
-#define CSDv1_VDD_WR_MAX			((uint32_t) 3 << 18)
-#define CSDv1_CSIZE_MUL				((uint32_t) 7 << 15)
-#define CSDv1_ERASE_BLK_EN			((uint32_t) 1 << 14)
-#define CSDv1_SECT_SIZE				((uint32_t) 0x7F << 7)
-#define CSDv1_WP_GRP_SIZE			((uint32_t) 0x7F)
-
-#define CSDv1_WP_GRP_EN				((uint32_t) 1 << 31)
-#define CSDv1_R2W_FACTOR			((uint32_t) 7 << 26)
-#define CSDv1_WR_BLKLEN				((uint32_t) 0xF << 22)
-#define CSDv1_WR_PART_OK			((uint32_t) 1 << 21)
-#define CSDv1_FILE_FMT_GRP			((uint32_t) 1 << 15)
-#define CSDv1_COPY_FLAG				((uint32_t) 1 << 14)
-#define CSDv1_PERM_WP				((uint32_t) 1 << 13)
-#define CSDv1_TMP_WP				((uint32_t) 1 << 12)
-#define CSDv1_FILE_FMT				((uint32_t) 3 << 10)
-
-
-#define CSDv2_ACC_TIME				((uint32_t) 0xFF << 16)
-#define CSDv2_NSAC					((uint32_t) 0xFF << 8)
-#define CSDv2_TRANS_SPEED			((uint32_t) 0xFF << 0)
-
-#define CSDv2_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
-#define CSDv2_RD_BLKLEN				((uint32_t) 0xF << 16)
-#define CSDv2_RD_PART_OK			((uint32_t) 1 << 15)
-#define CSDv2_WR_BLK_MIS			((uint32_t) 1 << 14)
-#define CSDv2_RD_BLK_MIS			((uint32_t) 1 << 13)
-#define CSDv2_DSR_IMPL				((uint32_t) 1 << 12)
-#define CSDv2_CSIZE_UPPER			((uint32_t) ((1 << 6) - 1))
-
-#define CSDv2_CSIZE_LOWER			((uint32_t) (((1 << 16) - 1) << 16))
-#define CSDv2_ERASE_BLK_EN			((uint32_t) 1 << 14)
-#define CSDv2_SECT_SIZE				((uint32_t) 0x7F << 7)
-#define CSDv2_WP_GRP_SIZE			((uint32_t) 0x7F)
-
-#define CSDv2_WP_GRP_EN				((uint32_t) 1 << 31)
-#define CSDv2_R2W_FACTOR			((uint32_t) 7 << 26)
-#define CSDv2_WR_BLKLEN				((uint32_t) 0xF << 22)
-#define CSDv2_WR_PART_OK			((uint32_t) 1 << 21)
-#define CSDv2_FILE_FMT_GRP			((uint32_t) 1 << 15)
-#define CSDv2_COPY_FLAG				((uint32_t) 1 << 14)
-#define CSDv2_PERM_WP				((uint32_t) 1 << 13)
-#define CSDv2_TMP_WP				((uint32_t) 1 << 12)
-#define CSDv2_FILE_FMT				((uint32_t) 3 << 10)
+#define SET_DMA_MODE(sdio)				sdio->status |= SDIO_HANDLE_FLAG_DMA
+#define CLR_DMA_MODE(sdio)				sdio->status &= ~SDIO_HANDLE_FLAG_DMA
+#define IS_DMA_MODE(sdio)				(sdio->status & SDIO_HANDLE_FLAG_DMA)
 
 typedef struct tch_sdio_device {
  	SdioDevType				type;
-#define SDIO_DEV_FLAG_CAP_LARGE				((uint16_t) 1 << 1)
-#define SDIO_DEV_FLAG_S18A_SUPPORT			((uint16_t) 1 << 2)
-#define SDIO_DEV_FLAG_UHSII_SUPPORT			((uint16_t) 1 << 3)
-#define SDIO_DEV_FLAG_READY					((uint16_t) 1 << 4)
+#define SDIO_DEV_FLAG_CAP_LARGE			((uint16_t) 1 << 1)
+#define SDIO_DEV_FLAG_S18A_SUPPORT		((uint16_t) 1 << 2)
+#define SDIO_DEV_FLAG_UHSII_SUPPORT		((uint16_t) 1 << 3)
+#define SDIO_DEV_FLAG_READY				((uint16_t) 1 << 4)
  	uint32_t				flags;
  	uint16_t 				caddr;
  	uint8_t					bus_width;
  	uint8_t					blksz;
  	uint32_t				csd[4];
 }tch_sdioDev_t;
+
+
+
+#define SDIO_REQ_TYPE_READ_BLK			((uint32_t) 1 << 0)
+#define SDIO_REQ_TYPE_WRITE_BLK			((uint32_t) 1 << 1)
 
 typedef struct tch_sdio_req {
 	void					*buffer;
@@ -296,38 +300,39 @@ typedef uint8_t		sdio_resp_t;
 
 /*** private function declaration ***/
 
-static tch_hal_module_dma_t* DMA;
 static int tch_sdio_init();
 static void tch_sdio_exit();
 
 
+/**********************************************************************************
+ ********************  private function declaration *******************************
+ **********************************************************************************/
+
 static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
-
-
 static tchStatus sdio_set_bus_width(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint8_t bw);
 static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp, sdio_resp_t rtype, uint32_t* resp,uint32_t timeout);
 static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device);
 static tchStatus sd_deselect_device(struct tch_sdio_handle_prototype* ins);
 static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint32_t* csd);
-
-
-
-/**
- * read block helper function
- */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout);
-
-
 static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address,const void* buffer, uint32_t blk_cnt,uint32_t blk_size, uint32_t timeout);
 
 
+
+/**********************************************************************************
+ ********************  public function declaration for module API *****************
+ **********************************************************************************/
 
 __USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt);
 __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,const tch_sdioCfg_t* config,uint32_t timeout);
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
+
+/**********************************************************************************
+ ********************  public function declaration for handle API *****************
+ **********************************************************************************/
 __USER_API__ static tchStatus tch_sdio_handle_device_reset(tch_sdioHandle_t sdio);
 __USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 __USER_API__ tchStatus tch_sdio_handle_getDevInfo(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
@@ -339,7 +344,6 @@ __USER_API__ static tchStatus tch_sdio_handle_eraseForce(tch_sdioHandle_t sdio, 
 __USER_API__ static tchStatus tch_sdio_handle_setPassword(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* opwd, const char* npwd, BOOL lock);
 __USER_API__ static tchStatus tch_sdio_handle_lock(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
 __USER_API__ static tchStatus tch_sdio_handle_unlock(tch_sdioHandle_t sdio, tch_sdioDevId device, const char* pwd);
-
 __USER_API__ static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device);
 __USER_API__ static BOOL tch_sdio_handle_isProtectEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device);
 __USER_API__ static uint64_t tch_sdio_handle_getMaxBitrate(tch_sdioHandle_t sdio, tch_sdioDevId device);
@@ -851,14 +855,38 @@ static uint64_t tch_sdio_handle_getCapacity(tch_sdioHandle_t sdio, tch_sdioDevId
 
 static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
 {
+	if(!sdio || !SDIO_ISVALID(sdio))
+		return tchErrorParameter;
+	tchStatus res;
+	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
+	const tch_core_api_t* api = ins->api;
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
+	{
+		return res;
+	}
+	// mutex successfully locked
+	// wait until sdio idle
+	while(IS_BUSY(sdio))
+	{
+		if((res = api->Condv->wait(ins->condv,ins->mtx, timeout)) != tchOK)
+		{
+			return res;
+		}
+	}
+	SET_BUSY(sdio);
+	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
+	{
+		return res;
+	}
 
 }
 
 static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
 {
-	tchStatus res;
 	if(!sdio || !SDIO_ISVALID(sdio))
 		return tchErrorParameter;
+	tchStatus res;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
 	const tch_core_api_t* api = ins->api;
 	tch_sdioDev_t *dev = (tch_sdioDev_t*) device;
@@ -877,11 +905,16 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 	res = sd_select_device(ins, dev);
 	uint32_t cnt = 0;
 	uint32_t blksize = 1 << dev->blksz;
+	res = sdio_read_block(ins, CMD_READ_SBLK, blk_offset, blk_bp, blk_cnt, dev->blksz, timeout);
+	/*
 	do{
-		res = sdio_read_block(ins, CMD_READ_SBLK,  blk_offset, &blk_bp[blksize * cnt++] ,1, dev->blksz, timeout);
+		//TODO : prevent overflow capacity of the device
+		res = sdio_read_block(ins, CMD_READ_SBLK,  blk_offset +(blksize * cnt), &blk_bp[blksize * cnt++] ,1, dev->blksz, timeout);
 		if(res != tchOK)
 			goto READ_SAFERET;
 	}while(cnt < blk_cnt);
+*/
+	res = sd_deselect_device(ins);
 
 	res = tchOK;
 
@@ -1153,10 +1186,15 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 
 		sdio_reg->DCTRL = (SDIO_DCTRL_DTDIR | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
+		tch_sdio_req_t request;
+		request.buffer = buffer;
+		request.bsz = (1 << blk_size) * blk_cnt;
+		request.bidx = 0;
 
 		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
 		{
-			sdio_reg->DCTRL;
+			sdio_reg->DCTRL = 0;
+			return tchErrorIo;
 		}
 		return tchOK;
 	}
@@ -1170,7 +1208,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 
 	tchStatus result;
 	uint32_t resp;
-	tch_core_api_t* api = ins->api;
+	const tch_core_api_t* api = ins->api;
 	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
 
 	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size,TRUE, SDIO_RESP_SHORT, &resp,timeout);
@@ -1180,7 +1218,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 		sdio_reg->DCTRL = 0;
 
 		tch_DmaReqDef req;
-		dma->initReq(&req,buffer,&sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
+		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
 		dma->beginXfer(ins->dma,&req,timeout,NULL);
 
 		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
