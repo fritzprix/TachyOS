@@ -53,7 +53,6 @@ struct tch_sdio_cfg {
 	uint8_t 		bus_width;
 	uint16_t 		v_opt;
 	tch_PwrOpt 		lpopt;
-	BOOL			s18r_enable;		// sd card specific?
 }__attribute__((packed));
 
 
