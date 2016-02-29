@@ -28,18 +28,18 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	sdio_handle->deviceReset(sdio_handle);		// sdio send reset command
 
 	uint32_t sdc_devcnt = sdio_handle->deviceId(sdio_handle, SDC, devs, 10);
-//	uint32_t mmc_devcnt = sdio_handle->deviceId(sdio_handle, MMC, devs, 10);
+	uint32_t mmc_devcnt = sdio_handle->deviceId(sdio_handle, MMC, devs, 10);
 
 	api->Dbg->print(api->Dbg->Normal, 0 ,"%d SD Memory Card Found!!\n\r", sdc_devcnt);
-//	api->Dbg->print(api->Dbg->Normal, 0 ,"%d MMC Card Found!!\n\r",mmc_devcnt);
+	api->Dbg->print(api->Dbg->Normal, 0 ,"%d MMC Card Found!!\n\r",mmc_devcnt);
 
 	sdio_handle->prepare(sdio_handle, devs[0],SDIO_PREPARE_OPT_MAX_COMPAT);
 
 	mset(blk_buffer, 2, 2048);
 	mset(blk_buffer1, 2, 2048);
 
-	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer,0,2,1000);
-	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer1,0,2,1000);
+	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer,0,4,1000);
+	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer1,0,4,1000);
 
 	sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer,0,2,1000);
 

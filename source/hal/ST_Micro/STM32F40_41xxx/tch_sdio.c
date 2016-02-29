@@ -951,20 +951,15 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 
 	blk_size = 1 << dev->blksz;
 	cnt = 0;
+	uint8_t cmd;
 
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 	if(blk_cnt > 1)
 	{
-		// set block count
-		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, TRUE, SDIO_RESP_SHORT, &resp, timeout);
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
 	}
-	do{
-		res = sdio_read_block(ins, CMD_READ_SBLK,  blk_offset + (cnt * blk_hop), &blk_bp[blk_size * cnt] ,1, dev->blksz, timeout);
-		cnt++;
-		if(res != tchOK)
-			goto READ_SAFERET;
-	}while(cnt < blk_cnt);
-	/*
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+
+
 	if(blk_cnt > 1)
 	{
 		cmd = CMD_READ_MBLK;
@@ -974,7 +969,7 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 		cmd = CMD_READ_SBLK;
 	}
 	res = sdio_read_block(ins, cmd, blk_offset, blk_bp, blk_cnt, dev->blksz,timeout);
-	*/
+
 
 READ_SAFERET:
 	res = sd_deselect_device(ins);
@@ -1223,8 +1218,6 @@ static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevI
  */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout)
 {
-
-
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
 
@@ -1239,39 +1232,49 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
 		// DMA Used to receive data
-		tch_DmaReqDef req;
 		sdio_reg->DCTRL = 0;		// data state machine disable
+		tch_DmaReqDef dma_req;
+		dma->initReq(&dma_req, buffer, (char*) &sdio_reg->FIFO, 0 ,DMA_Dir_PeriphToMem);
+		if((ret = dma->beginXfer(ins->dma,&dma_req, 0, NULL)) != tchOK)
+		{
+			ret = tchErrorIo;
+			goto DMA_ERR_RET;
+		}
 
-
-		sdio_reg->DTIMER = timeout << 4;
 		sdio_reg->DLEN = blk_cnt << blk_size;
+		sdio_reg->DTIMER = timeout << 4;
+
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN |  SDIO_DCTRL_DTDIR |(blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-
-		dma->initReq(&req, buffer, (char*) &sdio_reg->FIFO, 0 ,DMA_Dir_PeriphToMem);
-		ret = dma->beginXfer(ins->dma,&req,0,NULL);
-
-		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,SDIO_RESP_SHORT,&resp,timeout) != tchOK)
+		if(sdio_send_cmd(ins, cmdIdx, address,TRUE,SDIO_RESP_SHORT,&resp,timeout) != tchOK)
 		{
-			sdio_reg->DCTRL = 0;
-			ins->req = NULL;
-			return tchErrorIo;
+			ret = tchErrorIo;
+			goto DMA_ERR_RET;
 		}
 
 		if((ret = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
 		{
-			ins->req = NULL;
-			return ret;
+			ret = tchErrorIo;
+			goto DMA_ERR_RET;
 		}
 		ins->api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
-
 		if(ins->req->flag & SDIO_REQ_NOK)
 		{
-			return tchErrorIo;
+			ret = tchErrorIo;
+			goto DMA_ERR_RET;
 		}
+
 		ins->req = NULL;
-		return tchOK;
+		return ret;
+
+DMA_ERR_RET:
+		// stop transmission
+		sdio_send_cmd(ins,CMD_STOP_TRANS,0, TRUE, SDIO_RESP_SHORT,&resp, timeout);
+		sdio_reg->DCTRL = 0;
+		ins->req = NULL;
+		return ret;
+
 	}
 	else
 	{
@@ -1374,7 +1377,11 @@ void SDIO_IRQHandler()
 	if(sdio_reg->STA & SDIO_STA_DBCKEND)
 	{
 		sdio_reg->ICR |= SDIO_ICR_DBCKENDC;
-		api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
+		if(!--sdio_ins->req->bcnt)
+		{
+			//when block count reaches '0', wakes up thread
+			api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
+		}
 		api->Dbg->print(api->Dbg->Normal,0, "SDIO Block op. complete\n\r");
 		return;
 	}
@@ -1389,7 +1396,7 @@ void SDIO_IRQHandler()
 	{
 		sdio_reg->ICR |= SDIO_ICR_DCRCFAILC;
 		sdio_ins->req->flag |= SDIO_REQ_NOK;
-		api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DCRCFAIL);
+		api->Event->set(sdio_ins->evId, SDIO_STA_DCRCFAIL);
 		return;
 	}
 	if(sdio_reg->STA & SDIO_STA_DTIMEOUT)
