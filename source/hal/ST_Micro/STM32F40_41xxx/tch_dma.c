@@ -237,6 +237,8 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,d
 	dmaHw->CR |= cfg->Priority << DMA_Prior_Pos;
 	dmaHw->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
 
+	dmaHw->FCR = DMA_SxFCR_FTH | DMA_SxFCR_DMDIS;
+
 	tch_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
 	__DMB();
 	__ISB();
