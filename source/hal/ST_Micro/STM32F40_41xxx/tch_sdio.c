@@ -234,6 +234,14 @@
 #define CLR_DMA_MODE(sdio)				sdio->status &= ~SDIO_HANDLE_FLAG_DMA
 #define IS_DMA_MODE(sdio)				(sdio->status & SDIO_HANDLE_FLAG_DMA)
 
+#define IOERROR_FLAGS					(SDIO_STA_CCRCFAIL | \
+										 SDIO_STA_DCRCFAIL | \
+										 SDIO_STA_TXUNDERR | \
+										 SDIO_STA_RXOVERR  | \
+										 SDIO_STA_STBITERR)
+
+#define IS_IOERROR(ev)					(ev & IOERROR_FLAGS)
+
 typedef struct tch_sdio_device {
  	SdioDevType				type;
 #define SDIO_DEV_FLAG_CAP_LARGE			((uint16_t) 1 << 1)		// if this is set, sd card is SDXC or SDEC class
@@ -459,6 +467,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		goto INIT_FAIL;
 	}
 
+	// this guarantee all uninitialized member set to NULL
 	mset(ins,0, sizeof(struct tch_sdio_handle_prototype));
 
 	dma = tch_kmod_request(MODULE_TYPE_DMA);
@@ -571,11 +580,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	if(!ins->dma)
 	{
 		// DMA support is not available, enable interrupt for data handling
-		sdio_reg->MASK |= (SDIO_MASK_SDIOITIE | SDIO_MASK_RXDAVLIE);
-	}
-	else
-	{
-		sdio_reg->CLKCR |= SDIO_CLKCR_HWFC_EN;		// hardware flow control enable
+		sdio_reg->MASK |= (SDIO_MASK_RXDAVLIE);
 	}
 	// enable error handling interrupt
 	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE |
@@ -1144,9 +1149,9 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 		cmd |= ((rtype == SDIO_RESP_SHORT)? SDIO_CMD_WAITRESP_0 : SDIO_CMD_WAITRESP);
 		sdio_reg->CMD = cmd;
 		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout)) != tchOK)
+		{
 			return res;
-		ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDREND);
-
+		}
 		if(resp)
 		{
 			switch(rtype){
@@ -1164,8 +1169,18 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 		cmd |= SDIO_CMD_ENCMDCOMPL;
 		sdio_reg->CMD = cmd;
 		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout)) != tchOK)
+		{
 			return res;
-		ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT);
+		}
+		if(IS_IOERROR(ev))
+		{
+			res = tchErrorIo;
+		}
+	}
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT | SDIO_STA_CMDREND | IOERROR_FLAGS);
+	if(IS_IOERROR(ev))
+	{
+		res = tchErrorIo;
 	}
 	return res;
 }
@@ -1176,9 +1191,12 @@ static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdi
 		return tchErrorParameter;
 	struct tch_sdio_device* dinfo = (struct tch_sdio_device*) device;
 	uint32_t cstatus = 0;
+	tchStatus res = tchOK;
 
-	sdio_send_cmd(ins,CMD_SELECT, (dinfo->caddr << 16),
-						TRUE,SDIO_RESP_SHORT, &cstatus, MAX_TIMEOUT_MILLS);
+	if((res = sdio_send_cmd(ins,CMD_SELECT, (dinfo->caddr << 16), TRUE, SDIO_RESP_SHORT, &cstatus, MAX_TIMEOUT_MILLS)) != tchOK)
+	{
+		return res;
+	}
 	if(cstatus & SDC_STATUS_DATA_RDY)
 		return tchOK;
 	return tchErrorIo;
@@ -1215,6 +1233,7 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		return tchErrorParameter;
 
 	uint32_t resp = 0;
+	int32_t ev = 0;
 	tchStatus res;
 	SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
 	tch_sdio_req_t request;
@@ -1225,7 +1244,6 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;	// disable power save mode
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
-//	if(FALSE)
 	{
 		// DMA Used to receive data
 		tch_DmaReqDef dma_req;
@@ -1270,11 +1288,11 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	{
 		goto READ_ERR_RET;
 	}
-	ins->api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | IOERROR_FLAGS);
 
 	// disable rx fifo half full interrupt
 	sdio_reg->MASK &= ~SDIO_MASK_RXDAVLIE;
-	if(ins->req->flag & SDIO_REQ_NOK)
+	if(IS_IOERROR(ev))
 	{
 		res = tchErrorIo;
 		goto READ_ERR_RET;
@@ -1301,6 +1319,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 
 	tchStatus result;
 	uint32_t resp;
+	int32_t ev = 0;
 	const tch_core_api_t* api = ins->api;
 	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
 
@@ -1326,17 +1345,18 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 		{
 			return result;
 		}
-		api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
 	}
 	else
 	{
 
 	}
 
+	ev = api->Event->clear(ins->evId,SDIO_STA_DBCKEND | IOERROR_FLAGS);
+
+
 	return tchOK;
 
 }
-
 
 
 // interrupt handler
@@ -1361,11 +1381,25 @@ void SDIO_IRQHandler()
 
 		return;
 	}
+	if(sdio_reg->STA & SDIO_STA_RXOVERR)
+	{
+		// rx overrun error
+		sdio_reg->ICR |= SDIO_ICR_RXOVERRC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_RXOVERR);
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_TXUNDERR)
+	{
+		// tx underrun error
+		sdio_reg->ICR |= SDIO_ICR_TXUNDERRC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_TXUNDERR);
+		return;
+	}
 	if(sdio_reg->STA & SDIO_STA_CMDSENT)
 	{
 		sdio_reg->ICR |= SDIO_ICR_CMDSENTC;
-		api->Event->set(sdio_ins->evId,SDIO_STA_CMDSENT);
-		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Sent\n\r",(sdio_reg->CMD & SDIO_CMD_CMDINDEX));
+		api->Event->set(sdio_ins->evId, SDIO_STA_CMDSENT);
+		api->Dbg->print(api->Dbg->Normal, 0, "SDIO Command (%d) Sent\n\r", (sdio_reg->CMD & SDIO_CMD_CMDINDEX));
 		return;
 	}
 	if(sdio_reg->STA & SDIO_STA_CMDREND)
@@ -1378,7 +1412,7 @@ void SDIO_IRQHandler()
 	if(sdio_reg->STA & SDIO_STA_CCRCFAIL)
 	{
 		sdio_reg->ICR |= SDIO_ICR_CCRCFAILC;
-		api->Event->set(sdio_ins->evId, SDIO_STA_CMDREND | SDIO_STA_CCRCFAIL);
+		api->Event->set(sdio_ins->evId, SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND);
 		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Responded\n\r wiht CRC Error", (sdio_reg->RESPCMD & SDIO_RESPCMD_RESPCMD));
 		return;
 	}
