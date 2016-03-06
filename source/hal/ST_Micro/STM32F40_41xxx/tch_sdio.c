@@ -446,6 +446,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		return NULL;
 
 	struct tch_sdio_handle_prototype* ins = NULL;
+	uint32_t reg;
 	const tch_sdio_bs_t* sdio_bs = &SDIO_BD_CFGs[0];
 	tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 
@@ -589,9 +590,11 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE |
 						SDIO_MASK_CTIMEOUTIE | SDIO_MASK_DTIMEOUTIE);
 
-	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;			// power save mode enabled
-	sdio_reg->CLKCR |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
-	sdio_reg->CLKCR |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
+	reg = SDIO_CLKCR_PWRSAV | SDIO_CLKCR_HWFC_EN;			// power save mode enabled
+	reg |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
+	reg |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
+
+	sdio_reg->CLKCR = reg;
 
 	// set clock register for Identification phase
 	ins->api = api;
@@ -1274,6 +1277,7 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;	// disable power save mode
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
+//	if(FALSE)
 	{
 		// DMA Used to receive data
 		tch_DmaReqDef dma_req;
@@ -1314,8 +1318,8 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		}
 	}
 
-	res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
-	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | IOERROR_FLAGS);
+	res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND | SDIO_STA_DATAEND,timeout);
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND |  IOERROR_FLAGS);
 
 	// disable rx fifo half full interrupt
 	if(IS_IOERROR(ev))
@@ -1392,7 +1396,6 @@ WRITE_ERR_RET:
 	ins->req = NULL;
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
 	return result;
-
 }
 
 
