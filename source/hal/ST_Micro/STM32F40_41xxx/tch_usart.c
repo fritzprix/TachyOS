@@ -40,6 +40,7 @@
 
 #define UART_RXBUSY                         ((uint32_t) 0x10000)
 #define UART_TXBUSY                         ((uint32_t) 0x20000)
+#define UART_MAX_TIMEOUT					((uint32_t) 1000)
 
 #define UART_EVENT_TX_COMPLETE              ((uint32_t) 0x00000001)
 #define UART_EVENT_RX_COMPLETE              ((uint32_t) 0x00000002)
@@ -470,7 +471,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
 		uhw->SR &= ~USART_SR_TC;    // clear tc
-		if(dma->beginXfer(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
+		if(dma->beginXferSync(ins->txDma,&req,tchWaitForever,&result)){  // if dma fails, try again
 			result = tchErrorIo;
 			RETURN_SAFELY();
 		}
@@ -551,7 +552,7 @@ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,u
 		dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz, DMA_Dir_PeriphToMem);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
-		sz -= dma->beginXfer(ins->rxDma,&req,timeout,NULL);
+		sz -= dma->beginXferSync(ins->rxDma,&req,timeout,NULL);
 	}
 
 	env->Mtx->lock(ins->rxMtx,timeout);

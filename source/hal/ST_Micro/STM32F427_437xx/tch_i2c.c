@@ -46,7 +46,7 @@
 #define TCH_IIC_EVENT_INVALID_STATE				((uint32_t) 0x20)
 #define TCH_IIC_EVENT_ALL						((uint32_t) 0xFF)
 
-#define IIC_IO_MAX_TIMEOUT						((uint32_t) 50)
+#define IIC_IO_MAX_TIMEOUT						((uint32_t) 100)
 #define IIC_SQ_ID_INIT							((uint32_t) 0)
 
 #define SET_SAFE_RETURN()                       __SAFE_RETURN:
@@ -424,12 +424,12 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t
 	if(tch_port_isISR())
 		return tchErrorISR;
 	I2C_TypeDef* iicHw = (I2C_TypeDef*) IIC_HWs[ins->iic]._hw;
-	if((result = ins->env->Mtx->lock(ins->mtx,100)) != tchOK)
+	if((result = ins->env->Mtx->lock(ins->mtx,IIC_IO_MAX_TIMEOUT)) != tchOK)
 		return result;
 
 	while(IIC_isBusy(ins))
 	{
-		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,100)) != tchOK)
+		if((result = ins->env->Condv->wait(ins->condv,ins->mtx,IIC_IO_MAX_TIMEOUT)) != tchOK)
 			return result;
 	}
 	IIC_setBusy(ins);
@@ -466,21 +466,21 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t
 		dma->initReq(&txreq, (uaddr_t) wb, (uaddr_t) &iicHw->DR,sz,DMA_Dir_MemToPeriph);
 
 		// wait for addressing complete
-		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,100) != tchOK)
+		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,IIC_IO_MAX_TIMEOUT) != tchOK)
 		{
 			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
 		}
 
 		// start DMA transfer
-		if(dma->beginXfer(ins->txdma,&txreq,100,&result))
+		if(dma->beginXferSync(ins->txdma,&txreq,IIC_IO_MAX_TIMEOUT,&result))
 		{
 			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
 		}
 
 		iicHw->CR2 &= ~I2C_CR2_DMAEN;
-		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_IDLE,100) != tchOK)
+		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_IDLE,IIC_IO_MAX_TIMEOUT) != tchOK)
 		{
 			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
@@ -490,7 +490,7 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t
 	else
 	{
 		// wait data transfer complete
-		if(ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_TX_COMPLETE),100) != tchOK)
+		if(ins->env->Event->wait(ins->evId,(TCH_IIC_EVENT_IDLE | TCH_IIC_EVENT_TX_COMPLETE),IIC_IO_MAX_TIMEOUT) != tchOK)
 		{
 			ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
@@ -573,14 +573,14 @@ __USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle_t* self,uint16_t a
 		dma->initReq(&rxreq,(uaddr_t) rb, (uaddr_t) &iicHw->DR, sz, DMA_Dir_PeriphToMem);
 
 		// wait for addressing complete
-		if((result = ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,100)) != tchOK)
+		if((result = ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,IIC_IO_MAX_TIMEOUT)) != tchOK)
 		{
 			sig = ins->env->Event->clear(ins->evId,TCH_IIC_EVENT_ALL);
 			RETURN_SAFE();
 		}
 
 		iicHw->CR2 &= ~I2C_CR2_ITEVTEN;
-		sz -= dma->beginXfer(ins->rxdma,&rxreq,100,&result);
+		sz -= dma->beginXferSync(ins->rxdma,&rxreq,IIC_IO_MAX_TIMEOUT,&result);
 		iicHw->CR1 |= I2C_CR1_STOP;
 		iicHw->CR2 &= ~(I2C_CR2_DMAEN | I2C_CR2_LAST);
 	}

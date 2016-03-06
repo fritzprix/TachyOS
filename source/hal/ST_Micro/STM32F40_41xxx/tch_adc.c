@@ -397,7 +397,7 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 		chnk = (uint16_t*) ins->env->MailQ->alloc(q,tchWaitForever,NULL);
 		dma->initReq(&dmaReq,chnk,(uint32_t*) &adcHw->DR,(chnksz / 2),DMA_Dir_PeriphToMem);    // burst unit is half word
 		ins->timer->start(ins->timer);
-		dma->beginXfer(ins->dma,&dmaReq,0,&result);
+		dma->beginXferAsync(ins->dma,&dmaReq);
 		evt = ins->env->MsgQ->get(ins->msgq,tchWaitForever);
 		ins->timer->stop(ins->timer);
 		ins->env->MailQ->put(q,chnk,1000);
@@ -405,7 +405,12 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 			evt.status = tchErrorIo;
 			RETURN_SAFE();
 		}
+		if((evt.status = dma->waitComplete(ins->dma,tchWaitForever)) != tchOK)
+		{
+			RETURN_SAFE();
+		}
 	}
+
 	evt.status = tchOK;
 	SET_SAFE_EXIT();
 	adcHw->CR2 &= ~ADC_CR2_DMA;

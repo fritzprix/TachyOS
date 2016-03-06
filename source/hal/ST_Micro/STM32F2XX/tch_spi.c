@@ -391,14 +391,23 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const 
 	else
 		dmaReq.MemInc = FALSE;
 
-	if(dma->beginXfer(ins->rxCh.dma,&dmaReq,0,&result)){
+	//initiate rx DMA operation asynchronously
+	if((result = dma->beginXferAsync(ins->rxCh.dma,&dmaReq)) != tchOK)
+	{
+		RETURN_SAFE();
+	}
+
+	// initiate tx DMA opertaion synchronously
+	dma->initReq(&dmaReq, (uaddr_t) wb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_MemToPeriph);
+	if(dma->beginXferSync(ins->txCh.dma,&dmaReq,timeout,&result))
+	{
 		result = tchErrorIo;
 		RETURN_SAFE();
 	}
 
-	dma->initReq(&dmaReq, (uaddr_t) wb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_MemToPeriph);
-	if(dma->beginXfer(ins->txCh.dma,&dmaReq,timeout,&result)){
-		result = tchErrorIo;
+	// wait rx DMA operation complete
+	if((result = dma->waitComplete(ins->rxCh.dma,timeout)) != tchOK)
+	{
 		RETURN_SAFE();
 	}
 
