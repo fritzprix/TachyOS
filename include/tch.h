@@ -215,6 +215,8 @@ struct tch_messageQ_api {
 	 */
 	tchEvent (*get)(tch_msgqId,uint32_t millisec);
 
+	tchStatus (*reset)(tch_msgqId);
+
 	/*!
 	 * \brief destroy msg queue
 	 */

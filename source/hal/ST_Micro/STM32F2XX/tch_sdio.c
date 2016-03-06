@@ -19,116 +19,191 @@
 
 
 #ifndef SDIO_CLASS_KEY
-#define SDIO_CLASS_KEY				(uint16_t) 0x3F65
+#define SDIO_CLASS_KEY					(uint16_t) 0x3F65
 #endif
 
 
-#define MAX_SDIO_DEVCNT				10
-#define MAX_TIMEOUT_MILLS			1000
-#define CMD_CLEAR_MASK				((uint32_t)0xFFFFF800)
-#define SDIO_ACMD41_ARG_HCS			(1 << 30)
-#define SDIO_ACMD41_ARG_XPC			(1 << 28)
-#define SDIO_ACMD41_ARG_S18R		(1 << 24)
+#define MAX_SDIO_DEVCNT					10
+#define MAX_TIMEOUT_MILLS				1000
+#define CMD_CLEAR_MASK					((uint32_t)0xFFFFF800)
+#define SDIO_ACMD41_ARG_HCS				(1 << 30)
+#define SDIO_ACMD41_ARG_XPC				(1 << 28)
 
-#define SDIO_VO_TO_VW_SHIFT			15
-#define SDIO_OCR_VW27_28			(1 << 15)
-#define SDIO_OCR_VW28_29			(1 << 16)
-#define SDIO_OCR_VW29_30			(1 << 17)
-#define SDIO_OCR_VW30_31			(1 << 18)
-#define SDIO_OCR_VW31_32			(1 << 19)
-#define SDIO_OCR_VW32_33			(1 << 20)
-#define SDIO_OCR_VW33_34			(1 << 21)
-#define SDIO_OCR_VW34_35			(1 << 22)
-#define SDIO_OCR_VW35_36			(1 << 23)
+#define SDIO_VO_TO_VW_SHIFT				15
+#define SDIO_OCR_VW27_28				(1 << 15)
+#define SDIO_OCR_VW28_29				(1 << 16)
+#define SDIO_OCR_VW29_30				(1 << 17)
+#define SDIO_OCR_VW30_31				(1 << 18)
+#define SDIO_OCR_VW31_32				(1 << 19)
+#define SDIO_OCR_VW32_33				(1 << 20)
+#define SDIO_OCR_VW33_34				(1 << 21)
+#define SDIO_OCR_VW34_35				(1 << 22)
+#define SDIO_OCR_VW35_36				(1 << 23)
 
-#define SDIO_R3_READY				((uint32_t) 1 << 31)
-#define SDIO_R3_CCS					((uint32_t) 1 << 30)
-#define SDIO_R3_UHSII				((uint32_t) 1 << 29)
-#define SDIO_R3_S18A				((uint32_t) 1 << 24)
+#define SDIO_R3_READY					((uint32_t) 1 << 31)
+#define SDIO_R3_CCS						((uint32_t) 1 << 30)
+#define SDIO_R3_UHSII					((uint32_t) 1 << 29)
+#define SDIO_R3_S18A					((uint32_t) 1 << 24)
 
 /*
  * SDIO CMD index List
  * */
-#define CMD_GO_IDLE_STATE			((uint8_t) 0)
-#define CMD_ALL_SEND_CID			((uint8_t) 2)
-#define CMD_SEND_RCA				((uint8_t) 3)
-#define CMD_SET_DSR					((uint8_t) 4)		// program the DSR of all cards
-#define CMD_SELECT					((uint8_t) 7)		// command toggle a card between stand-by and transfer state
-#define CMD_SEND_IF_COND			((uint8_t) 8)		// send interface condition
-#define CMD_SEND_CSD				((uint8_t) 9)		// query card specific data(CSD)
-#define CMD_SEND_CID				((uint8_t) 10)		// query card identification(CID)
-#define CMD_SIGVL_SW				((uint8_t) 11)		// switch to 1.8V bus signal level
-#define CMD_STOP_TRANS				((uint8_t) 12)		// forces the card to stop transmission
-#define CMD_SEND_STATUS				((uint8_t) 13)		// addressed card send its status
-#define CMD_GO_INACTIVE				((uint8_t) 15)		// make an addressed card into the inactive state
+#define CMD_GO_IDLE_STATE				((uint8_t) 0)
+#define CMD_ALL_SEND_CID				((uint8_t) 2)
+#define CMD_SEND_RCA					((uint8_t) 3)
+#define CMD_SET_DSR						((uint8_t) 4)		// program the DSR of all cards
+#define CMD_SELECT						((uint8_t) 7)		// command toggle a card between stand-by and transfer state
+#define CMD_SEND_IF_COND				((uint8_t) 8)		// send interface condition
+#define CMD_SEND_CSD					((uint8_t) 9)		// query card specific data(CSD)
+#define CMD_SEND_CID					((uint8_t) 10)		// query card identification(CID)
+#define CMD_SIGVL_SW					((uint8_t) 11)		// switch to 1.8V bus signal level
+#define CMD_STOP_TRANS					((uint8_t) 12)		// forces the card to stop transmission
+#define CMD_SEND_STATUS					((uint8_t) 13)		// addressed card send its status
+#define CMD_GO_INACTIVE					((uint8_t) 15)		// make an addressed card into the inactive state
 
-#define CMD_SET_BLKLEN				((uint8_t) 16)
-#define CMD_READ_SBLK				((uint8_t) 17)
-#define CMD_READ_MBLK				((uint8_t) 18)
-#define CMD_SEND_TUNE				((uint8_t) 19)
-#define CMD_SPD_CLS_CTRL			((uint8_t) 20)
-#define CMD_SET_BLKCNT				((uint8_t) 23)
-#define CMD_WRITE_SBLK				((uint8_t) 24)
-#define CMD_WRITE_MBLK				((uint8_t) 25)
-#define CMD_PROG_CSD				((uint8_t) 27)
-#define CMD_SET_WP					((uint8_t) 28)
-#define CMD_CLR_WP					((uint8_t) 29)
-#define CMD_SEND_WP					((uint8_t) 30)
-#define CMD_ERASE_WBLK_START		((uint8_t) 32)
-#define CMD_ERASE_WBLK_END			((uint8_t) 33)
-#define CMD_ERASE					((uint8_t) 38)
-#define CMD_DEF_DPS					((uint8_t) 40)
-#define CMD_LOCK_UNLOCK				((uint8_t) 42)
-#define CMD_APP_CMD					((uint8_t) 55)
-#define CMD_GEN_CMD					((uint8_t) 56)
+#define CMD_SET_BLKLEN					((uint8_t) 16)
+#define CMD_READ_SBLK					((uint8_t) 17)
+#define CMD_READ_MBLK					((uint8_t) 18)
+#define CMD_SEND_TUNE					((uint8_t) 19)
+#define CMD_SPD_CLS_CTRL				((uint8_t) 20)
+#define CMD_SET_BLKCNT					((uint8_t) 23)
+#define CMD_WRITE_SBLK					((uint8_t) 24)
+#define CMD_WRITE_MBLK					((uint8_t) 25)
+#define CMD_PROG_CSD					((uint8_t) 27)
+#define CMD_SET_WP						((uint8_t) 28)
+#define CMD_CLR_WP						((uint8_t) 29)
+#define CMD_SEND_WP						((uint8_t) 30)
+#define CMD_ERASE_WBLK_START			((uint8_t) 32)
+#define CMD_ERASE_WBLK_END				((uint8_t) 33)
+#define CMD_ERASE						((uint8_t) 38)
+#define CMD_DEF_DPS						((uint8_t) 40)
+#define CMD_LOCK_UNLOCK					((uint8_t) 42)
+#define CMD_APP_CMD						((uint8_t) 55)
+#define CMD_GEN_CMD						((uint8_t) 56)
 
-#define ACMD_SET_BUS_WIDTH			((uint8_t) 6)
-#define ACMD_SD_STATUS				((uint8_t) 13)
-#define ACMD_SEND_NUM_WR_BLK		((uint8_t) 22)
-#define ACMD_SEND_WR_BLK_ERASE_CNT	((uint8_t) 23)
-#define ACMD_SEND_OP_COND			((uint8_t) 41)
-#define ACMD_SET_CLR_CARD_DETECT	((uint8_t) 42)
-#define ACMD_SEND_SCR				((uint8_t) 51)
+#define ACMD_SET_BUS_WIDTH				((uint8_t) 6)
+#define ACMD_SD_STATUS					((uint8_t) 13)
+#define ACMD_SEND_NUM_WR_BLK			((uint8_t) 22)
+#define ACMD_SEND_WR_BLK_ERASE_CNT		((uint8_t) 23)
+#define ACMD_SEND_OP_COND				((uint8_t) 41)
+#define ACMD_SET_CLR_CARD_DETECT		((uint8_t) 42)
+#define ACMD_SEND_SCR					((uint8_t) 51)
 
 /*
  * Flags for SDIO Handle
  * */
-#define SDIO_HANDLE_FLAG_DMA		((uint32_t) 0x10000)
-#define SDIO_HANDLE_FLAG_BUSY		((uint32_t) 0x20000)
-#define SDIO_HANDLE_FLAG_S18R		((uint32_t) 0x40000)
+#define SDIO_HANDLE_FLAG_DMA			((uint32_t) 0x10000)
+#define SDIO_HANDLE_FLAG_BUSY			((uint32_t) 0x20000)
 
 
 /*
  * Flags of SD Card Status Field @ R1 response
  * */
-#define SDC_STATUS_OOR				((uint32_t) 1 << 31)
-#define SDC_STATUS_ADDRESS_ERR		((uint32_t) 1 << 30)
-#define SDC_STATUS_BLEN_ERR			((uint32_t) 1 << 29)
-#define SDC_STATUS_ERASE_SEQ_ERR	((uint32_t) 1 << 28)
-#define SDC_STATUS_ERASE_PARM_ERR	((uint32_t) 1 << 27)
-#define SDC_STATUS_WP_VIOLATION_ERR	((uint32_t) 1 << 26)
-#define SDC_STATUS_CARD_IS_LOCKED	((uint32_t) 1 << 25)
-#define SDC_STATUS_LOCK_FAIL		((uint32_t) 1 << 24)
-#define SDC_STATUS_CMDCRC_ERR		((uint32_t) 1 << 23)
-#define SDC_STATUS_ILLCMD_ERR		((uint32_t) 1 << 22)
-#define SDC_STATUS_CARDECC_ERR		((uint32_t) 1 << 21)
-#define SDC_STATUS_CC_ERR			((uint32_t) 1 << 20)
-#define SDC_STATUS_ERR				((uint32_t) 1 << 19)
-#define SDC_STATUS_CSD_OVW_ERR		((uint32_t) 1 << 16)
-#define SDC_STATUS_WP_ERASE_SKIP	((uint32_t) 1 << 15)
-#define SDC_STATUS_CARD_ECC_DIS		((uint32_t) 1 << 14)
-#define SDC_STATUS_ERASE_RESET		((uint32_t) 1 << 13)
-#define SDC_STATUS_CUR_STATE_MSK	((uint32_t) 0xF << 9)
-#define SDC_STATUS_DATA_RDY			((uint32_t) 1 << 8)
-#define SDC_STATUS_APP_CMD			((uint32_t) 1 << 5)
-#define SDC_STATUS_AKE_SEQ_ERR		((uint32_t) 1 << 3)
+#define SDC_STATUS_OOR					((uint32_t) 1 << 31)
+#define SDC_STATUS_ADDRESS_ERR			((uint32_t) 1 << 30)
+#define SDC_STATUS_BLEN_ERR				((uint32_t) 1 << 29)
+#define SDC_STATUS_ERASE_SEQ_ERR		((uint32_t) 1 << 28)
+#define SDC_STATUS_ERASE_PARM_ERR		((uint32_t) 1 << 27)
+#define SDC_STATUS_WP_VIOLATION_ERR		((uint32_t) 1 << 26)
+#define SDC_STATUS_CARD_IS_LOCKED		((uint32_t) 1 << 25)
+#define SDC_STATUS_LOCK_FAIL			((uint32_t) 1 << 24)
+#define SDC_STATUS_CMDCRC_ERR			((uint32_t) 1 << 23)
+#define SDC_STATUS_ILLCMD_ERR			((uint32_t) 1 << 22)
+#define SDC_STATUS_CARDECC_ERR			((uint32_t) 1 << 21)
+#define SDC_STATUS_CC_ERR				((uint32_t) 1 << 20)
+#define SDC_STATUS_ERR					((uint32_t) 1 << 19)
+#define SDC_STATUS_CSD_OVW_ERR			((uint32_t) 1 << 16)
+#define SDC_STATUS_WP_ERASE_SKIP		((uint32_t) 1 << 15)
+#define SDC_STATUS_CARD_ECC_DIS			((uint32_t) 1 << 14)
+#define SDC_STATUS_ERASE_RESET			((uint32_t) 1 << 13)
+#define SDC_STATUS_CUR_STATE_MSK		((uint32_t) 0xF << 9)
+#define SDC_STATUS_DATA_RDY				((uint32_t) 1 << 8)
+#define SDC_STATUS_APP_CMD				((uint32_t) 1 << 5)
+#define SDC_STATUS_AKE_SEQ_ERR			((uint32_t) 1 << 3)
 
-#define SCR_DAT_BUS_WIDTH			((uint32_t) 0xF << 16)
-#define SCR_SPEC_VER				((uint32_t) 0xF << 24)
 
-#define BUS_WIDTH_1B				((uint8_t) 1)
-#define BUS_WIDTH_4B				((uint8_t) 1 << 2)
+#define SCR_DAT_BUS_WIDTH				((uint32_t) 0xF << 16)
+#define SCR_SPEC_VER					((uint32_t) 0xF << 24)
 
+#define BUS_WIDTH_1B					((uint8_t) 1)
+#define BUS_WIDTH_4B					((uint8_t) 1 << 2)
+#define MAX_BUS_WIDTH					((uint8_t) 4)
+
+#define SDIO_D0_PIN						((uint8_t) 8)
+#define SDIO_D1_PIN						((uint8_t) 9)
+#define SDIO_D2_PIN						((uint8_t) 10)
+#define SDIO_D3_PIN						((uint8_t) 11)
+#define SDIO_CK_PIN						((uint8_t) 12)
+
+#define SDIO_CMD_PIN					((uint8_t) 2)
+
+#define SDIO_DETECT_PIN					((uint8_t) 8)
+
+#define SDIO_DETECT_PORT				tch_gpio0
+#define SDIO_DATA_PORT					tch_gpio2
+#define SDIO_CMD_PORT					tch_gpio3
+
+
+#define CSD_VERSION						((uint32_t) 3 << 30)
+#define CSDv1_ACC_TIME					((uint32_t) 0xFF << 16)
+#define CSDv1_NSAC						((uint32_t) 0xFF << 8)
+#define CSDv1_TRANS_SPEED				((uint32_t) 0xFF << 0)
+
+#define CSDv1_CMD_CLASS					((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv1_RD_BLKLEN					((uint32_t) 0xF << 16)
+#define CSDv1_RD_PART_OK				((uint32_t) 1 << 15)
+#define CSDv1_WR_BLK_MIS				((uint32_t) 1 << 14)
+#define CSDv1_RD_BLK_MIS				((uint32_t) 1 << 13)
+#define CSDv1_DSR_IMPL					((uint32_t) 1 << 12)
+#define CSDv1_CSIZE_UPPER				((uint32_t) ((1 << 10) - 1))
+
+#define CSDv1_CSIZE_LOWER				((uint32_t) 3 << 30)
+#define CSDv1_VDD_RD_MIN				((uint32_t) 7 << 27)
+#define CSDv1_VDD_RD_MAX				((uint32_t) 7 << 24)
+#define CSDv1_VDD_WR_MIN				((uint32_t) 3 << 21)
+#define CSDv1_VDD_WR_MAX				((uint32_t) 3 << 18)
+#define CSDv1_CSIZE_MUL					((uint32_t) 7 << 15)
+#define CSDv1_ERASE_BLK_EN				((uint32_t) 1 << 14)
+#define CSDv1_SECT_SIZE					((uint32_t) 0x7F << 7)
+#define CSDv1_WP_GRP_SIZE				((uint32_t) 0x7F)
+
+#define CSDv1_WP_GRP_EN					((uint32_t) 1 << 31)
+#define CSDv1_R2W_FACTOR				((uint32_t) 7 << 26)
+#define CSDv1_WR_BLKLEN					((uint32_t) 0xF << 22)
+#define CSDv1_WR_PART_OK				((uint32_t) 1 << 21)
+#define CSDv1_FILE_FMT_GRP				((uint32_t) 1 << 15)
+#define CSDv1_COPY_FLAG					((uint32_t) 1 << 14)
+#define CSDv1_PERM_WP					((uint32_t) 1 << 13)
+#define CSDv1_TMP_WP					((uint32_t) 1 << 12)
+#define CSDv1_FILE_FMT					((uint32_t) 3 << 10)
+
+
+#define CSDv2_ACC_TIME					((uint32_t) 0xFF << 16)
+#define CSDv2_NSAC						((uint32_t) 0xFF << 8)
+#define CSDv2_TRANS_SPEED				((uint32_t) 0xFF << 0)
+
+#define CSDv2_CMD_CLASS					((uint32_t) ((1 << 12) - 1) << 20)
+#define CSDv2_RD_BLKLEN					((uint32_t) 0xF << 16)
+#define CSDv2_RD_PART_OK				((uint32_t) 1 << 15)
+#define CSDv2_WR_BLK_MIS				((uint32_t) 1 << 14)
+#define CSDv2_RD_BLK_MIS				((uint32_t) 1 << 13)
+#define CSDv2_DSR_IMPL					((uint32_t) 1 << 12)
+#define CSDv2_CSIZE_UPPER				((uint32_t) ((1 << 6) - 1))
+
+#define CSDv2_CSIZE_LOWER				((uint32_t) (((1 << 16) - 1) << 16))
+#define CSDv2_ERASE_BLK_EN				((uint32_t) 1 << 14)
+#define CSDv2_SECT_SIZE					((uint32_t) 0x7F << 7)
+#define CSDv2_WP_GRP_SIZE				((uint32_t) 0x7F)
+
+#define CSDv2_WP_GRP_EN					((uint32_t) 1 << 31)
+#define CSDv2_R2W_FACTOR				((uint32_t) 7 << 26)
+#define CSDv2_WR_BLKLEN					((uint32_t) 0xF << 22)
+#define CSDv2_WR_PART_OK				((uint32_t) 1 << 21)
+#define CSDv2_FILE_FMT_GRP				((uint32_t) 1 << 15)
+#define CSDv2_COPY_FLAG					((uint32_t) 1 << 14)
+#define CSDv2_PERM_WP					((uint32_t) 1 << 13)
+#define CSDv2_TMP_WP					((uint32_t) 1 << 12)
+#define CSDv2_FILE_FMT					((uint32_t) 3 << 10)
 
 
 #define SDIO_VALIDATE(ins)	do {\
@@ -140,7 +215,7 @@
 }while(0)
 
 
-#define SDIO_ISVALID(ins)			((((struct tch_sdio_handle_prototype*) ins)->status & 0xffff) == (((uint32_t) ins ^ SDIO_CLASS_KEY) & 0xffff))
+#define SDIO_ISVALID(ins)	((((struct tch_sdio_handle_prototype*) ins)->status & 0xffff) == (((uint32_t) ins ^ SDIO_CLASS_KEY) & 0xffff))
 
 
 #define SET_BUSY(sdio) do {\
@@ -153,96 +228,26 @@
 	((struct tch_sdio_handle_prototype*) sdio)->status &= ~SDIO_HANDLE_FLAG_BUSY;\
 }while(0)
 
-#define IS_BUSY(sdio) 		((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_HANDLE_FLAG_BUSY
+#define IS_BUSY(sdio) 					((struct tch_sdio_handle_prototype*) sdio)->status & SDIO_HANDLE_FLAG_BUSY
 
-#define SET_DMA_MODE(sdio)		sdio->status |= SDIO_HANDLE_FLAG_DMA
-#define CLR_DMA_MODE(sdio)		sdio->status &= ~SDIO_HANDLE_FLAG_DMA
-#define IS_DMA_MODE(sdio)		(sdio->status & SDIO_HANDLE_FLAG_DMA)
+#define SET_DMA_MODE(sdio)				sdio->status |= SDIO_HANDLE_FLAG_DMA
+#define CLR_DMA_MODE(sdio)				sdio->status &= ~SDIO_HANDLE_FLAG_DMA
+#define IS_DMA_MODE(sdio)				(sdio->status & SDIO_HANDLE_FLAG_DMA)
 
-#define MAX_BUS_WIDTH			((uint8_t) 4)
+#define IOERROR_FLAGS					(SDIO_STA_CCRCFAIL | \
+										 SDIO_STA_DCRCFAIL | \
+										 SDIO_STA_TXUNDERR | \
+										 SDIO_STA_RXOVERR  | \
+										 SDIO_STA_STBITERR)
 
-#define SDIO_D0_PIN				((uint8_t) 8)
-#define SDIO_D1_PIN				((uint8_t) 9)
-#define SDIO_D2_PIN				((uint8_t) 10)
-#define SDIO_D3_PIN				((uint8_t) 11)
-#define SDIO_CK_PIN				((uint8_t) 12)
-
-#define SDIO_CMD_PIN			((uint8_t) 2)
-
-#define SDIO_DETECT_PIN			((uint8_t) 8)
-
-#define SDIO_DETECT_PORT		tch_gpio0
-#define SDIO_DATA_PORT			tch_gpio2
-#define SDIO_CMD_PORT			tch_gpio3
-
-
-#define CSD_VERSION					((uint32_t) 3 << 30)
-#define CSDv1_ACC_TIME				((uint32_t) 0xFF << 16)
-#define CSDv1_NSAC					((uint32_t) 0xFF << 8)
-#define CSDv1_TRANS_SPEED			((uint32_t) 0xFF << 0)
-
-#define CSDv1_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
-#define CSDv1_RD_BLKLEN				((uint32_t) 0xF << 16)
-#define CSDv1_RD_PART_OK			((uint32_t) 1 << 15)
-#define CSDv1_WR_BLK_MIS			((uint32_t) 1 << 14)
-#define CSDv1_RD_BLK_MIS			((uint32_t) 1 << 13)
-#define CSDv1_DSR_IMPL				((uint32_t) 1 << 12)
-#define CSDv1_CSIZE_UPPER			((uint32_t) ((1 << 10) - 1))
-
-#define CSDv1_CSIZE_LOWER			((uint32_t) 3 << 30)
-#define CSDv1_VDD_RD_MIN			((uint32_t) 7 << 27)
-#define CSDv1_VDD_RD_MAX			((uint32_t) 7 << 24)
-#define CSDv1_VDD_WR_MIN			((uint32_t) 3 << 21)
-#define CSDv1_VDD_WR_MAX			((uint32_t) 3 << 18)
-#define CSDv1_CSIZE_MUL				((uint32_t) 7 << 15)
-#define CSDv1_ERASE_BLK_EN			((uint32_t) 1 << 14)
-#define CSDv1_SECT_SIZE				((uint32_t) 0x7F << 7)
-#define CSDv1_WP_GRP_SIZE			((uint32_t) 0x7F)
-
-#define CSDv1_WP_GRP_EN				((uint32_t) 1 << 31)
-#define CSDv1_R2W_FACTOR			((uint32_t) 7 << 26)
-#define CSDv1_WR_BLKLEN				((uint32_t) 0xF << 22)
-#define CSDv1_WR_PART_OK			((uint32_t) 1 << 21)
-#define CSDv1_FILE_FMT_GRP			((uint32_t) 1 << 15)
-#define CSDv1_COPY_FLAG				((uint32_t) 1 << 14)
-#define CSDv1_PERM_WP				((uint32_t) 1 << 13)
-#define CSDv1_TMP_WP				((uint32_t) 1 << 12)
-#define CSDv1_FILE_FMT				((uint32_t) 3 << 10)
-
-
-#define CSDv2_ACC_TIME				((uint32_t) 0xFF << 16)
-#define CSDv2_NSAC					((uint32_t) 0xFF << 8)
-#define CSDv2_TRANS_SPEED			((uint32_t) 0xFF << 0)
-
-#define CSDv2_CMD_CLASS				((uint32_t) ((1 << 12) - 1) << 20)
-#define CSDv2_RD_BLKLEN				((uint32_t) 0xF << 16)
-#define CSDv2_RD_PART_OK			((uint32_t) 1 << 15)
-#define CSDv2_WR_BLK_MIS			((uint32_t) 1 << 14)
-#define CSDv2_RD_BLK_MIS			((uint32_t) 1 << 13)
-#define CSDv2_DSR_IMPL				((uint32_t) 1 << 12)
-#define CSDv2_CSIZE_UPPER			((uint32_t) ((1 << 6) - 1))
-
-#define CSDv2_CSIZE_LOWER			((uint32_t) (((1 << 16) - 1) << 16))
-#define CSDv2_ERASE_BLK_EN			((uint32_t) 1 << 14)
-#define CSDv2_SECT_SIZE				((uint32_t) 0x7F << 7)
-#define CSDv2_WP_GRP_SIZE			((uint32_t) 0x7F)
-
-#define CSDv2_WP_GRP_EN				((uint32_t) 1 << 31)
-#define CSDv2_R2W_FACTOR			((uint32_t) 7 << 26)
-#define CSDv2_WR_BLKLEN				((uint32_t) 0xF << 22)
-#define CSDv2_WR_PART_OK			((uint32_t) 1 << 21)
-#define CSDv2_FILE_FMT_GRP			((uint32_t) 1 << 15)
-#define CSDv2_COPY_FLAG				((uint32_t) 1 << 14)
-#define CSDv2_PERM_WP				((uint32_t) 1 << 13)
-#define CSDv2_TMP_WP				((uint32_t) 1 << 12)
-#define CSDv2_FILE_FMT				((uint32_t) 3 << 10)
+#define IS_IOERROR(ev)					(ev & IOERROR_FLAGS)
 
 typedef struct tch_sdio_device {
  	SdioDevType				type;
-#define SDIO_DEV_FLAG_CAP_LARGE				((uint16_t) 1 << 1)
-#define SDIO_DEV_FLAG_S18A_SUPPORT			((uint16_t) 1 << 2)
-#define SDIO_DEV_FLAG_UHSII_SUPPORT			((uint16_t) 1 << 3)
-#define SDIO_DEV_FLAG_READY					((uint16_t) 1 << 4)
+#define SDIO_DEV_FLAG_CAP_LARGE			((uint16_t) 1 << 1)		// if this is set, sd card is SDXC or SDEC class
+#define SDIO_DEV_FLAG_S18A_SUPPORT		((uint16_t) 1 << 2)
+#define SDIO_DEV_FLAG_UHSII_SUPPORT		((uint16_t) 1 << 3)
+#define SDIO_DEV_FLAG_READY				((uint16_t) 1 << 4)
  	uint32_t				flags;
  	uint16_t 				caddr;
  	uint8_t					bus_width;
@@ -250,12 +255,20 @@ typedef struct tch_sdio_device {
  	uint32_t				csd[4];
 }tch_sdioDev_t;
 
+
+
+#define SDIO_REQ_TYPE_READ_BLK			((uint32_t) 1 << 0)
+#define SDIO_REQ_TYPE_WRITE_BLK			((uint32_t) 1 << 1)
+#define SDIO_REQ_MULTIBLK				((uint32_t) 1 << 2)
+#define SDIO_REQ_NOK					((uint32_t) 1 << 3)
+
 typedef struct tch_sdio_req {
-	void					*buffer;
+	uint32_t				*buffer;
 	uint32_t				 bsz;
 	uint32_t				 bidx;
-	uint32_t				 req_type;
-}tch_sdio_req_t;
+	uint32_t				 bcnt;
+	uint32_t				 flag;
+} tch_sdio_req_t;
 
 struct tch_sdio_handle_prototype  {
 	struct tch_sdio_handle 				pix;
@@ -286,8 +299,6 @@ typedef struct sdio_lock_blk {
 } sdio_lock_blk_t;
 
 
-
-
 #define SDIO_RESP_SHORT		((sdio_resp_t) 1)
 #define SDIO_RESP_LONG		((sdio_resp_t) 2)
 typedef uint8_t		sdio_resp_t;
@@ -296,38 +307,52 @@ typedef uint8_t		sdio_resp_t;
 
 /*** private function declaration ***/
 
-static tch_hal_module_dma_t* DMA;
 static int tch_sdio_init();
 static void tch_sdio_exit();
 
 
+/**********************************************************************************
+ ********************  private function declaration *******************************
+ **********************************************************************************/
+/**
+ * 	void					*buffer;
+	uint32_t				 bsz;
+	uint32_t				 bidx;
+	uint32_t				 bcnt;
+	uint8_t					 req_type;
+ */
+static void sdio_build_readreq(tch_sdio_req_t* req,void* buffer,uint32_t bsize,uint32_t bcnt);
+static void sdio_build_writereq(tch_sdio_req_t* req,void* buffer,uint32_t bsize,uint32_t bcnt);
 static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
 static uint32_t sdio_sdioc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt);
-
-
 static tchStatus sdio_set_bus_width(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint8_t bw);
 static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cmdidx, uint32_t arg, BOOL waitresp, sdio_resp_t rtype, uint32_t* resp,uint32_t timeout);
 static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device);
 static tchStatus sd_deselect_device(struct tch_sdio_handle_prototype* ins);
 static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevId device,uint32_t* csd);
-
-
-
-/**
- * read block helper function
- */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout);
-
-
 static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address,const void* buffer, uint32_t blk_cnt,uint32_t blk_size, uint32_t timeout);
 
 
+
+/**********************************************************************************
+ ********************  public function declaration for module API *****************
+ **********************************************************************************/
 
 __USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt);
 __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,const tch_sdioCfg_t* config,uint32_t timeout);
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
+
+/**********************************************************************************
+ ********************  public function declaration for handle API *****************
+ **********************************************************************************/
+
+
+/**
+ * reset all device in SDIO bus
+ */
 __USER_API__ static tchStatus tch_sdio_handle_device_reset(tch_sdioHandle_t sdio);
 __USER_API__ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type,tch_sdioDevId* devIds,uint32_t max_Idcnt);
 __USER_API__ tchStatus tch_sdio_handle_getDevInfo(tch_sdioHandle_t sdio, tch_sdioDevId device, tch_sdio_info_t* info);
@@ -339,7 +364,6 @@ __USER_API__ static tchStatus tch_sdio_handle_eraseForce(tch_sdioHandle_t sdio, 
 __USER_API__ static tchStatus tch_sdio_handle_setPassword(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* opwd, const char* npwd, BOOL lock);
 __USER_API__ static tchStatus tch_sdio_handle_lock(tch_sdioHandle_t sdio, tch_sdioDevId device,const char* pwd);
 __USER_API__ static tchStatus tch_sdio_handle_unlock(tch_sdioHandle_t sdio, tch_sdioDevId device, const char* pwd);
-
 __USER_API__ static SdioDevType tch_sdio_handle_getDeviceType(tch_sdioHandle_t sdio, tch_sdioDevId device);
 __USER_API__ static BOOL tch_sdio_handle_isProtectEnabled(tch_sdioHandle_t sdio, tch_sdioDevId device);
 __USER_API__ static uint64_t tch_sdio_handle_getMaxBitrate(tch_sdioHandle_t sdio, tch_sdioDevId device);
@@ -414,7 +438,6 @@ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpo
 	cfg->bus_width = buswidth;
 	cfg->lpopt = lpopt;
 	cfg->v_opt = SDIO_VO31_32 | SDIO_VO32_33;
-	cfg->s18r_enable = FALSE;
 }
 
 static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdioCfg_t* config,uint32_t timeout)
@@ -444,6 +467,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		goto INIT_FAIL;
 	}
 
+	// this guarantee all uninitialized member set to NULL
 	mset(ins,0, sizeof(struct tch_sdio_handle_prototype));
 
 	dma = tch_kmod_request(MODULE_TYPE_DMA);
@@ -556,34 +580,20 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	if(!ins->dma)
 	{
 		// DMA support is not available, enable interrupt for data handling
-		sdio_reg->MASK |= (SDIO_MASK_SDIOITIE | SDIO_MASK_RXDAVLIE);
-	}
-	else
-	{
-		sdio_reg->CLKCR |= SDIO_CLKCR_HWFC_EN;		// hardware flow control enable
+		sdio_reg->MASK |= (SDIO_MASK_RXDAVLIE);
 	}
 	// enable error handling interrupt
 	sdio_reg->MASK |= (SDIO_MASK_RXOVERRIE | SDIO_MASK_TXUNDERRIE |
 						SDIO_MASK_CMDRENDIE | SDIO_MASK_CMDSENTIE |
 						SDIO_MASK_CCRCFAILIE | SDIO_MASK_DBCKENDIE |
-						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE);
+						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE |
+						SDIO_MASK_CTIMEOUTIE | SDIO_MASK_DTIMEOUTIE);
 
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;			// power save mode enabled
 	sdio_reg->CLKCR |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
 	sdio_reg->CLKCR |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
 
 	// set clock register for Identification phase
-
-	if(config->s18r_enable)
-	{
-		ins->status |= SDIO_HANDLE_FLAG_S18R;
-	}
-	else
-	{
-		ins->status &= ~ SDIO_HANDLE_FLAG_S18R;
-	}
-
-
 	ins->api = api;
 	tch_enableInterrupt(sdio_hw->irq, HANDLER_HIGH_PRIOR);
 	SDIO_VALIDATE(ins);
@@ -685,9 +695,7 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 	}
 	uint32_t resp[4];
 
-	sdio_send_cmd(ins, CMD_SEND_IF_COND, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);		// send op cond
-	if(resp[0] != 0x1FF)
-		goto ID_SAFERET;
+
 
 	switch(type){
 	case MMC:
@@ -703,7 +711,6 @@ static uint32_t tch_sdio_handle_device_id(tch_sdioHandle_t sdio,SdioDevType type
 		resp[0] = 0;
 	}
 
-ID_SAFERET:
 	ins->api->Mtx->lock(ins->mtx,tchWaitForever);
 	CLR_BUSY(ins);
 	ins->api->Condv->wakeAll(ins->condv);
@@ -787,11 +794,12 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 	if((res = ins->api->Mtx->unlock(ins->mtx)) != tchOK)
 		return res;
 
-	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
 	uint32_t clkcr;
+	uint32_t resp;
+	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
 
-	switch(option)
-	{
+	switch (option) {
 	case SDIO_PREPARE_OPT_MAX_COMPAT:
 		// TODO : sdio prepare for max compatibility
 		// set data bus 1
@@ -799,7 +807,7 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 		clkcr = sdio_reg->CLKCR;
 		clkcr &= ~(SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
 		sdio_set_bus_width(ins, device, 4);
-		clkcr |=  ((1 << 11) | SDIO_CLKCR_CLKEN);
+		clkcr |= ((1 << 11) | SDIO_CLKCR_CLKEN);
 		sdio_reg->CLKCR = clkcr;
 		break;
 	case SDIO_PREPARE_OPT_SPEED:
@@ -814,6 +822,27 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 		sdio_reg->CLKCR = clkcr;
 		break;
 	}
+
+	// negotiate data length for Standard class
+	if(!(dev->flags & SDIO_DEV_FLAG_CAP_LARGE))
+	{
+		sd_select_device(ins,device);
+		do {
+			sdio_send_cmd(ins,CMD_SET_BLKLEN,(1 << dev->blksz),TRUE, SDIO_RESP_SHORT,&resp,MAX_TIMEOUT_MILLS);
+			dev->blksz--;
+
+			if(dev->blksz == 0)
+			{
+				//if fail to find proper block size
+				return tchErrorIo;
+			}
+		}while(resp & SDC_STATUS_BLEN_ERR);
+		dev->blksz++;
+		sd_deselect_device(ins);
+	}else{
+		dev->blksz = 9;
+	}
+
 
 	if((res = ins->api->Mtx->lock(ins->mtx, tchWaitForever)) != tchOK)
 		return res;
@@ -851,17 +880,86 @@ static uint64_t tch_sdio_handle_getCapacity(tch_sdioHandle_t sdio, tch_sdioDevId
 
 static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId device ,const uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
 {
-
-}
-
-static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
-{
-	tchStatus res;
 	if(!sdio || !SDIO_ISVALID(sdio))
 		return tchErrorParameter;
+	tchStatus res;
+	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
+	const tch_core_api_t* api = ins->api;
+	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	uint8_t cmd;
+	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
+	{
+		return res;
+	}
+	// mutex successfully locked
+	// wait until sdio idle
+	while(IS_BUSY(sdio))
+	{
+		if((res = api->Condv->wait(ins->condv,ins->mtx, timeout)) != tchOK)
+		{
+			return res;
+		}
+	}
+	SET_BUSY(sdio);
+	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
+	{
+		return res;
+	}
+
+	res = sd_select_device(ins, dev);
+
+	if((dev->type == SDC) && !(dev->flags & SDIO_DEV_FLAG_CAP_LARGE))
+	{
+		// if device is SD card and standard capacity
+		// address should be bytes offset
+		/**
+		 * Physical Layer Simplified Version 4.10
+		 * SDSC Card (CCS=0) uses byte unit address and SDHC and SDXC Cards (CCS=1) use block unit address (512 bytes unit).
+		 */
+		blk_offset <<= dev->blksz;
+	}
+
+	if(blk_cnt > 1)
+	{
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, NULL, timeout);
+	}
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, NULL, timeout);
+
+	if(blk_cnt > 1)
+	{
+		cmd = CMD_WRITE_MBLK;
+	}
+	else
+	{
+		cmd = CMD_WRITE_SBLK;
+	}
+	res = sdio_write_block(ins, cmd, blk_offset, blk_bp, blk_cnt, dev->blksz,timeout);
+
+	sd_deselect_device(ins);
+
+	api->Mtx->lock(ins->mtx,tchWaitForever);
+	CLR_BUSY(sdio);
+	api->Condv->wakeAll(ins->condv);
+	api->Mtx->unlock(ins->mtx);
+	return res;
+}
+
+/**
+ *
+ */
+static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
+{
+	if(!sdio || !SDIO_ISVALID(sdio))
+		return tchErrorParameter;
+	tchStatus res = tchOK;
+	uint8_t cmd;
+
+	uint32_t resp = 0;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
 	const tch_core_api_t* api = ins->api;
 	tch_sdioDev_t *dev = (tch_sdioDev_t*) device;
+	SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
+
 	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
 		return res;
 	while(IS_BUSY(sdio))
@@ -871,21 +969,49 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 	}
 	SET_BUSY(sdio);
 	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
+	{
 		return res;
+	}
 
+	while((res = sd_select_device(ins, dev)) != tchOK)
+	{
+		if(res == tchEventTimeout)
+		{
+			return res;
+		}
+		// wait until device ready
+		api->Thread->yield(0);
+	}
 
-	res = sd_select_device(ins, dev);
-	uint32_t cnt = 0;
-	uint32_t blksize = 1 << dev->blksz;
-	do{
-		res = sdio_read_block(ins, CMD_READ_SBLK,  blk_offset, &blk_bp[blksize * cnt++] ,1, dev->blksz, timeout);
-		if(res != tchOK)
-			goto READ_SAFERET;
-	}while(cnt < blk_cnt);
+	if((dev->type == SDC) && !(dev->flags & SDIO_DEV_FLAG_CAP_LARGE))
+	{
+		// if device is SD card and standard capacity
+		// address should be bytes offset
+		/**
+		 * Physical Layer Simplified Version 4.10
+		 * SDSC Card (CCS=0) uses byte unit address and SDHC and SDXC Cards (CCS=1) use block unit address (512 bytes unit).
+		 */
+		blk_offset <<= dev->blksz;
+	}
 
-	res = tchOK;
+	if(blk_cnt > 1)
+	{
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+	}
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, &resp, timeout);
 
-READ_SAFERET:
+	if(blk_cnt > 1)
+	{
+		cmd = CMD_READ_MBLK;
+	}
+	else
+	{
+		cmd = CMD_READ_SBLK;
+	}
+	res = sdio_read_block(ins, cmd, blk_offset, blk_bp, blk_cnt, dev->blksz,timeout);
+
+	sd_deselect_device(ins);
+
 	api->Mtx->lock(ins->mtx,tchWaitForever);
 	CLR_BUSY(sdio);
 	api->Condv->wake(ins->condv);
@@ -923,6 +1049,28 @@ static uint32_t sdio_mmc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 
 }
 
+static void sdio_build_readreq(tch_sdio_req_t* req,void* buffer,uint32_t bsize,uint32_t bcnt)
+{
+	req->bcnt = bcnt;
+	req->bsz = bsize;
+	req->buffer = buffer;
+	req->flag = SDIO_REQ_TYPE_READ_BLK;
+	if(bcnt > 1)
+		req->flag |= SDIO_REQ_MULTIBLK;
+	req->bidx = 0;
+}
+
+static void sdio_build_writereq(tch_sdio_req_t* req,void* buffer,uint32_t bsize,uint32_t bcnt)
+{
+	req->bcnt = bcnt;
+	req->bsz = bsize;
+	req->buffer = buffer;
+	req->flag = SDIO_REQ_TYPE_WRITE_BLK;
+	if(bcnt > 1)
+		req->flag |= SDIO_REQ_MULTIBLK;
+	req->bidx = 0;
+}
+
 static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sdioDevId* devIds, uint32_t max_idcnt)
 {
 	const tch_core_api_t* api = ins->api;
@@ -940,19 +1088,29 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 	const tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
 
-
+	// SEND_IF_COND to all devices and only the cards that support the condition become available
+	sdio_send_cmd(ins, CMD_SEND_IF_COND, 0x1FF, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
+	if(resp[0] != 0x1FF)
+		return tchErrorIo;				/// there is no card to
 
 	while(res != tchEventTimeout && (ins->dev_cnt < max_idcnt))
 	{
+		/* continue card init process until timeout happens or the number of found device
+		 * exceeds max_idcnt
+		*/
+
 		// send card initialization command with OCR setting
+		/**
+		 * send SEND_OP_COND to all cards serially response to it.
+		 * SEND_OP_COND is actually sent to device 2 times.
+		 * 1. host request operating condition to device
+		 * 2. a device replies its operating condition
+		 * 3. host confirms the operating condition by sending another SEND_OP_COND with the same argument
+		 * 4. wait until device is ready
+		 */
 		res = tchOK;
 		sdio_send_cmd(ins, CMD_APP_CMD, 0, TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
-		mset(resp,0, 4 * sizeof(uint32_t));
 		arg = SDIO_ACMD41_ARG_HCS;
-		if(ins->status & SDIO_HANDLE_FLAG_S18R)
-		{
-			arg |= SDIO_ACMD41_ARG_S18R;
-		}
 		arg |= (ins->vopt << SDIO_VO_TO_VW_SHIFT);
 		res = sdio_send_cmd(ins, ACMD_SEND_OP_COND, arg , TRUE, SDIO_RESP_SHORT, resp, MAX_TIMEOUT_MILLS);
 
@@ -974,13 +1132,9 @@ static uint32_t sdio_sdc_device_id(struct tch_sdio_handle_prototype* ins, tch_sd
 			ins->devs[ins->dev_cnt].caddr = (resp[0] >> 16);
 			devIds[ins->dev_cnt] = &ins->devs[ins->dev_cnt];
 
-			if(ins->devs[ins->dev_cnt].flags & SDIO_DEV_FLAG_UHSII_SUPPORT)
-			{
-				// TODO : if UHS further initialization required
-			}
-
 			sd_read_csd(ins, &ins->devs[ins->dev_cnt], ins->devs[ins->dev_cnt].csd);
 			ins->devs[ins->dev_cnt].blksz = (ins->devs[ins->dev_cnt].csd[1] & CSDv1_RD_BLKLEN) >> 16;
+			ins->devs[ins->dev_cnt].flags |= SDIO_DEV_FLAG_READY;
 			ins->dev_cnt++;
 		}
 	}
@@ -1000,16 +1154,20 @@ static tchStatus sdio_set_bus_width(struct tch_sdio_handle_prototype* ins, tch_s
 	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
 	uint32_t resp;
 	tchStatus result = tchOK;
+
+	if(!(dev->flags & SDIO_DEV_FLAG_READY))
+		return tchErrorIo;
+	/**
+	 *  to configure bus width card should be in trasn state and unlocked
+	 */
 	if((result = sd_select_device(ins,dev)) != tchOK)
 		return result;
 	if((result = sdio_send_cmd(ins,CMD_APP_CMD, (dev->caddr) << 16,TRUE,SDIO_RESP_SHORT,&resp,MAX_TIMEOUT_MILLS)) != tchOK)
 		return result;
 	if((result = sdio_send_cmd(ins,ACMD_SET_BUS_WIDTH, (bw >> 1),TRUE,SDIO_RESP_SHORT,&resp,MAX_TIMEOUT_MILLS)) != tchOK)
 		return result;
-
 	if((result = sd_deselect_device(ins)) != tchOK)
 		return result;
-
 	dev->bus_width = bw;
 	return result;
 }
@@ -1030,10 +1188,7 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 	{
 		cmd |= ((rtype == SDIO_RESP_SHORT)? SDIO_CMD_WAITRESP_0 : SDIO_CMD_WAITRESP);
 		sdio_reg->CMD = cmd;
-		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout)) != tchOK)
-			return res;
-		ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDREND);
-
+		res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout);
 		if(resp)
 		{
 			switch(rtype){
@@ -1045,19 +1200,17 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 				break;
 			}
 		}
-
-/*		if((ev & ~SDIO_STA_CMDREND))
-		{
-			return tchErrorIo;
-		}*/
 	}
 	else
 	{
 		cmd |= SDIO_CMD_ENCMDCOMPL;
 		sdio_reg->CMD = cmd;
-		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout)) != tchOK)
-			return res;
-		ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT);
+		res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout);
+	}
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT | SDIO_STA_CMDREND | IOERROR_FLAGS);
+	if(IS_IOERROR(ev))
+	{
+		res = tchErrorIo;
 	}
 	return res;
 }
@@ -1068,9 +1221,12 @@ static tchStatus sd_select_device(struct tch_sdio_handle_prototype* ins, tch_sdi
 		return tchErrorParameter;
 	struct tch_sdio_device* dinfo = (struct tch_sdio_device*) device;
 	uint32_t cstatus = 0;
+	tchStatus res = tchOK;
 
-	sdio_send_cmd(ins,CMD_SELECT, (dinfo->caddr << 16),
-						TRUE,SDIO_RESP_SHORT, &cstatus, MAX_TIMEOUT_MILLS);
+	if((res = sdio_send_cmd(ins,CMD_SELECT, (dinfo->caddr << 16), TRUE, SDIO_RESP_SHORT, &cstatus, MAX_TIMEOUT_MILLS)) != tchOK)
+	{
+		return res;
+	}
 	if(cstatus & SDC_STATUS_DATA_RDY)
 		return tchOK;
 	return tchErrorIo;
@@ -1103,63 +1259,81 @@ static tchStatus sd_read_csd(struct tch_sdio_handle_prototype* ins, tch_sdioDevI
  */
 static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t cmdIdx, uint32_t address, void* buffer, uint32_t blk_cnt, uint32_t blk_size,  uint32_t timeout)
 {
-
-
 	if(!ins || !SDIO_ISVALID(ins))
 		return tchErrorParameter;
 
 	uint32_t resp = 0;
-	tchStatus ret;
+	int32_t ev = 0;
+	tchStatus res;
 	SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
+	tch_sdio_req_t request;
+	sdio_build_readreq(&request,buffer,blk_cnt << blk_size,blk_cnt);
+	ins->req = &request;
 
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size, TRUE, SDIO_RESP_SHORT, &resp, timeout);
+	sdio_reg->DCTRL = 0;					// data state machine disable
+	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;	// disable power save mode
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
-			// DMA Used to receive data
-		tch_DmaReqDef req;
-		sdio_reg->DCTRL = 0;		// data state machine disable
+		// DMA Used to receive data
+		tch_DmaReqDef dma_req;
+		dma->initReq(&dma_req, buffer, (char*) &sdio_reg->FIFO, 0 ,DMA_Dir_PeriphToMem);
+		if((res = dma->beginXferAsync(ins->dma,&dma_req)) != tchOK)
+		{
+			goto READ_ERR_RET;
+		}
 
-		dma->initReq(&req, buffer, (char*) &sdio_reg->FIFO, 0,DMA_Dir_PeriphToMem);
-		ret = dma->beginXfer(ins->dma,&req,0,NULL);
-
+		sdio_reg->DLEN = blk_cnt << blk_size;
 		sdio_reg->DTIMER = timeout << 4;
-		sdio_reg->DLEN = blk_cnt * (1 << blk_size);
 
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN |  SDIO_DCTRL_DTDIR |(blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-
-		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
+		if((res = sdio_send_cmd(ins, cmdIdx, address,TRUE,SDIO_RESP_SHORT,&resp,timeout)) != tchOK)
 		{
-			sdio_reg->DCTRL = 0;
-			return tchErrorIo;
+			goto READ_ERR_RET;
 		}
-
-		if((ret = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
-		{
-			return ret;
-		}
-		ins->api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
-		return tchOK;
 	}
 	else
 	{
-			// Read Operation performed without DMA
-		sdio_reg->DCTRL = 0;
+		// enable rx fifo half full interrupt
+		sdio_reg->MASK |= SDIO_MASK_RXDAVLIE;
+		sdio_reg->DLEN = blk_cnt << blk_size;
+		sdio_reg->DTIMER = timeout << 16;
+		request.bcnt = 1;
 
-		sdio_reg->DTIMER = timeout << 4;
-		sdio_reg->DLEN = blk_cnt * (1 << blk_size);
+		Thread->yield(0);
 
 		sdio_reg->DCTRL = (SDIO_DCTRL_DTDIR | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-		if(sdio_send_cmd(ins, cmdIdx, address,FALSE,0,NULL,timeout) != tchOK)
+
+		if((res = sdio_send_cmd(ins, cmdIdx, address, TRUE, SDIO_RESP_SHORT,&resp,timeout)) != tchOK)
 		{
-			sdio_reg->DCTRL;
+			goto READ_ERR_RET;
 		}
-		return tchOK;
 	}
+
+	res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | IOERROR_FLAGS);
+
+	// disable rx fifo half full interrupt
+	if(IS_IOERROR(ev))
+	{
+		res = tchErrorIo;
+	}
+
+READ_ERR_RET:
+	if((blk_cnt > 1) || (res != tchOK))
+	{
+		sdio_send_cmd(ins,CMD_STOP_TRANS,0, TRUE, SDIO_RESP_SHORT,&resp, timeout);
+	}
+
+	sdio_reg->DCTRL = 0;
+	ins->req = NULL;
+	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
+	sdio_reg->MASK &= ~SDIO_MASK_RXDAVLIE;
+	return res;
 }
 
 
@@ -1170,41 +1344,56 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 
 	tchStatus result;
 	uint32_t resp;
-	tch_core_api_t* api = ins->api;
+	int32_t ev = 0;
+	const tch_core_api_t* api = ins->api;
 	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
+	tch_sdio_req_t request;
 
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size,TRUE, SDIO_RESP_SHORT, &resp,timeout);
+	sdio_build_writereq(&request, (void*) buffer, blk_cnt << blk_size, blk_cnt);
+	ins->req = &request;
+
+	sdio_reg->DCTRL = 0;
+	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;
+
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
-		sdio_reg->DCTRL = 0;
 
 		tch_DmaReqDef req;
-		dma->initReq(&req,buffer,&sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
-		dma->beginXfer(ins->dma,&req,timeout,NULL);
+		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
+		dma->beginXferSync(ins->dma,&req,timeout,NULL);
 
 		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
-		sdio_send_cmd(ins,CMD_WRITE_SBLK,address, TRUE, SDIO_RESP_SHORT, &resp, timeout);
-
 		sdio_reg->DTIMER = timeout << 4;
+
+		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)
+		{
+			goto WRITE_ERR_RET;
+		}
+
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-		if((result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
-		{
-			return result;
-		}
-		api->Event->clear(ins->evId,SDIO_STA_DBCKEND);
+
 	}
 	else
 	{
 
 	}
+	result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
+	ev = api->Event->clear(ins->evId,SDIO_STA_DBCKEND | IOERROR_FLAGS);
+	if(IS_IOERROR(ev))
+	{
+		result = tchErrorIo;
+	}
 
-	return tchOK;
+WRITE_ERR_RET:
+	sdio_reg->DCTRL = 0;
+	ins->req = NULL;
+	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
+	return result;
 
 }
-
 
 
 // interrupt handler
@@ -1214,11 +1403,40 @@ void SDIO_IRQHandler()
 	struct tch_sdio_handle_prototype* sdio_ins = sdio_hw->_handle;
 	const tch_core_api_t* api = sdio_ins->api;
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
+	uint32_t cnt;
+	uint32_t dummy;
+	if(sdio_reg->STA & SDIO_STA_RXDAVL)
+	{
+			while (sdio_reg->STA & SDIO_STA_RXDAVL)
+			{
+				sdio_ins->req->buffer[sdio_ins->req->bidx++] = sdio_reg->FIFO;
+				if ((sdio_ins->req->bsz >> 2) <= sdio_ins->req->bidx)
+				{
+					dummy = sdio_reg->FIFO;
+				}
+			}
+
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_RXOVERR)
+	{
+		// rx overrun error
+		sdio_reg->ICR |= SDIO_ICR_RXOVERRC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_RXOVERR);
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_TXUNDERR)
+	{
+		// tx underrun error
+		sdio_reg->ICR |= SDIO_ICR_TXUNDERRC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_TXUNDERR);
+		return;
+	}
 	if(sdio_reg->STA & SDIO_STA_CMDSENT)
 	{
 		sdio_reg->ICR |= SDIO_ICR_CMDSENTC;
-		api->Event->set(sdio_ins->evId,SDIO_STA_CMDSENT);
-		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Sent\n\r",(sdio_reg->CMD & SDIO_CMD_CMDINDEX));
+		api->Event->set(sdio_ins->evId, SDIO_STA_CMDSENT);
+		api->Dbg->print(api->Dbg->Normal, 0, "SDIO Command (%d) Sent\n\r", (sdio_reg->CMD & SDIO_CMD_CMDINDEX));
 		return;
 	}
 	if(sdio_reg->STA & SDIO_STA_CMDREND)
@@ -1231,14 +1449,18 @@ void SDIO_IRQHandler()
 	if(sdio_reg->STA & SDIO_STA_CCRCFAIL)
 	{
 		sdio_reg->ICR |= SDIO_ICR_CCRCFAILC;
-		api->Event->set(sdio_ins->evId, SDIO_STA_CMDREND | SDIO_STA_CCRCFAIL);
+		api->Event->set(sdio_ins->evId, SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND);
 		api->Dbg->print(api->Dbg->Normal,0, "SDIO Command (%d) Responded\n\r wiht CRC Error", (sdio_reg->RESPCMD & SDIO_RESPCMD_RESPCMD));
 		return;
 	}
 	if(sdio_reg->STA & SDIO_STA_DBCKEND)
 	{
 		sdio_reg->ICR |= SDIO_ICR_DBCKENDC;
-		api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
+		if(!--sdio_ins->req->bcnt)
+		{
+			//when block count reaches '0', wakes up thread
+			api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
+		}
 		api->Dbg->print(api->Dbg->Normal,0, "SDIO Block op. complete\n\r");
 		return;
 	}
@@ -1252,7 +1474,21 @@ void SDIO_IRQHandler()
 	if(sdio_reg->STA & SDIO_STA_DCRCFAIL)
 	{
 		sdio_reg->ICR |= SDIO_ICR_DCRCFAILC;
-		api->Event->set(sdio_ins->evId, SDIO_STA_DBCKEND);
+		sdio_ins->req->flag |= SDIO_REQ_NOK;
+		api->Event->set(sdio_ins->evId, SDIO_STA_DCRCFAIL);
+		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_DTIMEOUT)
+	{
+		sdio_reg->ICR |= SDIO_ICR_DTIMEOUTC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_DTIMEOUT);
+		return;
+	}
+
+	if(sdio_reg->STA & SDIO_STA_CTIMEOUT)
+	{
+		sdio_reg->ICR |= SDIO_ICR_CTIMEOUTC;
+		api->Event->set(sdio_ins->evId, SDIO_STA_CTIMEOUT);
 		return;
 	}
 }

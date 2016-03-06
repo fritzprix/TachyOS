@@ -799,6 +799,30 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
 	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
 
+	switch (option) {
+	case SDIO_PREPARE_OPT_MAX_COMPAT:
+		// TODO : sdio prepare for max compatibility
+		// set data bus 1
+		// set clock 24mhz
+		clkcr = sdio_reg->CLKCR;
+		clkcr &= ~(SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
+		sdio_set_bus_width(ins, device, 4);
+		clkcr |= ((1 << 11) | SDIO_CLKCR_CLKEN);
+		sdio_reg->CLKCR = clkcr;
+		break;
+	case SDIO_PREPARE_OPT_SPEED:
+		// TODO : sdio
+		//try to set data bus width to 4
+		// if fail set data bus width to 1
+		//set clock 48mhz
+		clkcr = sdio_reg->CLKCR;
+		clkcr &= ~(SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
+		sdio_set_bus_width(ins, device, 4);
+		clkcr |= ((1 << 11) | SDIO_CLKCR_BYPASS | SDIO_CLKCR_CLKEN);
+		sdio_reg->CLKCR = clkcr;
+		break;
+	}
+
 	// negotiate data length for Standard class
 	if(!(dev->flags & SDIO_DEV_FLAG_CAP_LARGE))
 	{
@@ -819,30 +843,6 @@ static tchStatus tch_sdio_handle_prepare(tch_sdioHandle_t sdio, tch_sdioDevId de
 		dev->blksz = 9;
 	}
 
-	switch(option)
-	{
-	case SDIO_PREPARE_OPT_MAX_COMPAT:
-		// TODO : sdio prepare for max compatibility
-		// set data bus 1
-		// set clock 24mhz
-		clkcr = sdio_reg->CLKCR;
-		clkcr &= ~(SDIO_CLKCR_BYPASS |  SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
-		sdio_set_bus_width(ins, device, 4);
-		clkcr |=  ((1 << 11) | SDIO_CLKCR_CLKEN);
-		sdio_reg->CLKCR = clkcr;
-		break;
-	case SDIO_PREPARE_OPT_SPEED:
-		// TODO : sdio
-		//try to set data bus width to 4
-		// if fail set data bus width to 1
-		//set clock 48mhz
-		clkcr = sdio_reg->CLKCR;
-		clkcr &= ~(SDIO_CLKCR_BYPASS |   SDIO_CLKCR_WIDBUS | SDIO_CLKCR_CLKDIV);
-		sdio_set_bus_width(ins, device, 4);
-		clkcr |= ((1 << 11) | SDIO_CLKCR_BYPASS | SDIO_CLKCR_CLKEN);
-		sdio_reg->CLKCR = clkcr;
-		break;
-	}
 
 	if((res = ins->api->Mtx->lock(ins->mtx, tchWaitForever)) != tchOK)
 		return res;
@@ -886,6 +886,7 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
 	const tch_core_api_t* api = ins->api;
 	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
+	uint8_t cmd;
 	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
 	{
 		return res;
@@ -904,41 +905,6 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 	{
 		return res;
 	}
-
-	uint32_t cnt = 0;
-	uint32_t blksiz = 1 << dev->blksz;
-
-	api->Mtx->lock(ins->mtx,tchWaitForever);
-	CLR_BUSY(sdio);
-	api->Condv->wakeAll(ins->condv);
-	api->Mtx->unlock(ins->mtx);
-	return res;
-}
-
-/**
- *
- */
-static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
-{
-	if(!sdio || !SDIO_ISVALID(sdio))
-		return tchErrorParameter;
-	tchStatus res = tchOK;
-	uint8_t cmd;
-
-	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
-	const tch_core_api_t* api = ins->api;
-	tch_sdioDev_t *dev = (tch_sdioDev_t*) device;
-
-	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
-		return res;
-	while(IS_BUSY(sdio))
-	{
-		if((res = api->Condv->wait(ins->condv, ins->mtx, timeout)) != tchOK)
-			return res;
-	}
-	SET_BUSY(sdio);
-	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
-		return res;
 
 	res = sd_select_device(ins, dev);
 
@@ -959,6 +925,80 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 	}
 	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, NULL, timeout);
 
+	if(blk_cnt > 1)
+	{
+		cmd = CMD_WRITE_MBLK;
+	}
+	else
+	{
+		cmd = CMD_WRITE_SBLK;
+	}
+	res = sdio_write_block(ins, cmd, blk_offset, blk_bp, blk_cnt, dev->blksz,timeout);
+
+	sd_deselect_device(ins);
+
+	api->Mtx->lock(ins->mtx,tchWaitForever);
+	CLR_BUSY(sdio);
+	api->Condv->wakeAll(ins->condv);
+	api->Mtx->unlock(ins->mtx);
+	return res;
+}
+
+/**
+ *
+ */
+static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId device,uint8_t* blk_bp,uint32_t blk_offset,uint32_t blk_cnt,uint32_t timeout)
+{
+	if(!sdio || !SDIO_ISVALID(sdio))
+		return tchErrorParameter;
+	tchStatus res = tchOK;
+	uint8_t cmd;
+
+	uint32_t resp = 0;
+	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
+	const tch_core_api_t* api = ins->api;
+	tch_sdioDev_t *dev = (tch_sdioDev_t*) device;
+	SDIO_TypeDef* sdio_reg = (SDIO_TypeDef*) SDIO_HWs[0]._sdio;
+
+	if((res = api->Mtx->lock(ins->mtx, timeout)) != tchOK)
+		return res;
+	while(IS_BUSY(sdio))
+	{
+		if((res = api->Condv->wait(ins->condv, ins->mtx, timeout)) != tchOK)
+			return res;
+	}
+	SET_BUSY(sdio);
+	if((res = api->Mtx->unlock(ins->mtx)) != tchOK)
+	{
+		return res;
+	}
+
+	while((res = sd_select_device(ins, dev)) != tchOK)
+	{
+		if(res == tchEventTimeout)
+		{
+			return res;
+		}
+		// wait until device ready
+		api->Thread->yield(0);
+	}
+
+	if((dev->type == SDC) && !(dev->flags & SDIO_DEV_FLAG_CAP_LARGE))
+	{
+		// if device is SD card and standard capacity
+		// address should be bytes offset
+		/**
+		 * Physical Layer Simplified Version 4.10
+		 * SDSC Card (CCS=0) uses byte unit address and SDHC and SDXC Cards (CCS=1) use block unit address (512 bytes unit).
+		 */
+		blk_offset <<= dev->blksz;
+	}
+
+	if(blk_cnt > 1)
+	{
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+	}
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, &resp, timeout);
 
 	if(blk_cnt > 1)
 	{
@@ -1148,10 +1188,7 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 	{
 		cmd |= ((rtype == SDIO_RESP_SHORT)? SDIO_CMD_WAITRESP_0 : SDIO_CMD_WAITRESP);
 		sdio_reg->CMD = cmd;
-		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout)) != tchOK)
-		{
-			return res;
-		}
+		res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDREND, timeout);
 		if(resp)
 		{
 			switch(rtype){
@@ -1168,14 +1205,7 @@ static tchStatus sdio_send_cmd(struct tch_sdio_handle_prototype* ins, uint8_t cm
 	{
 		cmd |= SDIO_CMD_ENCMDCOMPL;
 		sdio_reg->CMD = cmd;
-		if((res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout)) != tchOK)
-		{
-			return res;
-		}
-		if(IS_IOERROR(ev))
-		{
-			res = tchErrorIo;
-		}
+		res = ins->api->Event->wait(ins->evId, SDIO_STA_CMDSENT, timeout);
 	}
 	ev = ins->api->Event->clear(ins->evId, SDIO_STA_CMDSENT | SDIO_STA_CMDREND | IOERROR_FLAGS);
 	if(IS_IOERROR(ev))
@@ -1248,7 +1278,7 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		// DMA Used to receive data
 		tch_DmaReqDef dma_req;
 		dma->initReq(&dma_req, buffer, (char*) &sdio_reg->FIFO, 0 ,DMA_Dir_PeriphToMem);
-		if((res = dma->beginXfer(ins->dma,&dma_req, 0, NULL)) != tchOK)
+		if((res = dma->beginXferAsync(ins->dma,&dma_req)) != tchOK)
 		{
 			goto READ_ERR_RET;
 		}
@@ -1284,30 +1314,25 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		}
 	}
 
-	if((res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
-	{
-		goto READ_ERR_RET;
-	}
+	res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
 	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | IOERROR_FLAGS);
 
 	// disable rx fifo half full interrupt
-	sdio_reg->MASK &= ~SDIO_MASK_RXDAVLIE;
 	if(IS_IOERROR(ev))
 	{
 		res = tchErrorIo;
-		goto READ_ERR_RET;
 	}
 
-	ins->req = NULL;
-	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
-	return res;
-
 READ_ERR_RET:
-	// stop transmission
-	sdio_send_cmd(ins,CMD_STOP_TRANS,0, TRUE, SDIO_RESP_SHORT,&resp, timeout);
+	if((blk_cnt > 1) || (res != tchOK))
+	{
+		sdio_send_cmd(ins,CMD_STOP_TRANS,0, TRUE, SDIO_RESP_SHORT,&resp, timeout);
+	}
+
 	sdio_reg->DCTRL = 0;
-	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
 	ins->req = NULL;
+	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
+	sdio_reg->MASK &= ~SDIO_MASK_RXDAVLIE;
 	return res;
 }
 
@@ -1322,39 +1347,51 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 	int32_t ev = 0;
 	const tch_core_api_t* api = ins->api;
 	SDIO_TypeDef* sdio_reg = SDIO_HWs[0]._sdio;
+	tch_sdio_req_t request;
 
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << blk_size,TRUE, SDIO_RESP_SHORT, &resp,timeout);
+	sdio_build_writereq(&request, (void*) buffer, blk_cnt << blk_size, blk_cnt);
+	ins->req = &request;
+
+	sdio_reg->DCTRL = 0;
+	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;
+
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
-		sdio_reg->DCTRL = 0;
 
 		tch_DmaReqDef req;
 		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
-		dma->beginXfer(ins->dma,&req,timeout,NULL);
+		dma->beginXferSync(ins->dma,&req,timeout,NULL);
 
 		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
-		sdio_send_cmd(ins,CMD_WRITE_SBLK,address, TRUE, SDIO_RESP_SHORT, &resp, timeout);
-
 		sdio_reg->DTIMER = timeout << 4;
+
+		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)
+		{
+			goto WRITE_ERR_RET;
+		}
+
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
 
-		if((result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout)) != tchOK)
-		{
-			return result;
-		}
 	}
 	else
 	{
 
 	}
-
+	result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
 	ev = api->Event->clear(ins->evId,SDIO_STA_DBCKEND | IOERROR_FLAGS);
+	if(IS_IOERROR(ev))
+	{
+		result = tchErrorIo;
+	}
 
-
-	return tchOK;
+WRITE_ERR_RET:
+	sdio_reg->DCTRL = 0;
+	ins->req = NULL;
+	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
+	return result;
 
 }
 

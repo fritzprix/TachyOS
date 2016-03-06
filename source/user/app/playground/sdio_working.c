@@ -16,6 +16,7 @@ uint8_t blk_buffer[2048];
 uint8_t blk_buffer1[2048];
 tchStatus start_sdio_test(const tch_core_api_t* api)
 {
+	tchStatus res = tchOK;
 	tch_sdioDevId devs[10];
 	mset(devs, 0, sizeof(devs));
 
@@ -38,12 +39,12 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	mset(blk_buffer, 2, 2048);
 	mset(blk_buffer1, 2, 2048);
 
-	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer,0,3,1000);
-	sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer1,0,3,1000);
+	res = sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer,0,4,1000);
+	res = sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer1,0,4,1000);
 
-	sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer,0,2,1000);
+//	res = sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer,0,2,1000);
 
-	return tchOK;
+	return res;
 }
 
 
