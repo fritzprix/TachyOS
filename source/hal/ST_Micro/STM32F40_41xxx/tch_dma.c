@@ -293,6 +293,8 @@ __USER_API__ static uint32_t tch_dma_beginXferSync(tch_dmaHandle self,tch_DmaReq
 		residue = dmaHw->NDTR;
 	}
 
+	dmaHw->CR &= ~DMA_SxCR_EN;
+
 	ins->api->Mtx->lock(&ins->lock,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
 	ins->api->Condv->wakeAll(&ins->condWait);
@@ -352,6 +354,7 @@ __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t 
 
 
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 	tchEvent evt;
 
 	if((evt.status = ins->api->Mtx->lock(&ins->lock,timeout)) != tchOK)
@@ -373,6 +376,7 @@ __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t 
 	}
 
 	evt = ins->api->MsgQ->get(ins->dma_mq, timeout);
+	dmaHw->CR &= ~DMA_SxCR_EN;
 
 
 	ins->api->Mtx->lock(&ins->lock, timeout);
