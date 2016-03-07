@@ -42,7 +42,8 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	res = sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer,0,4,1000);
 	res = sdio_handle->readBlock(sdio_handle,devs[0],blk_buffer1,4,4,1000);
 
-//	res = sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer,0,2,1000);
+	res = sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer,0,4,1000);
+	res = sdio_handle->writeBlock(sdio_handle,devs[0],blk_buffer1,4,4,1000);
 
 	return res;
 }

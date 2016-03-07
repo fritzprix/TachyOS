@@ -926,7 +926,7 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 	{
 		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, NULL, timeout);
 	}
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, NULL, timeout);
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, NULL, timeout);
 
 	if(blk_cnt > 1)
 	{
@@ -1277,7 +1277,6 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;	// disable power save mode
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
-//	if(FALSE)
 	{
 		// DMA Used to receive data
 		tch_DmaReqDef dma_req;
@@ -1301,6 +1300,12 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 	}
 	else
 	{
+		/**
+		 *  Note : multiple blocks of reading without using DMA cuases
+		 *         overrun error, however, single block reading has been working
+		 *         without any problem so far. so if DMA can't be allocated to SDIO
+		 *         single block of reading can be used.
+		 */
 		// enable rx fifo half full interrupt
 		sdio_reg->MASK |= (SDIO_MASK_RXDAVLIE);
 		sdio_reg->DLEN = blk_cnt << blk_size;
@@ -1358,42 +1363,54 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 	sdio_build_writereq(&request, (void*) buffer, blk_cnt << blk_size, blk_cnt);
 	ins->req = &request;
 
+	api->Event->clear(ins->evId, 0xffffffff);
+
 	sdio_reg->DCTRL = 0;
 	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;
 
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
-
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
-		dma->beginXferSync(ins->dma,&req,timeout,NULL);
-
-		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
-		sdio_reg->DTIMER = timeout << 4;
-
 		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)
 		{
 			goto WRITE_ERR_RET;
 		}
 
+		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
+		sdio_reg->DTIMER = timeout << 4;
+
+		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
+		dma->beginXferAsync(ins->dma,&req);
+
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
+		dma->waitComplete(ins->dma,timeout);
 
 	}
 	else
 	{
 
 	}
-	result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
-	ev = api->Event->clear(ins->evId,SDIO_STA_DBCKEND | IOERROR_FLAGS);
+
+	result = api->Event->wait(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND, timeout);
+	ev = api->Event->clear(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND | IOERROR_FLAGS);
+
+WRITE_ERR_RET:
+
 	if(IS_IOERROR(ev))
 	{
 		result = tchErrorIo;
 	}
 
-WRITE_ERR_RET:
+	if((blk_cnt > 1) || (result != tchOK))
+	{
+			// SD Card will not respond, if it is already in transfer state
+			// so doesn't wait response
+			sdio_send_cmd(ins,CMD_STOP_TRANS,0, FALSE, SDIO_RESP_SHORT,&resp, timeout);
+	}
+
 	sdio_reg->DCTRL = 0;
 	ins->req = NULL;
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
