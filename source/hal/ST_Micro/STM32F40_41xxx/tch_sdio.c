@@ -590,7 +590,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE |
 						SDIO_MASK_CTIMEOUTIE | SDIO_MASK_DTIMEOUTIE);
 
-	reg = SDIO_CLKCR_PWRSAV | SDIO_CLKCR_HWFC_EN;			// power save mode enabled
+	reg = SDIO_CLKCR_PWRSAV;// | SDIO_CLKCR_HWFC_EN;			// power save mode enabled
 	reg |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
 	reg |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
 
@@ -886,6 +886,7 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 	if(!sdio || !SDIO_ISVALID(sdio))
 		return tchErrorParameter;
 	tchStatus res;
+	uint32_t resp;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
 	const tch_core_api_t* api = ins->api;
 	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
@@ -921,12 +922,13 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 		 */
 		blk_offset <<= dev->blksz;
 	}
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 
 	if(blk_cnt > 1)
 	{
-		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, NULL, timeout);
+		sdio_send_cmd(ins, CMD_APP_CMD , (dev->caddr << 16) ,TRUE , SDIO_RESP_SHORT,&resp,timeout);
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
 	}
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, NULL, timeout);
 
 	if(blk_cnt > 1)
 	{
@@ -997,11 +999,14 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 		blk_offset <<= dev->blksz;
 	}
 
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, &resp, timeout);
+
 	if(blk_cnt > 1)
 	{
-		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+		sdio_send_cmd(ins, CMD_APP_CMD, (dev->caddr << 16), TRUE, SDIO_RESP_SHORT,&resp,timeout);
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 	}
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+
 
 	if(blk_cnt > 1)
 	{
@@ -1372,19 +1377,24 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
 		tch_DmaReqDef req;
+
+
+		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, blk_cnt << blk_size, DMA_Dir_MemToPeriph);
+		dma->beginXferAsync(ins->dma,&req);
+
 		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)
 		{
 			goto WRITE_ERR_RET;
 		}
 
-		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
-		sdio_reg->DTIMER = timeout << 4;
-
-		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
-		dma->beginXferAsync(ins->dma,&req);
+		sdio_reg->DLEN = blk_cnt << blk_size;
+		sdio_reg->DTIMER = timeout << 16;
 
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
+
+
+
 
 		dma->waitComplete(ins->dma,timeout);
 

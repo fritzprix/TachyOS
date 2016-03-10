@@ -19,7 +19,7 @@ all : $(GIT_MOVIE_TARGET)
 
 $(GIT_MOVIE_TARGET): $(GIT_MOVIE_OBJ)
 	@echo "Generating Movie"
-	$(GIT_MOVIE_CONV) -y -r 30 -f image2pipe -vcodec ppm -i $< -vcodec libx264 -preset ultrafast -crf 1 -threads 0 -bf 0 $@
+	$(GIT_MOVIE_CONV) -y -r 30 -f image2pipe -vcodec ppm -i $< -vcodec libx264 -preset ultrafast -crf 1 -threads 0 -bf 1 $@
 	@echo ' '
 
 $(GIT_MOVIE_OBJ):$(GIT_MOVIE_GEN_DIR)
