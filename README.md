@@ -42,21 +42,21 @@
 
 > $> sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa  
 > $> sudo apt-get update   
-> $> sudo apt-get install gcc-arm-embedded
- + python2.7 & pip for configuration utility (jconfigpy)
-> $> sudo apt-get install python-dev python-pip   
- + gnu arm eclipse plug-in   (optional)
-   link : [GNU ARM Eclipse Plug-ins ] (http://gnuarmeclipse.livius.net/blog/)   
- + For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)
+> $> sudo apt-get install gcc-arm-embedded     
+ + python2.7 & pip for configuration utility (jconfigpy)       
+> $> sudo apt-get install python-dev python-pip     
+ + gnu arm eclipse plug-in   (optional)    
+   link : [GNU ARM Eclipse Plug-ins ] (http://gnuarmeclipse.livius.net/blog/)       
+ + For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)    
 
 ## Build in Ubuntu
     1. get source code from repository
     $> git clone https://github.com/fritzprix/TachyOS.git
     $> cd TachyOS
     
-    2. configure project (you can use predefined configuration or make your own)
+    2. initiate project configuration and make your own configuration
     $> make config ARCH=ARM DEFCONF=stm32f4_def.conf
-    or 
+    or you can use predefined configuration
     $> make config
     
     3. build project
