@@ -19,7 +19,9 @@ CC:=$(CROSS_COMPILE)gcc
 CXX:=$(CROSS_COMPILE)g++
 SIZE:=$(CROSS_COMPILE)size
 PY:=python
+PIP:=pip
 MKDIR:=mkdir
+TOOL_DIR:=$(ROOT_DIR)/tools
 CONFIG_PY:= $(ROOT_DIR)/tools/jconfigpy/jconfigpy.py
 
 OBJS_DIR_DEBUG:= $(ROOT_DIR)/DEBUG
@@ -69,12 +71,16 @@ SILENT=cofig $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_T
 all : debug
 
 ifeq ($(DEFCONF),)
-config : $(AUTOGEN_DIR)
+config : $(AUTOGEN_DIR) $(CONFIG_PY)
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
 else
-config : $(AUTOGEN_DIR)
+config : $(AUTOGEN_DIR) $(CONFIG_PY)
 	$(PY) $(CONFIG_PY) -s -i $(CONFIG_DIR)/$(DEFCONF) -t $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
 endif
+
+$(CONFIG_PY):
+	$(PIP) install jconfigpy -t $(TOOL_DIR)
+	
 
 
 debug: $(OBJS_DIR_DEBUG) $(DEBUG_TARGET)
