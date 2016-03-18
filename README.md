@@ -37,18 +37,34 @@
 
 ## Build Environment   
  project is developed with eclipse IDE with ARM Cross compile tool (toolchain and plugin)
- + arm gcc cross compiler  (ver: 4.9-2014q4 rel)    
+ + arm gcc cross compiler     
    link : [GCC ARM Embedded in Launchpad] (https://launchpad.net/gcc-arm-embedded)   
- + gnu arm eclipse plug-in   
+
+> $> sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa  
+> $> sudo apt-get update   
+> $> sudo apt-get install gcc-arm-embedded
+ + python2.7 & pip for configuration utility (jconfigpy)
+> $> sudo apt-get install python-dev python-pip   
+ + gnu arm eclipse plug-in   (optional)
    link : [GNU ARM Eclipse Plug-ins ] (http://gnuarmeclipse.livius.net/blog/)   
  + For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)
 
-## Configuration
-> $> make config
+## Build in Ubuntu
+    1. get source code from repository
+    $> git clone https://github.com/fritzprix/TachyOS.git
+    $> cd TachyOS
+    
+    2. configure project (you can use predefined configuration or make your own)
+    $> make config ARCH=ARM DEFCONF=stm32f4_def.conf
+    or 
+    $> make config
+    
+    3. build project
+    $> make all
 
 ## To-Do
- + Add SDIO HAL Implementation (~Feb.2016)
- + Add Kernel Logging module   (~Feb.2016)	
+ + Add SDIO HAL Implementation (~Apr.2016)
+ + Add virtual file system   (~May.2016)
  
 ## License 
  LGPL V3.0 
