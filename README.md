@@ -51,7 +51,7 @@
 + gnu arm eclipse plug-in   (optional)    
    link : [GNU ARM Eclipse Plug-ins ] (http://gnuarmeclipse.livius.net/blog/)       
     
- + For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)         
++ For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)         
 
 ## Build in Ubuntu
     1. get source code from repository
