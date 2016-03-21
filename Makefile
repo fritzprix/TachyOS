@@ -65,7 +65,7 @@ RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).elf
 PHONY=config all debug release clean config_clean
 .SILENT : $(SILENT)
 
-SILENT=cofig $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
+SILENT=config $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
 
 
 all : debug

@@ -21,7 +21,6 @@
  *   - Initialize kernel enviroment (init kernel internal objects,
  */
 #include "tch.h"
-//#include "autogen.h"
 #include "tch_kobj.h"
 #include "tch_board.h"
 #include "tch_ktypes.h"
