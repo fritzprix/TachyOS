@@ -1360,7 +1360,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 	{
 
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
+		dma->initReq(&req,(uwaddr_t) buffer, (uwaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
 		dma->beginXferSync(ins->dma,&req,timeout,NULL);
 
 		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;

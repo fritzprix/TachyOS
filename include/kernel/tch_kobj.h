@@ -23,7 +23,7 @@ typedef struct tch_kobject_t tch_kobj;		//<<< kernel object type
 typedef tchStatus (*tch_kobjDestr)(tch_kobj* obj);
 
 struct tch_kobject_t {
-	cdsl_dlistNode_t      lhead;		// id -> object searching
+	dlistNode_t         lhead;		// id -> object searching
 	tch_kobjDestr		__destr_fn;
 };
 

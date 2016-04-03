@@ -102,9 +102,9 @@ typedef struct dma_cfg_t tch_DmaCfg;
 
 typedef struct tch_dma_req_s {
 	size_t      size;
-	uaddr_t     MemAddr[2];
+	uwaddr_t     MemAddr[2];
 	BOOL        MemInc;
-	uaddr_t     PeriphAddr[2];
+	uwaddr_t     PeriphAddr[2];
 	BOOL        PeriphInc;
 	uint8_t 	Dir;
 }tch_DmaReqDef;
@@ -137,7 +137,7 @@ typedef struct tch_hal_module_dma {
 	 * \param power mode option \ref tch_pwr_def
 	 * \return dma handle which allows access dma H/W
 	 */
-	void (*initReq)(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir);
+	void (*initReq)(tch_DmaReqDef* attr,uwaddr_t maddr,uwaddr_t paddr,size_t size,uint8_t dir);
 	tch_dmaHandle (*allocate)(const tch_core_api_t* api,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 	tchStatus (*beginXferAsync)(tch_dmaHandle self, tch_DmaReqDef* req);
 	tchStatus (*waitComplete)(tch_dmaHandle self, uint32_t timeout);

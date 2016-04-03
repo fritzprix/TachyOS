@@ -19,7 +19,7 @@ typedef struct tch_bar_cb {
 	tch_kobj                 __obj;
 	uint32_t                 status;
 	uint8_t 				 th_cnt;
-	cdsl_dlistNode_t         wq;
+	dlistEntry_t             wq;
 }tch_barCb;
 
 extern tch_barrier_api_t Barrier_IX;

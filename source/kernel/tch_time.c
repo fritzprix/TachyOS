@@ -17,14 +17,13 @@
 #include "kernel/tch_err.h"
 #include "kernel/tch_kobj.h"
 #include "tch_port.h"
+#include "cdsl_dlist.h"
+#include "kernel/time.h"
 
-#include "kernel/util/cdsl_dlist.h"
-#include "kernel/util/time.h"
 
-
-static cdsl_dlistNode_t systimeWaitQ;
-static cdsl_dlistNode_t lpsystimeWaitQ;
-static cdsl_dlistNode_t alrmQ;
+static dlistEntry_t systimeWaitQ;
+static dlistEntry_t lpsystimeWaitQ;
+static dlistEntry_t alrmQ;
 
 
 __USER_DATA static tch_timezone current_tz;
@@ -34,11 +33,11 @@ __USER_DATA volatile time_t gmt_epoch;			/// without time zone
 __USER_DATA static tch_rtcHandle* rtcHandle;
 
 struct alrm_descriptor {
-	tch_kobj			__kobj;
-	cdsl_dlistNode_t 	alrq_wn;
-	tch_thread_queue	wait_q;
-	time_t				alrm_time;
-	alrmIntv			alrm_period;
+	tch_kobj            __kobj;
+	dlistNode_t         alrq_wn;
+	tch_thread_queue    wait_q;
+	time_t              alrm_time;
+	alrmIntv            alrm_period;
 };
 /**
  */
@@ -84,8 +83,8 @@ DEFINE_SYSCALL_2(set_alarm,time_t*, epoch_alrmtm, alrmIntv, period, alrm_Id)
 	struct alrm_descriptor* alrm_desc = (struct alrm_descriptor*) kmalloc(sizeof(struct alrm_descriptor));
 	alrm_desc->alrm_period = period;
 	alrm_desc->alrm_time = *epoch_alrmtm;
-	cdsl_dlistInit(&alrm_desc->alrq_wn);
-	cdsl_dlistInit((cdsl_dlistNode_t*) &alrm_desc->wait_q);
+	cdsl_dlistNodeInit(&alrm_desc->alrq_wn);
+	cdsl_dlistEntryInit(&(alrm_desc->wait_q.thque));
 
 	cdsl_dlistEnqueuePriority(&alrmQ,&alrm_desc->alrq_wn,tch_systimeAlrmQRule);
 	tch_registerKobject(&alrm_desc->__kobj,(tch_kobjDestr) tch_systime_cancelAlarm);
@@ -105,7 +104,7 @@ DEFINE_SYSCALL_1(cancel_alarm,alrm_Id,id,tchStatus)
 		return tchErrorParameter;
 	struct alrm_descriptor* alrm_desc = (struct alrm_descriptor*) id;
 
-	cdsl_dlistRemove((cdsl_dlistNode_t*) &alrm_desc->alrq_wn);	// remove alrm from alrm queue
+	cdsl_dlistRemove(&alrm_desc->alrq_wn);	// remove alrm from alrm queue
 	tch_schedWake(&alrm_desc->wait_q,SCHED_THREAD_ALL,tchErrorResource,FALSE);
 	tch_unregisterKobject(&alrm_desc->__kobj);
 
@@ -117,9 +116,9 @@ void tch_systimeInit(const tch_core_api_t* env, time_t init_tm, tch_timezone ini
 
 	tch_hal_disableSystick();
 
-	cdsl_dlistInit(&systimeWaitQ);
-	cdsl_dlistInit(&lpsystimeWaitQ);
-	cdsl_dlistInit(&alrmQ);
+	cdsl_dlistEntryInit(&systimeWaitQ);
+	cdsl_dlistEntryInit(&lpsystimeWaitQ);
+	cdsl_dlistEntryInit(&alrmQ);
 
 	systimeTick = 0;
 	sysUpTimeSec = 0;
@@ -147,12 +146,11 @@ tchStatus tch_systimeSetTimeout(tch_threadId thread, uint32_t timeout,
 	switch (tu) {
 	case mSECOND:
 		get_thread_kheader(thread)->to = systimeTick + timeout;
-		cdsl_dlistEnqueuePriority(&systimeWaitQ, (cdsl_dlistNode_t*) get_thread_kheader(thread),
-				tch_systimeWaitQRule);
+		cdsl_dlistEnqueuePriority(&systimeWaitQ, &get_thread_kheader(thread)->t_schedNode, tch_systimeWaitQRule);
 		return tchOK;
 	case SECOND:
 		get_thread_kheader(thread)->to = sysUpTimeSec + timeout;
-		cdsl_dlistEnqueuePriority(&lpsystimeWaitQ, (cdsl_dlistNode_t*) get_thread_kheader(thread),
+		cdsl_dlistEnqueuePriority(&lpsystimeWaitQ,  &get_thread_kheader(thread)->t_schedNode,
 				tch_systimeWaitQRule);
 		return tchOK;
 	}
@@ -164,7 +162,7 @@ tchStatus tch_systimeCancelTimeout(tch_threadId thread) {
 	if (!thread)
 		return tchErrorParameter;
 	get_thread_kheader(thread)->to = 0;
-	if (!cdsl_dlistRemove( (cdsl_dlistNode_t*) get_thread_kheader(thread)))
+	if (!cdsl_dlistRemove(&get_thread_kheader(thread)->t_schedNode))
 		return tchErrorParameter;
 	return tchOK;
 }
@@ -269,7 +267,7 @@ void tch_kernel_onWakeup() {
 	tch_thread_kheader* nth = NULL;
 	sysUpTimeSec += LSTICK_PERIOD;
 	gmt_epoch++;
-	while ((!cdsl_dlistIsEmpty(&lpsystimeWaitQ)) && (((tch_thread_kheader*) lpsystimeWaitQ.next)->to	<= sysUpTimeSec)) {
+	while ((!cdsl_dlistIsEmpty(&lpsystimeWaitQ)) && (((tch_thread_kheader*) lpsystimeWaitQ.head)->to	<= sysUpTimeSec)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&lpsystimeWaitQ);
 		nth->to = 0;
 		tch_schedReady(nth->uthread);
@@ -286,7 +284,7 @@ void tch_kernel_onSystick() {
 	tch_thread_kheader* nth = NULL;
 	systimeTick += HSTICK_PERIOD;
 	get_thread_kheader(current)->tslot++;
-	while ((!cdsl_dlistIsEmpty(&systimeWaitQ)) && (((tch_thread_kheader*) systimeWaitQ.next)->to <= systimeTick)) {
+	while ((!cdsl_dlistIsEmpty(&systimeWaitQ)) && (((tch_thread_kheader*) systimeWaitQ.head)->to <= systimeTick)) {
 		nth = (tch_thread_kheader*) cdsl_dlistDequeue(&systimeWaitQ);
 		nth->to = 0;
 		tch_schedReady(nth->uthread);

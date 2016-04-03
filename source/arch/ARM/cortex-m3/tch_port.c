@@ -141,7 +141,7 @@ void tch_port_disableISR(void){
 	__disable_irq();
 }
 
-void tch_port_switch(uaddr_t nth,uaddr_t cth){
+void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
 	asm volatile(
 #if FEATURE_FLOAT > 0
 			"vpush {s16-s31}\n"
@@ -163,7 +163,7 @@ void tch_port_switch(uaddr_t nth,uaddr_t cth){
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_setJmp(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
+void tch_port_setJmp(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
 	                                                              //   prepare exception entry stack
 	                                                              //    - passing arguement to kernel mode thread
@@ -210,7 +210,7 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
  *
  *
  */
-void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t initfn){
+void* tch_port_makeInitialContext(uwaddr_t uthread_header,uwaddr_t stktop,uwaddr_t initfn){
 	tch_exc_stack* exc_sp = (tch_exc_stack*) stktop - 1;                // offset exc_stack size (size depends on floating point option)
 	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
 	mset(exc_sp,0,sizeof(tch_exc_stack));
@@ -226,7 +226,7 @@ void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t stktop,uaddr_t 
 /**
  * read
  */
-int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
+int tch_port_exclusiveCompareUpdate(uwaddr_t dest,uword_t comp,uword_t update){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
@@ -245,7 +245,7 @@ int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update){
 	return result;
 }
 
-int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp){
+int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"

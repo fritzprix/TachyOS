@@ -134,7 +134,7 @@ DEFINE_SYSCALL_1(event_deinit,tch_eventCb*,ep,tchStatus){
 tch_eventId event_init(tch_eventCb* evcb,BOOL is_static){
 	mset(evcb,0,sizeof(tch_eventCb));
 	tch_registerKobject(&evcb->__obj,is_static? (tch_kobjDestr) tch_eventDeinit :  (tch_kobjDestr) tch_eventDestroy);
-	cdsl_dlistInit((cdsl_dlistNode_t*) &evcb->ev_blockq);
+	cdsl_dlistEntryInit(&evcb->ev_blockq.thque);
 	EVENT_VALIDATE(evcb);
 	return evcb;
 }

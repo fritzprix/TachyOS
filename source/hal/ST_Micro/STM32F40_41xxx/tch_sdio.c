@@ -1379,7 +1379,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 		tch_DmaReqDef req;
 
 
-		dma->initReq(&req,(uaddr_t) buffer, (uaddr_t) &sdio_reg->FIFO, blk_cnt << blk_size, DMA_Dir_MemToPeriph);
+		dma->initReq(&req,(uwaddr_t) buffer, (uwaddr_t) &sdio_reg->FIFO, blk_cnt << blk_size, DMA_Dir_MemToPeriph);
 		dma->beginXferAsync(ins->dma,&req);
 
 		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)

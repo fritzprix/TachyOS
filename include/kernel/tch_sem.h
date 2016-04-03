@@ -30,7 +30,7 @@ typedef struct tch_semCb {
 	tch_kobj          	__obj;
 	uint32_t        	state;
 	uint32_t     	    count;
-	cdsl_dlistNode_t    wq;
+	dlistEntry_t        wq;
 } tch_semCb;
 
 

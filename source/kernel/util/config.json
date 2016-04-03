@@ -1,6 +1,0 @@
-{
-  "UTIL_MK":{
-    "type":"recipe",
-    "path":"./recipe.mk"
-  }
-}

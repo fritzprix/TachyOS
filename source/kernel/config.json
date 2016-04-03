@@ -42,10 +42,6 @@
     "type":"config",
     "path":"./mm/config.json"
   },
-  "UTIL_CONFIG":{
-    "type":"config",
-    "path":"./util/config.json"
-  },
   "USE_BARRIER":{
   	"type":"bool",
    	"force":"y",

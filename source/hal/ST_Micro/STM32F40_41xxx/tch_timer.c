@@ -18,7 +18,7 @@
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 
 

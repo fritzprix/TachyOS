@@ -19,6 +19,7 @@
 #include "tch_err.h"
 #include "tch_mm.h"
 #include "wtmalloc.h"
+#include "cdsl_dlist.h"
 
 
 #define  MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
@@ -34,7 +35,7 @@ DECLARE_SYSCALL_1(shmem_cleanup,tch_threadId,tchStatus);
 DECLARE_SYSCALL_1(shmem_statm,mstat*,tchStatus);
 
 struct shmalloc_header {
-	cdsl_dlistNode_t	alc_ln;
+	dlistNode_t         alc_ln;
 };
 
 void tch_shmInit(int seg_id){
@@ -78,7 +79,7 @@ DEFINE_SYSCALL_1(shmem_alloc,size_t,sz,void*){
 	}
 
 	chnk = wt_malloc(&shm_root,asz);
-	cdsl_dlistInit(&chnk->alc_ln);
+	cdsl_dlistNodeInit(&chnk->alc_ln);
 	cdsl_dlistPutHead(&current->kthread->mm.shm_list,&chnk->alc_ln);
 	return &chnk[1];
 }
@@ -96,7 +97,7 @@ DEFINE_SYSCALL_1(shmem_free,void*,ptr,tchStatus){
 
 DEFINE_SYSCALL_1(shmem_cleanup,tch_threadId,tid,tchStatus){
 	tch_thread_kheader* kth = get_thread_kheader(tid);
-	cdsl_dlistNode_t* shm_alc = &kth->mm.shm_list;
+	dlistEntry_t* shm_alc = &kth->mm.shm_list;
 	struct shmalloc_header* chnk = NULL;
 	while(!cdsl_dlistIsEmpty(shm_alc)){
 		 chnk = (struct shmalloc_header*) cdsl_dlistDequeue(shm_alc);

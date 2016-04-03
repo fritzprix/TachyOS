@@ -24,11 +24,11 @@ typedef struct tch_mailqCb {
 	uint32_t	 	 	pidx;
 	uint32_t	 	 	gidx;
 	uint32_t			qupdated;
-	cdsl_dlistNode_t 	pwq;
-	cdsl_dlistNode_t 	gwq;
+	dlistEntry_t        pwq;
+	dlistEntry_t        gwq;
 	void**				queue;
 	tch_mpoolId   		bpool;
-	cdsl_dlistNode_t  	allocwq;
+	dlistEntry_t        allocwq;
 }tch_mailqCb;
 
 typedef struct _tch_mailq_karg{

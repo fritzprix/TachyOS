@@ -99,11 +99,11 @@ extern void tch_port_switch(void* nth,void* cth) __attribute__((naked,noreturn))
 
 
 
-extern void tch_port_jmpToKernelModeThread(uaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
+extern void tch_port_jmpToKernelModeThread(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3);
 extern int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3);
-extern void* tch_port_makeInitialContext(uaddr_t uthread_header,uaddr_t sp,uaddr_t initfn);
-extern int tch_port_exclusiveCompareUpdate(uaddr_t dest,uword_t comp,uword_t update);
-extern int tch_port_exclusiveCompareDecrement(uaddr_t dest,uword_t comp);
+extern void* tch_port_makeInitialContext(uwaddr_t uthread_header,uwaddr_t sp,uwaddr_t initfn);
+extern int tch_port_exclusiveCompareUpdate(uwaddr_t dest,uword_t comp,uword_t update);
+extern int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp);
 extern int tch_port_clearFault(int fault);
 extern int tch_port_reset();
 

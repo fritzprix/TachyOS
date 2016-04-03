@@ -75,7 +75,7 @@ typedef struct tch_thread_uheader_s tch_thread_uheader;
 
 
 typedef struct tch_thread_queue{
-	cdsl_dlistNode_t             thque;
+	dlistEntry_t             thque;
 } tch_thread_queue;
 
 struct tch_mm {
@@ -85,9 +85,9 @@ struct tch_mm {
 	struct mem_region* 		data_region;		///< per process memory region where data section is stored
 	struct mem_region* 		stk_region;			///< per process memory region to be used as stack
 	struct mem_region*		heap_region;		///< per process memory region to be used as heap
-	cdsl_dlistNode_t		kobj_list;			///< per thread kobjects list
-	cdsl_dlistNode_t		alc_list;
-	cdsl_dlistNode_t		shm_list;
+	dlistEntry_t            kobj_list;			///< per thread kobjects list
+	dlistEntry_t            alc_list;
+	dlistEntry_t            shm_list;
 	pgd_t* 					pgd;
 	paddr_t 				estk;
 #define ROOT				((uint32_t) 1)
@@ -111,18 +111,18 @@ struct tch_thread_uheader_s {
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {
-	cdsl_dlistNode_t				t_schedNode;	///<thread queue node to be scheduled
-	cdsl_dlistNode_t				t_waitNode;		///<thread queue node to be blocked
-	cdsl_dlistNode_t				t_joinQ;		///<thread queue to wait for this thread's termination
-	cdsl_dlistNode_t				child_list;		///<thread queue node to iterate child thread
-	cdsl_dlistNode_t				t_siblingLn;	///<linked list entry for added into child list
-	cdsl_dlistNode_t				lockables;		///<linked list of locks that are locked by this thread
-	cdsl_dlistNode_t*				t_waitQ;		///<reference to wait queue in which this thread is waiting
+	dlistNode_t                     t_schedNode;    ///<thread queue node to be scheduled
+	dlistNode_t                     t_waitNode;     ///<thread queue node to be blocked
+	dlistEntry_t                    t_joinQ;        ///<thread queue to wait for this thread's termination
+	dlistEntry_t                    child_list;     ///<thread queue node to iterate child thread
+	dlistNode_t                     t_siblingLn;    ///<linked list entry for added into child list
+	dlistEntry_t                    lockables;      ///<linked list of locks that are locked by this thread
+	dlistEntry_t*                   t_waitQ;        ///<reference to wait queue in which this thread is waiting
 	void*							ctx;			///<ptr to thread saved context (stack pointer value)
 	struct tch_mm					mm;				///<embedded memory management handle struct
-	cdsl_dlistNode_t				t_palc;			///<allocation list for page
-	cdsl_dlistNode_t				t_pshalc;		///<allocation list for shared heap
-	cdsl_dlistNode_t				t_upshalc;
+	dlistNode_t                     t_palc;			///<allocation list for page
+	dlistNode_t                     t_pshalc;		///<allocation list for shared heap
+	dlistNode_t                     t_upshalc;
 	uint32_t						tslot;			///<time slot for round robin scheduling (currently not used)
 	uint32_t						permission;
 	tch_threadState					state;			///<thread state

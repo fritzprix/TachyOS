@@ -20,7 +20,7 @@
 #include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 #define SET_SAFE_EXIT();      RETURN_EXIT:
 #define RETURN_SAFE()         goto RETURN_EXIT

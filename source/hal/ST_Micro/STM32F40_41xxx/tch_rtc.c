@@ -20,7 +20,7 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 #ifndef RTC_CLASS_KEY
 #define RTC_CLASS_KEY               ((uint16_t) 0xAB5D)
@@ -59,12 +59,12 @@ typedef struct tch_rtc_handle_prototype_t {
 	const tch_core_api_t* 							env;
 	tch_rtc_wkupHandler					wkup_handler;
 	uint16_t							wkup_period;
-	cdsl_dlistNode_t					alrm_queue;
+	dlistEntry_t                        alrm_queue;
 }tch_rtc_handle_prototype;
 
 struct rtc_alarm_event
 {
-	cdsl_dlistNode_t					alrm_wnode;
+	dlistNode_t                         alrm_wnode;
 	tch_thread_queue 					wait_queue;
 	time_t								alrm_epoch_time;
 };
@@ -158,7 +158,7 @@ static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* ltm)
 		RTC->PRER |= (127 << RTC_PRERA_Pos);  // setup rtc prescaler to obtain 1 Hz
 	}
 
-	cdsl_dlistInit(&ins->alrm_queue);
+	cdsl_dlistEntryInit(&ins->alrm_queue);
 
 	ins->mtx = env->Mtx->create();
 	ins->pix.close = tch_rtc_close;

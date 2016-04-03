@@ -8,7 +8,7 @@
 #ifndef TCH_LOCK_H_
 #define TCH_LOCK_H_
 
-#include "kernel/util/cdsl_dlist.h"
+#include "cdsl_dlist.h"
 #include "kernel/tch_ktypes.h"
 
 #if defined(__cplusplus)
@@ -19,14 +19,14 @@ typedef struct unlockable lock_t;
 typedef tchStatus (*unlock_fn)(lock_t* );
 
 struct unlockable {
-	cdsl_dlistNode_t 	lock_ln;
+	dlistNode_t         lock_ln;
 	unlock_fn			unlock_fn;
 };
 
 extern tchStatus tch_lock_add(lock_t* lock,unlock_fn fn);
 extern tchStatus tch_lock_remove(lock_t* lock);
 extern tchStatus tch_lock_unlock(lock_t* lock);
-extern tchStatus tch_lock_force_release(cdsl_dlistNode_t* lock_list);
+extern tchStatus tch_lock_force_release(dlistEntry_t* lock_list);
 
 
 

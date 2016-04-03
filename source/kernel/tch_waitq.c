@@ -9,7 +9,7 @@
 #include "tch_err.h"
 #include "tch_kobj.h"
 #include "tch_waitq.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 #ifndef WAITQ_CLASS_KEY
 #define WAITQ_CLASS_KEY				((uint16_t) 0xF53A)
@@ -124,7 +124,7 @@ static tchStatus waitq_init(tch_waitqCb* wq, tch_waitqPolicy policy, BOOL is_sta
 	if(!wq)
 		return tchErrorParameter;
 	mset(wq, 0 ,sizeof(tch_waitqCb));
-	cdsl_dlistInit((cdsl_dlistNode_t*) &wq->wq);
+	cdsl_dlistEntryInit(&wq->wq.thque);
 	WAITQ_SETPOL(wq, policy);
 	tch_registerKobject(&wq->__kobj,is_static? (tch_kobjDestr) tch_waitqDeinit : (tch_kobjDestr) tch_waitqDestroy);
 	WAITQ_VALIDATE(wq);

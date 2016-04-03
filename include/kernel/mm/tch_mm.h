@@ -13,8 +13,8 @@
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"
 #include "kernel/mm/wtmalloc.h"
-#include "kernel/util/cdsl_rbtree.h"
-#include "kernel/util/cdsl_slist.h"
+#include "cdsl_nrbtree.h"
+#include "cdsl_slist.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -146,11 +146,11 @@ typedef struct page_frame page_frame_t;
  */
 
 struct proc_dynamic {
-	rb_treeNode_t* mregions;			// region mapping node
-	void* heap;
-	void* shmem;
-	tch_condvId condv;
-	tch_mtxId mtx;
+	nrbtreeRoot_t   mregions;			// region mapping node
+	void*           heap;
+	void*           shmem;
+	tch_condvId     condv;
+	tch_mtxId       mtx;
 };
 
 

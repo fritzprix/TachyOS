@@ -21,7 +21,7 @@
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 
 
@@ -466,7 +466,7 @@ static tchStatus tch_usart_write(tch_usartHandle handle,const uint8_t* bp,uint32
 	{
 		uhw->CR3 |= USART_CR3_DMAT;
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t) bp,(uaddr_t)&uhw->DR,sz,DMA_Dir_MemToPeriph);
+		dma->initReq(&req,(uwaddr_t) bp,(uwaddr_t)&uhw->DR,sz,DMA_Dir_MemToPeriph);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		while(!(uhw->SR & USART_SR_TC)) __NOP();
@@ -549,7 +549,7 @@ static uint32_t tch_usart_read(tch_usartHandle handle,uint8_t* bp, uint32_t sz,u
 	{
 		uhw->CR3 |= USART_CR3_DMAR;
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uaddr_t)bp,(uaddr_t) &uhw->DR,sz, DMA_Dir_PeriphToMem);
+		dma->initReq(&req,(uwaddr_t)bp,(uwaddr_t) &uhw->DR,sz, DMA_Dir_PeriphToMem);
 		req.MemInc = TRUE;
 		req.PeriphInc = FALSE;
 		sz -= dma->beginXferSync(ins->rxDma,&req,timeout,NULL);

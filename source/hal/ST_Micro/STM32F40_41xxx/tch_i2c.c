@@ -22,7 +22,7 @@
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 #ifndef IIC_CLASS_KEY
 #define IIC_CLASS_KEY							((uint16_t) 0x62D1)
@@ -463,7 +463,7 @@ __USER_API__ static tchStatus tch_IIC_writeMaster(tch_iicHandle_t* self,uint16_t
 	{
 		// prepare DMA request
 		tch_DmaReqDef txreq;
-		dma->initReq(&txreq, (uaddr_t) wb, (uaddr_t) &iicHw->DR,sz,DMA_Dir_MemToPeriph);
+		dma->initReq(&txreq, (uwaddr_t) wb, (uwaddr_t) &iicHw->DR,sz,DMA_Dir_MemToPeriph);
 
 		// wait for addressing complete
 		if(ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,IIC_IO_MAX_TIMEOUT) != tchOK)
@@ -570,7 +570,7 @@ __USER_API__ static uint32_t tch_IIC_readMaster(tch_iicHandle_t* self,uint16_t a
 	if(ins->rxdma)
 	{
 		tch_DmaReqDef rxreq;
-		dma->initReq(&rxreq,(uaddr_t) rb, (uaddr_t) &iicHw->DR, sz, DMA_Dir_PeriphToMem);
+		dma->initReq(&rxreq,(uwaddr_t) rb, (uwaddr_t) &iicHw->DR, sz, DMA_Dir_PeriphToMem);
 
 		// wait for addressing complete
 		if((result = ins->env->Event->wait(ins->evId,TCH_IIC_EVENT_ADDR_COMPLETE,IIC_IO_MAX_TIMEOUT)) != tchOK)

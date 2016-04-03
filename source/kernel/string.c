@@ -6,7 +6,7 @@
  */
 
 #include "kernel/tch_kernel.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 #include <stdarg.h>
 
 #define FORMAT_DELIM			'%'

@@ -29,7 +29,7 @@ static struct mem_region init_region;
 static int init_segid;
 
 struct alloc_header {
-	cdsl_dlistNode_t	alc_ln;
+	dlistNode_t      alc_ln;
 };
 
 
@@ -73,8 +73,8 @@ void* kmalloc(size_t sz){
 	if(!chunk){
 		return NULL;
 	}
-	cdsl_dlistInit(&chunk->alc_ln);
-	cdsl_dlistPutHead((cdsl_dlistNode_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
+	cdsl_dlistNodeInit(&chunk->alc_ln);
+	cdsl_dlistPutHead((dlistEntry_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
 	return (void*) ((size_t) chunk + sizeof(struct alloc_header));
 }
 

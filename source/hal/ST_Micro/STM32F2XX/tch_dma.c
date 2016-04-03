@@ -125,7 +125,7 @@ typedef struct tch_dma_handle_prototype_t{
  *  User Accessible Stubs
  */
 __USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg);
-__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir);
+__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uwaddr_t maddr,uwaddr_t paddr,size_t size,uint8_t dir);
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* sys,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg);
 __USER_API__ static uint32_t tch_dma_beginXferSync(tch_dmaHandle self,tch_DmaReqDef* req,uint32_t timeout,tchStatus* result);
 __USER_API__ static tchStatus tch_dma_beginXferAsync(tch_dmaHandle self, tch_DmaReqDef* req);
@@ -190,7 +190,7 @@ __USER_API__ static void tch_dma_initConfig(tch_DmaCfg* cfg){
 	cfg->pBurstSize = DMA_Burst_Single;
 }
 
-__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uaddr_t maddr,uaddr_t paddr,size_t size,uint8_t dir){
+__USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uwaddr_t maddr,uwaddr_t paddr,size_t size,uint8_t dir){
 	attr->MemAddr[0] = maddr;
 	attr->PeriphAddr[0] = paddr;
 	attr->MemInc = TRUE;

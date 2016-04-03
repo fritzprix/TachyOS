@@ -7,7 +7,7 @@
 
 
 
-#include "kernel/util/time.h"
+#include "kernel/time.h"
 
 
 #define SEC_PER_HOUR			((uint32_t) 3600)

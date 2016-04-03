@@ -38,6 +38,9 @@ KCONFIG_AUTOGEN:=$(AUTOGEN_DIR)/autogen.h
 VPATH= $(SRC-y)
 INC=$(INC-y:%=-I%)
 
+LIBS= $(SLIB-y:%=-l:%)
+LIBDIR= $(LDIR-y:%=-L%)
+
 # Assembler flag used in kernel source build
 ASFLAG_KERNEL:= -nostdinc
 
@@ -70,6 +73,7 @@ SILENT=config $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_
 
 all : debug
 
+
 ifeq ($(DEFCONF),)
 config : $(AUTOGEN_DIR) $(CONFIG_PY)
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
@@ -91,14 +95,14 @@ release: $(OBJS_DIR_RELEASE) $(RELEASE_TARGET)
 
 $(DEBUG_TARGET) : $(DEBUG_OBJS)
 	@echo 'building elf image.. $@'
-	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(DEBUG_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	$(CC) $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(DEBUG_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@   $(LIBDIR) $(LIBS)
 	$(SIZE) $@
 	@echo 'build complete!!'
 
 	
 $(RELEASE_TARGET) : $(RELEASE_OBJS)
 	@echo 'building elf image.. $@'
-	$(CC) $(CLFAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(RELEASE_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	$(CC) $(CLFAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS)  $(RELEASE_OBJS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@  $(LIBDIR) $(LIBS)
 	$(SIZE) $@
 	@echo 'build complete!!'
 
@@ -109,34 +113,34 @@ $(OBJS_DIR_DEBUG) $(OBJS_DIR_RELEASE) $(AUTOGEN_DIR):
 	
 DEBUG/%.uo:%.c
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_APP) $(INC) $(DEFS) $(LIBS)  $(LDFLAG_APP:%=-Wl,%) -o $@
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_APP) $(INC) $(DEFS)  $(LIBDIR) $(LIBS) $(LDFLAG_APP:%=-Wl,%) -o $@
 
 DEBUG/%.ko:%.c
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS)  $(LIBDIR) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 
 DEBUG/%.sko:%.S
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
+	$(CC) $< -c $(CFLAG_DEBUG) $(CFLAG_KERNEL) $(INC) $(DEFS)  $(LIBDIR) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
 	
 RELEASE/%.uo:%.c
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_APP) $(INC) $(DEFS) $(LIBS)  $(LDFLAG_APP:%=-Wl,%) -o $@	
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_APP) $(INC) $(DEFS)  $(LIBDIR) $(LIBS)  $(LDFLAG_APP:%=-Wl,%) -o $@	
 	
 RELEASE/%.ko:%.c
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS)  $(LIBDIR) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) -o $@
 	
 RELEASE/%.sko:%.S
 	@echo 'compile.. $@'
-	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
+	$(CC) $< -c $(CFLAG_RELEASE) $(CFLAG_KERNEL) $(INC) $(DEFS)  $(LIBDIR) $(LIBS) $(LDFLAG_KERNEL:%=-Wl,%) $(ASFLAG_KERNEL) -o $@
 	
 
 clean:
 	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(RELEASE_OBJS) $(DEBUG_OBJS)
 
 config_clean:
-	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN)
+	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN) $(REPO-y) $(LDIR-y)
 
 .PHONY = $(PHONY)
 

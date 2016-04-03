@@ -265,9 +265,9 @@ static tch_mailqId mailq_init(tch_mailqCb* qcb,uint32_t sz,uint32_t qlen,BOOL is
 	qcb->qlen = qlen;
 	qcb->gidx = qcb->gidx = 0;
 	qcb->bsz = sz;
-	cdsl_dlistInit(&qcb->gwq);
-	cdsl_dlistInit(&qcb->pwq);
-	cdsl_dlistInit(&qcb->allocwq);
+	cdsl_dlistEntryInit(&qcb->gwq);
+	cdsl_dlistEntryInit(&qcb->pwq);
+	cdsl_dlistEntryInit(&qcb->allocwq);
 	tch_mailqValidate(qcb);
 	return (tch_mailqId) qcb;
 }

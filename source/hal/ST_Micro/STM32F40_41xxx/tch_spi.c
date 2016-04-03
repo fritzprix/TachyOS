@@ -16,7 +16,7 @@
 #include "tch_gpio.h"
 #include "tch_spi.h"
 
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
@@ -385,7 +385,7 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const 
 		return result;
 
 	spiHw->CR1 |= SPI_CR1_SPE;
-	dma->initReq(&dmaReq, (uaddr_t) rb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_PeriphToMem);
+	dma->initReq(&dmaReq, (uwaddr_t) rb, (uwaddr_t) &spiHw->DR, sz, DMA_Dir_PeriphToMem);
 	if(rb)
 		dmaReq.MemInc = TRUE;
 	else
@@ -398,7 +398,7 @@ __USER_API__ static tchStatus tch_spi_transceiveDma(tch_spiHandle_t* self,const 
 	}
 
 	// initiate tx DMA opertaion synchronously
-	dma->initReq(&dmaReq, (uaddr_t) wb, (uaddr_t) &spiHw->DR, sz, DMA_Dir_MemToPeriph);
+	dma->initReq(&dmaReq, (uwaddr_t) wb, (uwaddr_t) &spiHw->DR, sz, DMA_Dir_MemToPeriph);
 	if(dma->beginXferSync(ins->txCh.dma,&dmaReq,timeout,&result))
 	{
 		result = tchErrorIo;

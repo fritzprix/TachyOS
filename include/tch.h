@@ -39,8 +39,8 @@ extern "C" {
  * \mainpage Tachyos
  * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
  * \section about_sec About Tachyos
- *  Tachyos is a RTOS based on Microkernel architecture with consideration of constrained distributed computing node as main target.
- *  Developing distributed computing application is
+ *  Tachyos is a RTOS based on Microkernel architecture with consideration of constrained distributed computing node.
+ *  Such a node has typicallyc
  *
  *
  *  \section feat_sec Detailed features

@@ -225,8 +225,8 @@ static tch_msgqId msgq_init(tch_msgqCb* mq,uint32_t* bp,uint32_t sz,BOOL isstati
 	mset(mq, 0, sizeof(tch_msgqCb));
 	mq->bp = bp;
 	mq->sz = sz;
-	cdsl_dlistInit(&mq->cwq);
-	cdsl_dlistInit(&mq->pwq);
+	cdsl_dlistEntryInit(&mq->cwq);
+	cdsl_dlistEntryInit(&mq->pwq);
 	tch_registerKobject(&mq->__obj,isstatic? (tch_kobjDestr) tch_msgqDeinit : (tch_kobjDestr) tch_msgqDestroy);
 	tch_msgqValidate(mq);
 	return mq;

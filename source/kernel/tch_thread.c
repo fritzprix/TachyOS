@@ -125,10 +125,10 @@ DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,reason,tchStatus){
 			 *  if target thread is blocked, wake it up
 			 *  this prevent abnormal thread wait undefinite time in wait queue
 			 */
-			cdsl_dlistNode_t fake_wq;
-			cdsl_dlistInit(&fake_wq);
+			dlistEntry_t fake_wq;
+			cdsl_dlistEntryInit(&fake_wq);
 			cdsl_dlistRemove(&kth->t_waitNode);
-			cdsl_dlistPutHead(&fake_wq,&kth->t_waitNode);
+			cdsl_dlistPutHead(&fake_wq, &kth->t_waitNode);
 			tch_schedWake((tch_thread_queue*) &fake_wq, 1, reason, FALSE);
 		}
 	}
@@ -259,7 +259,7 @@ tch_threadId tch_thread_createThread(thread_config_t* cfg,void* arg,BOOL isroot,
 			kfree(kthread);
 			return NULL;
 		}
-		cdsl_dlistPutTail((cdsl_dlistNode_t*) &procList,(cdsl_dlistNode_t*) &kthread->t_siblingLn);		// added in process list
+		cdsl_dlistPutTail(&procList.thque, &kthread->t_siblingLn);		// added in process list
 	}else if(current){									// new thread will be child of caller thread
 		proc = &default_prochdr;
 		proc->entry = cfg->entry;
@@ -392,7 +392,7 @@ __attribute__((naked,noreturn)) void __tch_thread_atexit(tch_threadId thread,int
 
 	while(!cdsl_dlistIsEmpty(&th_p->child_list))
 	{												// if has child, kill all of them
-		ch_p = (tch_thread_kheader*) cdsl_dlistDequeue((cdsl_dlistNode_t*) &th_p->child_list);
+		ch_p = (tch_thread_kheader*) cdsl_dlistDequeue(&th_p->child_list);
 		ch_p = container_of(ch_p, tch_thread_kheader,t_siblingLn);
 		tch_thread_exit(ch_p->uthread,status);
 		Thread->join(ch_p->uthread,tchWaitForever);

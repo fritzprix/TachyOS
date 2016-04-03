@@ -17,7 +17,7 @@
 #define TCH_KMODULE_H_
 
 #include "tch_types.h"
-#include "kernel/util/cdsl_rbtree.h"
+#include "cdsl_nrbtree.h"
 #include "kernel/tch_kernel.h"
 
 #if defined(__cplusplus)

@@ -146,7 +146,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 			mmp->data_region = NULL;
 		}
 
-		mmp->dynamic->mregions = NULL;
+		cdsl_nrbtreeRootInit(&mmp->dynamic->mregions);
 		tch_mutexInit(mmp->dynamic->mtx);
 		tch_condvInit(mmp->dynamic->condv);
 	}
@@ -159,9 +159,9 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 		if(!mmp->pgd)
 			return FALSE;
 		mmp->dynamic = parent_mm->dynamic;
-		cdsl_dlistInit(&mmp->kobj_list);
-		cdsl_dlistInit(&mmp->alc_list);
-		cdsl_dlistInit(&mmp->shm_list);
+		cdsl_dlistEntryInit(&mmp->kobj_list);
+		cdsl_dlistEntryInit(&mmp->alc_list);
+		cdsl_dlistEntryInit(&mmp->shm_list);
 	}
 
 	if(mmp->text_region && mmp->bss_region && mmp->data_region){

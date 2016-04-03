@@ -166,7 +166,7 @@ DEFINE_SYSCALL_2(mutex_lock,tch_mtxId, mtx,uint32_t, timeout,tchStatus)
 		return tchOK;									// if this mutex is locked by current thread, return 'ok'
 
 
-	if (tch_port_exclusiveCompareUpdate((uaddr_t) &mcb->own, 0,(uword_t) tid))
+	if (tch_port_exclusiveCompareUpdate((uwaddr_t) &mcb->own, 0,(uword_t) tid))
 	{
 		current->kthread->lckCnt++;
 		mcb->svdPrior = current->kthread->prior;
@@ -229,7 +229,7 @@ DEFINE_SYSCALL_1(mutex_deinit,tch_mtxCb*,mp,tchStatus)
 static tch_mtxId mutex_init(tch_mtxCb* mcb,BOOL is_static)
 {
 	mcb->svdPrior = Normal;
-	cdsl_dlistInit((cdsl_dlistNode_t*)&mcb->que);
+	cdsl_dlistEntryInit((dlistEntry_t*) &mcb->que);
 	mcb->own = NULL;
 	tch_registerKobject(&mcb->__obj,is_static? (tch_kobjDestr) tch_mutexDeinit :  (tch_kobjDestr) tch_mutexDestroy);
 	mcb->status = 0;
@@ -439,7 +439,7 @@ DEFINE_SYSCALL_1(condv_deinit,tch_condvCb*,cp,tchStatus)
 static tch_condvId condv_init(tch_condvCb* condv,BOOL is_static)
 {
 	mset(condv,0,sizeof(tch_condvCb));
-	cdsl_dlistInit((cdsl_dlistNode_t*)&condv->wq);
+	cdsl_dlistEntryInit((dlistEntry_t*) &condv->wq);
 	condv->waitMtx = NULL;
 	CONDV_VALIDATE(condv);
 	tch_registerKobject(&condv->__obj,is_static? (tch_kobjDestr)tch_condvDeinit : (tch_kobjDestr)tch_condvDestroy);
@@ -554,7 +554,7 @@ tchStatus tch_lock_add(lock_t* lock,unlock_fn fn)
 	if(!lock || !fn)
 		return tchErrorParameter;
 
-	cdsl_dlistInit(&lock->lock_ln);
+	cdsl_dlistNodeInit(&lock->lock_ln);
 	lock->unlock_fn = fn;
 	cdsl_dlistPutHead(&get_thread_kheader(current)->lockables,&lock->lock_ln);
 	return tchOK;
@@ -574,7 +574,7 @@ tchStatus tch_lock_unlock(lock_t* lock)
 	return lock->unlock_fn(lock);
 }
 
-tchStatus tch_lock_force_release(cdsl_dlistNode_t* lock_list)
+tchStatus tch_lock_force_release(dlistEntry_t* lock_list)
 {
 	if(!lock_list)
 		return tchErrorParameter;

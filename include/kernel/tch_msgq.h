@@ -24,8 +24,8 @@ typedef struct _tch_msgq_cb {
 	uint32_t      sz;
 	uint32_t      pidx;
 	uint32_t      gidx;
-	cdsl_dlistNode_t   cwq;
-	cdsl_dlistNode_t   pwq;
+	dlistEntry_t  cwq;
+	dlistEntry_t  pwq;
 	uint32_t      updated;
 }tch_msgqCb;
 

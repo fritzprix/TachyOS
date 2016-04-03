@@ -17,7 +17,7 @@
 #include "kernel/tch_err.h"
 #include "kernel/tch_kobj.h"
 #include "kernel/tch_sem.h"
-#include "kernel/util/cdsl_dlist.h"
+#include "cdsl_dlist.h"
 
 
 #ifndef SEMAPHORE_CLASS_KEY
@@ -157,7 +157,7 @@ tch_semId sem_init(tch_semCb* scb,uint32_t count,BOOL isStatic){
 		return NULL;
 	scb->count = count;
 	scb->state = 0;
-	cdsl_dlistInit(&scb->wq);
+	cdsl_dlistEntryInit(&scb->wq);
 	tch_registerKobject(&scb->__obj,isStatic? (tch_kobjDestr) tch_semDeinit : (tch_kobjDestr) tch_semDestroy);
 	tch_semaphoreValidate(scb);
 	return scb;

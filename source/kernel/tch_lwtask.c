@@ -28,13 +28,13 @@ struct lw_task {
 	uint8_t 			status;
 	tch_mtxId			lock;
 	tch_condvId			condv;
-	cdsl_dlistNode_t	tsk_qn;
+	dlistNode_t         tsk_qn;
 };
 
 static DECLARE_COMPARE_FN(lwtask_priority_rule);
 
 static tch_rendvId		looper_rendv;
-static cdsl_dlistNode_t	tsk_queue;
+static dlistEntry_t     tsk_queue;
 static rb_treeNode_t*	tsk_root;
 static uint32_t			tsk_cnt;
 
@@ -48,7 +48,7 @@ void __lwtsk_init(void)
 	looper_rendv = tch_rti->WaitQ->create(WAITQ_POL_FIFO);
 	tsk_root = NULL;
 	tsk_cnt = 0;
-	cdsl_dlistInit(&tsk_queue);
+	cdsl_dlistEntryInit(&tsk_queue);
 	tsk_lock = tch_rti->Mtx->create();
 	tsk_condv = tch_rti->Condv->create();
 }
@@ -105,7 +105,7 @@ int tch_lwtsk_registerTask(lwtask_routine fnp,uint8_t prior)
 	tsk->do_job = fnp;
 	tsk->prior = prior;
 	tsk->status = LWSTATUS_DONE;
-	cdsl_dlistInit(&tsk->tsk_qn);
+	cdsl_dlistNodeInit(&tsk->tsk_qn);
 	cdsl_rbtreeNodeInit(&tsk->rbn,tsk_cnt++);
 
 	tch_port_atomicBegin();
