@@ -59,12 +59,17 @@
     $> cd TachyOS
     
     2. initiate project configuration and make your own configuration
-    $> make config ARCH=ARM DEFCONF=stm32f4_def.conf
-    or you can use predefined configuration
     $> make config
+    
+    or you can use predefined configuration
+    $> make config ARCH=ARM DEFCONF=stm32f4_def.conf
     
     3. build project
     $> make all
+    
+    4. (Optional) if you want reconfigure project
+    $> make config_clean
+    ... and go to 2
 
 ## To-Do
  + Add SDIO HAL Implementation (~Apr.2016)
