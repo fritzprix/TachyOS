@@ -2,6 +2,7 @@
 	"DEP_CDSL":{
 	   "type" : "repo",
 	   "name" : "cdsl",
+	   "pkg" : "package_arm_cm0.json",
 	   "url" : "https://github.com/TachyOS/cdsl.git",
 	   "out" : "./dep/"
 	},

@@ -1,0 +1,13 @@
+{
+	"DEP_CDSL":{
+	   "type" : "repo",
+	   "name" : "cdsl",
+	   "pkg" : "package_arm_cm4.json",
+	   "url" : "https://github.com/TachyOS/cdsl.git",
+	   "out" : "./dep/"
+	},
+	"DEP_AUTORECIPE":{
+		"type":"recipe",
+		"path":"autorecipe.mk"
+	}
+}

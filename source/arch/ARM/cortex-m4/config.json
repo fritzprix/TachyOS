@@ -19,5 +19,9 @@
   "ARCH_RECIPE":{
     "type":"recipe",
     "path":"./recipe.mk"
+  },
+  "DEP_CONFIG": {  
+    "type":"config",
+    "path":"./depend/config.json"
   }
 }
