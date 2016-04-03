@@ -74,6 +74,7 @@ SILENT=config $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_
 all : debug
 
 
+
 ifeq ($(DEFCONF),)
 config : $(AUTOGEN_DIR) $(CONFIG_PY)
 	$(PY) $(CONFIG_PY) -c -i $(KCONFIG_ENTRY) -o $(KCONFIG_TARGET) -g $(KCONFIG_AUTOGEN)
