@@ -98,7 +98,7 @@ DEFINE_SYSCALL_3(messageQ_get,tch_msgqId,msgq,tchEvent*,eventp,uint32_t,timeout,
 	if(msgqcb->gidx >= msgqcb->sz)
 		msgqcb->gidx = 0;
 	msgqcb->updated--;
-	tch_schedWake((tch_thread_queue*) &msgqcb->cwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
+	tch_schedWake((tch_thread_queue*) &msgqcb->pwq,SCHED_THREAD_ALL,tchInterrupted,TRUE);
 	return eventp->status = tchEventMessage;
 }
 

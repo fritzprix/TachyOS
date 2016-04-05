@@ -2,7 +2,8 @@
   "BOARD_NAME":{
     "type":"enum",
     "enum":[
-      "Open_407Z"
+      "Open_407Z",
+      "Open_407Z-C"
     ]
   },
   "BOARD_SUB_CONFIG":{
