@@ -3,7 +3,7 @@
 	   "type" : "repo",
 	   "name" : "cdsl",
 	   "pkg" : "package_arm_cm4.json",
-	   "url" : "https://github.com/TachyOS/cdsl.git",
+	   "url" : "https://github.com/fritzprix/cdsl.git",
 	   "out" : "./dep/"
 	},
 	"DEP_AUTORECIPE":{
