@@ -13,8 +13,7 @@
 #include "tch.h"
 #include "tch_ptypes.h"
 #include "cdsl_dlist.h"
-#include "cdsl_rbtree.h"
-
+#include "cdsl_nrbtree.h"
 
 
 #if defined(__cplusplus)
@@ -96,18 +95,18 @@ struct tch_mm {
 };
 
 struct tch_thread_uheader_s {
-	tch_thread_routine			fn;					///<thread function pointer
-	rb_treeNode_t*				uobjs;				///<user object tree for tracking
-	void*						cache;
-	const char*					name;				///<thread name
-	void*						t_arg;				///<thread arg field
-	tch_thread_kheader*			kthread;			///<pointer to kernel level thread header
-	void*						heap;
-	tch_condvId 				condv;
-	tch_mtxId					mtx;
-	tch_core_api_t 						ctx;
-	uword_t						kRet;				///<kernel return value
-	uint32_t					chks;				///<check-sum for determine corruption of thread header
+	tch_thread_routine          fn;					///<thread function pointer
+	nrbtreeNode_t*              uobjs;				///<user object tree for tracking
+	void*                       cache;
+	const char*                 name;				///<thread name
+	void*                       t_arg;				///<thread arg field
+	tch_thread_kheader*         kthread;			///<pointer to kernel level thread header
+	void*                       heap;
+	tch_condvId                 condv;
+	tch_mtxId                   mtx;
+	tch_core_api_t              ctx;
+	uword_t                     kRet;				///<kernel return value
+	uint32_t                    chks;				///<check-sum for determine corruption of thread header
 } __attribute__((aligned(8)));
 
 struct tch_thread_kheader_s {

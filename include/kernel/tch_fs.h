@@ -9,7 +9,6 @@
 #define TCH_FS_H_
 
 #include "tch_ktypes.h"
-#include "cdsl_rbtree.h"
 
 struct tch_file_operations;
 typedef int32_t ssize_t;
