@@ -16,7 +16,8 @@
 #include "tch_gpio.h"
 #include "tch_spi.h"
 
-#include "kernel/util/string.h"
+#include "kernel/tch_interrupt.h"
+#include "kernel/string.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
@@ -276,7 +277,8 @@ __USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_
 	else
 	{
 		spiHw->CR2 |= SPI_CR2_ERRIE;
-		tch_enableInterrupt(spiDesc->irq,HANDLER_NORMAL_PRIOR);
+		// TODO : dummy handler, consider supporting isr remap
+		tch_enableInterrupt(spiDesc->irq,PRIORITY_2, NULL);
 	}
 	tch_spi_validate((tch_spi_handle_prototype*) ins);
 	return (tch_spiHandle_t*) ins;

@@ -25,7 +25,7 @@ __attribute__((naked)) void __init(void* arg){
 		 * 1. memory peripheral initialized
 		 * 2. clock configured properly
 		 */
-		tch_port_setKerenlSP((uword_t) tch_kernelMemInit(((bootp) arg)->section_tbl));
+		tch_port_setKernelSP((uwaddr_t) tch_kernelMemInit(((bootp) arg)->section_tbl));
 	}else{
 		// has no boot loader
 		//
@@ -33,7 +33,7 @@ __attribute__((naked)) void __init(void* arg){
 		tch_boot_setSystemMem();
 #endif
 		tch_boot_setSystemClock();
-		tch_port_setKerenlSP((uword_t) tch_kernelMemInit((struct section_descriptor**) default_sections));
+		tch_port_setKernelSP((uwaddr_t) tch_kernelMemInit((struct section_descriptor**) default_sections));
 	}
 
 	tch_kernel_init(arg);

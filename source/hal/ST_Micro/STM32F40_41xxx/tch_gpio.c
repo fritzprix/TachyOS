@@ -23,6 +23,7 @@
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_waitq.h"
+#include "kernel/tch_interrupt.h"
 
 
 
@@ -473,7 +474,8 @@ static tchStatus tch_gpio_configureEvent(tch_gpioHandle* self,uint8_t pin,const 
 	{
 		EXTI->IMR |= pmsk;
 	}
-	tch_enableInterrupt(ioDesc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : put dummy handler because isr remap is not supported, but consider supporting it
+	tch_enableInterrupt(ioDesc->irq,PRIORITY_2, NULL);
 	SYSCFG->EXTICR[pin >> 2] |= ins->idx << ((pin % 4) *4);
 	return tchOK;
 }

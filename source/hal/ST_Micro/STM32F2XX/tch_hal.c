@@ -19,6 +19,9 @@
 #include "tch_kernel.h"
 #include "tch_mm.h"
 
+#include "kernel/tch_interrupt.h"
+#include "kernel/tch_err.h"
+
 
 /**
  * 	void*                _hw;
@@ -657,15 +660,13 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 
 void tch_hal_enableSystick(uint32_t mills){
 	SysTick_Config(mills * (SYS_CLK / 1000));
-	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
-	NVIC_EnableIRQ(SysTick_IRQn);
+	tch_port_enableInterrupt(SysTick_IRQn, PRIORITY_0, NULL);
 }
 
 void tch_hal_disableSystick(){
-	NVIC_DisableIRQ(SysTick_IRQn);
+	tch_port_disableInterrupt(SysTick_IRQn);
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
-
 
 void tch_hal_setSleepMode(tch_lplvl lplvl){
 	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);

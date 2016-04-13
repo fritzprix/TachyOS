@@ -10,11 +10,13 @@
 #include "tch_hal.h"
 #include "tch_board.h"
 #include "tch_dma.h"
+
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_dbg.h"
+#include "kernel/tch_interrupt.h"
 
 
 
@@ -446,6 +448,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 		return NULL;
 
 	struct tch_sdio_handle_prototype* ins = NULL;
+	uint32_t reg;
 	const tch_sdio_bs_t* sdio_bs = &SDIO_BD_CFGs[0];
 	tch_sdio_descriptor* sdio_hw = &SDIO_HWs[0];
 
@@ -589,13 +592,15 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 						SDIO_MASK_DATAENDIE | SDIO_MASK_DCRCFAILIE |
 						SDIO_MASK_CTIMEOUTIE | SDIO_MASK_DTIMEOUTIE);
 
-	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;			// power save mode enabled
-	sdio_reg->CLKCR |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
-	sdio_reg->CLKCR |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
+	reg = SDIO_CLKCR_PWRSAV;// | SDIO_CLKCR_HWFC_EN;			// power save mode enabled
+	reg |= (SDIO_CLKCR_CLKDIV & 198);	// set clock divisor 48MHz / 200  because should be less than 400kHz
+	reg |= SDIO_CLKCR_CLKEN;			// set sdio clock enable
+
+	sdio_reg->CLKCR = reg;
 
 	// set clock register for Identification phase
 	ins->api = api;
-	tch_enableInterrupt(sdio_hw->irq, HANDLER_HIGH_PRIOR);
+	tch_enableInterrupt(sdio_hw->irq, PRIORITY_2, NULL);
 	SDIO_VALIDATE(ins);
 
 	return (tch_sdioHandle_t) ins;
@@ -883,6 +888,7 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 	if(!sdio || !SDIO_ISVALID(sdio))
 		return tchErrorParameter;
 	tchStatus res;
+	uint32_t resp;
 	struct tch_sdio_handle_prototype* ins = (struct tch_sdio_handle_prototype*) sdio;
 	const tch_core_api_t* api = ins->api;
 	tch_sdioDev_t* dev = (tch_sdioDev_t*) device;
@@ -918,12 +924,13 @@ static tchStatus tch_sdio_handle_writeBlock(tch_sdioHandle_t sdio,tch_sdioDevId 
 		 */
 		blk_offset <<= dev->blksz;
 	}
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 
 	if(blk_cnt > 1)
 	{
-		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, NULL, timeout);
+		sdio_send_cmd(ins, CMD_APP_CMD , (dev->caddr << 16) ,TRUE , SDIO_RESP_SHORT,&resp,timeout);
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
 	}
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, NULL, timeout);
 
 	if(blk_cnt > 1)
 	{
@@ -994,11 +1001,14 @@ static tchStatus tch_sdio_handle_readBlock(tch_sdioHandle_t sdio,tch_sdioDevId d
 		blk_offset <<= dev->blksz;
 	}
 
+	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, TRUE, SDIO_RESP_SHORT, &resp, timeout);
+
 	if(blk_cnt > 1)
 	{
-		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+		sdio_send_cmd(ins, CMD_APP_CMD, (dev->caddr << 16), TRUE, SDIO_RESP_SHORT,&resp,timeout);
+		sdio_send_cmd(ins, CMD_SET_BLKCNT, blk_cnt, TRUE, SDIO_RESP_SHORT, &resp, timeout);
 	}
-	sdio_send_cmd(ins, CMD_SET_BLKLEN, 1 << dev->blksz, FALSE, SDIO_RESP_SHORT, &resp, timeout);
+
 
 	if(blk_cnt > 1)
 	{
@@ -1293,11 +1303,18 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		{
 			goto READ_ERR_RET;
 		}
+		dma->waitComplete(ins->dma, timeout);
 	}
 	else
 	{
+		/**
+		 *  Note : multiple blocks of reading without using DMA cuases
+		 *         overrun error, however, single block reading has been working
+		 *         without any problem so far. so if DMA can't be allocated to SDIO
+		 *         single block of reading can be used.
+		 */
 		// enable rx fifo half full interrupt
-		sdio_reg->MASK |= SDIO_MASK_RXDAVLIE;
+		sdio_reg->MASK |= (SDIO_MASK_RXDAVLIE);
 		sdio_reg->DLEN = blk_cnt << blk_size;
 		sdio_reg->DTIMER = timeout << 16;
 		request.bcnt = 1;
@@ -1307,32 +1324,33 @@ static tchStatus sdio_read_block(struct tch_sdio_handle_prototype* ins, uint8_t 
 		sdio_reg->DCTRL = (SDIO_DCTRL_DTDIR | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
-
 		if((res = sdio_send_cmd(ins, cmdIdx, address, TRUE, SDIO_RESP_SHORT,&resp,timeout)) != tchOK)
 		{
 			goto READ_ERR_RET;
 		}
 	}
 
-	res = ins->api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
-	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | IOERROR_FLAGS);
+	res = ins->api->Event->wait(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND , timeout);
+	ev = ins->api->Event->clear(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND  | IOERROR_FLAGS);
 
 	// disable rx fifo half full interrupt
+READ_ERR_RET:
+
 	if(IS_IOERROR(ev))
 	{
 		res = tchErrorIo;
 	}
-
-READ_ERR_RET:
 	if((blk_cnt > 1) || (res != tchOK))
 	{
-		sdio_send_cmd(ins,CMD_STOP_TRANS,0, TRUE, SDIO_RESP_SHORT,&resp, timeout);
+		// SD Card will not respond, if it is already in transfer state
+		// so doesn't wait response
+		sdio_send_cmd(ins,CMD_STOP_TRANS,0, FALSE, SDIO_RESP_SHORT,&resp, timeout);
 	}
 
 	sdio_reg->DCTRL = 0;
 	ins->req = NULL;
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
-	sdio_reg->MASK &= ~SDIO_MASK_RXDAVLIE;
+	sdio_reg->MASK &= ~(SDIO_MASK_RXDAVLIE);
 	return res;
 }
 
@@ -1352,47 +1370,63 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
 	sdio_build_writereq(&request, (void*) buffer, blk_cnt << blk_size, blk_cnt);
 	ins->req = &request;
 
+	api->Event->clear(ins->evId, 0xffffffff);
+
 	sdio_reg->DCTRL = 0;
 	sdio_reg->CLKCR &= ~SDIO_CLKCR_PWRSAV;
 
 
 	if(ins->status & SDIO_HANDLE_FLAG_DMA)
 	{
-
 		tch_DmaReqDef req;
-		dma->initReq(&req,(uwaddr_t) buffer, (uwaddr_t) &sdio_reg->FIFO, 0, DMA_Dir_MemToPeriph);
-		dma->beginXferSync(ins->dma,&req,timeout,NULL);
 
-		sdio_reg->DLEN = (1 << blk_size) * blk_cnt;
-		sdio_reg->DTIMER = timeout << 4;
+
+		dma->initReq(&req,(uwaddr_t) buffer, (uwaddr_t) &sdio_reg->FIFO, blk_cnt << blk_size, DMA_Dir_MemToPeriph);
+		dma->beginXferAsync(ins->dma,&req);
 
 		if((result = sdio_send_cmd(ins,cmdIdx,address, TRUE, SDIO_RESP_SHORT, &resp, timeout)) != tchOK)
 		{
 			goto WRITE_ERR_RET;
 		}
 
+		sdio_reg->DLEN = blk_cnt << blk_size;
+		sdio_reg->DTIMER = timeout << 16;
+
 		sdio_reg->DCTRL = (SDIO_DCTRL_DMAEN | (blk_size << 4));
 		sdio_reg->DCTRL |= SDIO_DCTRL_DTEN;
 
+
+
+
+		dma->waitComplete(ins->dma,timeout);
 
 	}
 	else
 	{
 
 	}
-	result = api->Event->wait(ins->evId,SDIO_STA_DBCKEND,timeout);
-	ev = api->Event->clear(ins->evId,SDIO_STA_DBCKEND | IOERROR_FLAGS);
+
+	result = api->Event->wait(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND, timeout);
+	ev = api->Event->clear(ins->evId, SDIO_STA_DBCKEND | SDIO_STA_DATAEND | IOERROR_FLAGS);
+
+WRITE_ERR_RET:
+
 	if(IS_IOERROR(ev))
 	{
 		result = tchErrorIo;
 	}
 
-WRITE_ERR_RET:
+	if((blk_cnt > 1) || (result != tchOK))
+	{
+			// SD Card will not respond, if it is already in transfer state
+			// so doesn't wait response
+			sdio_send_cmd(ins,CMD_STOP_TRANS,0, FALSE, SDIO_RESP_SHORT,&resp, timeout);
+	}
+
 	sdio_reg->DCTRL = 0;
 	ins->req = NULL;
 	sdio_reg->CLKCR |= SDIO_CLKCR_PWRSAV;
 	return result;
-
 }
 
 
@@ -1405,18 +1439,27 @@ void SDIO_IRQHandler()
 	SDIO_TypeDef* sdio_reg = sdio_hw->_sdio;
 	uint32_t cnt;
 	uint32_t dummy;
+	if(sdio_reg->STA & SDIO_STA_RXFIFOF)
+	{
+		sdio_reg->DCTRL |= SDIO_DCTRL_RWSTART;
+		sdio_reg->MASK |= SDIO_MASK_RXFIFOEIE;
+	}
 	if(sdio_reg->STA & SDIO_STA_RXDAVL)
 	{
-			while (sdio_reg->STA & SDIO_STA_RXDAVL)
+		while (sdio_reg->STA & SDIO_STA_RXDAVL)
+		{
+			sdio_ins->req->buffer[sdio_ins->req->bidx++] = sdio_reg->FIFO;
+			if ((sdio_ins->req->bsz >> 2) <= sdio_ins->req->bidx)
 			{
-				sdio_ins->req->buffer[sdio_ins->req->bidx++] = sdio_reg->FIFO;
-				if ((sdio_ins->req->bsz >> 2) <= sdio_ins->req->bidx)
-				{
-					dummy = sdio_reg->FIFO;
-				}
+				dummy = sdio_reg->FIFO;
 			}
-
+		}
 		return;
+	}
+	if(sdio_reg->STA & SDIO_STA_RXFIFOE)
+	{
+		sdio_reg->DCTRL |= SDIO_DCTRL_RWSTOP;
+		sdio_reg->MASK &= ~SDIO_MASK_RXFIFOEIE;
 	}
 	if(sdio_reg->STA & SDIO_STA_RXOVERR)
 	{
@@ -1474,7 +1517,6 @@ void SDIO_IRQHandler()
 	if(sdio_reg->STA & SDIO_STA_DCRCFAIL)
 	{
 		sdio_reg->ICR |= SDIO_ICR_DCRCFAILC;
-		sdio_ins->req->flag |= SDIO_REQ_NOK;
 		api->Event->set(sdio_ins->evId, SDIO_STA_DCRCFAIL);
 		return;
 	}

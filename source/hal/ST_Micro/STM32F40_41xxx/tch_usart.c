@@ -17,6 +17,8 @@
 #include "tch_dma.h"
 #include "tch_gpio.h"
 #include "tch_usart.h"
+
+#include "kernel/tch_interrupt.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
@@ -312,7 +314,9 @@ static tch_usartHandle tch_usart_open(const tch_core_api_t* env,uart_t port,tch_
 	uhw->SR = 0;
 
 	tch_usart_validate(uins);
-	tch_enableInterrupt(uDesc->irq,HANDLER_NORMAL_PRIOR);
+
+	// dummy handler
+	tch_enableInterrupt(uDesc->irq,PRIORITY_2, NULL);
 
 	return (tch_usartHandle) uins;
 }

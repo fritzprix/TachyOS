@@ -8,8 +8,6 @@
 #ifndef TCH_MM_H_
 #define TCH_MM_H_
 
-#include "tch_ptypes.h"
-
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"
 #include "kernel/mm/wtmalloc.h"

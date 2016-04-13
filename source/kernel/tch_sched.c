@@ -221,7 +221,7 @@ static inline void tch_schedStartKernelThread(tch_threadId init_thr){
 	current = init_thr;
 	current_mm = &current->kthread->mm;
 	tch_thread_kheader* thr_p = (tch_thread_kheader*) get_thread_kheader(init_thr);
-	tch_port_setUserSP((uint32_t)thr_p->ctx);
+	tch_port_setUserSP((uwaddr_t)thr_p->ctx);
 #if FEATURE_FLOAT > 0
 	float _force_fctx = 0.1f;
 	_force_fctx += 0.1f;

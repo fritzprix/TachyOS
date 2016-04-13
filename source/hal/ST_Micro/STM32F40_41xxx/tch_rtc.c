@@ -16,6 +16,7 @@
 
 #include "tch_rtc.h"
 #include "tch_hal.h"
+#include "kernel/tch_interrupt.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mtx.h"
@@ -71,6 +72,7 @@ struct rtc_alarm_event
 
 static int tch_rtc_init(void);
 static void tch_rtc_exit(void);
+
 
 
 static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* localtm);
@@ -328,7 +330,7 @@ static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t perio
 	RTC->CR |= RTC_CR_WUTE;
 	RTC->ISR &= ~RTC_ISR_WUTF;
 	ins->wkup_handler = wkup_handler;
-	tch_enableInterrupt(RTC_WKUP_IRQn,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(RTC_WKUP_IRQn, PRIORITY_2,NULL);
 
 	return ins->env->Mtx->unlock(ins->mtx);
 

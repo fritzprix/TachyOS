@@ -20,6 +20,7 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
+#include "kernel/tch_interrupt.h"
 
 
 #define DMA_MAX_ERR_CNT           ((uint8_t)  2)
@@ -243,7 +244,8 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,d
 
 	dmaHw->FCR = DMA_SxFCR_FTH | DMA_SxFCR_DMDIS;
 
-	tch_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : put dummy handler because isr remap is not supported currently, however, consider supporting it
+	tch_enableInterrupt(dma_desc->irq,PRIORITY_2,NULL);
 	__DMB();
 	__ISB();
 	tch_dma_validate(dma_desc->_handle);

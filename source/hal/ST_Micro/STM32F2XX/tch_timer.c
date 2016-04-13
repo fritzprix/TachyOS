@@ -14,11 +14,13 @@
 #include "tch_hal.h"
 #include "tch_gpio.h"
 #include "tch_timer.h"
+
+#include "kernel/tch_interrupt.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
-#include "kernel/util/string.h"
+#include "kernel/string.h"
 
 
 
@@ -358,7 +360,8 @@ __USER_API__ static tch_gptimerHandle* tch_timer_allocGptimerUnit(const tch_core
 	if(timDesc->precision == 32)
 		timerHw->ARR = 0xFFFFFFFF;
 	timerHw->CR1 |= TIM_CR1_CEN;
-	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : dummy handler ,consider supporting isr remap
+	tch_enableInterrupt(timDesc->irq,PRIORITY_2,NULL);
 	return (tch_gptimerHandle*) ins;
 }
 
@@ -535,7 +538,8 @@ __USER_API__ static tch_pwmHandle* tch_timer_allocPWMUnit(const tch_core_api_t* 
 		timerHw->CCR4 = 0;
 	}
 
-	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : dummy handler, consider supporting isr remap
+	tch_enableInterrupt(timDesc->irq,PRIORITY_2, NULL);
 	timerHw->ARR = tdef->PeriodInUnitTime;
 	timerHw->EGR |= TIM_EGR_UG;
 
@@ -686,7 +690,8 @@ __USER_API__ static tch_tcaptHandle* tch_timer_allocCaptureUnit(const tch_core_a
 		timerHw->CCER |= (TIM_CCER_CC3E | TIM_CCER_CC4E);
 		timerHw->DIER |= TIM_DIER_CC3IE;
 	}
-	tch_enableInterrupt(timDesc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : dummy handler, consider again when isr remap support added
+	tch_enableInterrupt(timDesc->irq,PRIORITY_2, NULL);
 	timerHw->CNT = 0;
 	timerHw->CR1 = TIM_CR1_CEN;
 	return (tch_tcaptHandle*) ins;
@@ -701,10 +706,6 @@ __USER_API__ static uint8_t tch_timer_getPrecision(tch_timer timer)
 {
 	return TIMER_HWs[timer].precision;
 }
-//////         General Purpose Timer Function           ///////
-// Not Thread-Safe
-/*
-*/
 
 __USER_API__ static BOOL tch_gptimer_wait(tch_gptimerHandle* self,uint32_t utick)
 {

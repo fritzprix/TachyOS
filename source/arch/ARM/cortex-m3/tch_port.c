@@ -13,11 +13,43 @@
  */
 
 
+#include "aal.h"
 #include "tch_kernel.h"
 #include "tch_fault.h"
 #include "tch_hal.h"
 #include "tch_port.h"
 #include "tch_ptypes.h"
+
+
+#define GROUP_PRIOR_Pos                (uint8_t) (7)
+#define SUB_PRIOR_Pos                  (uint8_t) (4)
+#define GROUP_PRIOR(x)                 (uint8_t) ((x & 1) << (GROUP_PRIOR_Pos - SUB_PRIOR_Pos))
+#define SUB_PRIOR(y)                   (uint8_t) ((y & 7))
+
+#define MODE_KERNEL                    (uint32_t)(1 << GROUP_PRIOR_Pos)                                 // execution priority of kernel only supervisor call can interrupt
+#define MODE_USER                      (uint32_t)(0)
+
+
+#define HANDLER_SVC_PRIOR              (uint32_t)(GROUP_PRIOR(0) | SUB_PRIOR(0))
+#define HANDLER_SYSTICK_PRIOR          (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(1))
+#define HANDLER_HIGH_PRIOR             (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(2))
+#define HANDLER_NORMAL_PRIOR           (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(3))
+#define HANDLER_LOW_PRIOR              (uint32_t)(GROUP_PRIOR(1) | SUB_PRIOR(4))
+
+
+#define HARDFAULT_UNRECOVERABLE                    (-1)
+#define HARDFAULT_RECOVERABLE                      (-2)
+
+
+#define MEM_UNPRIV_READ_PERMISSION					((uint32_t) 0x10000)
+#define MEM_UNPRIV_WRITE_PERMISSION					((uint32_t) 0x20000)
+
+#define MEM_PRIV_READ_PERMISSION					((uint32_t) 0x40000)
+#define MEM_PRIV_WRITE_PERMISSION					((uint32_t) 0x80000)
+#define MEM_PERMISSION_MSK							(MEM_UNPRIV_READ_PERMISSION |\
+													MEM_UNPRIV_WRITE_PERMISSION |\
+													MEM_PRIV_READ_PERMISSION |\
+													MEM_PRIV_WRITE_PERMISSION)
 
 
 
@@ -35,6 +67,18 @@
 
 
 #define NR_PAGE_ENTRY				8
+
+
+const uint32_t PRIORITY_MAP[] = {
+		[0] = HANDLER_SYSTICK_PRIOR,
+		[1] = HANDLER_HIGH_PRIOR,
+		[2] = HANDLER_NORMAL_PRIOR,
+		[3] = HANDLER_NORMAL_PRIOR,
+		[4] = HANDLER_LOW_PRIOR
+};
+
+static uwaddr_t remapped_isr_table = 0;
+
 
 
 
@@ -106,7 +150,6 @@ void tch_port_setIsrVectorMap(uint32_t isrv){
 	SCB->VTOR = isrv;
 }
 
-
 void tch_port_enablePrivilegedThread(){
 	uint32_t mcu_control = __get_CONTROL();
 	mcu_control &= ~CTRL_UNPRIV_THREAD_ENABLE;
@@ -133,12 +176,34 @@ BOOL tch_port_isISR(){
 	return __get_IPSR() > 0;
 }
 
-void tch_port_enableISR(void){
+void tch_port_enableGlobalInterrupt(void) {
 	__enable_irq();
 }
 
-void tch_port_disableISR(void){
+void tch_port_disableGlobalInterrupt(void) {
 	__disable_irq();
+}
+
+void tch_port_remapIsrTable(uwaddr_t remapped_table) {
+	return;
+}
+
+void tch_port_enableInterrupt(int32_t irq, uint32_t priority, void (*handler) (void) ) {
+	NVIC_DisableIRQ(irq);
+	NVIC_SetPriority(irq,PRIORITY_MAP[priority]);
+
+	if(remapped_isr_table) {
+		/*
+		 * ISR remapping is enabled assign handler to isr table
+		 */
+		uwaddr_t* isr_table = (uwaddr_t*) remapped_isr_table;
+		isr_table[irq] = (uwaddr_t*) handler;
+	}
+	NVIC_EnableIRQ(irq);
+}
+
+void tch_port_disableInterrupt(int32_t irq) {
+	NVIC_DisableIRQ(irq);
 }
 
 void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
@@ -155,7 +220,7 @@ void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) :"r4","r5","r6","r8","r9","r10","lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) :"r4","r5","r6","r8","r9","r10", "r11", "lr");
 }
 
 

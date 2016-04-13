@@ -17,7 +17,7 @@
 
 
 
-DECLARE_SYSCALL_2(interrupt_enable,IRQn_Type,uint32_t,tchStatus);
+DECLARE_SYSCALL_3(interrupt_enable,IRQn_Type,uint32_t,isr_handler,tchStatus);
 DECLARE_SYSCALL_1(interrupt_disable,IRQn_Type,tchStatus);
 
 void tch_remapTable(void* tblp){
@@ -30,21 +30,19 @@ void tch_remapTable(void* tblp){
 	 */
 }
 
-DEFINE_SYSCALL_2(interrupt_enable,IRQn_Type,irq,uint32_t,priority,tchStatus){
-	NVIC_DisableIRQ(irq);
-	NVIC_SetPriority(irq,priority);
-	NVIC_EnableIRQ(irq);
+DEFINE_SYSCALL_3(interrupt_enable,IRQn_Type,irq,uint32_t,priority,isr_handler, handler,tchStatus){
+	tch_port_enableInterrupt(irq,priority,handler);
 	return tchOK;
 }
 
 DEFINE_SYSCALL_1(interrupt_disable,IRQn_Type,irq,tchStatus){
-	NVIC_DisableIRQ(irq);
+	tch_port_disableInterrupt(irq);
 	return tchOK;
 }
 
-tchStatus tch_enableInterrupt(IRQn_Type irq,uint32_t priority){
+tchStatus tch_enableInterrupt(IRQn_Type irq,uint32_t priority,isr_handler handler){
 	if(tch_port_isISR())
-		return __interrupt_enable(irq,priority);
+		return __interrupt_enable(irq,priority,handler);
 	return __SYSCALL_2(interrupt_enable,irq,priority);
 }
 

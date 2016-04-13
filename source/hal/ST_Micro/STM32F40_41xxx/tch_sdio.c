@@ -10,11 +10,13 @@
 #include "tch_hal.h"
 #include "tch_board.h"
 #include "tch_dma.h"
+
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_dbg.h"
+#include "kernel/tch_interrupt.h"
 
 
 
@@ -598,7 +600,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 
 	// set clock register for Identification phase
 	ins->api = api;
-	tch_enableInterrupt(sdio_hw->irq, HANDLER_HIGH_PRIOR);
+	tch_enableInterrupt(sdio_hw->irq, PRIORITY_2, NULL);
 	SDIO_VALIDATE(ins);
 
 	return (tch_sdioHandle_t) ins;

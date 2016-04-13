@@ -36,11 +36,25 @@ extern "C" {
 
 
 /**
- * \mainpage Tachyos
- * \copyright Copyright (C) 2014-2015 doowoong,lee  All rights reserved.
- * \section about_sec About Tachyos
- *  Tachyos is a RTOS based on Microkernel architecture with consideration of constrained distributed computing node.
- *  Such a node has typicallyc
+ * \mainpage TachyOS
+ * \copyright 2014-2016 doowoong,lee  All rights reserved.
+ * \section about_sec About TachyOS
+ *  TachyOS is a RTOS based on Microkernel architecture considering cost efficient targets like ARM Cortex-M series microcontroller.
+ *  TachyOS is composed of three distinct parts (Kernel, AAL and HAL) and depend on each other. but they are agnostic to implementation
+ *  of each other by put interface for each core part.
+ *
+ * ## Kernel
+ * > kernel is composed of core functionalities which can be used from user application or HAL components as well.
+ * > Kernel depends on the architecture abstraction layer(AAL) which defines how kernel interact with under lying processor hardware
+ * > so kernel porting can be accomplished simply by implementing these interfaces.
+ * > kernel services available to user program by means of system call. system call
+ *
+ *
+ *
+ * \section support Supported Target
+ *  - STM32F407 (ARM Cortex-M4)
+ *  - STM32F417 (ARM Cortex-M4)
+ *  - STM32F2XX (ARM Cortex-M3)
  *
  *
  *  \section feat_sec Detailed features

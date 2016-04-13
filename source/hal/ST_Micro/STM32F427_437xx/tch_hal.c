@@ -19,6 +19,8 @@
 #include "tch_hal.h"
 #include "tch_kernel.h"
 #include "tch_mm.h"
+
+#include "kernel/tch_interrupt.h"
 #include "kernel/tch_err.h"
 
 
@@ -650,17 +652,31 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 };
 
 
+__TCH_STATIC_INIT tch_sdio_descriptor SDIO_HWs[MFEATURE_SDIO] = {
+		{
+				._sdio = SDIO,
+				._handle = NULL,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_SDIOEN,
+				._lpclkenr = &RCC->APB2LPENR,
+				.lpclkmsk = RCC_APB2LPENR_SDIOLPEN,
+				._rstr = &RCC->APB2RSTR,
+				.rstmsk = RCC_APB2RSTR_SDIORST,
+				.irq = SDIO_IRQn
+		}
+};
+
+
 /**
  *  implementation of HAL interface on which kernel depends
  */
 void tch_hal_enableSystick(uint32_t mills){
 	SysTick_Config(mills * (SYS_CLK / 1000));
-	NVIC_SetPriority(SysTick_IRQn,HANDLER_SYSTICK_PRIOR);
-	NVIC_EnableIRQ(SysTick_IRQn);
+	tch_port_enableInterrupt(SysTick_IRQn, PRIORITY_0, NULL);
 }
 
 void tch_hal_disableSystick(){
-	NVIC_DisableIRQ(SysTick_IRQn);
+	tch_port_disableInterrupt(SysTick_IRQn);
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 

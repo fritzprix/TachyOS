@@ -20,6 +20,7 @@
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
+#include "kernel/tch_interrupt.h"
 
 
 #define DMA_MAX_ERR_CNT           ((uint8_t)  2)
@@ -243,7 +244,8 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,d
 
 	dmaHw->FCR = DMA_SxFCR_FTH | DMA_SxFCR_DMDIS;
 
-	tch_enableInterrupt(dma_desc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : put dummy handler because isr remap is not supported currently, however, consider supporting it
+	tch_enableInterrupt(dma_desc->irq,PRIORITY_2,NULL);
 	__DMB();
 	__ISB();
 	tch_dma_validate(dma_desc->_handle);
@@ -292,6 +294,8 @@ __USER_API__ static uint32_t tch_dma_beginXferSync(tch_dmaHandle self,tch_DmaReq
 	if(evt.status != tchEventMessage){
 		residue = dmaHw->NDTR;
 	}
+
+	dmaHw->CR &= ~DMA_SxCR_EN;
 
 	ins->api->Mtx->lock(&ins->lock,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
@@ -352,6 +356,7 @@ __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t 
 
 
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
+	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
 	tchEvent evt;
 
 	if((evt.status = ins->api->Mtx->lock(&ins->lock,timeout)) != tchOK)
@@ -373,6 +378,7 @@ __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t 
 	}
 
 	evt = ins->api->MsgQ->get(ins->dma_mq, timeout);
+	dmaHw->CR &= ~DMA_SxCR_EN;
 
 
 	ins->api->Mtx->lock(&ins->lock, timeout);

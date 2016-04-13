@@ -11,7 +11,7 @@
 #define TCH_KTYPES_H_
 
 #include "tch.h"
-#include "tch_ptypes.h"
+#include "aal.h"
 #include "cdsl_dlist.h"
 #include "cdsl_nrbtree.h"
 

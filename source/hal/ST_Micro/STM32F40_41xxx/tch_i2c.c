@@ -16,13 +16,16 @@
 
 #include "tch_types.h"
 #include "tch_hal.h"
+
 #include "hal/tch_i2c.h"
 #include "hal/tch_gpio.h"
+
 #include "kernel/tch_kernel.h"
 #include "kernel/tch_kmod.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/string.h"
+#include "kernel/tch_interrupt.h"
 
 #ifndef IIC_CLASS_KEY
 #define IIC_CLASS_KEY							((uint16_t) 0x62D1)
@@ -333,7 +336,8 @@ __USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch
 	}
 
 	iicHw->CR1 |= I2C_CR1_STOP;
-	tch_enableInterrupt(iicDesc->irq,HANDLER_NORMAL_PRIOR);
+	// TODO : dummy handler consider isr remap
+	tch_enableInterrupt(iicDesc->irq,PRIORITY_2, NULL);
 	tch_IIC_validate(ins);
 	return (tch_iicHandle_t*) ins;
 }

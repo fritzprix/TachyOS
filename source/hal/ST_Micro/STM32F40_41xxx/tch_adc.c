@@ -16,6 +16,8 @@
 #include "tch_gpio.h"
 #include "tch_adc.h"
 #include "tch_timer.h"
+
+#include "kernel/tch_interrupt.h"
 #include "kernel/tch_mtx.h"
 #include "kernel/tch_condv.h"
 #include "kernel/tch_kernel.h"
@@ -261,7 +263,7 @@ static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCf
 	ins->env = env;
 
 
-	tch_enableInterrupt(adcDesc->irq,HANDLER_NORMAL_PRIOR);
+	tch_enableInterrupt(adcDesc->irq,PRIORITY_2,NULL);
 	tch_adc_validate(ins);
 	return (tch_adcHandle*) ins;
 }
