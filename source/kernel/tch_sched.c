@@ -19,8 +19,6 @@
 #include "tch_thread.h"
 
 
-
-
 /* =================  private internal function declaration   ========================== */
 
 /***
@@ -64,7 +62,9 @@ void tch_schedInit(void* init_thread){
 /** Note : should not called any other program except kernel mode program
  *  @brief start thread based on its priority (thread can be started in preempted way)
  */
-void tch_schedStart(tch_threadId thread){
+tchStatus tch_schedStart(tch_threadId thread){
+	if(!thread || !tch_thread_isValid(thread))
+		return tchErrorParameter;
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	tch_thread_kheader* kth = thr->kthread;
 	tch_thread_kheader* pkth = NULL;
@@ -72,16 +72,15 @@ void tch_schedStart(tch_threadId thread){
 		cdsl_dlistEnqueuePriority(&tch_readyQue.thque, &current->kthread->t_schedNode, tch_schedReadyQRule);			///< put current thread in ready queue
 		pkth = current->kthread;
 		pkth->state = READY;
-
 		current = thr;
 		tch_kernel_set_result(thread,tchOK);
 		tch_schedSwitch(kth, pkth);
-		// TODO: change switch
 	}else{
 		thr->kthread->state = READY;
 		tch_kernel_set_result(current,tchOK);
 		cdsl_dlistEnqueuePriority(&tch_readyQue.thque, &thr->kthread->t_schedNode, tch_schedReadyQRule);
 	}
+	return tchOK;
 }
 
 void tch_schedSwitch(tch_thread_kheader* next, tch_thread_kheader* cur)

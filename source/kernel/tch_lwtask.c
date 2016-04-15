@@ -33,7 +33,7 @@ struct lw_task {
 
 static DECLARE_COMPARE_FN(lwtask_priority_rule);
 
-static tch_rendvId		looper_rendv;
+static tch_waitqId		looper_wq;
 static dlistEntry_t     tsk_queue;
 static nrbtreeRoot_t	tsk_root;
 static uint32_t			tsk_cnt;
@@ -45,7 +45,7 @@ static tch_condvId		tsk_condv;
 void __lwtsk_init(void)
 {
 //	looper_rendv = tch_rti->Rendezvous->create();
-	looper_rendv = tch_rti->WaitQ->create(WAITQ_POL_FIFO);
+	looper_wq = tch_rti->WaitQ->create(WAITQ_POL_FIFO);
 	tsk_cnt = 0;
 	cdsl_dlistEntryInit(&tsk_queue);
 	cdsl_nrbtreeRootInit(&tsk_root);
@@ -71,7 +71,7 @@ void __lwtsk_start_loop(void)
 					return;	//break loop and return (means system termination)
 				}
 				*/
-				if(tch_rti->WaitQ->sleep(looper_rendv, tchWaitForever) != tchOK)
+				if(tch_rti->WaitQ->sleep(looper_wq, tchWaitForever) != tchOK)
 				{
 					return;
 				}
@@ -184,7 +184,7 @@ void tch_lwtsk_request(int tsk_id,void* arg, BOOL canblock)
 	tch_port_atomicEnd();
 
 //	tch_rti->Rendezvous->wake(looper_rendv);
-	tch_rti->WaitQ->wake(looper_rendv);
+	tch_rti->WaitQ->wake(looper_wq);
 
 
 	if(canblock)

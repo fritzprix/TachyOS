@@ -93,8 +93,7 @@ DEFINE_SYSCALL_2(thread_create,thread_config_t*,cfg,void*,arg,tch_threadId){
 }
 
 DEFINE_SYSCALL_1(thread_start,tch_threadId,id,tchStatus){
-	tch_schedStart(id);
-	return tchOK;
+	return tch_schedStart(id);
 }
 
 DEFINE_SYSCALL_2(thread_exit,tch_threadId,tid,tchStatus,reason,tchStatus){

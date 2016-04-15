@@ -18,7 +18,6 @@
 #include "tch_fault.h"
 #include "tch_hal.h"
 #include "tch_port.h"
-#include "tch_ptypes.h"
 
 
 #define GROUP_PRIOR_Pos                (uint8_t) (7)

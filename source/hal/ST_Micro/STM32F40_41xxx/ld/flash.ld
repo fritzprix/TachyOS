@@ -24,8 +24,6 @@ MEMORY
 }
 
 
-
-
 /* include the sections management sub-script for FLASH mode */
 
 /* Sections Definitions */
@@ -188,7 +186,6 @@ SECTIONS
     	. = . + KERNEL_STACK_SIZE;
     	_estack = .;
     } >RAM
-    
     
     
     /* this is the FLASH Bank1 */

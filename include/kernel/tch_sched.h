@@ -34,7 +34,7 @@
 extern void tch_schedInit(void* _systhread);
 extern tch_threadId tch_schedGetRunningThread();
 
-extern void tch_schedStart(tch_threadId thread);
+extern tchStatus tch_schedStart(tch_threadId thread);
 extern void tch_schedReady(tch_threadId thread);
 extern void tch_schedSwitch(tch_thread_kheader* next, tch_thread_kheader* cur);
 extern tchStatus tch_schedYield(uint32_t timeout,tch_timeunit tu,tch_threadState nextState);

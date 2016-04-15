@@ -11,43 +11,46 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/*!
+ * \addtogroup core_api
+ * @{
+ */
+
 #if defined(__cplusplus)
 extern "C"{
 #endif
 
+#define MODULE_TYPE_GPIO				((uint32_t) 0)	///< module ID for GPIO, GPIO hal handle can be registered and looked up with this module Id
+#define MODULE_TYPE_RTC					((uint32_t) 1)  ///< RTC hal module ID
+#define MODULE_TYPE_DMA					((uint32_t) 2)  ///< DMA hal module ID
+#define MODULE_TYPE_UART				((uint32_t) 3)  ///< UART hal module ID
+#define MODULE_TYPE_IIC					((uint32_t) 4)  ///< IIC hal module ID
+#define MODULE_TYPE_SPI					((uint32_t) 5)  ///< SPI hal module ID
+#define MODULE_TYPE_TIMER				((uint32_t) 6)  ///< Timer hal module ID
+#define MODULE_TYPE_ANALOGIN			((uint32_t) 7)  ///< ADC hal module ID
+#define MODULE_TYPE_ANALOGOUT			((uint32_t) 8)  ///< DAC hal module ID
+#define MODULE_TYPE_SDIO				((uint32_t) 9)  ///< SDIO hal module ID
 
-#define MODULE_TYPE_GPIO				((uint32_t) 0)
-#define MODULE_TYPE_RTC					((uint32_t) 1)
-#define MODULE_TYPE_DMA					((uint32_t) 2)
-#define MODULE_TYPE_UART				((uint32_t) 3)
-#define MODULE_TYPE_IIC					((uint32_t) 4)
-#define MODULE_TYPE_SPI					((uint32_t) 5)
-#define MODULE_TYPE_TIMER				((uint32_t) 6)
-#define MODULE_TYPE_ANALOGIN			((uint32_t) 7)
-#define MODULE_TYPE_ANALOGOUT			((uint32_t) 8)
-#define MODULE_TYPE_SDIO				((uint32_t) 9)
-
-typedef struct module_map {
-	uint64_t _map[8];
-}module_map_t;
-
-typedef void* tch_threadId;
-typedef void* tch_eventId;
-typedef void* tch_mtxId;
-typedef void* tch_semId;
-typedef void* tch_barId;
-typedef void* tch_timerId;
-typedef void* tch_rendvId;
-typedef void* tch_waitqId;
-/*! \brief condition variable identifier
+/*!
+ * \brief bitmap for representing module dependency or avaiability
  */
-typedef void* tch_condvId;
-typedef void* tch_mpoolId;
-typedef void* tch_msgqId;
-typedef void* tch_mailqId;
-typedef void* tch_memId;
-typedef void* tch_eventTree;
+typedef struct module_map {
+	uint64_t _map[8];  ///< bitmap pattern width of 512bit
+}module_map_t;         ///< module map type
 
+typedef void* tch_threadId;		///< thread ID type
+typedef void* tch_eventId;      ///< Object ID for event handle
+typedef void* tch_mtxId;        ///< Object ID for mutex handle
+typedef void* tch_semId;        ///< Object ID for semaphore handle
+typedef void* tch_barId;        ///< Object ID for barrier handle
+typedef void* tch_timerId;      ///< Object ID for system timer handle
+typedef void* tch_waitqId;      ///< Object ID for wait queue handle
+typedef void* tch_condvId;      ///< Object ID for condition variable
+typedef void* tch_mpoolId;      ///< Object ID for Memory Pool handle
+typedef void* tch_msgqId;       ///< Object ID for Message Queue
+typedef void* tch_mailqId;      ///< Object ID for Mail Queue
+typedef void* tch_memId;        ///< Object ID for Dynamic Memory allocator
+typedef void* alrm_Id;          ///< Object ID for alarm handle
 
 
 
@@ -61,31 +64,30 @@ typedef struct tch_mailQ_api tch_mailQ_api_t;
 typedef struct tch_mempool_api tch_mempool_api_t;
 typedef struct tch_malloc_api tch_malloc_api_t;
 typedef struct tch_barrier_api tch_barrier_api_t;
-typedef struct tch_rendezvu_api tch_rendezvu_api_t;
 typedef struct tch_waitq_api tch_waitq_api_t;
 typedef struct tch_event_api tch_event_api_t;
 typedef struct tch_module_api tch_module_api_t;
 typedef struct tcn_dbg_api tch_dbg_api_t;
 
 
-/**
- *  tachyos app post processor attach header in front of application binary
+/*!
+ * \brief application header which contains metadata and loading information
  */
 struct application_header {
-	uint64_t			vid;
-	uint64_t			appid;
-	uint32_t			ver;
-	uint32_t			permission;
-	uint32_t			req_stksz;
-	uint32_t			req_heapsz;
-	void* 				stext;
-	void* 				etext;
-	void*				sbss;
-	void*				ebss;
-	void*				sdata;
-	void*				edata;
-	void*				entry;
-	uint64_t			chks;
+	uint64_t			vid;                ///< Company or organization ID
+	uint64_t			appid;              ///< App ID
+	uint32_t			ver;                ///< Version specifier
+	uint32_t			permission;         ///< permission flags
+	uint32_t			req_stksz;          ///< required stack size refered in load time
+	uint32_t			req_heapsz;         ///< required heap size refered in load time
+	void* 				stext;              ///< start address of text section
+	void* 				etext;              ///< end address of text section
+	void*				sbss;               ///< start address of bss section (Zero-initialized variable)
+	void*				ebss;               ///< end address of bss section
+	void*				sdata;              ///< start address of data section (Non-zero initialized variable e.g. static)
+	void*				edata;              ///< end address of data section
+	void*				entry;              ///< pointer to app entry
+	uint64_t			chks;               ///< optional checksum
 };
 
 typedef struct tch_core_api {
@@ -96,7 +98,6 @@ typedef struct tch_core_api {
 	const tch_mutex_api_t* Mtx;
 	const tch_semaphore_api_t* Sem;
 	const tch_barrier_api_t* Barrier;
-//	const tch_rendezvu_api_t* Rendezvous;
 	const tch_waitq_api_t* WaitQ;
 	const tch_messageQ_api_t* MsgQ;
 	const tch_mailQ_api_t* MailQ;
@@ -106,8 +107,7 @@ typedef struct tch_core_api {
 	const tch_module_api_t* Module;
 } tch_core_api_t;
 
-/// Status code values returned by CMSIS-RTOS functions.
-/// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
+/// Status code values returned by TachyOS.
 typedef enum  {
   tchOK                    =   0,			///< function completed; no error or event occurred.
   tchInterrupted		   =  -1,			///< thread is interrupted from waiting
@@ -128,10 +128,13 @@ typedef enum  {
   tchErrorIo               =  -16,			///< Error occurs in IO operation
   tchErrorStackOverflow    =  -17,			///< stack overflow error
   tchErrorHeapCorruption   =  -18,			/// <heap corrupted
-  tchErrorOS               =  -19,			///< unspecified RTOS error: run-time error but no other error message fits.
+  tchErrorOS               =  -19,			         ///< unspecified RTOS error: run-time error but no other error message fits.
   tch_status_reserved      =  (uint32_t) 0xFFFFFF    ///< prevent from enum down-size compiler optimization.
 } tchStatus;
 
+/*!
+ * \brief UTC offset type
+ */
 typedef enum {
 	UTC_N12 = ((int8_t) -12),
 	UTC_N11 = ((int8_t) -11),
@@ -162,9 +165,7 @@ typedef enum {
 	UTC_P14 = ((int8_t) 14)
 }tch_timezone;
 
-typedef uint64_t time_t;
-
-typedef void*	alrm_Id;
+typedef uint64_t time_t;           ///< type representing time
 typedef enum {
 	alrmIntv_Year = ((uint8_t) 5),
 	alrmIntv_Month = ((uint8_t) 4),
@@ -207,17 +208,17 @@ typedef enum {	ActOnSleep,NoActOnSleep }tch_PwrOpt;
 typedef enum {	bSet = 1,  bClear = 0   }tch_bState;
 
 
-/**
- * type definition for thread api
+/*!
+ * \brief Thread priority type
  */
 typedef enum {
-	Kernel = 7,
-	Unpreemtible = 6,
-	Realtime = 5,
-	High = 4,
-	Normal = 3,
-	Low = 2,
-	Idle = 1
+	Kernel = 7,            ///< Highest Priority Level, user thread can't have this priority
+	Unpreemtible = 6,      ///< Highest Priority Level which user thread can have,
+	Realtime = 5,          ///< Priority for the thread that has real-time requirement
+	High = 4,              ///< High priority
+	Normal = 3,            ///< Normal Priority
+	Low = 2,               ///< Lowest Priority user thread can has
+	Idle = 1               ///< Lowest Priority which is only for Idle thread
 } tch_threadPrior;
 
 typedef int (*tch_thread_routine)(const tch_core_api_t* env);
@@ -231,6 +232,9 @@ typedef struct thread_config {
 }thread_config_t;
 
 
+/*!
+ * @}
+ */
 
 #if defined(__cplusplus)
 }

@@ -14,9 +14,6 @@
  *      This header defines tachyos kernel interface.
  */
 
-/** \addtogroup API
- *  @{
- */
 
 #ifndef TCH_H_
 #define TCH_H_
@@ -44,11 +41,22 @@ extern "C" {
  *  of each other by put interface for each core part.
  *
  * ## Kernel
- * > kernel is composed of core functionalities which can be used from user application or HAL components as well.
- * > Kernel depends on the architecture abstraction layer(AAL) which defines how kernel interact with under lying processor hardware
- * > so kernel porting can be accomplished simply by implementing these interfaces.
- * > kernel services available to user program by means of system call. system call
+ * > The kernel is composed of core functionalities which can be used from user application or HAL components as well.
+ * > Kernel depends on the architecture abstraction layer(AAL) which defines how kernel interact with under lying core part of cpu.
+ * > Some kernel components are optional and you can easily switch them off with kernel configuration which can be performed by simple
+ * > command line utility. kernel can provide optional system power management and time functionality which depends on a few HAL
+ * > components.
  *
+ * ## AAL
+ * > The AAL(Architecture Abstract Layer) is an abstraction of how the kernel interacts to underlying hardware.
+ * > It is designed to maximize portability and fit to various CPU architecture by keeping the total count of interfaces
+ * > low so anyone can port TachyOS into a CPU architecture with just small piece of souce code (hopefully under 300 sloc)
+ * > As stated earlier, few assumption is applied in AAL design along the way of abstraction. Most significant are listed
+ * > below.
+ * >
+ * > - Hardware support unpriviledged(User) / priviledged(Kernel) mode
+ * > - Hardware support separate stack pointer for each mode
+ * > - unpriviledged mode can aquire priviledged mode by raise interrupt
  *
  *
  * \section support Supported Target
@@ -76,20 +84,55 @@ extern "C" {
  *   */
 
 
-#define tchWaitForever     0xFFFFFFFF     ///< wait forever timeout value
-#define tch_assert(api,b,err) if(!b){api->Thread->exit(api->Thread->self(),err);}
-#define DECLARE_THREADROUTINE(fn)                    int fn(const tch_core_api_t* ctx)
+/*!
+ *  \addtogroup core_api Core API
+ *  @{
+ */
 
+#define tchWaitForever                          0xFFFFFFFF                                               ///< wait forever timeout value
+#define tch_assert(api,b,err)                   if(!b){api->Thread->exit(api->Thread->self(),err);}
+#define DECLARE_THREADROUTINE(fn)               int fn(const tch_core_api_t* ctx)
+
+
+
+/*!
+ * \brief Core API for Thread
+ */
 struct tch_thread_api {
-	/**
-	 *  Create Thread Object
+
+	/*!\fn tch_threadId tch_thread_api::create(thread_config_t* cfg, void* arg)
+	 * \brief create thread without putting on ready queue
+	 * \param[in] cfg thread configuration, can not be null
+	 * \param[in] arg thread arguement, can be null arguement can be accessed by calling getArg()
+	 * \return thread id, if create operation is successful, otherwise, it returns NULL
+	 * \sa tch_thread_api::start
 	 */
 	tch_threadId (*create)(thread_config_t* cfg,void* arg);
-	/**
-	 *  Start New Thread
+
+	/*!
+	 *  \fn tchStatus tch_thread_api::start(tch_threadId thread)
+	 *  \brief start or put new thread into ready queue depends on its priority
+	 *  \param[in] thread id of thread to be started
+	 *  \returns tchOk start successfully, otherwise return tchErrorParameter
+	 *  \sa tchStatus
 	 */
 	tchStatus (*start)(tch_threadId thread);
+
+	/*!
+	 *  \fn tch_threadId tch_thread_api::self()
+	 *  \brief get current thread ID
+	 *  \return current thread ID
+	 */
 	tch_threadId (*self)();
+
+	/*!
+	 *  \fn tchStatus tch_thread_api::yield(uint32_t millisec)
+	 *  \brief yield CPU runtime to next thread and rescheduled after given time
+	 *  \param[in] millisec reschedule time in millisecond, should be determined time
+	 *  \return tchOk yield successfully, return tchErrorParameter if tchWaitForever is used as parameter
+	 *  \sa tchOK
+	 *  \sa tchWaitForever
+	 */
 	tchStatus (*yield)(uint32_t millisec);
 	tchStatus (*sleep)(uint32_t sec);
 	tchStatus (*join)(tch_threadId thread,uint32_t timeout);
@@ -126,13 +169,6 @@ struct tch_barrier_api {
 	tchStatus (*destroy)(tch_barId bar);
 };
 
-
-struct tch_rendezvu_api {
-	tch_rendvId (*create)();
-	tchStatus (*sleep)(tch_rendvId rendv,uint32_t timeout);
-	tchStatus (*wake)(tch_rendvId rendv);
-	tchStatus (*destroy)(tch_rendvId rendv);
-};
 
 
 struct tch_time_api {
@@ -289,9 +325,8 @@ struct tcn_dbg_api {
 
 extern DECLARE_THREADROUTINE(main);
 
-/***
- * tachyos generic data interface
- */
+/**
+ * @} */
 
 #ifdef __cplusplus
 }
