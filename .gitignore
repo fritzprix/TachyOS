@@ -1,5 +1,7 @@
 /Debug
 
+/Release
+
 /tools
 
 /tachyos.ppm
@@ -15,6 +17,8 @@
 .project
 
 *.o
+
+*.a
 
 *.bin
 
