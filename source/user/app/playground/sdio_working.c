@@ -23,7 +23,7 @@ tchStatus start_sdio_test(const tch_core_api_t* api)
 	tch_hal_module_sdio_t* sdio = api->Module->request(MODULE_TYPE_SDIO);
 
 	tch_sdioCfg_t sdio_cfg;
-	sdio->initCfg(&sdio_cfg, 4, ActOnSleep);
+	sdio->initCfg(&sdio_cfg, 4,0,ActOnSleep);
 	tch_sdioHandle_t sdio_handle = sdio->alloc(api, &sdio_cfg, tchWaitForever);
 
 	sdio_handle->deviceReset(sdio_handle);		// sdio send reset command

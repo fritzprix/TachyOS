@@ -76,7 +76,7 @@ struct tch_sdio_handle {
 
 
 typedef struct tch_hal_module_sdio {
-	void (*initCfg)(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt);
+	void (*initCfg)(tch_sdioCfg_t* cfg,uint8_t buswidth, uint16_t vopt, tch_PwrOpt lpopt);
 	tch_sdioHandle_t (*alloc)(const tch_core_api_t* api,const tch_sdioCfg_t* config,uint32_t timeout);
 	tchStatus (*release)(tch_sdioHandle_t sdio);
 }tch_hal_module_sdio_t;

@@ -1,6 +1,8 @@
 
 /*!
- * \addtogroup DMA_HAL
+ * \addtogroup hal_api
+ * @{
+ * \addtogroup dma_api DMA API
  * @{
  * tch_dma.h
  *
@@ -14,7 +16,7 @@
  *  Created on: 2014. 6. 15.
  *      Author: innocentevil
  *
- *  \brief DMA HAL Header
+ *  \brief DMA HAL Interface
  *
  *   This is HAL Interface for DMA Module. Interface itself is desinged agnostic to Platform H/W though
  *   DMA has H/W dependencies in following reason.
@@ -97,6 +99,10 @@ extern "C" {
 typedef uint8_t dma_t;
 typedef void* tch_dmaHandle;
 typedef BOOL (*tch_dma_eventListener)(tch_dmaHandle ins,uint16_t evType);
+
+/*!
+ * \brief configuration type for DMA
+ */
 typedef struct dma_cfg_t tch_DmaCfg;
 
 
@@ -118,12 +124,11 @@ typedef struct tch_dma_req_s {
 
 /*!
  *  \brief DMA HAL Interface
- *   DMA HAL Interface which is accessible from \ref tch object
  */
 typedef struct tch_hal_module_dma {
 	/*!
 	 * \brief Initialize DMA Configuration
-	 * \param cfg pointer of \ref tch_dma_cfg
+	 * \param cfg pointer of \ref tch_DmaCfg
 	 * \see tch_dma_cfg
 	 */
 	const uint16_t count;
@@ -170,5 +175,7 @@ struct dma_cfg_t {
 #endif
 
 /**@}*/
+/**@}*/
+
 
 #endif /* TCH_DMA_H_ */

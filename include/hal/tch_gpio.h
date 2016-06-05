@@ -13,8 +13,14 @@
  */
 
 
-/** \addtogroup HAL
- *  @{
+/*!
+ * \addtogroup hal_api
+ * @{
+ */
+
+/*!
+ * \addtogroup gpio_api GPIO API
+ * @{
  */
 
 #ifndef TCH_GPIO_H_
@@ -28,18 +34,19 @@ extern "C" {
 
 
 
-#define tch_gpio0              ((gpIo_x) 0) /**< gpio 0 */
-#define tch_gpio1              ((gpIo_x) 1) /**< gpio 1*/
-#define tch_gpio2              ((gpIo_x) 2) /** */
-#define tch_gpio3              ((gpIo_x) 3) /** */
-#define tch_gpio4              ((gpIo_x) 4) /** */
-#define tch_gpio5              ((gpIo_x) 5) /** */
-#define tch_gpio6              ((gpIo_x) 6) /** */
-#define tch_gpio7              ((gpIo_x) 7) /** */
-#define tch_gpio8              ((gpIo_x) 8) /** */
-#define tch_gpio9              ((gpIo_x) 9) /** */
-#define tch_gpio10             ((gpIo_x) 10)/** */
-#define tch_gpio11             ((gpIo_x) 11)/** */
+#define tch_gpio0              ((gpIo_x) 0)   ///< 1st GPIO port (can be PORT A or PORT 0 depend on hardware)
+#define tch_gpio1              ((gpIo_x) 1)   ///< 2nd GPIO port
+#define tch_gpio2              ((gpIo_x) 2)   ///< 3rd GPIO port
+#define tch_gpio3              ((gpIo_x) 3)   ///< 4th GPIO port
+#define tch_gpio4              ((gpIo_x) 4)   ///< 5th GPIO port
+#define tch_gpio5              ((gpIo_x) 5)   ///< 6th GPIO port
+#define tch_gpio6              ((gpIo_x) 6)   ///< 7th GPIO port
+#define tch_gpio7              ((gpIo_x) 7)   ///< 8th GPIO port
+#define tch_gpio8              ((gpIo_x) 8)   ///< 9th GPIO port
+#define tch_gpio9              ((gpIo_x) 9)   ///< 10th GPIO port
+#define tch_gpio10             ((gpIo_x) 10)  ///< 11th GPIO port
+#define tch_gpio11             ((gpIo_x) 11)  ///< 12th GPIO port
+
 
 #define GPIO_Mode_IN                   (uint8_t) (0)
 #define GPIO_Mode_OUT                  (uint8_t) (1)
@@ -74,10 +81,6 @@ typedef uint8_t pin;
 typedef struct tch_gpio_handle tch_gpioHandle;
 typedef BOOL (*tch_IoEventCallback_t) (tch_gpioHandle* self,uint8_t pin);
 
-
-/**
- * gpio handle interface
- */
 
 
 typedef struct _tch_gpio_ports{
@@ -199,6 +202,11 @@ typedef struct tch_hal_module_gpio {
 }
 #endif
 
+/*!
+ * @}
+ */
 
+/*!
+ * @}
+ */
 #endif /* TCH_GPIO_H_ */
-/** @}*/

@@ -12,8 +12,10 @@
 #include <stdint.h>
 
 /*!
- * \addtogroup core_api
+ * \addtogroup kernel_api
  * @{
+ *
+ * \brief TachyOS API for kernel layer
  */
 
 #if defined(__cplusplus)
@@ -90,8 +92,11 @@ struct application_header {
 	uint64_t			chks;               ///< optional checksum
 };
 
+/*!
+ * \brief Core API
+ */
 typedef struct tch_core_api {
-	const tch_thread_api_t* Thread;
+	const tch_thread_api_t* Thread;      ///< Thread API  /ref tch_thread_api
 	const tch_event_api_t* Event;
 	const tch_time_api_t* Time;
 	const tch_condvar_api_t* Condv;
@@ -107,7 +112,9 @@ typedef struct tch_core_api {
 	const tch_module_api_t* Module;
 } tch_core_api_t;
 
-/// Status code values returned by TachyOS.
+/*!
+ * \brief TachyOS result code
+ */
 typedef enum  {
   tchOK                    =   0,			///< function completed; no error or event occurred.
   tchInterrupted		   =  -1,			///< thread is interrupted from waiting
@@ -221,14 +228,20 @@ typedef enum {
 	Idle = 1               ///< Lowest Priority which is only for Idle thread
 } tch_threadPrior;
 
+/*!
+ * \brief Thread entry function type
+ */
 typedef int (*tch_thread_routine)(const tch_core_api_t* env);
 
+/*!
+ * \brief Thread Configuration Type
+ */
 typedef struct thread_config {
-	size_t				 stksz;
-	size_t				 heapsz;
-	tch_thread_routine	 entry;
-	tch_threadPrior      priority;
-	const char*          name;
+	size_t				 stksz;        ///< thread stack size in bytes
+	size_t				 heapsz;       ///< thread heap size in bytes
+	tch_thread_routine	 entry;        ///< thread function \sa tch_thread_routine
+	tch_threadPrior      priority;     ///< thread priority \sa tch_threadPrior
+	const char*          name;         ///< thread name
 }thread_config_t;
 
 

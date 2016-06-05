@@ -14,8 +14,19 @@
 extern "C"{
 #endif
 
+
 #include "kernel/tch_ktypes.h"
 
+
+/*!
+ * \addtogroup hal_api
+ * @{
+ */
+
+/*!
+ * \addtogroup adc_api ADC API
+ * @{
+ */
 #define tch_ADC1                  ((adc_t) 0)
 #define tch_ADC2                  ((adc_t) 1)
 #define tch_ADC3                  ((adc_t) 2)
@@ -85,6 +96,14 @@ typedef struct tch_hal_module_adc {
 	tch_adcHandle* (*open)(const tch_core_api_t* env,adc_t adc,tch_adcCfg* cfg,tch_PwrOpt popt,uint32_t timeout);
 	BOOL (*available)(adc_t adc);
 }tch_hal_module_adc_t;
+
+/*!
+ * @}
+ */
+
+/*!
+ * @}
+ */
 
 #if defined(__cplusplus)
 }

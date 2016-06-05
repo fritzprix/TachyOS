@@ -13,7 +13,7 @@
  */
 
 
-/** \addtogroup Base_HAL_Interface
+/** \addtogroup hal_api HAL API
  *  @{
  */
 
@@ -31,6 +31,10 @@ extern "C"{
 #endif
 
 
+/*!
+ * \addtogroup hal_api HAL API
+ */
+
 /**
  * An enum for defining low power level
  */
@@ -47,8 +51,8 @@ typedef enum {
 /*--------------------------------------------------------------------------------- */
 
 
-/**
- * \callgraph
+
+/*!
  * \brief Enable system tick timer
  * \see tch_hal_disableSystick
  *
@@ -56,7 +60,7 @@ typedef enum {
  */
 extern void tch_hal_enableSystick(uint32_t mills);
 
-/**
+/*!
  * \brief Disable system tick timer
  * \see tch_hal_enableSystick
  *
@@ -64,7 +68,7 @@ extern void tch_hal_enableSystick(uint32_t mills);
  */
 extern void tch_hal_disableSystick();
 
-/**
+/*!
  * \brief set current low power mode
  * \param lplvl new low-power level
  * \see tch_lplvl
@@ -75,7 +79,7 @@ extern void tch_hal_disableSystick();
 extern void tch_hal_setSleepMode(tch_lplvl lplvl);
 
 
-/**
+/*!
  * \brief Allow system to enter sleep mode
  *
  * this function is invoked from kernel to allow system to go into low power mode.
@@ -83,7 +87,7 @@ extern void tch_hal_setSleepMode(tch_lplvl lplvl);
 
 extern void tch_hal_enterSleepMode();
 
-/**
+/*!
  * \brief pause system core clock
  *
  * this function is invoked from kernel when main clock should be turned off
@@ -92,7 +96,7 @@ extern void tch_hal_enterSleepMode();
 
 extern void tch_hal_pauseSysClock();
 
-/**
+/*!
  * \brief Resume system core clock
  *
  * this function is invoked from kernel when cpu is waken-up from sleep (low power mode)
