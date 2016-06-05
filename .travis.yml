@@ -2,6 +2,7 @@
 language: c
 
 install: 
+     - sudo add-apt-repository ppa:h-rayflood/llvm
      - sudo apt-get update
      - sudo apt-get install gcc-arm-embedded python-dev python-pip clang-3.6
      - make config ARCH=arm DEFCONF=stm32f4_def.conf
