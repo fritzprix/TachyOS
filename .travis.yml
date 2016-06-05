@@ -2,9 +2,11 @@
 language: c
 
 install: 
+     - sudo add-apt-repository ppa:h-rayflood/llvm -y
      - sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa -y
      - sudo apt-get update
-     - sudo apt-get install gcc-arm-embedded python-dev python-pip -y
+     - sudo apt-get dist-upgrade
+     - sudo apt-get install gcc-arm-embedded python-dev python-pip clang-3.6 -y
      - make config ARCH=ARM DEFCONF=stm32f4_def.conf
 
 script: make release
