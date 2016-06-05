@@ -2,9 +2,9 @@
 language: c
 
 install: 
-     - sudo add-apt-repository ppa:h-rayflood/llvm
+     - sudo add-apt-repository ppa:h-rayflood/llvm -y
      - sudo apt-get update
-     - sudo apt-get install gcc-arm-embedded python-dev python-pip clang-3.6
+     - sudo apt-get install gcc-arm-embedded python-dev python-pip clang-3.6 -y
      - make config ARCH=arm DEFCONF=stm32f4_def.conf
 
 script: make release
