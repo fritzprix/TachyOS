@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Tachyos by fritzprix</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Tachyos</h1>
+        <h2>Embedded OS for IoT</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/fritzprix/TachyOS/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/fritzprix/TachyOS/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/fritzprix/TachyOS" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="tachyos" class="anchor" href="#tachyos" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TachyOS</h1>
+
+<p><a href="https://drone.io/github.com/fritzprix/tachyos/latest"><img src="https://drone.io/github.com/fritzprix/tachyos/status.png" alt="Build Status"></a></p>
+
+<h2>
+<a id="note" class="anchor" href="#note" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Note</h2>
+
+<blockquote>
+<p>This project is subjected to serious HOMEBREWING and still in INFANCY. So any experimental change can be made without any notice.  </p>
+</blockquote>
+
+<h2>
+<a id="about" class="anchor" href="#about" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About</h2>
+
+<blockquote>
+<p>TachyOS is the RTOS based on microkernel architecture which includes only minimal components like thread / synchronization, memory management, inter-thread communication while supporting execution context / address space isolation(protection) and extensible modular interface. Name of this project comes from the hypothetical particle called 'tachyon' [t챈ki.�뭤], whose speed increases as its energy decreases theoretically, is thought to be the ideal of the real time application which runs in very constrained environment. </p>
+</blockquote>
+
+<h2>
+<a id="motivation" class="anchor" href="#motivation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Motivation</h2>
+
+<ul>
+<li>Build modular architecture which supports both static linked(kernel mode) and dynamic-linked module(user mode).</li>
+<li>Provides dynamic loading and dependency management of an application through network.</li>
+<li>Provides secure runtime environment and fault isolation for user application using memory protection facility which is generally available in low-cost hardware.</li>
+</ul>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>provide runtime scalablility with various dynamic modules. (Not Supported Yet)</li>
+<li>Provides application loading and debugging over the network. (Not Supported Yet)</li>
+<li>Provides autonomous dependency (dynamic module) management over the network. (Not Supported Yet)</li>
+<li>Support multi-threading 
+
+<ul>
+<li>The number of threads is limited only by available memory</li>
+<li>Context-switch overhead is less than 5us in ARM CM4 (STM)</li>
+</ul>
+</li>
+<li>Preemptive scheduler with 6 execution priorities<br>
+</li>
+<li>Various lightweight synchronization 
+
+<ul>
+<li>Monitor (mutex / condition variable)</li>
+<li>Event (blocking pub / sub)<br>
+</li>
+<li>Semaphore<br>
+</li>
+<li>Barrier</li>
+</ul>
+</li>
+<li>Various Inter-thread communication 
+
+<ul>
+<li>Message Queue<br>
+</li>
+<li>Mail Queue<br>
+</li>
+<li>HAL (as static module) [UART / I2C / SPI / TIMER / RTC / GPIO]<br>
+</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="target-supported" class="anchor" href="#target-supported" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Target Supported</h2>
+
+<ul>
+<li>STM32F40x (ARM Cortex-M4)<br>
+</li>
+<li>STM32F41x (ARM Cortex-M4)<br>
+</li>
+<li>STM32F20x (ARM Cortex-M3)<br>
+</li>
+</ul>
+
+<h2>
+<a id="build-environment" class="anchor" href="#build-environment" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build Environment</h2>
+
+<p>project is developed with eclipse IDE with ARM Cross compile tool (toolchain and plugin)</p>
+
+<ul>
+<li>arm gcc cross compiler<br>
+link : <a href="https://launchpad.net/gcc-arm-embedded">GCC ARM Embedded in Launchpad</a><br>
+</li>
+</ul>
+
+<blockquote>
+<p>$&gt; sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa<br>
+$&gt; sudo apt-get update<br>
+$&gt; sudo apt-get install gcc-arm-embedded        </p>
+</blockquote>
+
+<ul>
+<li>python2.7 &amp; pip for configuration utility (jconfigpy)<br>
+</li>
+</ul>
+
+<blockquote>
+<p>$&gt; sudo apt-get install python-dev python-pip  </p>
+</blockquote>
+
+<ul>
+<li><p>gnu arm eclipse plug-in   (optional)<br>
+link : <a href="http://gnuarmeclipse.livius.net/blog/">GNU ARM Eclipse Plug-ins </a>       </p></li>
+<li><p>For Windows user, MinGW or Cygwin should be installed (might be included in GCC ARM toolchain installation)         </p></li>
+</ul>
+
+<h2>
+<a id="build-in-ubuntu" class="anchor" href="#build-in-ubuntu" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build in Ubuntu</h2>
+
+<pre><code>1. get source code from repository
+$&gt; git clone https://github.com/fritzprix/TachyOS.git
+$&gt; cd TachyOS
+
+2. initiate project configuration and make your own configuration
+$&gt; make config
+
+or you can use predefined configuration
+$&gt; make config ARCH=ARM DEFCONF=stm32f4_def.conf
+
+3. build project
+$&gt; make all
+
+4. (Optional) if you want reconfigure project
+$&gt; make config_clean
+... and go to 2
+</code></pre>
+
+<h2>
+<a id="to-do" class="anchor" href="#to-do" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To-Do</h2>
+
+<ul>
+<li>Add SDIO HAL Implementation (~Apr.2016)</li>
+<li>Add virtual file system   (~May.2016)</li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>LGPL V3.0 </p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
