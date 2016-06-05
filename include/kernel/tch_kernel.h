@@ -162,7 +162,6 @@ extern const tch_mempool_api_t* Mempool;
 extern const tch_malloc_api_t* uMem;
 extern const tch_module_api_t* Module;
 extern const tch_time_api_t* Time;
-extern const tch_rendezvu_api_t* Rendezvous;
 extern const tch_dbg_api_t* Debug;
 
 

@@ -63,7 +63,7 @@ void tch_schedInit(void* init_thread){
  *  @brief start thread based on its priority (thread can be started in preempted way)
  */
 tchStatus tch_schedStart(tch_threadId thread){
-	if(!thread || !tch_thread_isValid(thread))
+	if(!thread || (tch_thread_isValid(thread) != tchOK))
 		return tchErrorParameter;
 	tch_thread_uheader* thr = (tch_thread_uheader*) thread;
 	tch_thread_kheader* kth = thr->kthread;
