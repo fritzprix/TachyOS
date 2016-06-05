@@ -5,7 +5,7 @@ install:
      - sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa -y
      - sudo apt-get update
      - sudo apt-get install gcc-arm-embedded python-dev python-pip -y
-     - make config ARCH=arm DEFCONF=stm32f4_def.conf
+     - make config ARCH=ARM DEFCONF=stm32f4_def.conf
 
 script: make release
 
