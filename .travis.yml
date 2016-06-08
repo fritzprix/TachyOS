@@ -7,7 +7,7 @@ install:
      - alias clang-3.6='clang'
      - clang --version
      - sudo apt-get update
-     - sudo apt-get install gcc-arm-embedded python-dev python-pip clang-3.6 -y
+     - sudo apt-get install gcc-arm-embedded python-dev python-pip -y
      - make config ARCH=ARM DEFCONF=stm32f4_def.conf
 
 script: make release
