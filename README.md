@@ -1,5 +1,5 @@
 # TachyOS 
-[![Build Status](https://drone.io/github.com/fritzprix/tachyos/status.png)](https://drone.io/github.com/fritzprix/tachyos/latest)
+[![Build Status](https://travis-ci.org/fritzprix/TachyOS.svg?branch=master)](https://travis-ci.org/fritzprix/TachyOS)
 
 ## Note 
 > This project is subjected to serious HOMEBREWING and still in INFANCY. So any experimental change can be made without any notice.  
