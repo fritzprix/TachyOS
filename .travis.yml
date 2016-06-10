@@ -12,4 +12,9 @@ install:
 script: 
      - docker run tachyos_build
 
+notifications:
+  slack: doodream:kGaMxozfTcIK4BIzxxEkxnAZ
+
+
+
 
