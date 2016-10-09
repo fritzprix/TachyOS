@@ -19,16 +19,16 @@ extern "C" {
 #endif
 
 /**
- * tachyos aims to allowing multiple program to run simultaneously without any interference between processes
- * or any harm to system stability. so there must be protection unit at the minumum in hardware. kernel itself dosen't has
- * any limitation (I believe) to support low cost 8-bit microcontrollers though, there are many alternatives which is more
+ * tachyos aims to allowing multiple programs to run simultaneously without any interference between processes
+ * or any harm to system stability. so there must be protection unit at the minimum in hardware. kernel itself dosen't has
+ * any limitation (I believe) to support low cost 8-bit Microcontrollers though, there are many alternatives which is more
  * appropriately designed to those kinds of low cost things.
  *
  *
  * mmu-less architecture (mpu supported)
- * 	. kernel operates in privilidged mode which is able to access all memory directly
- * mmu suppoted architecture
- * 	. kernel operates in privilidged mode though, it can not directly access all address
+ * 	. kernel operates in privileged mode which is able to access all memory directly
+ * mmu supported architecture
+ * 	. kernel operates in privileged mode though, it can not directly access all address
  * 	. kernel has to prepare its own page table before enabling paging hardware
  *
  * 	1. how memory is virtualized in each hardware architecture respectively.
@@ -63,8 +63,8 @@ extern "C" {
 
 #define PAGE_MASK					(~(PAGE_SIZE - 1))
 
-#define SEGMENT_NORMAL				((uint32_t) 0)
-#define SEGMENT_KERNEL				((uint32_t) 1)
+#define SEGMENT_NORMAL          ((uint32_t) 0)
+#define SEGMENT_KERNEL          ((uint32_t) 1)
 #define SEGMENT_UACCESS				((uint32_t) 2)
 #define SEGMENT_DEVICE				((uint32_t) 3)
 

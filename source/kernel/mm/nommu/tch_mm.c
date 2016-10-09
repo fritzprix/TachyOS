@@ -27,6 +27,7 @@ struct user_heap {
 };
 
 /**
+ *  section_descriptor is used to kernel
  *  NOTE : the order of section should not change
  */
 
