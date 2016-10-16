@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+#include "autogen.h"
 #include "tch_types.h"
 
 #include "tch_usart.h"
