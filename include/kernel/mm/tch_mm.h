@@ -137,9 +137,8 @@ struct section_descriptor {
 	paddr_t end;				///< end address of section in bytes
 }__attribute__((packed));
 
-/**
- *
- */
+
+typedef struct page_frame page_frame_t;
 
 struct proc_dynamic {
 	nrbtreeRoot_t   mregions;			// region mapping node

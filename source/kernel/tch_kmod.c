@@ -100,7 +100,7 @@ BOOL tch_kmod_register(int type,int owner, __UACESS void* interface,BOOL  ispriv
 	cdsl_nrbtreeNodeInit(&module->rbn,type);
 	module->flag |= ispriv? MODULE_FLAG_PRIV : 0;
 
-	return (cdsl_nrbtreeInsert(&module_root,&module->rbn) != NULL);
+	return (cdsl_nrbtreeInsert(&module_root,&module->rbn, FALSE) != NULL);
 }
 
 BOOL tch_kmod_unregister(int type,int owner){

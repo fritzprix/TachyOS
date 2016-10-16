@@ -153,9 +153,9 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 	struct mem_region* region = kmalloc(sizeof(struct mem_region));
 	if(!region)
 		KERNEL_PANIC("mem_region can't created");
-	initRegion(region,segment,segment->poff,segment->psize,get_permission(segment->flags));		// region has same page offset and count to its parent segment
+	initRegion(region,segment,segment->poff, segment->psize, get_permission(segment->flags));		// region has same page offset and count to its parent segment
 	region->owner = mm;
-	cdsl_nrbtreeInsert(&mm->dynamic->mregions,&region->mm_rbn);
+	cdsl_nrbtreeInsert(&mm->dynamic->mregions, &region->mm_rbn, FALSE);
 
 }
 
@@ -329,8 +329,8 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 		break;
 	}
 
-	cdsl_nrbtreeInsert(&id_root,&seg->id_rbn);			// any registered segment doesn't need to be unregistered in typical case
-	cdsl_nrbtreeInsert(&addr_root,&seg->addr_rbn);		// tree is used only for lookup
+	cdsl_nrbtreeInsert(&id_root,&seg->id_rbn, FALSE);			// any registered segment doesn't need to be unregistered in typical case
+	cdsl_nrbtreeInsert(&addr_root,&seg->addr_rbn, FALSE);		// tree is used only for lookup
 	return seg_cnt++;
 }
 
@@ -352,7 +352,7 @@ static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32
 		set_permission(regp->flags,get_permission(parent->flags));		// otherwise,inherit permission from its parent
 	cdsl_nrbtreeNodeInit(&regp->rbn,regp->poff);
 	cdsl_nrbtreeNodeInit(&regp->mm_rbn,regp->poff);
-	cdsl_nrbtreeInsert(&parent->reg_root,&regp->rbn);					// add region tracking red-black tree
+	cdsl_nrbtreeInsert(&parent->reg_root,&regp->rbn, FALSE);            // add region tracking red-black tree
 }
 
 
@@ -412,7 +412,7 @@ void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	if(!mm || !mreg)
 		return;
 	mreg->owner = mm;
-	cdsl_nrbtreeInsert(&mm->dynamic->mregions,&mreg->mm_rbn);
+	cdsl_nrbtreeInsert(&mm->dynamic->mregions,&mreg->mm_rbn, FALSE);
 }
 
 void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg){
