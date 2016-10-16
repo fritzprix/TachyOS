@@ -78,7 +78,7 @@ typedef struct tch_thread_queue{
 } tch_thread_queue;
 
 struct tch_mm {
-	struct proc_dynamic* 	dynamic;			///< per process dynamic memory mangement struct
+	struct proc_dynamic* 	dynamic;			///< per process dynamic memory management struct
 	struct mem_region* 		text_region;		///< per process memory region where text section is stored
 	struct mem_region* 		bss_region;			///< per process memory region where bss section is stored
 	struct mem_region* 		data_region;		///< per process memory region where data section is stored
