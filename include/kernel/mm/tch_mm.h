@@ -6,11 +6,12 @@
  */
 
 #ifndef TCH_MM_H_
+
 #define TCH_MM_H_
 
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"
-#include "kernel/mm/wtmalloc.h"
+#include "owtmalloc.h"
 #include "cdsl_nrbtree.h"
 #include "cdsl_slist.h"
 
@@ -129,7 +130,10 @@ extern "C" {
 
 #define get_memtype(flag)		(flag & MEMTYPE_MSK)
 
-#define get_addr_from_page(page)	((size_t) page << CONFIG_PAGE_SHIFT)
+#define get_addr_from_page(page)	     ((size_t) page << PAGE_OFFSET)
+#define get_size_from_pcount(pcnt)       ((size_t) pcnt << PAGE_OFFSET)
+#define get_page_from_addr(addr)         ((size_t) addr >> PAGE_OFFSET)
+#define get_pcount_from_size(size)       ((size_t) size >> PAGE_OFFSET)
 
 struct section_descriptor {
 	uint32_t flags;
@@ -176,6 +180,7 @@ extern volatile struct tch_mm* current_mm;
 extern BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc);
 extern BOOL tch_mmProcClean(tch_thread_kheader* thread);
 extern uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl);
+extern uint32_t* tch_kernelnMemInit(struct section_descriptor** mdesc_tbl);
 
 #if defined(__cplusplus)
 }

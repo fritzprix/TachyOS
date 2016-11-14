@@ -41,12 +41,14 @@ struct page_frame {
  *
  */
 
+
+
 static struct mem_segment init_seg;				// segment to be used as dynamic memory pool
 static struct mem_region  init_dynamic_region;	// initial memory region, **NOTE : the only region which is statically declared
 static int init_segid;
 
-static nrbtreeRoot_t		id_root;
-static nrbtreeRoot_t		addr_root;
+static nrbtreeRoot_t		id_root;           // global red black tree that keeps track of segment (key : seg_id)
+static nrbtreeRoot_t		addr_root;         // global red black tree that keeps track of segment (key : page_offset)
 static uint32_t				seg_cnt;
 static struct proc_dynamic  init_dynamic;
 
@@ -60,9 +62,11 @@ static struct mem_segment* findSegmentFromPtr(void* ptr);
 
 void tch_initSegment(struct section_descriptor* init_section){
 	mset(&init_seg,0,sizeof(struct mem_segment));
+	cdsl_nrbtreeRootInit(&id_root);
+	cdsl_nrbtreeRootInit(&addr_root);
 	seg_cnt = 0;
 
-	init_segid = initSegment(init_section,&init_seg);
+	init_segid = initSegment(init_section, &init_seg);
 	init_mm.dynamic = &init_dynamic;
 	cdsl_nrbtreeRootInit(&init_mm.dynamic->mregions);
 	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
@@ -288,49 +292,44 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	if(!section || !seg)
 		return -1;
 
-	uint32_t i;
-	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's begining from section base address
-	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from sectioni size
+	seg->flags = section->flags;          // copy flags of section into segment
+	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's beginning from section base address
+	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from section size
 	seg->psize = section_limit - seg->poff;													// segment size in pages
-	page_frame_t* pages = (page_frame_t*) (seg->poff << PAGE_OFFSET);
 
-	seg->flags = section->flags;															// inherit permission of section
+	if(section_limit < seg->poff) {
+		// minimum size of section should be greater than single page
+		// if the size is less than a page, section is discarded and return -1
+		return -1;
+	}
+
 	cdsl_nrbtreeRootInit(&seg->reg_root);
-	cdsl_dlistEntryInit(&seg->pfree_list);														// init members
+	cdsl_dlistEntryInit(&seg->pfree_list);
 	cdsl_nrbtreeNodeInit(&seg->id_rbn,seg_cnt);
 	cdsl_nrbtreeNodeInit(&seg->addr_rbn,seg->poff);
 
 
-	switch(seg->flags & SEGMENT_MSK){
+
+	switch(seg->flags & SEGMENT_MSK) {
 	case SEGMENT_KERNEL:
 		seg->pfree_cnt = 0;											// marked as segment has no free page for kernel section & keep its memory content
 		uint32_t sec_type = get_section(seg->flags);
-
 		if(sec_type == SECTION_URODATA || sec_type == SECTION_UTEXT){
-			set_permission(seg->flags,PERM_OTHER_RD | PERM_KERNEL_XC | PERM_KERNEL_ALL);
+			set_permission(seg->flags, PERM_OTHER_RD | PERM_KERNEL_ALL);
 		} else {
-			set_permission(seg->flags,PERM_KERNEL_ALL);					// kernel is only accessible privilidge level
+			set_permission(seg->flags, PERM_KERNEL_ALL);            // kernel is only accessible privilege level
 		}
 		break;
 	case SEGMENT_NORMAL:
-		seg->pfree_cnt = seg->psize;								// set free page count as its total page count
-		for(i = 0; i < seg->psize ;i++){							// initialize all the page frame header structure within a segment
-			pages[i].fhdr.offset = seg->poff + i;
-			pages[i].fhdr.contig_pcount = 0;
-			cdsl_dlistNodeInit(&pages[i].fhdr.lhead);
-		}
-
-		pages[0].fhdr.contig_pcount = seg->psize;					// initialize first page frame header
-		cdsl_dlistPutHead(&seg->pfree_list,&pages[0].fhdr.lhead);
 		set_permission(seg->flags,PERM_KERNEL_ALL | PERM_OTHER_RD);	// normal default permission (kernel_all | public read)
 		break;
 	case SEGMENT_DEVICE:
-		// TODO : make decision whether implement device segment or leave it to be accessed by priviledged context
+		// TODO : make decision whether implement device segment or leave it to be accessed by privilege context
 		break;
 	}
 
-	cdsl_nrbtreeInsert(&id_root,&seg->id_rbn, FALSE);			// any registered segment doesn't need to be unregistered in typical case
-	cdsl_nrbtreeInsert(&addr_root,&seg->addr_rbn, FALSE);		// tree is used only for lookup
+	cdsl_nrbtreeInsert(&id_root,&seg->id_rbn, FALSE);               // any registered segment doesn't need to be unregistered in typical case
+	cdsl_nrbtreeInsert(&addr_root,&seg->addr_rbn, FALSE);           // tree is used only for lookup
 	return seg_cnt++;
 }
 

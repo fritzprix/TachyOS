@@ -9,6 +9,7 @@
 #include "tch_err.h"
 #include "tch_kernel.h"
 #include "tch_segment.h"
+#include "tch_nsegment.h"
 #include "tch_loader.h"
 #include "tch_kmalloc.h"
 #include "tch_mtx.h"
@@ -85,7 +86,7 @@ const struct __attribute__((section(".data"))) section_descriptor* const default
 
 volatile struct tch_mm*		current_mm;
 struct tch_mm				init_mm;
-
+static struct proc_dynamic  kernel_proc;
 
 static uint32_t* init_mmProcStack(struct tch_mm* mmp,struct mem_region* stkregion,size_t stksz);
 
@@ -318,9 +319,11 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL)
 		KERNEL_PANIC("invalid section descriptor table");
 
-	mset(&init_mm,0,sizeof(struct tch_mm));
+	mset(&init_mm, 0, sizeof(struct tch_mm));
+	mset(&kernel_proc, 0, sizeof(struct proc_dynamic));
 	current_mm = &init_mm;
-	tch_initSegment(*section);			// initialize segment manager and kernel dyanmic memory manager
+
+	tch_initSegment(*section);			// initialize segment manager and kernel dynamic memory manager
 
 	// register segments
 	uint32_t* ekstk = NULL;
@@ -335,6 +338,32 @@ uint32_t* tch_kernelMemInit(struct section_descriptor** mdesc_tbl){
 
 	return ekstk; // return top address of kernel stack
 }
+
+uint32_t* tch_kernelnMemInit(struct section_descriptor** mdesc_tbl) {
+
+	struct section_descriptor** section = &mdesc_tbl[0];
+	if(((*section)->flags & SEGMENT_MSK) != SEGMENT_NORMAL) {
+		KERNEL_PANIC("invalid section descriptor table");
+	}
+
+
+	// start initialize kernel mm struct
+	mset(&init_mm, 0, sizeof(struct tch_mm));
+	// 커널의 동적 메모리 요소 초기화 이전으로 정적 할당된 proc_dynamic을 사용
+    // 이는 메모리 관리를 위한 구조의 user / kernel간 일관성을 제공하기 위한 방식이며
+    // 이를 통해  kernel의 memory region에 대한 mapping을 관리한다.
+    // 단, 여기서 init_mm의 일부  field만을 사용한다.
+	init_mm.dynamic = &kernel_proc;
+	init_mm.dynamic->mtx = NULL;
+	init_mm.dynamic->condv = NULL;
+	cdsl_nrbtreeRootInit(&init_mm.dynamic->mregions);
+	current_mm = &init_mm;
+
+
+	int kinit_segId = tch_init_segment(*section);
+	init_km(kinit_segId);
+}
+
 
 
 void tch_kernel_onMemFault(paddr_t pa, int fault,int spec){

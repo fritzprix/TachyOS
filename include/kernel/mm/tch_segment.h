@@ -6,9 +6,11 @@
  */
 
 #ifndef TCH_SEGMENT_H_
+
 #define TCH_SEGMENT_H_
 
 #include "tch_mm.h"
+#include "owtree.h"
 
 
 
@@ -17,9 +19,8 @@
 
 
 
-
 struct mem_segment {
-	nrbtreeRoot_t           reg_root;		///< region allocated in red black treee
+	nrbtreeRoot_t           reg_root;		///< region allocated in red black tree
 	nrbtreeNode_t           addr_rbn;		///< address rb node of this segment
 	nrbtreeNode_t           id_rbn;			///< id rb node of this segment
 	uint32_t                flags;			///< flags

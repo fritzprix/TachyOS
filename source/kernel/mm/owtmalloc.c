@@ -1,4 +1,7 @@
+#include "../../../include/kernel/mm/owtmalloc.h"
+
 /*
+#include "../../../include/kernel/mm/owtree.h"
  * wtmalloc.c
  *
  *  Copyright (C) 2014 doowoong,lee
@@ -11,8 +14,6 @@
  *      Author: innocentevil
  */
 
-#include "wtree.h"
-#include "wtmalloc.h"
 #include "tch_kernel.h"
 
 
@@ -35,7 +36,7 @@ struct heapHeader {
 /// ===========================================================	///
 	uint32_t size;				///         current chunk
 /// ===========================================================	///
-	wtreeNode_t wtree_node;		///			free cache header 	///
+	owtreeNode_t wtree_node;		///			free cache header 	///
 };
 
 
@@ -76,7 +77,7 @@ void wt_initNode(wt_heapNode_t* alloc,void* addr,uint32_t sz){
 	alloc->limit = (void*) ((uint32_t) addr + sz);
 	alloc->size = sz;
 	alloc->left = alloc->right = NULL_CACHE;
-	wtreeRootInit(&alloc->entry,sizeof(struct ext_header));
+	owtreeRootInit(&alloc->entry,sizeof(struct ext_header));
 }
 
 
@@ -118,7 +119,7 @@ int wt_free(wt_heapRoot_t* heap,void* ptr){
 void wt_initCache(wt_cache_t* cache,size_t sz_limit){
 	if(!cache)
 		return;
-	wtreeRootInit(&cache->entry,sizeof(struct ext_header));
+	owtreeRootInit(&cache->entry,sizeof(struct ext_header));
 	cache->size = 0;
 	cache->size_limit = sz_limit;
 }
@@ -127,7 +128,7 @@ void* wt_cacheMalloc(wt_cache_t* cache,uint32_t sz){
 	if(!sz || (cache->size < sz))
 		return NULL;
 
-	wtreeNode_t* chunk = wtreeRetrive(&cache->entry,&sz);
+	owtreeNode_t* chunk = owtreeRetrive(&cache->entry,&sz);
 	struct heapHeader *chdr,*nhdr,*nnhdr;
 	if(chunk == NULL)
 		return NULL;
@@ -151,8 +152,8 @@ int wt_cacheFree(wt_cache_t* cache,void* ptr){
 	nhdr = (struct heapHeader* ) ((uint32_t) ptr + chdr->size);
 	if(chdr->size != nhdr->psize)
 		return WT_ERROR;
-	wtreeNodeInit(&chdr->wtree_node,(uint32_t) &chdr->wtree_node,chdr->size);
-	wtreeInsert(&cache->entry,&chdr->wtree_node);
+	owtreeNodeInit(&chdr->wtree_node,(uint32_t) &chdr->wtree_node,chdr->size);
+	owtreeInsert(&cache->entry,&chdr->wtree_node);
 	cache->size += chdr->size;
 	return WT_OK;
 }
@@ -160,8 +161,8 @@ int wt_cacheFree(wt_cache_t* cache,void* ptr){
 void wt_cacheFlush(wt_heapRoot_t* heap,wt_cache_t* cache){
 	if(!heap || !cache)
 		return;
-	wtreeNode_t* wtn;
-	while((wtn = wtreeDeleteRightMost(&cache->entry)) != NULL) {
+	owtreeNode_t* wtn;
+	while((wtn = owtreeDeleteRightMost(&cache->entry)) != NULL) {
 		wt_free(heap,wtn);
 	}
 }
@@ -248,7 +249,7 @@ static wt_heapNode_t* rotateRight(wt_heapNode_t* rot_pivot){
 static void * node_malloc(wt_heapNode_t* alloc,uint32_t sz){
 	if(!sz)
 		return NULL;
-	wtreeNode_t* chunk = wtreeRetrive(&alloc->entry,&sz);
+	owtreeNode_t* chunk = owtreeRetrive(&alloc->entry,&sz);
 	struct heapHeader *chdr,*nhdr,*nnhdr;
 	uint64_t tsz;
 	if(chunk == NULL){
@@ -287,21 +288,21 @@ static int node_free(wt_heapNode_t* alloc,void* ptr,uint32_t* freesz){
 		return WT_ERROR;
 	}
 
-	wtreeNodeInit(&chdr->wtree_node,(uint32_t)&chdr->wtree_node,chdr->size);
-	wtreeInsert(&alloc->entry,&chdr->wtree_node);
+	owtreeNodeInit(&chdr->wtree_node,(uint32_t)&chdr->wtree_node,chdr->size);
+	owtreeInsert(&alloc->entry,&chdr->wtree_node);
 	alloc->size += chdr->size;
 	*freesz += chdr->size;
 	return WT_OK;
 }
 
 static uint32_t node_size(wt_heapNode_t* alloc){
-	return wtreeTotalSpan(&alloc->entry);
+	return owtreeTotalSpan(&alloc->entry);
 }
 
 
 static void node_print(wt_heapNode_t* alloc){
 //	printf("======================================================================================================\n");
-	wtreePrint(&alloc->entry);
+	owtreePrint(&alloc->entry);
 //	printf("======================================================================================================\n");
 }
 

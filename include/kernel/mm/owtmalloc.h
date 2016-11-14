@@ -6,10 +6,11 @@
  */
 
 #ifndef MALLOC_H_
+
 #define MALLOC_H_
 
 #include <stddef.h>
-#include "wtree.h"
+#include "owtree.h"
 
 #define WT_ERROR	((int) -1)
 #define WT_OK		((int) 1)
@@ -25,7 +26,7 @@ struct wt_heap_node {
 	void* 			pos;
 	void* 			limit;
 	size_t 			size;
-	wtreeRoot_t		entry;
+	owtreeRoot_t		entry;
 };
 
 struct wt_heaproot {
@@ -35,7 +36,7 @@ struct wt_heaproot {
 };
 
 struct wt_cache {
-	wtreeRoot_t		entry;
+	owtreeRoot_t		entry;
 	size_t			size;
 	size_t			size_limit;
 };

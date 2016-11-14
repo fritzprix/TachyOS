@@ -4,5 +4,5 @@ SRC-y+=$(ROOT_DIR)/source/kernel/mm
 OBJ-y+=tch_kmalloc.ko
 OBJ-y+=tch_malloc.ko
 OBJ-y+=tch_shm.ko
-OBJ-y+=wtmalloc.ko
-OBJ-y+=wtree.ko
+OBJ-y+=owtmalloc.ko
+OBJ-y+=owtree.ko

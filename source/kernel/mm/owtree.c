@@ -1,3 +1,5 @@
+#include "../../../include/kernel/mm/owtree.h"
+
 /*
  * wtree.c
  *
@@ -29,9 +31,8 @@
  */
 
 #include "tch_ktypes.h"
-#include "wtree.h"
 
-static wtreeNode_t null_node = {
+static owtreeNode_t null_node = {
 	.left = NULL,
 	.right = NULL,
 	.base = 0,
@@ -41,50 +42,50 @@ static wtreeNode_t null_node = {
 #define NULL_NODE   &null_node
 
 
-static wtreeNode_t* insert_r(wtreeNode_t* current,wtreeNode_t* item,uint32_t gap);
-static wtreeNode_t* rotateLeft(wtreeNode_t* rot_pivot);
-static wtreeNode_t* rotateRight(wtreeNode_t* rot_pivot);
-static wtreeNode_t* mergeSubtree(wtreeNode_t* root);
-static size_t span_r(wtreeNode_t* node);
-static void print_r(wtreeNode_t* node,int depth);
+static owtreeNode_t* insert_r(owtreeNode_t* current,owtreeNode_t* item,uint32_t gap);
+static owtreeNode_t* rotateLeft(owtreeNode_t* rot_pivot);
+static owtreeNode_t* rotateRight(owtreeNode_t* rot_pivot);
+static owtreeNode_t* mergeSubtree(owtreeNode_t* root);
+static size_t span_r(owtreeNode_t* node);
+static void print_r(owtreeNode_t* node,int depth);
 static void print_tab(int k);
 
-void wtreeRootInit(wtreeRoot_t* root,uint32_t ext_gap){
+void owtreeRootInit(owtreeRoot_t* root,uint32_t ext_gap){
 	root->entry = NULL_NODE;
 	root->ext_gap = ext_gap;
 }
 
-void wtreeNodeInit(wtreeNode_t* node,uint32_t base,uint32_t span){
+void owtreeNodeInit(owtreeNode_t* node,uint32_t base,uint32_t span){
 	node->left = node->right = NULL_NODE;
 	node->base = base;
 	node->span = span;
 }
 
-size_t wtreeTotalSpan(wtreeRoot_t* root){
+size_t owtreeTotalSpan(owtreeRoot_t* root){
 	return span_r(root->entry);
 }
 
-void wtreeInsert(wtreeRoot_t* root,wtreeNode_t* item){
+void owtreeInsert(owtreeRoot_t* root,owtreeNode_t* item){
 	if(!root)
 		return;
 	root->entry = insert_r(root->entry,item,root->ext_gap);
 }
 
-wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
+owtreeNode_t* owtreeRetrive(owtreeRoot_t* root,uint32_t* span){
 	if(!root || !root->entry)
 		return NULL;
 	uint32_t nspan = *span + root->ext_gap;
 	if(root->entry->span < *span)
 		return NULL;
 
-	wtreeNode_t* retrived = NULL;
-	if(root->entry->span >= (nspan + sizeof(wtreeNode_t))){			//
+	owtreeNode_t* retrived = NULL;
+	if(root->entry->span >= (nspan + sizeof(owtreeNode_t))){			//
 		// build up new chunk
 		retrived = root->entry;
-		root->entry = (wtreeNode_t*)(((uint8_t*) root->entry) + nspan);
+		root->entry = (owtreeNode_t*)(((uint8_t*) root->entry) + nspan);
 		nspan = retrived->span - nspan;
 		retrived->span = *span;
-		wtreeNodeInit(root->entry,(uint32_t)root->entry,nspan);
+		owtreeNodeInit(root->entry,(uint32_t)root->entry,nspan);
 		root->entry->left = retrived->left;
 		root->entry->right = retrived->right;
 		if((root->entry->right->span > root->entry->span) || (root->entry->left->span > root->entry->span)){
@@ -104,13 +105,13 @@ wtreeNode_t* wtreeRetrive(wtreeRoot_t* root,uint32_t* span){
 	return retrived;
 }
 
-wtreeNode_t* wtreeDeleteRightMost(wtreeRoot_t*root){
+owtreeNode_t* owtreeDeleteRightMost(owtreeRoot_t*root){
 	if(!root)
 		return NULL;
 	if(root->entry == NULL_NODE)
 		return NULL;
-	wtreeNode_t* rm;
-	wtreeNode_t ** current;
+	owtreeNode_t* rm;
+	owtreeNode_t ** current;
 	current = &root->entry;
 	while((*current)->right != NULL_NODE){
 		current = &(*current)->right;
@@ -126,12 +127,12 @@ wtreeNode_t* wtreeDeleteRightMost(wtreeRoot_t*root){
 
 
 
-void wtreePrint(wtreeRoot_t* root){
+void owtreePrint(owtreeRoot_t* root){
 	print_r(root->entry,0);
 }
 
 
-static wtreeNode_t* insert_r(wtreeNode_t* current,wtreeNode_t* item,uint32_t gap){
+static owtreeNode_t* insert_r(owtreeNode_t* current,owtreeNode_t* item,uint32_t gap){
 	if(current == NULL_NODE)
 		return item;
 	if(current->base < item->base){
@@ -168,7 +169,7 @@ static wtreeNode_t* insert_r(wtreeNode_t* current,wtreeNode_t* item,uint32_t gap
 	return current;
 }
 
-static void print_r(wtreeNode_t* node,int depth){
+static void print_r(owtreeNode_t* node,int depth){
 	if(node == NULL_NODE)
 		return;
 	print_r(node->right,depth + 1);
@@ -182,21 +183,21 @@ static void print_tab(int k){
 	//while(k--)printf("\t");
 }
 
-static wtreeNode_t* rotateLeft(wtreeNode_t* rot_pivot){
-	wtreeNode_t* nparent = rot_pivot->right;
+static owtreeNode_t* rotateLeft(owtreeNode_t* rot_pivot){
+	owtreeNode_t* nparent = rot_pivot->right;
 	rot_pivot->right = nparent->left;
 	nparent->left = rot_pivot;
 	return nparent;
 }
 
-static wtreeNode_t* rotateRight(wtreeNode_t* rot_pivot){
-	wtreeNode_t* nparent = rot_pivot->left;
+static owtreeNode_t* rotateRight(owtreeNode_t* rot_pivot){
+	owtreeNode_t* nparent = rot_pivot->left;
 	rot_pivot->left = nparent->right;
 	nparent->right = rot_pivot;
 	return nparent;
 }
 
-static wtreeNode_t* mergeSubtree(wtreeNode_t* root){
+static owtreeNode_t* mergeSubtree(owtreeNode_t* root){
 	if(root->left != NULL_NODE){
 		while(root->left->right != NULL_NODE){
 			root->left = rotateLeft(root->left);
@@ -216,7 +217,7 @@ static wtreeNode_t* mergeSubtree(wtreeNode_t* root){
 }
 
 
-static size_t span_r(wtreeNode_t* node){
+static size_t span_r(owtreeNode_t* node){
 	if(node == NULL_NODE)
 		return 0;
 	return node->span + span_r(node->right) + span_r(node->left);

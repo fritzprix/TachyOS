@@ -75,7 +75,6 @@ __USER_RODATA__ const tch_core_api_t RuntimeInterface = {
 };
 
 const tch_core_api_t* tch_rti = &RuntimeInterface;
-
 static tch_threadId sysThread;
 
 volatile BOOL kernel_ready;
