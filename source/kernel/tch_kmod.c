@@ -12,14 +12,13 @@
 #include "kernel/string.h"
 
 
-
 #define MODULE_FLAG_PRIV			((uint32_t) 1 << 0)
 #define MODULE_FLAG_STATIC			((uint32_t) 1 << 1)
 #define MODULE_FLAG_DYNAMIC			((uint32_t) 1 << 2)
 
 
 typedef struct module_header {
-	nrbtreeNode_t 			rbn;
+	rbtreeNode_t 			rbn;
 	int 					owner;
 	uint32_t				flag;
 	void*					uaccess_ix;
@@ -29,7 +28,7 @@ typedef struct module_header {
 __USER_API__ void* kmod_usr_request(int);
 __USER_API__ BOOL kmod_usr_chkdep(module_map_t* map);
 
-static nrbtreeRoot_t module_root = {0};
+static rbtreeRoot_t module_root = {0};
 static module_map_t	module_map = {0};
 
 static void* _request_kmod(int type,BOOL ispriv);
@@ -63,7 +62,7 @@ DEFINE_SYSCALL_1(kmod_usr_chkdep,module_map_t*, map,tchStatus){
 BOOL tch_kmod_init(void){
 	initv_t* initv = (initv_t*) &_initv_begin;
 	initv_t* initv_limit = (initv_t*) &_initv_end;
-	cdsl_nrbtreeRootInit(&module_root);
+	cdsl_rbtreeRootInit(&module_root);
 
 	while(initv < initv_limit){
 		if(!(*initv)())
@@ -97,10 +96,10 @@ BOOL tch_kmod_register(int type,int owner, __UACESS void* interface,BOOL  ispriv
 	module->flag = MODULE_FLAG_STATIC;
 	module->owner = owner;
 	module->uaccess_ix = interface;
-	cdsl_nrbtreeNodeInit(&module->rbn,type);
+	cdsl_rbtreeNodeInit(&module->rbn,type);
 	module->flag |= ispriv? MODULE_FLAG_PRIV : 0;
 
-	return (cdsl_nrbtreeInsert(&module_root,&module->rbn, FALSE) != NULL);
+	return (cdsl_rbtreeInsert(&module_root,&module->rbn, FALSE) != NULL);
 }
 
 BOOL tch_kmod_unregister(int type,int owner){
@@ -109,7 +108,7 @@ BOOL tch_kmod_unregister(int type,int owner){
 	int offset = type % 64;
 	if(!((module_map._map[idx] >> offset) & 1))
 		return FALSE;						// there is a registered module interface for given type
-	module_header_t* module = (module_header_t*) cdsl_nrbtreeDelete(&module_root,type);
+	module_header_t* module = (module_header_t*) cdsl_rbtreeDelete(&module_root,type);
 	if(!module)
 		return FALSE;
 
@@ -135,7 +134,7 @@ static void* _request_kmod(int type,BOOL ispriv){
 	int offset = type % 64;
 	if(!((module_map._map[idx] >> offset) & 1))
 		return NULL;
-	module_header_t* module = (module_header_t*) cdsl_nrbtreeLookup(&module_root,type);
+	module_header_t* module = (module_header_t*) cdsl_rbtreeLookup(&module_root,type);
 	if(!module)
 		KERNEL_PANIC("module map is corrupted");
 	module = container_of(module,module_header_t,rbn);

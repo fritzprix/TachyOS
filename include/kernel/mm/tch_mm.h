@@ -12,7 +12,7 @@
 #include "kernel/tch_ktypes.h"
 #include "kernel/tch_loader.h"
 #include "owtmalloc.h"
-#include "cdsl_nrbtree.h"
+#include "cdsl_rbtree.h"
 #include "cdsl_slist.h"
 
 #if defined(__cplusplus)
@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 /**
- * tachyos aims to allowing multiple programs to run simultaneously without any interference between processes
+ * TachyOS aims to allowing multiple programs to run simultaneously without any interference between processes
  * or any harm to system stability. so there must be protection unit at the minimum in hardware. kernel itself dosen't has
  * any limitation (I believe) to support low cost 8-bit Microcontrollers though, there are many alternatives which is more
  * appropriately designed to those kinds of low cost things.
@@ -33,7 +33,7 @@ extern "C" {
  * 	. kernel has to prepare its own page table before enabling paging hardware
  *
  * 	1. how memory is virtualized in each hardware architecture respectively.
- * 	- mpu based hardware (most of low(not extremely low....) cost system)
+ * 	- MPU(Memory protection unit) based hardware (typical low cost hardware)
  * 	 . make decision whether accessed memory address is valid or not in memory fault (by cpu)
  * 	 . if it is valid address situation (mpu) update memory permission (protection) table in mpu configuration registers as soon as possible
  * 	   . if all the permission table entry is occupied (arm v7m mpu supports only 8 protection region..), drop least-likely to be used entry, and put new one.
@@ -62,25 +62,7 @@ extern "C" {
  *
  */
 
-#define PAGE_MASK               (~(PAGE_SIZE - 1))
 
-#define SEGMENT_NORMAL          ((uint32_t) 0)
-#define SEGMENT_KERNEL          ((uint32_t) 1)
-#define SEGMENT_UACCESS         ((uint32_t) 2)
-#define SEGMENT_DEVICE          ((uint32_t) 3)
-
-#define SEGMENT_MSK             (SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE | SEGMENT_UACCESS)
-
-#define SECTION_UTEXT           ((uint32_t) 0 << 3)
-#define SECTION_URODATA         ((uint32_t) 1 << 3)
-#define SECTION_TEXT            ((uint32_t) 2 << 3)
-#define SECTION_DATA            ((uint32_t) 3 << 3)
-#define SECTION_STACK           ((uint32_t) 4 << 3)
-#define SECTION_DYNAMIC         ((uint32_t) 5 << 3)
-
-#define SECTION_MSK	            ((uint32_t) 7 << 3)
-
-#define get_section(flag)       (flag & SECTION_MSK)
 
 #define CACHE_WRITE_THROUGH     ((uint32_t) 1 << 6)
 #define CACHE_WRITE_BACK_WA     ((uint32_t) 2 << 6)
@@ -93,7 +75,7 @@ extern "C" {
 #define SHAREABLE_MSK           ((uint32_t) 1 << 9 )
 #define get_shareability(flag)  (flag & SHAREABLE_MSK)
 
-#define PERM_BASE               ((uint32_t) SHAREABLE_MSK << 1)
+#define PERM_BASE               ((uint32_t) SHAREABLE_MSK << 1)     ///< Memory Access permission
 #define PERM_KERNEL_RD          ((uint32_t) PERM_BASE << 0)
 #define PERM_KERNEL_WR          ((uint32_t) PERM_BASE << 1)
 #define PERM_KERNEL_XC          ((uint32_t) PERM_BASE << 2)
@@ -122,30 +104,52 @@ extern "C" {
 	flag |= perm;\
 }while(0)
 
-#define MEMTYPE_INROM 			((uint32_t) PERM_MSK + PERM_BASE)
-#define MEMTYPE_EXROM			((uint32_t) MEMTYPE_INROM * 2)
-#define MEMTYPE_INRAM			((uint32_t) MEMTYPE_INROM * 3)
-#define MEMTYPE_EXRAM			((uint32_t) MEMTYPE_INROM * 4)
-#define MEMTYPE_MSK				(MEMTYPE_INROM | MEMTYPE_EXROM | MEMTYPE_INRAM | MEMTYPE_EXRAM)
 
-#define get_memtype(flag)		(flag & MEMTYPE_MSK)
 
 #define get_addr_from_page(page)	     ((size_t) page << PAGE_OFFSET)
 #define get_size_from_pcount(pcnt)       ((size_t) pcnt << PAGE_OFFSET)
 #define get_page_from_addr(addr)         ((size_t) addr >> PAGE_OFFSET)
 #define get_pcount_from_size(size)       ((size_t) size >> PAGE_OFFSET)
 
+/**
+ *  define physical memory segment properties
+ */
 struct section_descriptor {
 	uint32_t flags;
 	paddr_t start;				///< start address of section in bytes
 	paddr_t end;				///< end address of section in bytes
+#define PAGE_MASK               (~(PAGE_SIZE - 1))      ///< Mask
+
+#define SEGMENT_NORMAL          ((uint32_t) 0)
+#define SEGMENT_KERNEL          ((uint32_t) 1)
+#define SEGMENT_UACCESS         ((uint32_t) 2)
+#define SEGMENT_DEVICE          ((uint32_t) 3)
+
+#define SEGMENT_MSK             (SEGMENT_KERNEL | SEGMENT_NORMAL | SEGMENT_DEVICE | SEGMENT_UACCESS)
+
+#define SECTION_UTEXT           ((uint32_t) 0 << 3)
+#define SECTION_URODATA         ((uint32_t) 1 << 3)
+#define SECTION_TEXT            ((uint32_t) 2 << 3)
+#define SECTION_DATA            ((uint32_t) 3 << 3)
+#define SECTION_STACK           ((uint32_t) 4 << 3)
+#define SECTION_DYNAMIC         ((uint32_t) 5 << 3)
+
+#define SECTION_MSK	            ((uint32_t) 7 << 3)
+
+#define get_section(flag)       (flag & SECTION_MSK)
+#define MEMTYPE_INROM 			((uint32_t) PERM_MSK + PERM_BASE)
+#define MEMTYPE_EXROM			((uint32_t) MEMTYPE_INROM * 2)
+#define MEMTYPE_INRAM			((uint32_t) MEMTYPE_INROM * 3)
+#define MEMTYPE_EXRAM			((uint32_t) MEMTYPE_INROM * 4)
+#define MEMTYPE_MSK				(MEMTYPE_INROM | MEMTYPE_EXROM | MEMTYPE_INRAM | MEMTYPE_EXRAM)
+#define get_memtype(flag)		(flag & MEMTYPE_MSK)
 }__attribute__((packed));
 
 
 typedef struct page_frame page_frame_t;
 
 struct proc_dynamic {
-	nrbtreeRoot_t   mregions;			// region mapping node
+	rbtreeRoot_t   mregions;			// region mapping node
 	void*           heap;
 	void*           shmem;
 	tch_condvId     condv;

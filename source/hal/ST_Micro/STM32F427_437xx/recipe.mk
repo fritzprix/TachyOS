@@ -10,7 +10,7 @@ OBJ-y+=tch_gpio.ko
 OBJ-y+=tch_dma.ko
 OBJ-y+=tch_hal.ko
 
-OBJ-$(CONFIG_UART)+=tch_uart.ko
+OBJ-$(CONFIG_UART)+=tch_usart.ko
 OBJ-$(CONFIG_ADC)+=tch_adc.ko
 OBJ-$(CONFIG_SPI)+=tch_spi.ko
 OBJ-$(CONFIG_IIC)+=tch_i2c.ko

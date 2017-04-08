@@ -13,7 +13,7 @@
 #include "tch.h"
 #include "aal.h"
 #include "cdsl_dlist.h"
-#include "cdsl_nrbtree.h"
+#include "cdsl_rbtree.h"
 
 
 #if defined(__cplusplus)
@@ -96,7 +96,7 @@ struct tch_mm {
 
 struct tch_thread_uheader_s {
 	tch_thread_routine          fn;					///<thread function pointer
-	nrbtreeNode_t*              uobjs;				///<user object tree for tracking
+	rbtreeNode_t*              uobjs;				///<user object tree for tracking
 	void*                       cache;
 	const char*                 name;				///<thread name
 	void*                       t_arg;				///<thread arg field

@@ -83,9 +83,9 @@ tch_board_descriptor board_desc;
 
 
 /***
- *  Kernel initailization is followed sequence below
- *  1. initialize kernel stack and dyanmic memory region @ tch_kernelMemInit()
- *  2. perform cpu specific initialization
+ *  Kernel initialization is followed sequence below
+ *  1. initialize kernel stack and dynamic memory region @ tch_kernelMemInit()
+ *  2. perform CPU specific initialization
  */
 void tch_kernel_init(void* arg){
 

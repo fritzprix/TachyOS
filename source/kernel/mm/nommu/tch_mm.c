@@ -148,7 +148,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 			mmp->data_region = NULL;
 		}
 
-		cdsl_nrbtreeRootInit(&mmp->dynamic->mregions);
+		cdsl_rbtreeRootInit(&mmp->dynamic->mregions);
 		tch_mutexInit(mmp->dynamic->mtx);
 		tch_condvInit(mmp->dynamic->condv);
 	}
@@ -356,7 +356,7 @@ uint32_t* tch_kernelnMemInit(struct section_descriptor** mdesc_tbl) {
 	init_mm.dynamic = &kernel_proc;
 	init_mm.dynamic->mtx = NULL;
 	init_mm.dynamic->condv = NULL;
-	cdsl_nrbtreeRootInit(&init_mm.dynamic->mregions);
+	cdsl_rbtreeRootInit(&init_mm.dynamic->mregions);
 	current_mm = &init_mm;
 
 
