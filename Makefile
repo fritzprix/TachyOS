@@ -22,7 +22,7 @@ PY:=python
 PIP:=pip
 MKDIR:=mkdir
 TOOL_DIR:=$(ROOT_DIR)/tools
-CONFIG_PY:= $(ROOT_DIR)/tools/jconfigpy/jconfigpy.py
+CONFIG_PY:= $(ROOT_DIR)/tools/jconfigpy
 
 OBJS_DIR_DEBUG:= $(ROOT_DIR)/DEBUG
 OBJS_DIR_RELEASE:= $(ROOT_DIR)/RELEASE
