@@ -117,6 +117,7 @@ static __USER_API__ void tch_dbg_print(dbg_level level, tchStatus code, const ch
 	{
 		__SYSCALL_3(dbg_print, &info, fmt, (uword_t) &arg_list);
 	}
+	va_end(arg_list);
 }
 
 static DECLARE_LWTASK(dbg_flush)
