@@ -103,7 +103,7 @@ static DECLARE_THREADROUTINE(idle){
 
 
 static DECLARE_LWTASK(idleTaskHandler){
-	struct idle_parameter* parm;
+	struct idle_parameter* parm = (struct idle_parameter*) arg;
 	switch(parm->cmd){
 	case IDLE_CMD_GOSLEEP:
 		tch_hal_disableSystick();

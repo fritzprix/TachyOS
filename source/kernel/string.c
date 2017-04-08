@@ -176,5 +176,7 @@ size_t format(char* dest,const char* fmt,...)
 		return 0;
 	va_list args;
 	va_start(args,fmt);
-	return vformat(dest,fmt,args);
+	size_t sz = vformat(dest,fmt,args);
+	va_end(args);
+	return sz;
 }
