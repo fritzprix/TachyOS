@@ -1,5 +1,6 @@
 # TachyOS 
 [![Build Status](https://travis-ci.org/fritzprix/TachyOS.svg?branch=master)](https://travis-ci.org/fritzprix/TachyOS)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc5b451d38624e44a58c8fd4913bc4a5)](https://www.codacy.com/app/innocentevil0914/TachyOS?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=fritzprix/TachyOS&amp;utm_campaign=Badge_Grade)
 
 ## Note 
 > This project is subjected to serious HOMEBREWING and still in INFANCY. So any experimental change can be made without any notice.  

@@ -6,9 +6,11 @@
  */
 
 #ifndef TCH_SEGMENT_H_
+
 #define TCH_SEGMENT_H_
 
 #include "tch_mm.h"
+#include "owtree.h"
 
 
 
@@ -17,11 +19,10 @@
 
 
 
-
 struct mem_segment {
-	nrbtreeRoot_t           reg_root;		///< region allocated in red black treee
-	nrbtreeNode_t           addr_rbn;		///< address rb node of this segment
-	nrbtreeNode_t           id_rbn;			///< id rb node of this segment
+	rbtreeRoot_t            reg_root;		///< region allocated in red black tree
+	rbtreeNode_t            addr_rbn;		///< address rb node of this segment
+	rbtreeNode_t            id_rbn;			///< id rb node of this segment
 	uint32_t                flags;			///< flags
 	uint32_t                poff;			///< page offset of segment
 	size_t                  psize;			///< total segment size in page
@@ -33,8 +34,8 @@ struct mem_segment {
  * represent allocated memory chunk from mem_node
  */
 struct mem_region {
-	nrbtreeNode_t			rbn;			///< rb node for association to its parent
-	nrbtreeNode_t			mm_rbn;			///< rb node for association to mapping tree
+	rbtreeNode_t			rbn;			///< rb node for association to its parent
+	rbtreeNode_t			mm_rbn;			///< rb node for association to mapping tree
 	struct tch_mm*			owner;
 	uint32_t				flags;
 	struct mem_segment*		segp;

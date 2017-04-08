@@ -12,7 +12,7 @@
 #include "tch_mm.h"
 #include "tch_segment.h"
 #include "tch_kmalloc.h"
-#include "cdsl_nrbtree.h"
+#include "cdsl_rbtree.h"
 
 #define ptr_to_pgidx(ptr)		(((size_t) ptr) >> PAGE_OFFSET)
 
@@ -41,13 +41,15 @@ struct page_frame {
  *
  */
 
+
+
 static struct mem_segment init_seg;				// segment to be used as dynamic memory pool
 static struct mem_region  init_dynamic_region;	// initial memory region, **NOTE : the only region which is statically declared
-static int init_segid;
+static int                init_segid;
 
-static nrbtreeRoot_t		id_root;
-static nrbtreeRoot_t		addr_root;
-static uint32_t				seg_cnt;
+static rbtreeRoot_t	        id_root;           // global red black tree that keeps track of segment (key : seg_id)
+static rbtreeRoot_t	        addr_root;         // global red black tree that keeps track of segment (key : page_offset)
+static uint32_t	            seg_cnt;
 static struct proc_dynamic  init_dynamic;
 
 static int initSegment(struct section_descriptor* section,struct mem_segment* seg);
@@ -60,11 +62,13 @@ static struct mem_segment* findSegmentFromPtr(void* ptr);
 
 void tch_initSegment(struct section_descriptor* init_section){
 	mset(&init_seg,0,sizeof(struct mem_segment));
+	cdsl_rbtreeRootInit(&id_root);
+	cdsl_rbtreeRootInit(&addr_root);
 	seg_cnt = 0;
 
-	init_segid = initSegment(init_section,&init_seg);
+	init_segid = initSegment(init_section, &init_seg);
 	init_mm.dynamic = &init_dynamic;
-	cdsl_nrbtreeRootInit(&init_mm.dynamic->mregions);
+	cdsl_rbtreeRootInit(&init_mm.dynamic->mregions);
 	init_mm.pgd = NULL;				// kernel has no mapping table in mpu based hardware
 	tch_mapRegion(&init_mm,&init_dynamic_region);
 
@@ -77,7 +81,7 @@ void tch_initSegment(struct section_descriptor* init_section){
 struct mem_segment* tch_segmentLookup(int seg_id){
 	if(seg_id < 0)
 		return NULL;
-	struct mem_segment* segment = (struct mem_segment*) cdsl_nrbtreeLookup(&id_root,seg_id);
+	struct mem_segment* segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return NULL;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -97,17 +101,17 @@ int tch_segmentRegister(struct section_descriptor* section){
 void tch_segmentUnregister(int seg_id){
 	if(seg_id < 0)
 		return;
-	struct mem_segment* segment = (struct mem_segment*) cdsl_nrbtreeDelete(&id_root,seg_id);		// delete segment from id rbtree
+	struct mem_segment* segment = (struct mem_segment*) cdsl_rbtreeDelete(&id_root,seg_id);		// delete segment from id rbtree
 	if(!segment)
 		return;
 	segment = container_of(segment,struct mem_segment,id_rbn);
 	if(segment == &init_seg)
 		KERNEL_PANIC("kernel init segment can't be unregistered");
 
-	cdsl_nrbtreeDelete(&addr_root,segment->poff);												// delete segment from addr rbtree
+	cdsl_rbtreeDelete(&addr_root,segment->poff);												// delete segment from addr rbtree
 	struct mem_region* reg;
-	while(cdsl_nrbtreeIsEmpty(&segment->reg_root)){
-		reg = (struct mem_region*) cdsl_nrbtreeDelete(&segment->reg_root,segment->reg_root.entry->key);
+	while(cdsl_rbtreeIsEmpty(&segment->reg_root)){
+		reg = (struct mem_region*) cdsl_rbtreeDelete(&segment->reg_root,segment->reg_root.entry->key);
 		if(reg){
 			reg = container_of(reg,struct mem_region,rbn);
 			if(!reg && (reg->segp->id_rbn.key == seg_id))
@@ -122,7 +126,7 @@ void tch_segmentUnregister(int seg_id){
 size_t tch_segmentGetSize(int seg_id){
 	if(seg_id < 0)
 		return 0;
-	struct mem_segment* segment = (struct mem_segment*)cdsl_nrbtreeLookup(&id_root,seg_id);
+	struct mem_segment* segment = (struct mem_segment*)cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return 0;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -132,7 +136,7 @@ size_t tch_segmentGetSize(int seg_id){
 size_t tch_segmentGetFreeSize(int seg_id){
 	if(seg_id < 0)
 		return 0;
-	struct mem_segment* segment = (struct mem_segment*) cdsl_nrbtreeLookup(&id_root,seg_id);
+	struct mem_segment* segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return 0;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -145,7 +149,7 @@ size_t tch_segmentGetFreeSize(int seg_id){
 void tch_mapSegment(struct tch_mm* mm,int seg_id){
 	if(!mm || (seg_id < 0))
 		return;
-	struct mem_segment* segment = (struct mem_segment*) cdsl_nrbtreeLookup(&id_root,seg_id);
+	struct mem_segment* segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return;
 	segment = container_of(segment,struct mem_segment,id_rbn);
@@ -155,7 +159,7 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 		KERNEL_PANIC("mem_region can't created");
 	initRegion(region,segment,segment->poff, segment->psize, get_permission(segment->flags));		// region has same page offset and count to its parent segment
 	region->owner = mm;
-	cdsl_nrbtreeInsert(&mm->dynamic->mregions, &region->mm_rbn, FALSE);
+	cdsl_rbtreeInsert(&mm->dynamic->mregions, &region->mm_rbn, FALSE);
 
 }
 
@@ -167,18 +171,18 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 void tch_unmapSegment(struct tch_mm* mm,int seg_id){
 	if(!mm || (seg_id < 0))
 		return;
-	struct mem_segment* segment = (struct mem_segment*) cdsl_nrbtreeLookup(&id_root,seg_id);
+	struct mem_segment* segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id);
 	if(!segment)
 		return;
 	segment = container_of(segment,struct mem_segment,id_rbn);
-	if(cdsl_nrbtreeIsEmpty(&segment->reg_root))
+	if(cdsl_rbtreeIsEmpty(&segment->reg_root))
 		return;
 
 	struct mem_region* region = container_of(segment->reg_root.entry,struct mem_region,rbn);
 	region->owner = NULL;
 
-	cdsl_nrbtreeDelete(&mm->dynamic->mregions,region->poff);				// region is removed from all the tracking red black tree
-	cdsl_nrbtreeDelete(&segment->reg_root,region->poff);
+	cdsl_rbtreeDelete(&mm->dynamic->mregions,region->poff);				// region is removed from all the tracking red black tree
+	cdsl_rbtreeDelete(&segment->reg_root,region->poff);
 
 	kfree(region);
 }
@@ -201,7 +205,7 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 		return 0;
 	}
 	struct mem_segment* segment;
-	segment = (struct mem_segment*) cdsl_nrbtreeLookup(&id_root,seg_id); 		// find segment by id
+	segment = (struct mem_segment*) cdsl_rbtreeLookup(&id_root,seg_id); 		// find segment by id
 	if(!segment)
 		return 0;
 	segment = container_of(segment,struct mem_segment,id_rbn);					// get actual segment struct pointer
@@ -244,7 +248,7 @@ void tch_segmentFreeRegion(const struct mem_region* mreg){
 	if((mreg->poff >= segment->psize) && (mreg->psz > (segment->psize - mreg->poff)))			// may mregion is not valid
 		return;
 
-	if(cdsl_nrbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn)										// delete memory region structure from allocation tree
+	if(cdsl_rbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn)										// delete memory region structure from allocation tree
 		KERNEL_PANIC("region mapping broken");
 
 	dlistNode_t* phead = segment->pfree_list.head;
@@ -288,49 +292,44 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 	if(!section || !seg)
 		return -1;
 
-	uint32_t i;
-	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's begining from section base address
-	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from sectioni size
+	seg->flags = section->flags;          // copy flags of section into segment
+	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's beginning from section base address
+	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from section size
 	seg->psize = section_limit - seg->poff;													// segment size in pages
-	page_frame_t* pages = (page_frame_t*) (seg->poff << PAGE_OFFSET);
 
-	seg->flags = section->flags;															// inherit permission of section
-	cdsl_nrbtreeRootInit(&seg->reg_root);
-	cdsl_dlistEntryInit(&seg->pfree_list);														// init members
-	cdsl_nrbtreeNodeInit(&seg->id_rbn,seg_cnt);
-	cdsl_nrbtreeNodeInit(&seg->addr_rbn,seg->poff);
+	if(section_limit < seg->poff) {
+		// minimum size of section should be greater than single page
+		// if the size is less than a page, section is discarded and return -1
+		return -1;
+	}
+
+	cdsl_rbtreeRootInit(&seg->reg_root);
+	cdsl_dlistEntryInit(&seg->pfree_list);
+	cdsl_rbtreeNodeInit(&seg->id_rbn,seg_cnt);
+	cdsl_rbtreeNodeInit(&seg->addr_rbn,seg->poff);
 
 
-	switch(seg->flags & SEGMENT_MSK){
+
+	switch(seg->flags & SEGMENT_MSK) {
 	case SEGMENT_KERNEL:
 		seg->pfree_cnt = 0;											// marked as segment has no free page for kernel section & keep its memory content
 		uint32_t sec_type = get_section(seg->flags);
-
 		if(sec_type == SECTION_URODATA || sec_type == SECTION_UTEXT){
-			set_permission(seg->flags,PERM_OTHER_RD | PERM_KERNEL_XC | PERM_KERNEL_ALL);
+			set_permission(seg->flags, PERM_OTHER_RD | PERM_KERNEL_ALL);
 		} else {
-			set_permission(seg->flags,PERM_KERNEL_ALL);					// kernel is only accessible privilidge level
+			set_permission(seg->flags, PERM_KERNEL_ALL);            // kernel is only accessible privilege level
 		}
 		break;
 	case SEGMENT_NORMAL:
-		seg->pfree_cnt = seg->psize;								// set free page count as its total page count
-		for(i = 0; i < seg->psize ;i++){							// initialize all the page frame header structure within a segment
-			pages[i].fhdr.offset = seg->poff + i;
-			pages[i].fhdr.contig_pcount = 0;
-			cdsl_dlistNodeInit(&pages[i].fhdr.lhead);
-		}
-
-		pages[0].fhdr.contig_pcount = seg->psize;					// initialize first page frame header
-		cdsl_dlistPutHead(&seg->pfree_list,&pages[0].fhdr.lhead);
 		set_permission(seg->flags,PERM_KERNEL_ALL | PERM_OTHER_RD);	// normal default permission (kernel_all | public read)
 		break;
 	case SEGMENT_DEVICE:
-		// TODO : make decision whether implement device segment or leave it to be accessed by priviledged context
+		// TODO : make decision whether implement device segment or leave it to be accessed by privilege context
 		break;
 	}
 
-	cdsl_nrbtreeInsert(&id_root,&seg->id_rbn, FALSE);			// any registered segment doesn't need to be unregistered in typical case
-	cdsl_nrbtreeInsert(&addr_root,&seg->addr_rbn, FALSE);		// tree is used only for lookup
+	cdsl_rbtreeInsert(&id_root,&seg->id_rbn, FALSE);               // any registered segment doesn't need to be unregistered in typical case
+	cdsl_rbtreeInsert(&addr_root,&seg->addr_rbn, FALSE);           // tree is used only for lookup
 	return seg_cnt++;
 }
 
@@ -350,9 +349,9 @@ static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32
 		set_permission(regp->flags,perm);
 	else
 		set_permission(regp->flags,get_permission(parent->flags));		// otherwise,inherit permission from its parent
-	cdsl_nrbtreeNodeInit(&regp->rbn,regp->poff);
-	cdsl_nrbtreeNodeInit(&regp->mm_rbn,regp->poff);
-	cdsl_nrbtreeInsert(&parent->reg_root,&regp->rbn, FALSE);            // add region tracking red-black tree
+	cdsl_rbtreeNodeInit(&regp->rbn,regp->poff);
+	cdsl_rbtreeNodeInit(&regp->mm_rbn,regp->poff);
+	cdsl_rbtreeInsert(&parent->reg_root,&regp->rbn, FALSE);            // add region tracking red-black tree
 }
 
 
@@ -368,7 +367,7 @@ static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr){
 	if(!ptr || !segp)
 		return NULL;
 
-	nrbtreeNode_t* arb = segp->reg_root.entry;
+	rbtreeNode_t* arb = segp->reg_root.entry;
 	struct mem_region* region;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
 	if(!arb)
@@ -378,9 +377,9 @@ static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr){
 		if((region->poff <= pgidx) && (region->poff + region->psz >= pgidx)){
 			return region;
 		}else if(region->poff > pgidx){
-			arb = cdsl_nrbtreeGoLeft(arb);
+			arb = cdsl_rbtreeGoLeft(arb);
 		}else if((region->poff + region->psz) < pgidx){
-			arb = cdsl_nrbtreeGoRight(arb);
+			arb = cdsl_rbtreeGoRight(arb);
 		}
 	}
 	return NULL;
@@ -389,7 +388,7 @@ static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr){
 static struct mem_segment* findSegmentFromPtr(void* ptr){
 	if(!ptr)
 		return NULL;
-	nrbtreeNode_t* arb = addr_root.entry;
+	rbtreeNode_t* arb = addr_root.entry;
 	struct mem_segment* segment;
 	uint32_t pgidx = ptr_to_pgidx(ptr);
 	if(!arb)
@@ -399,9 +398,9 @@ static struct mem_segment* findSegmentFromPtr(void* ptr){
 		if((segment->poff <= pgidx) && (segment->poff + segment->psize >= pgidx)){
 			return segment;
 		}else if(segment->poff > pgidx){
-			arb = cdsl_nrbtreeGoLeft(arb);
+			arb = cdsl_rbtreeGoLeft(arb);
 		}else if((segment->poff + segment->psize) < pgidx){
-			arb = cdsl_nrbtreeGoRight(arb);
+			arb = cdsl_rbtreeGoRight(arb);
 		}
 	}
 	return NULL;			// no matched segment
@@ -412,14 +411,14 @@ void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	if(!mm || !mreg)
 		return;
 	mreg->owner = mm;
-	cdsl_nrbtreeInsert(&mm->dynamic->mregions,&mreg->mm_rbn, FALSE);
+	cdsl_rbtreeInsert(&mm->dynamic->mregions,&mreg->mm_rbn, FALSE);
 }
 
 void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg){
 	if(!mm || !mreg)
 		return;
 	mreg->owner = NULL;
-	cdsl_nrbtreeDelete(&mm->dynamic->mregions,mreg->poff);
+	cdsl_rbtreeDelete(&mm->dynamic->mregions,mreg->poff);
 }
 
 

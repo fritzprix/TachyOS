@@ -342,7 +342,7 @@ static tchStatus sdio_write_block(struct tch_sdio_handle_prototype* ins, uint8_t
  ********************  public function declaration for module API *****************
  **********************************************************************************/
 
-__USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt);
+__USER_API__ static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, uint16_t vopt, tch_PwrOpt lpopt);
 __USER_API__ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api,const tch_sdioCfg_t* config,uint32_t timeout);
 __USER_API__ static tchStatus tch_sdio_release(tch_sdioHandle_t sdio);
 
@@ -435,11 +435,13 @@ MODULE_INIT(tch_sdio_init);
 MODULE_EXIT(tch_sdio_exit);
 
 
-static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, tch_PwrOpt lpopt)
+static void tch_sdio_initCfg(tch_sdioCfg_t* cfg,uint8_t buswidth, uint16_t vopt, tch_PwrOpt lpopt)
 {
 	cfg->bus_width = buswidth;
 	cfg->lpopt = lpopt;
-	cfg->v_opt = SDIO_VO31_32 | SDIO_VO32_33;
+	if(!vopt)
+		vopt = SDIO_VO31_32 | SDIO_VO32_33;
+	cfg->v_opt = vopt;
 }
 
 static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdioCfg_t* config,uint32_t timeout)

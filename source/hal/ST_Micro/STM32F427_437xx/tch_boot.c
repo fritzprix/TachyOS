@@ -200,7 +200,7 @@ void tch_boot_setSystemClock(){
 	    else
 	    { /* If HSE fails to start-up, the application will have wrong clock
 	           configuration. User can add here some code to deal with this error */
-			KERNEL_PANIC("tch_boot.c","clock init failed");
+			KERNEL_PANIC("clock init failed");
 	    }
 
 }
@@ -280,9 +280,9 @@ void tch_boot_setSystemMem(){
 	  RCC->AHB3ENR         = 0x00000001;
 
 	  /* Configure and enable Bank1_SRAM2 */
-	  FSMC_Bank1->BTCR[2]  = 0x00001015;
-	  FSMC_Bank1->BTCR[3]  = 0x00010400;
-	  FSMC_Bank1E->BWTR[2] = 0x0fffffff;
+//	  FSMC_Bank1->BTCR[2]  = 0x00001015;
+//	  FSMC_Bank1->BTCR[3]  = 0x00010400;
+//	  FSMC_Bank1E->BWTR[2] = 0x0fffffff;
 	/*
 	  Bank1_SRAM2 is configured as follow:
 

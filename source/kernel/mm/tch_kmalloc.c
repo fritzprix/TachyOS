@@ -14,7 +14,8 @@
 #include "tch_segment.h"
 #include "tch_kernel.h"
 #include "tch_kmalloc.h"
-#include "wtmalloc.h"
+
+#include "../../../include/kernel/mm/owtmalloc.h"
 #include "cdsl_dlist.h"
 #include "tch_err.h"
 #include "tch_mm.h"
@@ -36,7 +37,7 @@ struct alloc_header {
 void tch_kmalloc_init(int segid){
 
 	init_segid = segid;
-	tch_segmentAllocRegion(segid,&init_region,KERNEL_DYNAMIC_SIZE,PERM_KERNEL_ALL | PERM_OTHER_RD);
+	tch_segmentAllocRegion(segid, &init_region, KERNEL_DYNAMIC_SIZE, PERM_KERNEL_ALL | PERM_OTHER_RD);
 	tch_mapRegion(&init_mm,&init_region);
 
 	wt_initRoot(&kernel_heap_root);

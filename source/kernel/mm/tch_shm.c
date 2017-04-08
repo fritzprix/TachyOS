@@ -15,10 +15,11 @@
 #include "tch_kernel.h"
 #include "tch_ktypes.h"
 #include "tch_shm.h"
+
+#include "../../../include/kernel/mm/owtmalloc.h"
 #include "tch_segment.h"
 #include "tch_err.h"
 #include "tch_mm.h"
-#include "wtmalloc.h"
 #include "cdsl_dlist.h"
 
 

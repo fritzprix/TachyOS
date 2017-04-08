@@ -13,7 +13,7 @@
 
 #include "tch_kernel.h"
 #include "tch_lwtask.h"
-#include "cdsl_nrbtree.h"
+#include "cdsl_rbtree.h"
 
 #define LWSTATUS_PENDING		((uint8_t) 1)
 #define LWSTATUS_DONE			((uint8_t) 2)
@@ -21,7 +21,7 @@
 
 struct lw_task {
 	tch_kobj __kobj;
-	nrbtreeNode_t rbn;
+	rbtreeNode_t rbn;
 	lwtask_routine do_job;
 	uint8_t prior;
 	void* arg;
@@ -35,7 +35,7 @@ static DECLARE_COMPARE_FN(lwtask_priority_rule);
 
 static tch_waitqId looper_wq;
 static dlistEntry_t tsk_queue;
-static nrbtreeRoot_t tsk_root;
+static rbtreeRoot_t tsk_root;
 static uint32_t tsk_cnt;
 
 static tch_mtxId tsk_lock;
@@ -45,7 +45,7 @@ void __lwtsk_init(void) {
 	looper_wq = tch_rti->WaitQ->create(WAITQ_POL_FIFO);
 	tsk_cnt = 0;
 	cdsl_dlistEntryInit(&tsk_queue);
-	cdsl_nrbtreeRootInit(&tsk_root);
+	cdsl_rbtreeRootInit(&tsk_root);
 	tsk_lock = tch_rti->Mtx->create();
 	tsk_condv = tch_rti->Condv->create();
 }
@@ -91,10 +91,10 @@ int tch_lwtsk_registerTask(lwtask_routine fnp, uint8_t prior) {
 	tsk->prior = prior;
 	tsk->status = LWSTATUS_DONE;
 	cdsl_dlistNodeInit(&tsk->tsk_qn);
-	cdsl_nrbtreeNodeInit(&tsk->rbn, tsk_cnt++);
+	cdsl_rbtreeNodeInit(&tsk->rbn, tsk_cnt++);
 
 	tch_port_atomicBegin();
-	cdsl_nrbtreeInsert(&tsk_root, &tsk->rbn, FALSE);
+	cdsl_rbtreeInsert(&tsk_root, &tsk->rbn, FALSE);
 	tch_port_atomicEnd();
 
 	return tsk->rbn.key;
@@ -103,7 +103,7 @@ int tch_lwtsk_registerTask(lwtask_routine fnp, uint8_t prior) {
 void tch_lwtsk_unregisterTask(int tsk_id) {
 	if (tsk_id < 0)
 		return;
-	struct lw_task* tsk = (struct lw_task*) cdsl_nrbtreeDelete(&tsk_root, tsk_id);
+	struct lw_task* tsk = (struct lw_task*) cdsl_rbtreeDelete(&tsk_root, tsk_id);
 	if (!tsk)
 		return;
 	tsk = container_of(tsk, struct lw_task, rbn);
@@ -125,7 +125,7 @@ void tch_lwtsk_request(int tsk_id, void* arg, BOOL canblock) {
 	if ((tsk_id > tsk_cnt) || (tsk_id < 0))
 		return;
 
-	struct lw_task* tsk = (struct lw_task*) cdsl_nrbtreeLookup(&tsk_root,
+	struct lw_task* tsk = (struct lw_task*) cdsl_rbtreeLookup(&tsk_root,
 			tsk_id);
 	if (!tsk)
 		return;
@@ -176,7 +176,7 @@ void tch_lwtsk_cancel(int tsk_id) {
 	if ((tsk_id > tsk_cnt) || (tsk_id < 0))
 		return;
 
-	struct lw_task* tsk = (struct lw_task*) cdsl_nrbtreeLookup(&tsk_root, tsk_id);
+	struct lw_task* tsk = (struct lw_task*) cdsl_rbtreeLookup(&tsk_root, tsk_id);
 	if (!tsk)
 		return;
 
