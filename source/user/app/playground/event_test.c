@@ -30,8 +30,8 @@ tchStatus do_eventTest(const tch_core_api_t* api)
 	api->Thread->start(waiterID);
 	api->Thread->start(wakerID);
 
-//	api->Thread->join(waiterID,tchWaitForever);
-//	api->Thread->join(wakerID,tchWaitForever);
+	api->Thread->join(waiterID,tchWaitForever);
+	api->Thread->join(wakerID,tchWaitForever);
 	return tchOK;
 }
 
