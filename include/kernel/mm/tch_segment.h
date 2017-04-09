@@ -11,6 +11,7 @@
 
 #include "tch_mm.h"
 #include "owtree.h"
+#include "wtree.h"
 
 
 
@@ -20,14 +21,15 @@
 
 
 struct mem_segment {
-	rbtreeRoot_t            reg_root;		///< region allocated in red black tree
-	rbtreeNode_t            addr_rbn;		///< address rb node of this segment
-	rbtreeNode_t            id_rbn;			///< id rb node of this segment
+	rbtreeRoot_t            reg_root;		///< red-black tree root to track region allocation
+	rbtreeNode_t            addr_rbn;		///< red-black tree node for segment lookup by address
+	rbtreeNode_t            id_rbn;			///< red-black tree node for segment lookup by id
+	wtreeRoot_t             alloc_root;
 	uint32_t                flags;			///< flags
 	uint32_t                poff;			///< page offset of segment
-	size_t                  psize;			///< total segment size in page
+	uint32_t                psize;			///< total segment size in page
 	dlistEntry_t            pfree_list;		///< free page list
-	size_t	                pfree_cnt;		///< the total number of free pages in this segment
+	uint32_t                pfree_cnt;		///< the total number of free pages in this segment
 };
 
 /**

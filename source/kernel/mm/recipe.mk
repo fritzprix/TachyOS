@@ -6,3 +6,4 @@ OBJ-y+=tch_malloc.ko
 OBJ-y+=tch_shm.ko
 OBJ-y+=owtmalloc.ko
 OBJ-y+=owtree.ko
+OBJ-y+=wtree.ko
