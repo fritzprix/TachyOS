@@ -39,12 +39,12 @@ const struct section_descriptor __default_sections[] = {
 				.end = &_ekheap
 		},
 		{
-				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_UTEXT),
+				.flags = (MEMTYPE_INROM | SEGMENT_UACCESS | SECTION_UTEXT),
 				.start = &_utext_begin,
 				.end = &_utext_end
 		},
 		{
-				.flags = (MEMTYPE_INROM | SEGMENT_KERNEL | SECTION_URODATA),
+				.flags = (MEMTYPE_INROM | SEGMENT_UACCESS | SECTION_URODATA),
 				.start = &_surox,
 				.end = &_eurox
 		},
@@ -202,7 +202,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 
 	/**
 	 *  ================== Stack layout =========================
-	 *  |  thread argment										|
+	 *  |  thread argument										|
 	 *  |  : null terminated string or pointer to object        |
 	 *  ---------------------------------------------------------
 	 *  |  stack												|
@@ -246,7 +246,7 @@ BOOL tch_mmProcInit(tch_thread_kheader* thread,struct proc_header* proc_header)
 		if(proc_header->req_heapsz < HEAP_SIZE)
 			proc_header->req_heapsz = HEAP_SIZE;
 		if(!tch_segmentAllocRegion(0,mmp->heap_region,proc_header->req_heapsz,(PERM_KERNEL_ALL | PERM_OWNER_ALL | SECTION_DYNAMIC))){
-			tch_segmentFreeRegion(mmp->stk_region);
+			tch_segmentFreeRegion(mmp->stk_region, TRUE);
 			kfree(regions);
 			kfree(mmp->pgd);
 			kfree(mmp->dynamic);
@@ -287,9 +287,9 @@ BOOL tch_mmProcClean(tch_thread_kheader* thread){
 		KERNEL_PANIC("thread clean-up fail : null reference");
 	struct tch_mm* mmp = &thread->mm;
 	wt_cacheFlush(thread->uthread->heap,thread->uthread->cache);		// return cached chunk to per process heap
-	tch_segmentFreeRegion(mmp->stk_region);								// return user stack region
+	tch_segmentFreeRegion(mmp->stk_region, TRUE);								// return user stack region
 	if((mmp->flags & ROOT) == ROOT){									// if current thread is root thread in thread group
-		tch_segmentFreeRegion(mmp->heap_region);						// free heap region
+		tch_segmentFreeRegion(mmp->heap_region, TRUE);						// free heap region
 		tch_mutexDeinit(mmp->dynamic->mtx);
 		tch_condvDeinit(mmp->dynamic->condv);
 		kfree(mmp->dynamic->mtx);
@@ -298,9 +298,9 @@ BOOL tch_mmProcClean(tch_thread_kheader* thread){
 	}
 
 	if((mmp->flags & DYN) == DYN) {										// if current thread is dynamically loaded at first
-		tch_segmentFreeRegion(mmp->bss_region);							// free bss region
-		tch_segmentFreeRegion(mmp->data_region);						// free data region
-		tch_segmentFreeRegion(mmp->text_region);						// text region
+		tch_segmentFreeRegion(mmp->bss_region, TRUE);							// free bss region
+		tch_segmentFreeRegion(mmp->data_region, TRUE);						// free data region
+		tch_segmentFreeRegion(mmp->text_region, TRUE);						// text region
 	}
 
 	kfree(mmp->heap_region);											// return 2 mem_region struct pointer to kernel heap
