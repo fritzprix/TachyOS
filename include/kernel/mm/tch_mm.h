@@ -120,7 +120,7 @@ struct section_descriptor {
 	paddr_t end;				///< end address of section in bytes
 #define PAGE_MASK               (~(PAGE_SIZE - 1))      ///< Mask
 
-#define SEGMENT_NORMAL          ((uint32_t) 0)
+#define SEGMENT_NORMAL          ((uint32_t) 0)          ///< segment which is intended for use of generic memory resource of the system
 #define SEGMENT_KERNEL          ((uint32_t) 1)
 #define SEGMENT_UACCESS         ((uint32_t) 2)
 #define SEGMENT_DEVICE          ((uint32_t) 3)
@@ -159,24 +159,24 @@ struct proc_dynamic {
 
 extern const struct section_descriptor* const default_sections[];
 
-extern int _stext;
-extern int _etext;
-extern int _initv_begin;
-extern int _initv_end;
-extern int _exitv_begin;
-extern int _exitv_end;
-extern int _sdata;
-extern int _edata;
-extern int _sbss;
-extern int _ebss;
-extern int _skheap;
-extern int _ekheap;
-extern int _sstack;
-extern int _estack;
-extern int _utext_begin;
-extern int _utext_end;
-extern int _surox;
-extern int _eurox;
+extern int _stext;				///< beginning of kernel executable code section
+extern int _etext;              ///< end of kernel executable code section
+extern int _initv_begin;        ///< beginning of kernel module initialization vector table
+extern int _initv_end;          ///< end of kernel module initialization vector table
+extern int _exitv_begin;        ///< beginning of kernel module destroyer vector table
+extern int _exitv_end;          ///< end of kernel module destroyer vector table
+extern int _sdata;              ///< beginning of kernel static initialized data section
+extern int _edata;              ///< end of kernel static initialized data section
+extern int _sbss;               ///< beginning of kernel bss (zero) initialized section
+extern int _ebss;               ///< end of kernel bss (zero) initialized section
+extern int _skheap;             ///< beginning of system dynamic memory section
+extern int _ekheap;             ///< end of system dynamic memory section
+extern int _sstack;             ///< beginning of kernel stack
+extern int _estack;             ///< end of kernel stack
+extern int _utext_begin;        ///< beginning of section for code which can be executed from unprivileged mode
+extern int _utext_end;          ///< end of section for code which can be executed from unprivileged mode
+extern int _surox;              ///< beginning of read-only data section accessible from unprivileged mode
+extern int _eurox;              ///< end of read-only data section accessible from unprivileged mode
 
 extern struct tch_mm init_mm;
 extern volatile struct tch_mm* current_mm;

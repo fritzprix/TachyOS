@@ -388,7 +388,6 @@ static int log_open(struct tch_file* filp)
 	uart_config.Parity = USART_Parity_NON;
 	uart_config.StopBit = USART_StopBit_1B;
 
-	//tch_usartHandle (*const allocate)(const tch* env,uart_t port,tch_UartCfg* cfg,uint32_t timeout,tch_PwrOpt popt);
 	log_serial = uart->allocate(context, tch_USART2,&uart_config,tchWaitForever,ActOnSleep);
 	if(!log_serial)
 		return FALSE;

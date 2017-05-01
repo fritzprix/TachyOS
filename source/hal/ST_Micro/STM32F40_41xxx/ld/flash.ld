@@ -67,7 +67,6 @@ SECTIONS
 	    . = ALIGN(PAGE_SIZE);
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _edata = . ;
-	    
     } >RAM
     
     .udata : AT ( _usidata)
@@ -117,19 +116,18 @@ SECTIONS
     	_exitv_end = . ;    	
 	    _etext = . ;
 	    
-    	
-    	/* user executable part of kernel binary */
+	    /* ro data section can be accessible from unpriviledged mode */
     	. = ALIGN(PAGE_SIZE);
     	_surox = .;
     	*(.urodata)
     	. = ALIGN(PAGE_SIZE);
     	_eurox = .;
     	. = ALIGN(PAGE_SIZE);
+    	/* executable section can be executed from unpriviledged mode (HAL code) */
     	_utext_begin = . ;
     	*(.utext)
     	. = ALIGN(PAGE_SIZE);
     	_utext_end = . ;    
-	    
 	    
 	    /* This is used by the startup in order to initialize the .data secion */
 	    _sidata = . ;

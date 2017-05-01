@@ -54,20 +54,13 @@ static uint32_t	            seg_cnt;
 static struct proc_dynamic  init_dynamic;
 
 static int initSegment(struct section_descriptor* section,struct mem_segment* seg);
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm);
 static struct mem_region* findRegionFromPtr(struct mem_segment* segp,void* ptr);
 static struct mem_segment* findSegmentFromPtr(void* ptr);
 
 static DECLARE_ONALLOCATE(seg_onallocate);
-static DECLARE_ONFREE(seg_onfree);
-static DECLARE_ONREMOVED(seg_removed);
-static DECLARE_ONADDED(seg_added);
 
 static wt_adapter seg_adapter = {
 		.onallocate = seg_onallocate,
-		.onfree = seg_onfree,
-		.onremoved = seg_removed,
-		.onadded = seg_added
 };
 
 
@@ -126,7 +119,7 @@ void tch_segmentUnregister(int seg_id){
 		if(reg){
 			reg = container_of(reg,struct mem_region,rbn);
 			if(!reg && (reg->segp->id_rbn.key == seg_id))
-				tch_segmentFreeRegion(reg);
+				tch_segmentFreeRegion(reg, TRUE);
 		}
 		kfree(reg);		// free mem_region struct
 	}
@@ -168,7 +161,7 @@ void tch_mapSegment(struct tch_mm* mm,int seg_id){
 	struct mem_region* region = kmalloc(sizeof(struct mem_region));
 	if(!region)
 		KERNEL_PANIC("mem_region can't created");
-	initRegion(region,segment,segment->poff, segment->psize, get_permission(segment->flags));		// region has same page offset and count to its parent segment
+	tch_initRegion(region,segment,segment->poff, segment->psize, get_permission(segment->flags));		// region has same page offset and count to its parent segment
 	region->owner = mm;
 	cdsl_rbtreeInsert(&mm->dynamic->mregions, &region->mm_rbn, FALSE);
 
@@ -229,44 +222,53 @@ uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uin
 	struct page_frame* frame = wtree_reclaim_chunk(&segment->alloc_root, (pcount << PAGE_OFFSET), FALSE);
 	if(frame) {
 		frame->fhdr.offset = ((size_t) frame) >> PAGE_OFFSET;
-		initRegion(mreg, segment, frame->fhdr.offset, pcount, permission);
+		tch_initRegion(mreg, segment, frame->fhdr.offset, pcount, permission);
 		segment->pfree_cnt -= mreg->psz;
 		return pcount;
 	}
 	return 0;
 }
 
-void tch_segmentFreeRegion(const struct mem_region* mreg){
-	if(mreg == NULL)
+void tch_segmentFreeRegion(const struct mem_region* mreg, BOOL discard){
+	if(mreg == NULL) {
 		return;
-	if(mreg->psz == 0 ||!mreg->segp)
+	}
+	if(mreg->psz == 0 ||!mreg->segp) {
 		return;
+	}
 	struct mem_segment* segment = mreg->segp;
-	if(!segment)
+	if(!segment) {
 		return;
-	if((mreg->poff >= segment->psize) && (mreg->psz > (segment->psize - mreg->poff)))			// may mregion is not valid
+	}
+	if((mreg->poff >= segment->psize) && (mreg->psz > (segment->psize - mreg->poff))) {			// may mregion is not valid
 		return;
+	}
 
-	if(cdsl_rbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn)		                    // delete memory region structure from allocation tree
+	if(cdsl_rbtreeDelete(&segment->reg_root,mreg->poff) != &mreg->rbn) {		                    // delete memory region structure from allocation tree
 		KERNEL_PANIC("region mapping broken");
+	}
+	if(!discard) {
+		return;
+	}
 
-	wtreeNode_t* reg_node = wtree_nodeInit(&segment->alloc_root, mreg->poff << PAGE_OFFSET, mreg->psz << PAGE_OFFSET, NULL);
+	wtreeNode_t* reg_node = wtree_nodeInit(&segment->alloc_root, (uaddr_t) (mreg->poff << PAGE_OFFSET), mreg->psz << PAGE_OFFSET, NULL);
 	if(!reg_node) {
 		KERNEL_PANIC("INVALID REGION : fail to initialize Segment chunk");
 	}
 	wtree_addNode(&segment->alloc_root, reg_node, TRUE, NULL);
 	segment->pfree_cnt += mreg->psz;																		// update segment free size
-
 }
+
+
 
 static int initSegment(struct section_descriptor* section,struct mem_segment* seg){
 	if(!section || !seg)
 		return -1;
 
-	seg->flags = section->flags;          // copy flags of section into segment
-	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;				// calculate page index of segment's beginning from section base address
-	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET; 					// calculate page index of segment's ending from section size
-	seg->psize = section_limit - seg->poff;													// segment size in pages
+	seg->flags = section->flags;                                                        // copy flags of section into segment
+	seg->poff = ((size_t) section->start + PAGE_SIZE - 1) >> PAGE_OFFSET;               // calculate page index of segment's beginning from section base address
+	size_t section_limit = ((size_t) section->end)  >> PAGE_OFFSET;                     // calculate page index of segment's ending from section size
+	seg->psize = section_limit - seg->poff;                                             // segment size in pages
 
 	if(section_limit < seg->poff) {
 		// minimum size of section should be greater than single page
@@ -276,30 +278,33 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
 
 	cdsl_rbtreeRootInit(&seg->reg_root);
 	cdsl_dlistEntryInit(&seg->pfree_list);
-	cdsl_rbtreeNodeInit(&seg->id_rbn,seg_cnt);
-	cdsl_rbtreeNodeInit(&seg->addr_rbn,seg->poff);
+	cdsl_rbtreeNodeInit(&seg->id_rbn, seg_cnt);
+	cdsl_rbtreeNodeInit(&seg->addr_rbn, seg->poff);
 
 
-
+	uint32_t sec_type;
 	switch(seg->flags & SEGMENT_MSK) {
 	case SEGMENT_KERNEL:
 		seg->pfree_cnt = 0;											// marked as segment has no free page for kernel section & keep its memory content
-		uint32_t sec_type = get_section(seg->flags);
-		if(sec_type == SECTION_URODATA || sec_type == SECTION_UTEXT){
-			set_permission(seg->flags, PERM_OTHER_RD | PERM_KERNEL_ALL);
-		} else {
-			set_permission(seg->flags, PERM_KERNEL_ALL);            // kernel is only accessible privilege level
-		}
+		sec_type = get_section(seg->flags);
+		set_permission(seg->flags, PERM_KERNEL_ALL);            // kernel is only accessible privilege level
 		break;
 	case SEGMENT_NORMAL:
 		seg->pfree_cnt = seg->psize;
+		// create segment allocation root
 		wtree_rootInit(&seg->alloc_root, NULL, &seg_adapter ,0);
+		// register memory area of segment as available to dynamic memory allocation request
 		wtreeNode_t* seg_node = wtree_baseNodeInit(&seg->alloc_root,(uaddr_t) (seg->poff << PAGE_OFFSET), seg->psize << PAGE_OFFSET);
 		wtree_addNode(&seg->alloc_root, seg_node, FALSE, NULL);
 		set_permission(seg->flags,PERM_KERNEL_ALL | PERM_OTHER_RD);	// normal default permission (kernel_all | public read)
 		break;
 	case SEGMENT_DEVICE:
 		// TODO : make decision whether implement device segment or leave it to be accessed by privilege context
+		break;
+	case SEGMENT_UACCESS:
+		seg->pfree_cnt = 0;
+		sec_type = get_section(seg->flags);
+		set_permission(seg->flags, PERM_OWNER_ALL | PERM_OTHER_RD | PERM_KERNEL_ALL);
 		break;
 	}
 
@@ -312,7 +317,7 @@ static int initSegment(struct section_descriptor* section,struct mem_segment* se
  *  @brief initialize region struct and insert it to parent segment
  *  @param[in] regp	pointer to mem_region struct
  */
-static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm){
+void tch_initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm){
 	if(!regp)
 		return;
 	regp->poff = poff;
@@ -324,9 +329,9 @@ static void initRegion(struct mem_region* regp,struct mem_segment* parent,uint32
 		set_permission(regp->flags,perm);
 	else
 		set_permission(regp->flags,get_permission(parent->flags));		// otherwise,inherit permission from its parent
-	cdsl_rbtreeNodeInit(&regp->rbn,regp->poff);
-	cdsl_rbtreeNodeInit(&regp->mm_rbn,regp->poff);
-	cdsl_rbtreeInsert(&parent->reg_root,&regp->rbn, FALSE);            // add region tracking red-black tree
+	cdsl_rbtreeNodeInit(&regp->rbn, regp->poff);
+	cdsl_rbtreeNodeInit(&regp->mm_rbn, regp->poff);
+	cdsl_rbtreeInsert(&parent->reg_root, &regp->rbn, FALSE);            // add region tracking red-black tree
 }
 
 
@@ -407,18 +412,6 @@ int tch_regionGetSize(struct mem_region* mreg){
 static DECLARE_ONALLOCATE(seg_onallocate) {
 	KERNEL_PANIC("Out-of-Memory\n");
 	return NULL;
-}
-
-static DECLARE_ONFREE(seg_onfree) {
-	return 0;
-}
-
-static DECLARE_ONREMOVED(seg_removed) {
-
-}
-
-static DECLARE_ONADDED(seg_added) {
-
 }
 
 

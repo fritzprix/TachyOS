@@ -48,6 +48,7 @@ struct mem_region {
 
 
 extern void tch_initSegment(struct section_descriptor* init_section);
+extern void tch_initRegion(struct mem_region* regp,struct mem_segment* parent,uint32_t poff,uint32_t psz,uint32_t perm);
 
 /**
  *  \brief register memory section into segment
@@ -64,7 +65,14 @@ extern void tch_unmapSegment(struct tch_mm* mm,int seg_id);
 
 
 extern uint32_t tch_segmentAllocRegion(int seg_id,struct mem_region* mreg,size_t sz,uint32_t permission);
-extern void tch_segmentFreeRegion(const struct mem_region* mreg);
+/*!
+ * \brief free allocated region
+ * \param[in] mreg pointer to region structure which is to be freed
+ * \param[in] discard discard option indicate whether the memory region is actually discarded so it can be new allocation request.
+ *  if true, it'll be available to allocation request, otherwise, the memory region is kept and the region node is removed from
+ *  segment allocation table. this option can be useful when a region is merged into another externally.
+ */
+extern void tch_segmentFreeRegion(const struct mem_region* mreg, BOOL discard);
 extern struct mem_region* tch_segmentGetRegionFromPtr(void* ptr);
 extern void tch_mapRegion(struct tch_mm* mm,struct mem_region* mreg);
 extern void tch_unmapRegion(struct tch_mm* mm,struct mem_region* mreg);

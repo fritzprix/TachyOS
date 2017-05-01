@@ -16,33 +16,55 @@
 #include "tch_kmalloc.h"
 
 #include "../../../include/kernel/mm/owtmalloc.h"
+#include "wtree.h"
 #include "cdsl_dlist.h"
 #include "tch_err.h"
 #include "tch_mm.h"
 
-#define MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(struct wt_heap_node))
+#define MIN_CACHE_SIZE				(sizeof(struct mem_region) + sizeof(wtreeNode_t))
 #define available(heap) 			(((wt_heapRoot_t*) heap)->free_sz)
+#define KM_PERMISSION               (PERM_KERNEL_ALL | PERM_OTHER_RD)
 
-static wt_heapRoot_t kernel_heap_root;
-static wt_heapNode_t init_kernel_cache;
-static struct mem_region init_region;
-
-static int init_segid;
+static DECLARE_ONALLOCATE(km_onallocate);
+static DECLARE_ONFREE(km_onfree);
+static DECLARE_ONREMOVED(km_onremoved);
+static DECLARE_ONADDED(km_onadded);
 
 struct alloc_header {
 	dlistNode_t      alc_ln;
+	size_t           size;
 };
+
+
+struct map_header {
+	wtreeNode_t         wtnode;
+	struct mem_region   mreg;
+};
+
+
+static wt_adapter kmalloc_adapter = {
+		.onallocate = km_onallocate,
+		.onfree = km_onfree,
+		.onremoved = km_onremoved,
+		.onadded = km_onadded
+};
+
+
+
+static wtreeRoot_t kernel_heap_root_new;
+static struct mem_region init_region;
+
+static int init_segid;
 
 
 void tch_kmalloc_init(int segid){
 
 	init_segid = segid;
-	tch_segmentAllocRegion(segid, &init_region, KERNEL_DYNAMIC_SIZE, PERM_KERNEL_ALL | PERM_OTHER_RD);
-	tch_mapRegion(&init_mm,&init_region);
+	tch_segmentAllocRegion(segid, &init_region,KERNEL_DYNAMIC_SIZE, KM_PERMISSION);
 
-	wt_initRoot(&kernel_heap_root);
-	wt_initNode(&init_kernel_cache,tch_getRegionBase(&init_region),tch_getRegionSize(&init_region));
-	wt_addNode(&kernel_heap_root,&init_kernel_cache);
+	wtree_rootInit(&kernel_heap_root_new, NULL, &kmalloc_adapter, sizeof(struct mem_region));
+	wtreeNode_t* init_node = wtree_baseNodeInit(&kernel_heap_root_new, (uaddr_t) tch_getRegionBase(&init_region), tch_getRegionSize(&init_region));
+	wtree_addNode(&kernel_heap_root_new, init_node, FALSE, NULL);
 }
 
 void* kmalloc(size_t sz){
@@ -52,30 +74,16 @@ void* kmalloc(size_t sz){
 	size_t asz = sz + sizeof(struct alloc_header);
 
 	tch_port_atomicBegin();
-	if(!(available(&kernel_heap_root)  > (MIN_CACHE_SIZE + asz))){
-		// try to allocate new memory region and add it to kernel heap
-		struct mem_region *nregion = wt_malloc(&kernel_heap_root,sizeof(struct mem_region));
-		wt_heapNode_t	*alloc = wt_malloc(&kernel_heap_root,sizeof(wt_heapNode_t));
-		size_t rsz = tch_segmentGetFreeSize(init_segid);
-		if((rsz * PAGE_SIZE) < sz){
-			tch_port_atomicEnd();
-			return NULL;		// not able to satisfies memory request
-								// allocate new region and add it to kernel heap
-		}
-
-		rsz = ((rsz * PAGE_SIZE) > KERNEL_DYNAMIC_SIZE) ? (rsz * PAGE_SIZE) : KERNEL_DYNAMIC_SIZE;
-		tch_segmentAllocRegion(init_segid,nregion,rsz,PERM_KERNEL_ALL | PERM_OTHER_RD);
-		wt_initNode(&init_kernel_cache,tch_getRegionBase(nregion),tch_getRegionSize(nregion));
-		wt_addNode(&kernel_heap_root,&init_kernel_cache);
-	}
-	chunk = wt_malloc(&kernel_heap_root,sz + sizeof(struct alloc_header));
-	tch_port_atomicEnd();
-
+	chunk = wtree_reclaim_chunk(&kernel_heap_root_new, asz, TRUE);
 	if(!chunk){
+		tch_port_atomicEnd();
 		return NULL;
 	}
+	chunk->size = asz;
 	cdsl_dlistNodeInit(&chunk->alc_ln);
 	cdsl_dlistPutHead((dlistEntry_t*) &current_mm->alc_list,&chunk->alc_ln);			// add alloc list
+	tch_port_atomicEnd();
+
 	return (void*) ((size_t) chunk + sizeof(struct alloc_header));
 }
 
@@ -87,17 +95,53 @@ void kfree(void* p){
 	obj_entry--;
 	tch_port_atomicBegin();
 	cdsl_dlistRemove(&obj_entry->alc_ln);
-	result = wt_free(&kernel_heap_root,obj_entry);
+	wtreeNode_t* node = wtree_nodeInit(&kernel_heap_root_new, obj_entry, obj_entry->size, NULL);
+	wtree_addNode(&kernel_heap_root_new, node, TRUE, NULL);
 	tch_port_atomicEnd();
-	if(result == WT_ERROR)
-		KERNEL_PANIC("kernel heap corrupted");
 }
 
 void kmstat(mstat* sp){
 	if(!sp)
 		return;
 	sp->cached = 0;
-	sp->total = kernel_heap_root.size;
-	sp->used = kernel_heap_root.size - kernel_heap_root.free_sz;
+	sp->total = wtree_totalSize(&kernel_heap_root_new);
+	sp->used = wtree_freeSize(&kernel_heap_root_new);
 }
 
+
+static DECLARE_ONALLOCATE(km_onallocate) {
+	struct mem_region mreg;
+	int pcount = tch_segmentAllocRegion(init_segid, &mreg, total_sz, KM_PERMISSION);
+	if(pcount <= 0) {
+		KERNEL_PANIC("Out-Of-Memory\n");
+	}
+	return (void*) (mreg.poff << PAGE_OFFSET);
+}
+
+static DECLARE_ONFREE(km_onfree) {
+	struct mem_segment* pseg = tch_segmentLookup(init_segid);
+	if(wtnode->base_size) {
+		struct mem_region* free_reg = (struct mem_region*) &wtnode[1];
+		tch_segmentFreeRegion(free_reg, TRUE);
+	}
+	return 0;
+}
+
+static DECLARE_ONREMOVED(km_onremoved) {
+	if(node->base_size) {
+		struct map_header* hdr = container_of(node, struct map_header, wtnode);
+		tch_unmapRegion(&init_mm, &hdr->mreg);
+		if(merged) {
+			tch_segmentFreeRegion(&hdr->mreg, FALSE);
+		}
+	}
+}
+
+static DECLARE_ONADDED(km_onadded) {
+	if(node->base_size) {
+		struct map_header* hdr = container_of(node, struct map_header, wtnode);
+		struct mem_segment* seg = tch_segmentLookup(init_segid);
+		tch_initRegion(&hdr->mreg, seg, (size_t) (node->top - node->base_size) >> PAGE_OFFSET, node->base_size >> PAGE_OFFSET, KM_PERMISSION);
+		tch_mapRegion(&init_mm, &hdr->mreg);
+	}
+}
