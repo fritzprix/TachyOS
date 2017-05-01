@@ -53,7 +53,7 @@ static wt_adapter kmalloc_adapter = {
 
 static wtreeRoot_t kernel_heap_root_new;
 static struct mem_region init_region;
-
+static struct mem_segment* cached_seg = NULL;
 static int init_segid;
 
 
@@ -119,10 +119,9 @@ static DECLARE_ONALLOCATE(km_onallocate) {
 }
 
 static DECLARE_ONFREE(km_onfree) {
-	struct mem_segment* pseg = tch_segmentLookup(init_segid);
 	if(wtnode->base_size) {
-		struct mem_region* free_reg = (struct mem_region*) &wtnode[1];
-		tch_segmentFreeRegion(free_reg, TRUE);
+		struct map_header* hdr = container_of(wtnode, struct map_header, wtnode);
+		tch_segmentFreeRegion(&hdr->mreg, TRUE);
 	}
 	return 0;
 }
@@ -139,9 +138,12 @@ static DECLARE_ONREMOVED(km_onremoved) {
 
 static DECLARE_ONADDED(km_onadded) {
 	if(node->base_size) {
+		// node that has base_size (meaning original allocated size) is mapped to init_mm (kernel logical memory management root)
 		struct map_header* hdr = container_of(node, struct map_header, wtnode);
-		struct mem_segment* seg = tch_segmentLookup(init_segid);
-		tch_initRegion(&hdr->mreg, seg, (size_t) (node->top - node->base_size) >> PAGE_OFFSET, node->base_size >> PAGE_OFFSET, KM_PERMISSION);
+		if(!cached_seg) {
+			cached_seg = tch_segmentLookup(init_segid);
+		}
+		tch_initRegion(&hdr->mreg, cached_seg, (size_t) (node->top - node->base_size) >> PAGE_OFFSET, node->base_size >> PAGE_OFFSET, KM_PERMISSION);
 		tch_mapRegion(&init_mm, &hdr->mreg);
 	}
 }
