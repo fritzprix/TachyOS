@@ -61,14 +61,14 @@ DEFS=$(DEF-y:%=-D%)
 DEBUG_OBJS=$(OBJ-y:%=DEBUG/%)
 RELEASE_OBJS=$(OBJ-y:%=RELEASE/%)
 
-DEBUG_TARGET=TachyOS_dbg_$(MAJOR).$(MINOR).elf
-RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).elf
+DEBUG_TARGET=TachyOS_dbg_$(MAJOR).$(MINOR).$(PATCH).elf
+RELEASE_TARGET=TachyOS_rel_$(MAJOR).$(MINOR).$(PATCH).elf
 
 
 PHONY=config all debug release clean config_clean
 .SILENT : $(SILENT)
 
-SILENT=config $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET)
+SILENT=config $(OBJ-y:%=DEBUG/%) $(OBJ-y:%=RELEASE/%) $(DEBUG_TARGET) $(RELEASE_TARGET) reset clean
 
 
 all : debug
@@ -84,7 +84,7 @@ $(KCONFIG_TARGET) : $(AUTOGEN_DIR) $(CONFIG_PY)
 endif
 
 $(CONFIG_PY):
-	$(PIP) install jconfigpy -t $(TOOL_DIR)
+	$(PIP) install jconfigpy --system -t $(TOOL_DIR)
 
 
 
@@ -140,7 +140,7 @@ RELEASE/%.sko:%.S
 clean:
 	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(RELEASE_OBJS) $(DEBUG_OBJS)
 
-config_clean:
+reset: clean
 	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN) $(REPO-y) $(LDIR-y)
 
 .PHONY = $(PHONY)
