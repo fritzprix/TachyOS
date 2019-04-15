@@ -84,7 +84,7 @@ $(KCONFIG_TARGET) : $(AUTOGEN_DIR) $(CONFIG_PY)
 endif
 
 $(CONFIG_PY):
-	$(PIP) install jconfigpy -t $(TOOL_DIR)
+	$(PIP) install jconfigpy --system -t $(TOOL_DIR)
 
 
 
