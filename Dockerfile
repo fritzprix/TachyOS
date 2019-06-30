@@ -1,4 +1,4 @@
-FROM	fritzprix/cbuild:0.0.1
+FROM	fritzprix/cbuild:0.0.2
 
 MAINTAINER	fritzprix
 
