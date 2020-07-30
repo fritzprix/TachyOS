@@ -658,6 +658,22 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 };
 
 
+//Placeholder for prevent build from failure
+__TCH_STATIC_INIT tch_sdio_descriptor SDIO_HWs[MFEATURE_SDIO] = {
+		{
+				._sdio = SDIO,
+				._handle = NULL,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_SDIOEN,
+				._lpclkenr = &RCC->APB2LPENR,
+				.lpclkmsk = RCC_APB2LPENR_SDIOLPEN,
+				._rstr = &RCC->APB2RSTR,
+				.rstmsk = RCC_APB2RSTR_SDIORST,
+				.irq = SDIO_IRQn
+		}
+};
+
+
 void tch_hal_enableSystick(uint32_t mills){
 	SysTick_Config(mills * (SYS_CLK / 1000));
 	tch_port_enableInterrupt(SysTick_IRQn, PRIORITY_0, NULL);
