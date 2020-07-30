@@ -1,11 +1,8 @@
-FROM	fritzprix/cbuild:0.0.2
-
-MAINTAINER	fritzprix
-
-RUN	apt-get update
-RUN	git clone https://github.com/fritzprix/TachyOS.git
-WORKDIR	TachyOS
-RUN	make config ARCH=ARM DEFCONF=stm32f4_def.conf
-CMD	make release & make all
+FROM	ubuntu:18.04
 
 
+RUN	apt update
+RUN apt install -y build-essential gcc-arm-none-eabi clang llvm git python-pip
+RUN mkdir build
+WORKDIR /build
+CMD ["./ci_build.sh"]
