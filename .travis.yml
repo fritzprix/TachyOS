@@ -10,7 +10,7 @@ install:
      - docker build -t tachyos_build .
 
 script: 
-     - docker run tachyos_build
+     - docker run --mount type=bind,source="$(pwd)",target=/build  tachyos_build
 
 notifications:
   slack: doodream:kGaMxozfTcIK4BIzxxEkxnAZ
