@@ -3,6 +3,18 @@
     "type":"recipe",
     "path":"./recipe.mk"
   },
+  "FPU_ABI":{
+    "type":"enum",
+    "default":1,
+    "enum":[
+      "soft",
+      "softfp",
+      "hardfp"
+    ],
+    "gen-list":{
+    	"FEATURE_FLOAT":"to_int(this)"
+    }
+  },
   "DEP_CONFIG": {  
     "type":"config",
     "path":"./depend/config.json"
