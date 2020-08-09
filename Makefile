@@ -138,7 +138,7 @@ RELEASE/%.sko:%.S
 
 
 clean:
-	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(RELEASE_OBJS) $(DEBUG_OBJS)
+	rm -rf $(OBJ-y) $(DEBUG_TARGET) $(RELEASE_TARGET) $(RELEASE_OBJS) $(DEBUG_OBJS) TachyOS_*
 
 reset: clean
 	rm -rf $(KCONFIG_TARGET) $(KCONFIG_AUTOGEN) $(REPO-y) $(LDIR-y)

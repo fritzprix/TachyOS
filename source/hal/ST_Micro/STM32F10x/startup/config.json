@@ -1,0 +1,17 @@
+{
+    "STM32F10x_SUB_CATEGORY": {
+        "type": "enum",
+        "default": 0,
+        "enum": [
+            "connectivty",
+            "ld",
+            "md",
+            "hd",
+            "xl"
+        ]
+    },
+    "STM32F10x_SUB_STARTUP_CONFIG": {
+        "type": "config",
+        "path": "./$STM32F10x_SUB_CATEGORY/config.json"
+    }
+}

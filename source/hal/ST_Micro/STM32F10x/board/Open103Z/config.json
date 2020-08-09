@@ -1,0 +1,6 @@
+{
+  "BOARD_RECIPE":{
+    "type":"recipe",
+    "path":"./recipe.mk"
+  }
+}

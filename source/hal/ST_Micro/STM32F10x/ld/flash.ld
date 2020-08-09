@@ -1,0 +1,282 @@
+
+
+/* Common part of the linker scripts for STM32F devices*/
+
+__stack_init = KERNEL_STACK_LIMIT  - KERNEL_STACK_SIZE ;
+
+
+MEMORY
+{
+  RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
+  CCMRAM (xrw) : ORIGIN = 0x10000000, LENGTH = 64K
+  FLASH (rx) : ORIGIN = 0x8000000, LENGTH = 1024K
+  FLASHB1 (rx) : ORIGIN = 0x00000000, LENGTH = 0
+  EXTMEMB0 (rx) : ORIGIN = 0x00000000, LENGTH = 0
+  EXTMEMB1 (rx) : ORIGIN = 0x00000000, LENGTH = 0
+  EXTMEMB2 (rx) : ORIGIN = 0x00000000, LENGTH = 0
+  EXTMEMB3 (rx) : ORIGIN = 0x00000000, LENGTH = 0
+  MEMORY_ARRAY (xrw)  : ORIGIN = 0x20002000, LENGTH = 32
+}
+
+
+
+
+/* include the sections management sub-script for FLASH mode */
+
+/* Sections Definitions */
+
+SECTIONS
+{
+    /* for Cortex devices, the beginning of the startup code is stored in the .isr_vector section, which goes to FLASH */
+    .isr_vector :
+    {
+	. = ALIGN(4);
+	_sisrv = .;
+        KEEP(*(.isr_vector))            /* Startup code */
+	. = ALIGN(4);
+    } >FLASH
+ 
+    /* for some STRx devices, the beginning of the startup code is stored in the .flashtext section, which goes to FLASH */
+    .flashtext :
+    {
+	. = ALIGN(4);
+        *(.flashtext)            /* Startup code */
+	. = ALIGN(4);
+    } >FLASH
+    
+    .ARM.extab : 
+    {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
+    
+    /*size of section is evaluated immediately so if you want to make size of init section in flash ROM
+      same to size of data section in RAM, you must allocate region first */
+    
+    .data  : AT ( _sidata )
+    {
+	    . = ALIGN(PAGE_SIZE);
+        /* This is used by the startup in order to initialize the .data secion */
+        _sdata = . ;
+        
+        *(.data)
+        *(.data.*)
+
+	    . = ALIGN(PAGE_SIZE);
+	    /* This is used by the startup in order to initialize the .data secion */
+	    _edata = . ;
+	    
+    } >RAM
+    
+    .udata : AT ( _usidata)
+    {
+    	. = ALIGN(PAGE_SIZE);
+    	_sudata = . ;
+    	*(.udata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eudata = . ;
+    } >RAM
+
+    __exidx_start = .;
+    .ARM.exidx :
+    {
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > FLASH
+    __exidx_end = .;
+    /* the program code is stored in the .text section, which goes to Flash */
+    .text :
+    {
+	    . = ALIGN(4);
+	    _stext = .;
+	    
+        *(.text)                   /* remaining code */
+        *(.text.*)                 /* remaining code */
+        *(.rodata)                 /* read-only data (constants) */
+        *(.rodata*)
+        *(.glue_7)
+        *(.glue_7t)
+
+	    . = ALIGN(4);
+    	__syscall_entry = . ;
+    	*(.sysc.table) 
+    	. = ALIGN(4);
+    	__syscall_end = . ;
+    	
+    	_initv_begin = . ;
+    	KEEP(*(.sinitv))  
+    	KEEP(*(.sinitv*)) 
+    	. = ALIGN(4); 
+    	_initv_end = . ;
+    	
+    	_exitv_begin = . ;
+    	KEEP(*(.sexitv))
+    	KEEP(*(.sexitv*))
+    	. = ALIGN(4);
+    	_exitv_end = . ;    	
+	    _etext = . ;
+	    
+    	
+    	/* user executable part of kernel binary */
+    	. = ALIGN(PAGE_SIZE);
+    	_surox = .;
+    	*(.urodata)
+    	. = ALIGN(PAGE_SIZE);
+    	_eurox = .;
+    	. = ALIGN(PAGE_SIZE);
+    	_utext_begin = . ;
+    	*(.utext)
+    	. = ALIGN(PAGE_SIZE);
+    	_utext_end = . ;    
+	    
+	    
+	    /* This is used by the startup in order to initialize the .data secion */
+	    _sidata = . ;
+	    _usidata = _sidata + SIZEOF(.data);
+    } >FLASH
+    
+   
+    /* MEMORY_ARRAY */
+    .ROarraySection :
+    {
+            *(.ROarraySection)                          
+    } >MEMORY_ARRAY
+     
+
+    /* This is the initialized data section
+    The program executes knowing that the data is in the RAM
+    but the loader puts the initial values in the FLASH (inidata).
+    It is one task of the startup to copy the initial values from FLASH to RAM. */
+    
+    
+    
+
+    /* This is the uninitialized data section */
+    .bss :
+    {
+	    . = ALIGN(4);
+        /* This is used by the startup in order to initialize the .bss secion */
+        _sbss = .;
+        
+        *(.bss)
+        *(.bss.*)
+        *(COMMON)
+        
+	    . = ALIGN(PAGE_SIZE);
+	    /* This is used by the startup in order to initialize the .bss secion */
+	    _ebss = . ;
+    } >RAM
+    
+    
+    .kheap :
+    {
+    	. = ALIGN(PAGE_SIZE);
+    	_skheap = .;
+    	. += KERNEL_DYNAMIC_SIZE;
+    	. = ALIGN(PAGE_SIZE);
+    } >RAM
+    
+    .kstack __stack_init :
+    {	
+    	. = ALIGN(PAGE_SIZE);
+    	_ekheap = .;
+    	_sstack = .;
+	   	KEEP(*(.kernel.stack))
+    	. = . + KERNEL_STACK_SIZE;
+    	_estack = .;
+    } >RAM
+    
+    
+    
+    /* this is the FLASH Bank1 */
+    /* the C or assembly source must explicitly place the code or data there
+    using the "section" attribute */
+    .b1text :
+    {
+        *(.b1text)                   /* remaining code */
+        *(.b1rodata)                 /* read-only data (constants) */
+        *(.b1rodata*)
+    } >FLASHB1
+    
+    /* this is the EXTMEM */
+    /* the C or assembly source must explicitly place the code or data there
+    using the "section" attribute */
+    
+    /* EXTMEM Bank0 */
+    .eb0text :
+    {
+        *(.eb0text)                   /* remaining code */
+        *(.eb0rodata)                 /* read-only data (constants) */
+        *(.eb0rodata*)
+    } >EXTMEMB0
+    
+    /* EXTMEM Bank1 */
+    .eb1text :
+    {
+        *(.eb1text)                   /* remaining code */
+        *(.eb1rodata)                 /* read-only data (constants) */
+        *(.eb1rodata*)
+    } >EXTMEMB1
+    
+    /* EXTMEM Bank2 */
+    .eb2text :
+    {
+        *(.eb2text)                   /* remaining code */
+        *(.eb2rodata)                 /* read-only data (constants) */
+        *(.eb2rodata*)
+    } >EXTMEMB2
+    
+    /* EXTMEM Bank0 */
+    .eb3text :
+    {
+        *(.eb3text)                   /* remaining code */
+        *(.eb3rodata)                 /* read-only data (constants) */
+        *(.eb3rodata*)
+    } >EXTMEMB3
+   
+
+    
+    /* after that it's only debugging information. */
+    
+    /* remove the debugging information from the standard libraries */
+    DISCARD :
+    {
+     libc.a ( * )
+     libm.a ( * )
+     libgcc.a ( * )
+     }
+  
+  
+    /* Stabs debugging sections.  */
+    .stab          0 : { *(.stab) }
+    .stabstr       0 : { *(.stabstr) }
+    .stab.excl     0 : { *(.stab.excl) }
+    .stab.exclstr  0 : { *(.stab.exclstr) }
+    .stab.index    0 : { *(.stab.index) }
+    .stab.indexstr 0 : { *(.stab.indexstr) }
+    .comment       0 : { *(.comment) }
+    /* DWARF debug sections.
+       Symbols in the DWARF debugging sections are relative to the beginning
+       of the section so we begin them at 0.  */
+    /* DWARF 1 */
+    .debug          0 : { *(.debug) }
+    .line           0 : { *(.line) }
+    /* GNU DWARF 1 extensions */
+    .debug_srcinfo  0 : { *(.debug_srcinfo) }
+    .debug_sfnames  0 : { *(.debug_sfnames) }
+    /* DWARF 1.1 and DWARF 2 */
+    .debug_aranges  0 : { *(.debug_aranges) }
+    .debug_pubnames 0 : { *(.debug_pubnames) }
+    /* DWARF 2 */
+    .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
+    .debug_abbrev   0 : { *(.debug_abbrev) }
+    .debug_line     0 : { *(.debug_line) }
+    .debug_frame    0 : { *(.debug_frame) }
+    .debug_str      0 : { *(.debug_str) }
+    .debug_loc      0 : { *(.debug_loc) }
+    .debug_macinfo  0 : { *(.debug_macinfo) }
+    /* SGI/MIPS DWARF 2 extensions */
+    .debug_weaknames 0 : { *(.debug_weaknames) }
+    .debug_funcnames 0 : { *(.debug_funcnames) }
+    .debug_typenames 0 : { *(.debug_typenames) }
+    .debug_varnames  0 : { *(.debug_varnames) }    
+    
+}
