@@ -6,6 +6,7 @@
     "enum":[
       "STM32F10x",
       "STM32F2XX",
+      "STM32F411xE",
       "STM32F40_41xxx",
       "STM32F427_437xx"
     ]

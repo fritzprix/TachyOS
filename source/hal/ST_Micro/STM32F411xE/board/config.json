@@ -1,0 +1,12 @@
+{
+  "BOARD_NAME": {
+    "type": "enum",
+    "enum": [
+      "AIX_SMC"
+    ]
+  },
+  "BOARD_SUB_CONFIG": {
+    "type": "config",
+    "path": "./$BOARD_NAME/config.json"
+  }
+}
