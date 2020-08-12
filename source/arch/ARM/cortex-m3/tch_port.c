@@ -68,12 +68,12 @@
 #define NR_PAGE_ENTRY				8
 
 
-const uint32_t PRIORITY_MAP[] = {
-		[0] = HANDLER_SYSTICK_PRIOR,
-		[1] = HANDLER_HIGH_PRIOR,
-		[2] = HANDLER_NORMAL_PRIOR,
-		[3] = HANDLER_NORMAL_PRIOR,
-		[4] = HANDLER_LOW_PRIOR
+const uint32_t PRIORITY_MAP[] ={
+	[0] = HANDLER_SYSTICK_PRIOR,
+	[1] = HANDLER_HIGH_PRIOR,
+	[2] = HANDLER_NORMAL_PRIOR,
+	[3] = HANDLER_NORMAL_PRIOR,
+	[4] = HANDLER_LOW_PRIOR
 };
 
 static uwaddr_t remapped_isr_table = 0;
@@ -81,7 +81,7 @@ static uwaddr_t remapped_isr_table = 0;
 
 
 
-struct pte  {
+struct pte {
 	union {
 		struct {
 			uint32_t	baddr;
@@ -97,46 +97,46 @@ struct pgd {
 };
 
 
-BOOL tch_port_init(){
+BOOL tch_port_init() {
 	__disable_irq();
 	SCB->AIRCR = (SCB_AIRCR_KEY | (6 << SCB_AIRCR_PRIGROUP_Pos));          /**  Set priority group
-	                                                                        *   - [7] : Group Priority / [6:4] : Subpriority
-	                                                                        *   - Handler or thread within same group priority
-	                                                                        *     don't preempt each other
-	                                                                        *   - Kenel thread has group priorty 1
-	                                                                        *   - SuperVisor Mode has group priority 0
-	                                                                        *   - highest priorty isr has group priority 1
-	                                                                        *   -> Kernel thread isn't preempted by other isr
-	                                                                        **/
+																			*   - [7] : Group Priority / [6:4] : Subpriority
+																			*   - Handler or thread within same group priority
+																			*     don't preempt each other
+																			*   - Kenel thread has group priorty 1
+																			*   - SuperVisor Mode has group priority 0
+																			*   - highest priorty isr has group priority 1
+																			*   -> Kernel thread isn't preempted by other isr
+																			**/
 	SCB->SHCSR |= (SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);    /**
-	                                                                                                       *  General Fault handler enable
-	                                                                                                       *  - for debugging convinience
-	                                                                                                       **/
+																										   *  General Fault handler enable
+																										   *  - for debugging convinience
+																										   **/
 	__set_PSP(__get_MSP());                         // Init Stack inherited to thread mode stack pointer
 	uint32_t mcu_ctrl = __get_CONTROL();            /** Modify Control register
-	                                                 *  - dedicated Thread Stack Pointer enabled
-	                                                 *
-	                                                 **/
+													 *  - dedicated Thread Stack Pointer enabled
+													 *
+													 **/
 
-#ifdef __DBG
+	#ifdef __DBG
 	DBGMCU->CR |= (DBGMCU_CR_DBG_SLEEP | DBGMCU_CR_DBG_STOP);
-#endif
+	#endif
 	mcu_ctrl |= CTRL_PSTACK_ENABLE;
-#if FEATURE_FLOAT > 0
+	#if FEATURE_FLOAT > 0
 	/***
 	 *   FPU Activation
 	 */
 	FPU->FPCCR |= FPU_FPCCR_ASPEN_Msk;
 	SCB->CPACR |= (0xF << 20);
-#endif
+	#endif
 	__set_CONTROL(mcu_ctrl);
 	__ISB();
 	__DMB();
 
 	// set Handler Priority
 
-	NVIC_SetPriority(SVCall_IRQn,HANDLER_SVC_PRIOR);
-	NVIC_SetPriority(PendSV_IRQn,HANDLER_SVC_PRIOR);
+	NVIC_SetPriority(SVCall_IRQn, HANDLER_SVC_PRIOR);
+	NVIC_SetPriority(PendSV_IRQn, HANDLER_SVC_PRIOR);
 	NVIC_EnableIRQ(SVCall_IRQn);
 	NVIC_EnableIRQ(PendSV_IRQn);
 
@@ -144,34 +144,34 @@ BOOL tch_port_init(){
 }
 
 
-void tch_port_setIsrVectorMap(uint32_t isrv){
+void tch_port_setIsrVectorMap(uint32_t isrv) {
 	isrv &= ~0x200;
 	SCB->VTOR = isrv;
 }
 
-void tch_port_enablePrivilegedThread(){
+void tch_port_enablePrivilegedThread() {
 	uint32_t mcu_control = __get_CONTROL();
 	mcu_control &= ~CTRL_UNPRIV_THREAD_ENABLE;
 	__set_CONTROL(mcu_control);
 }
 
-void tch_port_disablePrivilegedThread(){
+void tch_port_disablePrivilegedThread() {
 	uint32_t mcu_control = __get_CONTROL();
 	mcu_control |= CTRL_UNPRIV_THREAD_ENABLE;
 	__set_CONTROL(mcu_control);
 }
 
 
-void tch_port_atomicBegin(void){
+void tch_port_atomicBegin(void) {
 	__set_BASEPRI(MODE_KERNEL);
 }
 
 
-void tch_port_atomicEnd(void){
+void tch_port_atomicEnd(void) {
 	__set_BASEPRI(MODE_USER);
 }
 
-BOOL tch_port_isISR(){
+BOOL tch_port_isISR() {
 	return __get_IPSR() > 0;
 }
 
@@ -187,16 +187,16 @@ void tch_port_remapIsrTable(uwaddr_t remapped_table) {
 	return;
 }
 
-void tch_port_enableInterrupt(int32_t irq, uint32_t priority, void (*handler) (void) ) {
+void tch_port_enableInterrupt(int32_t irq, uint32_t priority, void (*handler) (void)) {
 	NVIC_DisableIRQ(irq);
-	NVIC_SetPriority(irq,PRIORITY_MAP[priority]);
+	NVIC_SetPriority(irq, PRIORITY_MAP[priority]);
 
-	if(remapped_isr_table) {
+	if (remapped_isr_table) {
 		/*
 		 * ISR remapping is enabled assign handler to isr table
 		 */
-		uwaddr_t* isr_table = (uwaddr_t*) remapped_isr_table;
-		isr_table[irq] = (uwaddr_t*) handler;
+		uwaddr_t* isr_table = (uwaddr_t*)remapped_isr_table;
+		isr_table[irq] = (uwaddr_t*)handler;
 	}
 	NVIC_EnableIRQ(irq);
 }
@@ -205,21 +205,21 @@ void tch_port_disableInterrupt(int32_t irq) {
 	NVIC_DisableIRQ(irq);
 }
 
-void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
+void tch_port_switch(uwaddr_t nth, uwaddr_t cth) {
 	asm volatile(
-#if FEATURE_FLOAT > 0
-			"vpush {s16-s31}\n"
-#endif
-			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
-			"str sp,[%0]\n"                      ///< store
+		#if FEATURE_FLOAT > 0
+		"vpush {s16-s31}\n"
+		#endif
+		"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
+		"str sp,[%0]\n"                      ///< store
 
-			"ldr sp,[%1]\n"
-			"pop {r4-r11,lr}\n"
-#if FEATURE_FLOAT > 0
-			"vpop {s16-s31}\n"
-#endif
-			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) :"r4","r5","r6","r8","r9","r10", "r11", "lr");
+		"ldr sp,[%1]\n"
+		"pop {r4-r11,lr}\n"
+		#if FEATURE_FLOAT > 0
+		"vpop {s16-s31}\n"
+		#endif
+		"ldr r0,=%2\n"
+		"svc #0" : : "r"(&((tch_thread_kheader*)cth)->ctx), "r"(&((tch_thread_kheader*)nth)->ctx), "i"(SV_EXIT_FROM_SWITCH) :"r4", "r5", "r6", "r8", "r9", "r10", "r11", "lr");
 }
 
 
@@ -227,23 +227,23 @@ void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
 /***
  *  this function redirect execution to thread mode for thread context manipulation
  */
-void tch_port_setJmp(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
+void tch_port_setJmp(uwaddr_t routine, uword_t arg1, uword_t arg2, uword_t arg3) {
 	tch_exc_stack* org_sp = (tch_exc_stack*)__get_PSP();          //
-	                                                              //   prepare exception entry stack
-	                                                              //    - passing arguement to kernel mode thread
-	                                                              //   - redirect kernel routine
-	                                                              //
+																  //   prepare exception entry stack
+																  //    - passing arguement to kernel mode thread
+																  //   - redirect kernel routine
+																  //
 	org_sp--;                                                     // 1. push stack
-	mset(org_sp,0,sizeof(tch_exc_stack));
+	mset(org_sp, 0, sizeof(tch_exc_stack));
 	org_sp->R0 = arg1;                                            // 2. pass arguement into fake stack
 	org_sp->R1 = arg2;
 	org_sp->R2 = arg3;
 
 	__VALID_SYSCALL = TRUE;
-	                                                              //
-	                                                              //  kernel thread function has responsibility to push r12 in stack of thread
-	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
-	                                                              //  more detail could be found in context switch function
+	//
+	//  kernel thread function has responsibility to push r12 in stack of thread
+	//  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
+	//  more detail could be found in context switch function
 
 	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
@@ -254,13 +254,13 @@ void tch_port_setJmp(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 
 
 
-int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
+int tch_port_enterSv(word_t sv_id, uword_t arg1, uword_t arg2, uword_t arg3) {
 	asm volatile(
-			"ldr r4,=#1\n"
-			"str r4,[%0]\n"
-			"dmb\n"
-			"isb\n"
-			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3","r4" );        // return from sv interrupt and get result from register #0
+		"ldr r4,=#1\n"
+		"str r4,[%0]\n"
+		"dmb\n"
+		"isb\n"
+		"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0", "r1", "r2", "r3", "r4");        // return from sv interrupt and get result from register #0
 	return ((tch_thread_uheader*)current)->kRet;
 }
 
@@ -274,69 +274,69 @@ int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
  *
  *
  */
-void* tch_port_makeInitialContext(uwaddr_t uthread_header,uwaddr_t stktop,uwaddr_t initfn){
-	tch_exc_stack* exc_sp = (tch_exc_stack*) stktop - 1;                // offset exc_stack size (size depends on floating point option)
-	exc_sp = (tch_exc_stack*)((int) exc_sp & ~7);
-	mset(exc_sp,0,sizeof(tch_exc_stack));
+void* tch_port_makeInitialContext(uwaddr_t uthread_header, uwaddr_t stktop, uwaddr_t initfn) {
+	tch_exc_stack* exc_sp = (tch_exc_stack*)stktop - 1;                // offset exc_stack size (size depends on floating point option)
+	exc_sp = (tch_exc_stack*)((int)exc_sp & ~7);
+	mset(exc_sp, 0, sizeof(tch_exc_stack));
 	exc_sp->Return = (uint32_t)initfn;
 	exc_sp->xPSR = EPSR_THUMB_MODE;
-	exc_sp->R0 = (uint32_t) uthread_header;
+	exc_sp->R0 = (uint32_t)uthread_header;
 	exc_sp->R1 = tchOK;
 
-	tch_thread_context* th_ctx = (tch_thread_context*) exc_sp - 1;
-	mset(th_ctx,0,sizeof(tch_thread_context));
-	return (uint32_t*) th_ctx;
+	tch_thread_context* th_ctx = (tch_thread_context*)exc_sp - 1;
+	mset(th_ctx, 0, sizeof(tch_thread_context));
+	return (uint32_t*)th_ctx;
 }
 /**
  * read
  */
-int tch_port_exclusiveCompareUpdate(uwaddr_t dest,uword_t comp,uword_t update){
+int tch_port_exclusiveCompareUpdate(uwaddr_t dest, uword_t comp, uword_t update) {
 	int result = 0;
 	asm volatile(
-			"push {r4-r6}\n"
-			"__exCmpUpdate:\n"
-			"LDREX r4,[r0]\n"       // read dest exclusively
-			"CMP r4,r1\n"           // compare read val to comp
-			"ITTEE EQ\n"            // if equal
-			"STREXEQ r6,r2,[r0]\n"  // update dest with new one
-			"LDREQ r5,=#1\n"        // return 0
-			"STREXNE r6,r4,[r0]\n"  // else update previous value
-			"LDRNE r5,=#0\n"        // return 1
-			"CMP r6,#0\n"
-			"BNE __exCmpUpdate\n"
-			"mov %0,r5\n"
-			"pop {r4-r6}" : "=r"(result) :  : "r4","r5","r6");
+		"push {r4-r6}\n"
+		"__exCmpUpdate:\n"
+		"LDREX r4,[r0]\n"       // read dest exclusively
+		"CMP r4,r1\n"           // compare read val to comp
+		"ITTEE EQ\n"            // if equal
+		"STREXEQ r6,r2,[r0]\n"  // update dest with new one
+		"LDREQ r5,=#1\n"        // return 0
+		"STREXNE r6,r4,[r0]\n"  // else update previous value
+		"LDRNE r5,=#0\n"        // return 1
+		"CMP r6,#0\n"
+		"BNE __exCmpUpdate\n"
+		"mov %0,r5\n"
+		"pop {r4-r6}" : "=r"(result) :  : "r4", "r5", "r6");
 	return result;
 }
 
-int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp){
+int tch_port_exclusiveCompareDecrement(uwaddr_t dest, uword_t comp) {
 	int result = 0;
 	asm volatile(
-			"push {r4-r6}\n"
-			"_exCmpDec:\n"
-			"LDREX r4,[r0]\n"
-			"CMP r4,r1\n"
-			"ITTE NE\n"
-			"SUBNE r4,r4,#1\n"
-			"LDRNE r5,=#1\n"
-			"LDREQ r5,=#0\n"
-			"STREX r6,r4,[r0]\n"
-			"CMP r6,#0\n"
-			"BNE _exCmpDec\n"
-			"mov %0,r5\n"
-			"pop {r4-r6}\n" : "=r"(result) : : "r4","r5","r6");
+		"push {r4-r6}\n"
+		"_exCmpDec:\n"
+		"LDREX r4,[r0]\n"
+		"CMP r4,r1\n"
+		"ITTE NE\n"
+		"SUBNE r4,r4,#1\n"
+		"LDRNE r5,=#1\n"
+		"LDREQ r5,=#0\n"
+		"STREX r6,r4,[r0]\n"
+		"CMP r6,#0\n"
+		"BNE _exCmpDec\n"
+		"mov %0,r5\n"
+		"pop {r4-r6}\n" : "=r"(result) : : "r4", "r5", "r6");
 	return result;
 }
 
 
 
-void SVC_Handler(void){
+void SVC_Handler(void) {
 	tch_exc_stack* exsp = (tch_exc_stack*)__get_PSP();
-	tch_kernel_onSyscall(exsp->R0,exsp->R1,exsp->R2,exsp->R3);
+	tch_kernel_onSyscall(exsp->R0, exsp->R1, exsp->R2, exsp->R3);
 }
 
-int tch_port_clearFault(int type){
-	switch(type){
+int tch_port_clearFault(int type) {
+	switch (type) {
 	case FAULT_HARD:
 		break;
 	case FAULT_BUS:
@@ -347,55 +347,68 @@ int tch_port_clearFault(int type){
 	return 0;
 }
 
-void inline tch_port_updateProtectionEntry(struct pte* ptep){
+void inline tch_port_updateProtectionEntry(struct pte* ptep) {
+#if __MPU_PRESENT
 	MPU->RNR = ptep->baddr & MPU_RBAR_REGION_Msk;
 	MPU->RASR &= ~MPU_RASR_ENABLE_Msk;			// disable mpu region
 
 	MPU->RBAR = ptep->baddr;					// setup base address
 	MPU->RASR = ptep->attr;						// setup attribute
 	__ISB();
+#endif
 }
 
-int tch_port_reset(){
+int tch_port_reset()
+{
 	return 0;
 }
 
-void tch_port_loadPageTable(pgd_t* pgd){
-	struct pgd* pgdp = (struct pgd*) pgd;
+void tch_port_loadPageTable(pgd_t* pgd)
+{
+#if __MPU_PRESENT
+
+	struct pgd* pgdp = (struct pgd*)pgd;
 	uint8_t idx = 0;
-	for(;idx < NR_PAGE_ENTRY;idx++){
+	for (;idx < NR_PAGE_ENTRY;idx++) {
 		tch_port_updateProtectionEntry(&pgdp->_pte[idx]);
 	}
+#endif
 }
 
 
-pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc){
+pgd_t* tch_port_allocPageDirectory(kernel_alloc_t alloc)
+{
+#if __MPU_PRESENT
 	struct pgd* pgdp = alloc(sizeof(struct pgd));
 	uint8_t i;
-	for(i = 0;i < NR_PAGE_ENTRY;i++){
+	for (i = 0;i < NR_PAGE_ENTRY;i++) {
 		pgdp->_pte[i].value = -1;
 	}
 	pgdp->dynamic_idx = 0;
-	return (pgd_t*) pgdp;
+	return (pgd_t*)pgdp;
+#else
+	return (pgd_t*) NULL;
+#endif
 }
 
-int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
-	if(!pgd || !poffset)
+int tch_port_addPageEntry(pgd_t* pgd, uint32_t poffset, uint32_t flag) {
+#if __MPU_PRESENT
+	if (!pgd || !poffset)
 		return FALSE;
-	struct pgd* pgdp = (struct pgd*) pgd;
+	struct pgd* pgdp = (struct pgd*)pgd;
 
 	uint8_t idx;
-	switch(flag & SECTION_MSK){
+	switch (flag & SECTION_MSK) {
 	case SECTION_DYNAMIC:
 		// check page is already in the table
-		for(idx = PE_DYNAMIC;idx < NR_PAGE_ENTRY;idx++){
-			if(((uint32_t)pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)){
+		for (idx = PE_DYNAMIC;idx < NR_PAGE_ENTRY;idx++) {
+			if (((uint32_t)pgdp->_pte[idx].baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)) {
 				return FALSE;
 			}
 		}
 		idx = pgdp->dynamic_idx + PE_DYNAMIC;
 		pgdp->dynamic_idx++;
-		if(pgdp->dynamic_idx >= NR_PAGE_ENTRY)
+		if (pgdp->dynamic_idx >= NR_PAGE_ENTRY)
 			pgdp->dynamic_idx = PE_DYNAMIC;
 		break;
 	case SECTION_TEXT:
@@ -414,9 +427,10 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
 	pgdp->_pte[idx].value = 0;
 
 	attr &= ~MPU_RASR_TEX_Msk;
-	if(flag & SEGMENT_DEVICE) {
+	if (flag & SEGMENT_DEVICE) {
 		attr |= (MPU_RASR_B_Msk | MPU_RASR_S_Msk);
-	} else {
+	}
+	else {
 		switch (get_memtype(flag)) {
 		case MEMTYPE_INROM:
 			attr |= MPU_RASR_C_Msk;
@@ -434,14 +448,14 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
 	}
 
 	attr |= (flag & (PERM_KERNEL_XC | PERM_OTHER_XC | PERM_OWNER_XC)) ? 0 : MPU_RASR_XN_Msk;	// instruction fetch
-	if(!(flag & (PERM_KERNEL_WR | PERM_OWNER_WR)))
+	if (!(flag & (PERM_KERNEL_WR | PERM_OWNER_WR)))
 		attr |= (4 << MPU_RASR_AP_Pos);				// read only
 	attr |= (2 << MPU_RASR_AP_Pos);
 	attr |= (flag & PERM_OWNER_WR) ? (1 << MPU_RASR_AP_Pos) : 0;
 	attr |= (MPU_RASR_SIZE_Msk & PAGE_OFFSET);
 	attr |= MPU_RASR_ENABLE_Msk;
 
-	address = ((uint32_t) poffset << PAGE_OFFSET)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
+	address = ((uint32_t)poffset << PAGE_OFFSET)  | (idx & MPU_RBAR_REGION_Msk)/* | MPU_RBAR_VALID_Msk*/;		// region valid is cleared
 
 	pgdp->_pte[idx].baddr = address;
 	pgdp->_pte[idx].attr = attr;
@@ -452,15 +466,19 @@ int tch_port_addPageEntry(pgd_t* pgd,uint32_t poffset,uint32_t flag){
 	tch_port_updateProtectionEntry(&pgdp->_pte[idx]);
 	idx++;
 	return TRUE;
+#else
+	return FALSE;
+#endif
 }
 
-int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
+int tch_port_removePageEntry(pgd_t* pgd, uint32_t poffset) {
+#if __MPU_PRESENT
 	uint8_t idx;
-	struct pgd* pgdp = (struct pgd*) pgd;
+	struct pgd* pgdp = (struct pgd*)pgd;
 	struct pte* ptep;
-	for(idx = 0;idx < NR_PAGE_ENTRY; idx++) {
+	for (idx = 0;idx < NR_PAGE_ENTRY; idx++) {
 		ptep = &pgdp->_pte[idx];
-		if(((uint32_t)ptep->baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)){
+		if (((uint32_t)ptep->baddr & MPU_RBAR_ADDR_Msk) == ((uint32_t)poffset << PAGE_OFFSET)) {
 			ptep->attr &= ~MPU_RASR_ENABLE_Msk;			// clear enable bit
 			tch_port_updateProtectionEntry(ptep);
 			ptep->value = 0;
@@ -468,29 +486,32 @@ int tch_port_removePageEntry(pgd_t* pgd,uint32_t poffset){
 		}
 	}
 	return -1;
+#else 
+	return -1;
+#endif
 }
 
 
-void HardFault_Handler(){
-	tch_kernel_onHardException(FAULT_HARD,SPEC_UND);
+void HardFault_Handler() {
+	tch_kernel_onHardException(FAULT_HARD, SPEC_UND);
 }
 
-void MemManage_Handler(){
+void MemManage_Handler() {
 	uint32_t mfault = (SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) >> SCB_CFSR_MEMFAULTSR_Pos;
 	paddr_t pa = 0;
 	int spec = 0;
-	if(mfault & 2)
+	if (mfault & 2)
 		spec = SPEC_DACCESS;
-	else if(mfault & 1)
+	else if (mfault & 1)
 		spec = SPEC_IACCESS;
-	else if(mfault & (1 << 4))
+	else if (mfault & (1 << 4))
 		spec = SPEC_STK;
-	else if(mfault & (1 << 3))
+	else if (mfault & (1 << 3))
 		spec = SPEC_UNSTK;
-	if(mfault & (1 << 7))	// if fault address is valid, handled in page fault
+	if (mfault & (1 << 7))	// if fault address is valid, handled in page fault
 	{
-		pa = (paddr_t) SCB->MMFAR;
-		tch_kernel_onMemFault(pa,FAULT_MEM,spec);
+		pa = (paddr_t)SCB->MMFAR;
+		tch_kernel_onMemFault(pa, FAULT_MEM, spec);
 	}
 	else
 	{
@@ -498,22 +519,22 @@ void MemManage_Handler(){
 	}
 }
 
-void BusFault_Handler(){
+void BusFault_Handler() {
 	uint32_t bfault = (SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) >> SCB_CFSR_BUSFAULTSR_Pos;
 	int spec = 0;
-	if(bfault & (1 << 4))
+	if (bfault & (1 << 4))
 		spec = SPEC_STK;
-	else if(bfault & (1 << 3))
+	else if (bfault & (1 << 3))
 		spec = SPEC_UNSTK;
-	else if(bfault & (1 << 2))
+	else if (bfault & (1 << 2))
 		spec = SPEC_UND;
-	else if(bfault & 2)
+	else if (bfault & 2)
 		spec = SPEC_DACCESS;
-	else if(bfault & 1)
+	else if (bfault & 1)
 		spec = SPEC_IACCESS;
-	tch_kernel_onHardException(FAULT_BUS,spec);
+	tch_kernel_onHardException(FAULT_BUS, spec);
 }
 
-void UsageFault_Handler(){
+void UsageFault_Handler() {
 	tch_kernel_onHardException(FAULT_ILLSTATE, SPEC_UND);
 }
