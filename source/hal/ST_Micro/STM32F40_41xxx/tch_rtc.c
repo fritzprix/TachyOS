@@ -77,8 +77,8 @@ static void tch_rtc_exit(void);
 
 static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* localtm);
 static tchStatus tch_rtc_close(tch_rtcHandle* self);
-static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* localtm,BOOL force);
-static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* localtm);
+static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* localtm,BOOL force, tch_timezone zone);
+static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* localtm, tch_timezone zone);
 static tchStatus tch_rtc_enablePeriodicWakeup(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 static tchStatus tch_rtc_disablePeriodicWakeup(tch_rtcHandle* self);
 
@@ -212,7 +212,7 @@ static tchStatus tch_rtc_close(tch_rtcHandle* self)
 	return tchOK;
 }
 
-static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* ltm,BOOL force)
+static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* ltm,BOOL force, tch_timezone zone)
 {
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	uint32_t dr = 0;
@@ -261,7 +261,7 @@ static tchStatus tch_rtc_setTime(tch_rtcHandle* self,struct tm* ltm,BOOL force)
 	return tchOK;
 }
 
-static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm)
+static tchStatus tch_rtc_getTime(tch_rtcHandle* self,struct tm* ltm, tch_timezone zone)
 {
 	tch_rtc_handle_prototype* ins = (tch_rtc_handle_prototype*) self;
 	tchStatus result;

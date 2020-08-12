@@ -32,8 +32,8 @@ typedef struct tch_rtc_handle tch_rtcHandle;
 typedef void (*tch_rtc_wkupHandler)(void);
 struct tch_rtc_handle {
 	tchStatus (*close)(tch_rtcHandle* self);
-	tchStatus (*setTime)(tch_rtcHandle* self,struct tm* localtm,BOOL force);
-	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* localtm);
+	tchStatus (*setTime)(tch_rtcHandle* self,struct tm* localtm,BOOL force, tch_timezone zone);
+	tchStatus (*getTime)(tch_rtcHandle* self,struct tm* localtm, tch_timezone zone);
 	tchStatus (*enablePeriodicWakeup)(tch_rtcHandle* self,uint16_t periodInSec,tch_rtc_wkupHandler handler);
 	tchStatus (*disablePeriodicWakeup)(tch_rtcHandle* self);
 };
