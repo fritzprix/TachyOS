@@ -174,7 +174,7 @@ static tchStatus tch_systime_getWorldTime(time_t* tp)
 	if (!tp)
 		return tchErrorParameter;
 	struct tm ltm;
-	rtcHandle->getTime(rtcHandle, &ltm);
+	rtcHandle->getTime(rtcHandle, &ltm, current_tz);
 	*tp = tch_time_broken_to_gmt_epoch(&ltm, current_tz);
 	return tchOK;
 }
@@ -197,7 +197,7 @@ static tchStatus tch_systime_setWorldTime(const time_t epoch_gmt)
 static tch_timezone tch_systime_setTimezone(const tch_timezone tz)
 {
 	tch_timezone prev_tz = current_tz;
-		current_tz = tz;
+	current_tz = tz;
 	struct tm ltm;
 	tch_time_gmt_epoch_to_broken((time_t*)&gmt_epoch, &ltm, current_tz);
 	if (rtcHandle)

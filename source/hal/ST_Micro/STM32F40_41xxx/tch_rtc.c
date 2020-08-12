@@ -172,7 +172,7 @@ static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* ltm)
 	ins->env = env;
 	tch_rtcValidate(ins);
 
-	tch_rtc_setTime((tch_rtcHandle*) ins,ltm,TRUE);
+	tch_rtc_setTime((tch_rtcHandle*) ins,ltm,TRUE, UTC_P9);
 	RTC->ISR &= ~RTC_ISR_INIT;
 	return (tch_rtcHandle*) ins;
 }
