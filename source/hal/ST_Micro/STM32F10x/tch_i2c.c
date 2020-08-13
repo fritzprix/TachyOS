@@ -258,7 +258,7 @@ __USER_API__ static tch_iicHandle_t* tch_IIC_alloc(const tch_core_api_t* env,tch
 	gpio->initCfg(&iocfg);
 	iocfg.Af = iicbs->afv;
 	iocfg.Mode = GPIO_Mode_AF;
-	iocfg.Speed = GPIO_OSpeed_25M;
+	iocfg.Speed = GPIO_OSpeed_LEVEL1;
 	iocfg.popt = popt;
 	ins->iohandle = gpio->allocIo(env,iicbs->port,((1 << iicbs->scl) | (1 << iicbs->sda)),&iocfg,timeout);
 

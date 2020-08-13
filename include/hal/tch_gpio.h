@@ -57,10 +57,10 @@ extern "C" {
 #define GPIO_Otype_OD                   (uint8_t) (1)
 
 
-#define GPIO_OSpeed_2M                  (uint8_t) (0)
-#define GPIO_OSpeed_25M                 (uint8_t) (1)
-#define GPIO_OSpeed_50M                 (uint8_t) (2)
-#define GPIO_OSpeed_100M                (uint8_t) (3)
+#define GPIO_OSpeed_LEVEL0               (uint8_t) (0)
+#define GPIO_OSpeed_LEVEL1               (uint8_t) (1)
+#define GPIO_OSpeed_LEVEL2               (uint8_t) (2)
+#define GPIO_OSpeed_LEVEL3               (uint8_t) (3)
 
 #define GPIO_PuPd_Float                 (uint8_t) (0)
 #define GPIO_PuPd_PU                    (uint8_t) (1)
