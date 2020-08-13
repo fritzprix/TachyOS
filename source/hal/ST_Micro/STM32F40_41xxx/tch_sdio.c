@@ -495,7 +495,7 @@ static tch_sdioHandle_t tch_sdio_alloc(const tch_core_api_t* api, const tch_sdio
 	ioconfig.Mode = GPIO_Mode_AF;
 	ioconfig.Otype = GPIO_Otype_PP;
 	ioconfig.popt = config->lpopt;
-	ioconfig.Speed = GPIO_OSpeed_100M;
+	ioconfig.Speed = GPIO_OSpeed_LEVEL3;
 	ioconfig.Af = sdio_bs->afv;
 	ins->data_port = gpio->allocIo(api, SDIO_DATA_PORT, (1 << SDIO_D0_PIN | 1 << SDIO_D1_PIN |
 			                                             1 << SDIO_D2_PIN | 1 << SDIO_D3_PIN | 

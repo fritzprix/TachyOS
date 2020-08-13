@@ -67,9 +67,10 @@ const uint32_t AF_REMAP_MASK[] =  {
 
 #define GPIO_Otype_Msk (GPIO_Otype_PP | GPIO_Otype_OD)
 
-#define GPIO_OSpeed_Msk (GPIO_OSpeed_2M |  \
-						 GPIO_OSpeed_50M | \
-						 GPIO_OSpeed_10M)
+#define GPIO_OSpeed_Msk (GPIO_OSpeed_LEVEL0 |  \
+						 GPIO_OSpeed_LEVEL1 | \
+						 GPIO_OSpeed_LEVEL2 | \
+						 GPIO_OSpeed_LEVEL3)
 
 #define GPIO_PuPd_Msk (GPIO_PuPd_Float | \
 					   GPIO_PuPd_PU |    \

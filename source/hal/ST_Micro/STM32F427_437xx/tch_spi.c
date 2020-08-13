@@ -180,7 +180,7 @@ __USER_API__ static tch_spiHandle_t* tch_spi_open(const tch_core_api_t* env,spi_
 	}
 	mset(ins,0,sizeof(tch_spi_handle_prototype));
 	iocfg.Af = spibs->afv;
-	iocfg.Speed = GPIO_OSpeed_100M;
+	iocfg.Speed = GPIO_OSpeed_LEVEL3;
 	iocfg.Mode = GPIO_Mode_AF;
 	iocfg.popt = popt;
 

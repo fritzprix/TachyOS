@@ -48,7 +48,7 @@ static DECLARE_THREADROUTINE(evgenRoutine){
 	iocfg.Mode = GPIO_Mode_OUT;
 	iocfg.Otype = GPIO_Otype_OD;
 	iocfg.PuPd = GPIO_PuPd_Float;
-	iocfg.Speed = GPIO_OSpeed_50M;
+	iocfg.Speed = GPIO_OSpeed_LEVEL2;
 	tch_gpioHandle* out = gpio->allocIo(ctx,tch_gpio1,outp,&iocfg,tchWaitForever);    // set pin 8 @ port b as output
 
 
@@ -67,7 +67,7 @@ static DECLARE_THREADROUTINE(evconsRoutine){
 	gpio->initCfg(&iocfg);
 	iocfg.Mode = GPIO_Mode_IN;
 	iocfg.PuPd = GPIO_PuPd_PU;
-	iocfg.Speed = GPIO_OSpeed_50M;
+	iocfg.Speed = GPIO_OSpeed_LEVEL2;
 	in = gpio->allocIo(ctx,tch_gpio0,inp,&iocfg,tchWaitForever);  // set pin 2 @ port a as input
 
 	gpio_event_config_t evcfg;
