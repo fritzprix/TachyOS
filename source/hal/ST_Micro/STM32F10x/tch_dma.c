@@ -203,12 +203,18 @@ __USER_API__ static void tch_dma_initReq(tch_DmaReqDef* attr,uwaddr_t maddr,uwad
 __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,dma_t dma,tch_DmaCfg* cfg,uint32_t timeout,tch_PwrOpt pcfg){
 	tch_dma_handle_prototype* ins;
 	if(dma == DMA_NOT_USED)
+	{
 		return NULL;
+	}
 	if(Mtx->lock(&mutex,timeout) != tchOK)
+	{
 		return NULL;
+	}
 	while(occp_state & (1 << dma)){
-		if(Condv->wait(&condvb,&mutex,timeout) != tchOK)
+		if(Condv->wait(&condvb,&mutex,timeout) != tchOK) 
+		{
 			return NULL;
+		}
 	}
 	occp_state |= (1 << dma);
 	Mtx->unlock(&mutex);
@@ -234,15 +240,13 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,d
 
 	dma_desc->_handle = ins;             // initializing dma handle object
 
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)dma_desc->_hw;   // initializing dma H/w Started
-	dmaHw->CR |= ((cfg->Ch << DMA_Ch_Pos) | (cfg->Dir << DMA_Dir_Pos) | (cfg->FlowCtrl << DMA_FlowControl_Pos));
-	dmaHw->CR |= ((cfg->mBurstSize << DMA_MBurst_Pos) | (cfg->pBurstSize << DMA_PBurst_Pos));
-	dmaHw->CR |= ((cfg->mAlign << DMA_MDataAlign_Pos) | (cfg->pAlign << DMA_PDataAlign_Pos));
-	dmaHw->CR |= ((cfg->mInc << DMA_Minc_Pos) | (cfg->pInc << DMA_Pinc_Pos));
-	dmaHw->CR |= cfg->Priority << DMA_Prior_Pos;
-	dmaHw->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
-
-	dmaHw->FCR = DMA_SxFCR_FTH | DMA_SxFCR_DMDIS;
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) dma_desc->_hw;   // initializing dma H/w Started
+	dmaHw->CCR |= ((cfg->Ch << DMA_Ch_Pos) | (cfg->Dir << DMA_Dir_Pos) | (cfg->FlowCtrl << DMA_FlowControl_Pos));
+	dmaHw->CCR |= ((cfg->mBurstSize << DMA_MBurst_Pos) | (cfg->pBurstSize << DMA_PBurst_Pos));
+	dmaHw->CCR |= ((cfg->mAlign << DMA_MDataAlign_Pos) | (cfg->pAlign << DMA_PDataAlign_Pos));
+	dmaHw->CCR |= ((cfg->mInc << DMA_Minc_Pos) | (cfg->pInc << DMA_Pinc_Pos));
+	dmaHw->CCR |= cfg->Priority << DMA_Prior_Pos;
+	dmaHw->CCR |= DMA_CCRx_TCIE | DMA_CCRx_TEIE;
 
 	// TODO : put dummy handler because isr remap is not supported currently, however, consider supporting it
 	tch_enableInterrupt(dma_desc->irq,PRIORITY_2,NULL);
@@ -270,7 +274,7 @@ __USER_API__ static uint32_t tch_dma_beginXferSync(tch_dmaHandle self,tch_DmaReq
 		result = &evt.status;
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus lresult = tchOK;
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) DMA_HWs[ins->dma]._hw;
 
 
 	if((*result = ins->api->Mtx->lock(&ins->lock,timeout)) != tchOK)
@@ -287,15 +291,15 @@ __USER_API__ static uint32_t tch_dma_beginXferSync(tch_dmaHandle self,tch_DmaReq
 	ins->api->MsgQ->reset(ins->dma_mq);
 
 	tch_dma_setDmaRequest(dmaHw,req);  // configure DMA
-	dmaHw->CR |= DMA_SxCR_EN;       // trigger dma tranfer in system task thread
+	dmaHw->CCR |= DMA_CCRx_EN;       // trigger dma tranfer in system task thread
 
 	evt = ins->api->MsgQ->get(ins->dma_mq,timeout);
 	*result = evt.status;
 	if(evt.status != tchEventMessage){
-		residue = dmaHw->NDTR;
+		residue = dmaHw->CNDTR;
 	}
 
-	dmaHw->CR &= ~DMA_SxCR_EN;
+	dmaHw->CCR &= ~DMA_CCRx_EN;
 
 	ins->api->Mtx->lock(&ins->lock,timeout);   // lock mutex for condition variable operation
 	DMA_CLR_BUSY(ins);                 // clear DMA Busy and wake waiting thread
@@ -313,7 +317,7 @@ __USER_API__ static tchStatus tch_dma_beginXferAsync(tch_dmaHandle self, tch_Dma
 		return tchErrorParameter;
 
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) DMA_HWs[ins->dma]._hw;
 	tchStatus res;
 
 	if((res = ins->api->Mtx->lock(&ins->lock,tchWaitForever)) != tchOK)
@@ -338,7 +342,7 @@ __USER_API__ static tchStatus tch_dma_beginXferAsync(tch_dmaHandle self, tch_Dma
 	ins->api->MsgQ->reset(ins->dma_mq);
 
 	tch_dma_setDmaRequest(dmaHw, req);
-	dmaHw->CR |= DMA_SxCR_EN;       // trigger dma tranfer in system task thread
+	dmaHw->CCR |= DMA_CCRx_EN;       // trigger dma tranfer in system task thread
 
 	ins->api->Mtx->lock(&ins->lock, tchWaitForever);
 	DMA_CLR_BUSY(ins);
@@ -350,13 +354,17 @@ __USER_API__ static tchStatus tch_dma_beginXferAsync(tch_dmaHandle self, tch_Dma
 __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t timeout)
 {
 	if(!self)
+	{
 		return tchErrorParameter;
+	}
 	if(!tch_dma_isValid(self))
+	{
 		return tchErrorParameter;
+	}
 
 
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*)DMA_HWs[ins->dma]._hw;
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) DMA_HWs[ins->dma]._hw;
 	tchEvent evt;
 
 	if((evt.status = ins->api->Mtx->lock(&ins->lock,timeout)) != tchOK)
@@ -378,7 +386,7 @@ __USER_API__ static tchStatus tch_dma_waitComplete(tch_dmaHandle self, uint32_t 
 	}
 
 	evt = ins->api->MsgQ->get(ins->dma_mq, timeout);
-	dmaHw->CR &= ~DMA_SxCR_EN;
+	dmaHw->CCR &= ~DMA_CCRx_EN;
 
 
 	ins->api->Mtx->lock(&ins->lock, timeout);
@@ -396,15 +404,23 @@ __USER_API__ static tchStatus tch_dma_close(tch_dmaHandle self){
 	tch_dma_handle_prototype* ins = (tch_dma_handle_prototype*) self;
 	tchStatus result = tchOK;
 	if(!tch_dma_isValid(ins))
+	{
 		return tchErrorResource;
+	}
+
 	const tch_core_api_t* env = ins->api;
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) DMA_HWs[ins->dma]._hw;
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) DMA_HWs[ins->dma]._hw;
 	// wait until dma is busy
-	if((result = env->Mtx->lock(&ins->lock,tchWaitForever)) != tchOK)
+	if((result = env->Mtx->lock(&ins->lock,tchWaitForever)) != tchOK) 
+	{
 		return result;
-	while(DMA_IS_BUSY(ins)){
+	}
+	while(DMA_IS_BUSY(ins))
+	{
 		if((result = env->Condv->wait(&ins->condWait,&ins->lock,tchWaitForever)) != tchOK)
+		{
 			return result;
+		}
 	}
 	tch_dma_invalidate(ins);
 	tch_mutexDeinit(&ins->lock);
@@ -448,22 +464,29 @@ static inline BOOL tch_dma_isValid(tch_dma_handle_prototype* _handle){
 
 
 static BOOL tch_dma_setDmaRequest(void* _dmaHw,tch_DmaReqDef* attr){
-	DMA_Stream_TypeDef* dmaHw = (DMA_Stream_TypeDef*) _dmaHw;
-	dmaHw->NDTR = attr->size;
-	dmaHw->M0AR = (uint32_t)attr->MemAddr[0];
-	dmaHw->M1AR = (uint32_t)attr->MemAddr[1];
-	dmaHw->PAR = (uint32_t)attr->PeriphAddr[0];
+	DMA_Channel_TypeDef* dmaHw = (DMA_Channel_TypeDef*) _dmaHw;
+	dmaHw->CNDTR = attr->size;
+	dmaHw->CMAR = ((uint32_t) attr->MemAddr[0] | ((uint32_t) attr->MemAddr[1] << 16));
+	dmaHw->CPAR = (uint32_t) attr->PeriphAddr[0];
 
-	if(attr->MemInc)
-		dmaHw->CR |= DMA_SxCR_MINC;
-	else
-		dmaHw->CR &= ~DMA_SxCR_MINC;
-	dmaHw->CR = ((dmaHw->CR & ~DMA_SxCR_DIR) | (attr->Dir << 6));
+	if(attr->MemInc)  
+	{
+		dmaHw->CCR |= DMA_CCRx_MINC;
+	}
+	else 
+	{
+		dmaHw->CCR &= ~DMA_CCRx_MINC;
+	} 
+	dmaHw->CCR = ((dmaHw->CCR & ~DMA_CCRx_DIR) | (attr->Dir << 4));
 
-	if(attr->PeriphInc)
-		dmaHw->CR |= DMA_SxCR_PINC;
-	else
-		dmaHw->CR &= ~DMA_SxCR_PINC;
+	if(attr->PeriphInc) 
+	{
+		dmaHw->CCR |= DMA_CCRx_PINC;
+	}
+	else 
+	{
+		dmaHw->CCR &= ~DMA_CCRx_PINC;
+	}
 
 	__ISB();
 	__DMB();
