@@ -253,8 +253,8 @@ static tch_adcHandle* tch_adc_open(const tch_core_api_t* env,adc_t adc,tch_adcCf
 
 	ins->timer = timer->openPWM(env,adcBs->timer,&pwmDef,timeout);
 
-	ins->isr_msk |= ADC_SR_OVR | ADC_SR_EOC;
-	adcHw->CR1 |= (cfg->Precision << ADC_Precision_Pos) | ADC_CR1_OVRIE | ADC_CR1_EOCIE;
+	ins->isr_msk |= ADC_SR_EOC;
+	adcHw->CR1 |= (cfg->Precision << ADC_Precision_Pos) | ADC_CR1_EOCIE;
 	adcHw->CR2 |= (ADC_CR2_ADON | (adcBs->timerExtsel << ADC_CR2_EXTSEL_Pos));
 
 	ins->pix.close = tch_adc_close;
@@ -391,7 +391,6 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 	tch_adc_setRegChannel(adcDesc,ch,1);
 	//enable dma
 	adcHw->CR2 |= ADC_CR2_DMA;
-	adcHw->CR2 |= ADC_CR2_EXTEN_0;
 	tch_DmaReqDef dmaReq;
 	uint16_t* chnk = NULL;
 	while(convCnt--)
@@ -416,7 +415,6 @@ static tchStatus tch_adc_burstConvert(const tch_adcHandle* self,uint8_t ch, tch_
 	evt.status = tchOK;
 	SET_SAFE_EXIT();
 	adcHw->CR2 &= ~ADC_CR2_DMA;
-	adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
 	ins->env->Mtx->lock(ins->mtx,tchWaitForever);
 	ADC_clrBusy(ins);
 	ins->env->Condv->wakeAll(ins->condv);
@@ -499,12 +497,6 @@ static BOOL tch_adc_handleInterrupt(tch_adc_descriptor* adcDesc,tch_adc_handle_p
 		{
 			ins->env->MsgQ->put(ins->msgq,adcHw->DR,0);
 			adcHw->SR &= ~ADC_SR_STRT;
-			adcHw->CR2 &= ~ADC_CR2_EXTEN_0;
-			return TRUE;
-		}
-		if(adcHw->SR & ADC_SR_OVR)
-		{
-			ins->env->MsgQ->put(ins->msgq,ADC_READ_FAIL,0);
 			return TRUE;
 		}
 	}

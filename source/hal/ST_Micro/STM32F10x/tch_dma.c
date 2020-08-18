@@ -223,7 +223,9 @@ __USER_API__ static tch_dmaHandle tch_dma_openStream(const tch_core_api_t* env,d
 
 	tch_dma_descriptor* dma_desc = &DMA_HWs[dma];
 	*dma_desc->_clkenr |= dma_desc->clkmsk;          // clk source is enabled
-	if(pcfg == ActOnSleep){
+
+	if(pcfg == ActOnSleep && dma_desc->_lpclkenr)
+	{
 		lpoccp_state |= (1 << dma);
 		*dma_desc->_lpclkenr |= dma_desc->lpcklmsk;  // if dma should be awaken during sleep, lp clk is enabled
 	}
@@ -436,7 +438,11 @@ __USER_API__ static tchStatus tch_dma_close(tch_dmaHandle self){
 	//check unused dma stream
 
 	*dma_desc->_clkenr &= ~dma_desc->clkmsk;
-	*dma_desc->_lpclkenr &= ~dma_desc->lpcklmsk;
+	if(dma_desc->_lpclkenr) 
+	{
+		*dma_desc->_lpclkenr &= ~dma_desc->lpcklmsk;
+	}
+
 	tch_disableInterrupt(dma_desc->irq);
 
 	DMA_HWs[ins->dma]._handle = NULL;

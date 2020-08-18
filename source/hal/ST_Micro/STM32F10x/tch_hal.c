@@ -34,50 +34,42 @@
 __TCH_STATIC_INIT tch_gpio_descriptor GPIO_HWs[] = {
 		{
 				._hw = GPIOA,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIOAEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIOALPEN,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_IOPAEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
 				.io_ocpstate = 0
 		},
 		{
 				._hw = GPIOB,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIOBEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIOBLPEN,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_IOPBEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
 				.io_ocpstate = 0
 		},
 		{
 				._hw = GPIOC,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIOCEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIOCLPEN,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_IOPCEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
 				.io_ocpstate = 0
 		},
 		{
 				._hw = GPIOD,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIODEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIODLPEN,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_IOPDEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
 				.io_ocpstate = 0
 		},
 		{
 				._hw = GPIOE,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIOEEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIOELPEN,
-				.io_ocpstate = 0
-		},
-		{
-				._hw = GPIOF,
-				._clkenr = &RCC->AHB1ENR,
-				.clkmsk = RCC_AHB1ENR_GPIOFEN,
-				._lpclkenr = &RCC->AHB1LPENR,
-				.lpclkmsk = RCC_AHB1LPENR_GPIOFLPEN,
+				._clkenr = &RCC->APB2ENR,
+				.clkmsk = RCC_APB2ENR_IOPEEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
 				.io_ocpstate = 0
 		}
 };
@@ -159,8 +151,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				0,
@@ -171,8 +163,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				4,
@@ -183,8 +175,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				8,
@@ -195,8 +187,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				12,
@@ -207,8 +199,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				16,
@@ -219,8 +211,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				20,
@@ -231,8 +223,8 @@ __TCH_STATIC_INIT tch_dma_descriptor DMA_HWs[] ={
 				NULL,
 				&RCC->AHBENR,
 				RCC_AHBENR_DMA1EN,
-				&RCC->AHBENR,
-				RCC_AHBENR_DMA1EN,
+				NULL,
+				0,
 				&DMA1->ISR,
 				&DMA1->IFCR,
 				24,
@@ -249,8 +241,8 @@ __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
 				NULL,
 				&RCC->APB2ENR,
 				RCC_APB2ENR_USART1EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_USART1LPEN,
+				NULL,
+				0,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_USART1RST,
 				USART1_IRQn
@@ -260,8 +252,8 @@ __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_USART2EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_USART2LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_USART2RST,
 				USART2_IRQn
@@ -271,8 +263,8 @@ __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_USART3EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_USART3LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_USART3RST,
 				USART3_IRQn
@@ -282,8 +274,8 @@ __TCH_STATIC_INIT tch_uart_descriptor UART_HWs[MFEATURE_UART] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_UART4EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_UART4LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_UART4RST,
 				UART4_IRQn
@@ -299,12 +291,12 @@ __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_TIM2EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM2LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM2RST,
 				4,
-				32,
+				16,
 				0,
 				TIM2_IRQn
 		},
@@ -313,8 +305,8 @@ __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_TIM3EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM3LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM3RST,
 				4,
@@ -327,8 +319,8 @@ __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_TIM4EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM4LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM4RST,
 				4,
@@ -341,8 +333,8 @@ __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_TIM5EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_TIM5LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_TIM5RST,
 				4,
@@ -351,88 +343,32 @@ __TCH_STATIC_INIT tch_timer_descriptor TIMER_HWs[MFEATURE_TIMER] = {
 				TIM5_IRQn
 		},
 		{
-				TIM9,
-				NULL,
-				&RCC->APB2ENR,
-				RCC_APB2ENR_TIM9EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_TIM9LPEN,
-				&RCC->APB2RSTR,
-				RCC_APB2RSTR_TIM9RST,
-				2,
-				16,
-				0,
-				TIM1_BRK_TIM9_IRQn
-		},
-		{
-				TIM10,
-				NULL,
-				&RCC->APB2ENR,
-				RCC_APB2ENR_TIM10EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_TIM10LPEN,
-				&RCC->APB2RSTR,
-				RCC_APB2RSTR_TIM10RST,
-				1,
-				16,
-				0,
-				TIM1_UP_TIM10_IRQn
-		},
-		{
-				TIM11,
-				NULL,
-				&RCC->APB2ENR,
-				RCC_APB2ENR_TIM11EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_TIM11LPEN,
-				&RCC->APB2RSTR,
-				RCC_APB2RSTR_TIM11RST,
-				1,
-				16,
-				0,
-				TIM1_TRG_COM_TIM11_IRQn
-		},
-		{
-				TIM12,
+				TIM6,
 				NULL,
 				&RCC->APB1ENR,
-				RCC_APB1ENR_TIM12EN,
-				&RCC->APB2LPENR,
-				RCC_APB1LPENR_TIM12LPEN,
-				&RCC->APB1RSTR,
-				RCC_APB1RSTR_TIM12RST,
-				2,
-				16,
-				0,
-				TIM8_BRK_TIM12_IRQn
-		},
-		{
-				TIM13,
+				RCC_APB1ENR_TIM6EN,
 				NULL,
-				&RCC->APB1ENR,
-				RCC_APB1ENR_TIM13EN,
-				&RCC->APB2LPENR,
-				RCC_APB1LPENR_TIM13LPEN,
+				0,
 				&RCC->APB1RSTR,
-				RCC_APB1RSTR_TIM13RST,
+				RCC_APB1RSTR_TIM6RST,
 				1,
 				16,
 				0,
-				TIM8_UP_TIM13_IRQn
+				TIM6_IRQn
 		},
 		{
-				TIM14,
+				TIM7,
 				NULL,
 				&RCC->APB1ENR,
-				RCC_APB1ENR_TIM14EN,
-				&RCC->APB2LPENR,
-				RCC_APB1LPENR_TIM14LPEN,
+				RCC_APB1ENR_TIM7EN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
-				RCC_APB1RSTR_TIM14RST,
+				RCC_APB1RSTR_TIM7RST,
 				1,
 				16,
 				0,
-				TIM8_TRG_COM_TIM14_IRQn
+				TIM7_IRQn
 		}
 };
 
@@ -442,8 +378,8 @@ __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI] = {
 				NULL,
 				&RCC->APB2ENR,
 				RCC_APB2ENR_SPI1EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_SPI1LPEN,
+				NULL,
+				0,
 				&RCC->APB2RSTR,
 				RCC_APB2RSTR_SPI1RST,
 				SPI1_IRQn
@@ -453,8 +389,8 @@ __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_SPI2EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_SPI2LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_SPI2RST,
 				SPI2_IRQn
@@ -464,8 +400,8 @@ __TCH_STATIC_INIT tch_spi_descriptor SPI_HWs[MFEATURE_SPI] = {
 				NULL,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_SPI3EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_SPI3LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_SPI3RST,
 				SPI3_IRQn
@@ -479,8 +415,8 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C1EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_I2C1LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_I2C1RST,
 				I2C1_EV_IRQn
@@ -491,23 +427,11 @@ __TCH_STATIC_INIT tch_iic_descriptor IIC_HWs[MFEATURE_IIC] = {
 				0,
 				&RCC->APB1ENR,
 				RCC_APB1ENR_I2C2EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_I2C2LPEN,
+				NULL,
+				0,
 				&RCC->APB1RSTR,
 				RCC_APB1RSTR_I2C2RST,
 				I2C2_EV_IRQn
-		},
-		{
-				I2C3,
-				NULL,
-				0,
-				&RCC->APB1ENR,
-				RCC_APB1ENR_I2C3EN,
-				&RCC->APB1LPENR,
-				RCC_APB1LPENR_I2C3LPEN,
-				&RCC->APB1RSTR,
-				RCC_APB1RSTR_I2C3RST,
-				I2C3_EV_IRQn
 		}
 };
 
@@ -519,33 +443,33 @@ __TCH_STATIC_INIT tch_adc_descriptor ADC_HWs[MFEATURE_ADC] = {
 				NULL,
 				&RCC->APB2ENR,
 				RCC_APB2ENR_ADC1EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_ADC1LPEN,
+				NULL,
+				0,
 				&RCC->APB2RSTR,
-				RCC_APB2RSTR_ADCRST,
-				ADC_IRQn
+				RCC_APB2RSTR_ADC1RST,
+				ADC1_2_IRQn
 		},
 		{
 				ADC2,
 				NULL,
 				&RCC->APB2ENR,
 				RCC_APB2ENR_ADC2EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_ADC2PEN,
+				NULL,
+				0,
 				&RCC->APB2RSTR,
-				RCC_APB2RSTR_ADCRST,
-				ADC_IRQn
+				RCC_APB2RSTR_ADC2RST,
+				ADC1_2_IRQn
 		},
 		{
 				ADC3,
 				NULL,
 				&RCC->APB2ENR,
 				RCC_APB2ENR_ADC3EN,
-				&RCC->APB2LPENR,
-				RCC_APB2LPENR_ADC3LPEN,
+				NULL,
+				0,
 				&RCC->APB2RSTR,
-				RCC_APB2RSTR_ADCRST,
-				ADC_IRQn
+				RCC_APB2RSTR_ADC3RST,
+				ADC3_IRQn
 		}
 };
 
@@ -555,12 +479,12 @@ __TCH_STATIC_INIT tch_sdio_descriptor SDIO_HWs[MFEATURE_SDIO] = {
 		{
 				._sdio = SDIO,
 				._handle = NULL,
-				._clkenr = &RCC->APB2ENR,
-				.clkmsk = RCC_APB2ENR_SDIOEN,
-				._lpclkenr = &RCC->APB2LPENR,
-				.lpclkmsk = RCC_APB2LPENR_SDIOLPEN,
-				._rstr = &RCC->APB2RSTR,
-				.rstmsk = RCC_APB2RSTR_SDIORST,
+				._clkenr = &RCC->AHBENR,
+				.clkmsk = RCC_AHBENR_SDIOEN,
+				._lpclkenr = NULL,
+				.lpclkmsk = 0,
+				._rstr = NULL,
+				.rstmsk = 0,
 				.irq = SDIO_IRQn
 		}
 };
@@ -578,7 +502,7 @@ void tch_hal_disableSystick(){
 
 void tch_hal_setSleepMode(tch_lplvl lplvl){
 	SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
-	PWR->CR &= ~(PWR_CR_LPDS | PWR_CR_FPDS);
+	PWR->CR &= ~PWR_CR_LPDS;
 	switch(lplvl){
 	case LP_LEVEL0:
 		break;
@@ -588,7 +512,7 @@ void tch_hal_setSleepMode(tch_lplvl lplvl){
 		break;
 	case LP_LEVEL2:
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-		PWR->CR |= (PWR_CR_LPDS | PWR_CR_FPDS);
+		PWR->CR |= (PWR_CR_LPDS);
 		break;
 	}
 }
@@ -614,7 +538,7 @@ void tch_hal_resumeSysClock(){
 	while(!(RCC->CR & RCC_CR_HSERDY))
 		__NOP();
 
-	RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;
+	RCC->CFGR |= RCC_CFGR_PLLSRC_HSE;
 	RCC->CR |= RCC_CR_PLLON;
 	while(!(RCC->CR & RCC_CR_PLLRDY))
 		__NOP();
