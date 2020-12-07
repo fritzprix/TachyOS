@@ -141,12 +141,10 @@ static tch_rtcHandle* tch_rtc_open(const tch_core_api_t* env,struct tm* ltm)
 	// RTC Clock source enable
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	PWR->CR |= PWR_CR_DBP;   //enable rtc register access
-
-
-	while(!(RCC->BDCR & RCC_BDCR_LSERDY)) RCC->BDCR |= RCC_BDCR_LSEON;
+	while(!(RCC->CSR & RCC_CSR_LSIRDY)) RCC->CSR |= RCC_CSR_LSION;
 
 	// RTC Clock enable
-	RCC->BDCR |= ((RTC_CLK_LSE << RTC_CLK_Pos) | RCC_BDCR_RTCEN);
+	RCC->BDCR |= ((RTC_CLK_LSI << RTC_CLK_Pos) | RCC_BDCR_RTCEN);
 
 	RTC->WPR = RTC_ACCESS_KEY1;
 	RTC->WPR = RTC_ACCESS_KEY2;    // input access-key
