@@ -78,9 +78,6 @@ const uint32_t PRIORITY_MAP[] = {
 
 static uwaddr_t remapped_isr_table = 0;
 
-
-
-
 struct pte  {
 	union {
 		struct {
@@ -210,16 +207,16 @@ void tch_port_switch(uwaddr_t nth,uwaddr_t cth){
 #if FEATURE_FLOAT > 0
 			"vpush {s16-s31}\n"
 #endif
-			"push {r4-r11,lr}\n"                 ///< save thread context in the thread stack
+			"push {r4-r11}\n"                 ///< save thread context in the thread stack
 			"str sp,[%0]\n"                      ///< store
 
 			"ldr sp,[%1]\n"
-			"pop {r4-r11,lr}\n"
+			"pop {r4-r11}\n"
 #if FEATURE_FLOAT > 0
 			"vpop {s16-s31}\n"
 #endif
 			"ldr r0,=%2\n"
-			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) :"r4","r5","r6","r8","r9","r10", "r11", "lr");
+			"svc #0" : : "r"(&((tch_thread_kheader*) cth)->ctx),"r"(&((tch_thread_kheader*) nth)->ctx),"i"(SV_EXIT_FROM_SWITCH) : "r4","r5","r6","r8","r9","r10", "r11");
 }
 
 
@@ -245,7 +242,7 @@ void tch_port_setJmp(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 	                                                              //  so when this pended thread restores its context, kernel thread result could be retrived from saved stack
 	                                                              //  more detail could be found in context switch function
 
-	org_sp->Return = (uint32_t)routine;                           // 3. modify return address of exc entry stack
+	org_sp->Return = (uint32_t) routine;                           // 3. modify return address of exc entry stack
 	org_sp->xPSR = EPSR_THUMB_MODE;                               // 4. ensure returning to thumb mode
 	__set_PSP((uint32_t)org_sp);                                  // 5. set manpulated exception stack as thread stack pointer
 	__DMB();
@@ -256,11 +253,13 @@ void tch_port_setJmp(uwaddr_t routine,uword_t arg1,uword_t arg2,uword_t arg3){
 
 int tch_port_enterSv(word_t sv_id,uword_t arg1,uword_t arg2,uword_t arg3){
 	asm volatile(
-			"ldr r4,=#1\n"
+			"push {r4}\n"
+			"mov r4,#1\n"
 			"str r4,[%0]\n"
+			"pop {r4}\n"
 			"dmb\n"
 			"isb\n"
-			"svc #0"  :  : "r"(&__VALID_SYSCALL) : "r0","r1","r2","r3","r4" );        // return from sv interrupt and get result from register #0
+			"svc #0"  :  : "r"(&__VALID_SYSCALL) : );     
 	return ((tch_thread_uheader*)current)->kRet;
 }
 
@@ -294,7 +293,7 @@ int tch_port_exclusiveCompareUpdate(uwaddr_t dest,uword_t comp,uword_t update){
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
-			"__exCmpUpdate:\n"
+			"__exCmpUpdate%=:\n"
 			"LDREX r4,[r0]\n"       // read dest exclusively
 			"CMP r4,r1\n"           // compare read val to comp
 			"ITTEE EQ\n"            // if equal
@@ -303,17 +302,17 @@ int tch_port_exclusiveCompareUpdate(uwaddr_t dest,uword_t comp,uword_t update){
 			"STREXNE r6,r4,[r0]\n"  // else update previous value
 			"LDRNE r5,=#0\n"        // return 1
 			"CMP r6,#0\n"
-			"BNE __exCmpUpdate\n"
+			"BNE __exCmpUpdate%=\n"
 			"mov %0,r5\n"
-			"pop {r4-r6}" : "=r"(result) :  : "r4","r5","r6");
+			"pop {r4-r6}" : "=r"(result) :  : );
 	return result;
 }
 
-int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp){
+int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp) {
 	int result = 0;
 	asm volatile(
 			"push {r4-r6}\n"
-			"_exCmpDec:\n"
+			"_exCmpDec%=:\n"
 			"LDREX r4,[r0]\n"
 			"CMP r4,r1\n"
 			"ITTE NE\n"
@@ -322,9 +321,9 @@ int tch_port_exclusiveCompareDecrement(uwaddr_t dest,uword_t comp){
 			"LDREQ r5,=#0\n"
 			"STREX r6,r4,[r0]\n"
 			"CMP r6,#0\n"
-			"BNE _exCmpDec\n"
+			"BNE _exCmpDec%=\n"
 			"mov %0,r5\n"
-			"pop {r4-r6}\n" : "=r"(result) : : "r4","r5","r6");
+			"pop {r4-r6}\n" : "=r"(result) : : );
 	return result;
 }
 

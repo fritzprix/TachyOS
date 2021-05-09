@@ -80,7 +80,6 @@ struct _tch_thread_context {
 	uint32_t R9;
 	uint32_t R10;
 	uint32_t R11;
-	uint32_t LR;
 #if FEATURE_FLOAT > 0
 	float S16;
 	float S17;
@@ -100,9 +99,6 @@ struct _tch_thread_context {
 	float S31;
 #endif
 };
-
-
-
 
 
 #endif /* TCHtch_port_H_ */
