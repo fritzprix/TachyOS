@@ -1,9 +1,26 @@
 # Task Switch in TachyOS (ARMv7m)
 >  Context switch exploits exception exit / entry behavior on target architecture.
 
+## Start initial task
+1. exception entry stack is prepared for new task
+#### prepared exception entry 
+|Registers| Initial Value | Stack Top Pointer <br/> (Task Context) |
+|:-:|:-:|:-:|
+|R4|0| * |
+|R5 ~ R11| 0 | |
+|xPSR| THUMB (1<<24) | |
+|Return Address | address of <br/> runtime init routine for task| 
+| R0 - R4, LR|  DONT CARE | |
+2. enter handler mode (or supervisor mode) using ```SVC```
+3. set ```PSP``` with stack top address from the initial task
+4. pop ```PSP``` by amount of saved context ```R4-R11``` (size of 32 bytes)
+> Note : task context, which is not actually used, is inserted into the stack only for maximization of code reuse. By doing this, we don't have to differentiate the way of stack preparation between ```start_task()``` and ```switch_task()```
+
+
+## Switching Task 
 1. When exception has occurred, the hardware pushes exception entry context```R0 - R3, R12, R14(LR), Return Address, xPSR``` into process stack ```PSP``` ahead of jump to any exception handler
 
-2. if switch is required before returning from exception handler, additional exception entry context is inserted into process stack (just beneath original exception entry frame) to mimick normal exception entry and let hardware to jump switch function on exception return.
+2. if switch is required before returning from exception handler, additional exception entry context is inserted into process stack (just beneath original exception entry frame) to mimick hardware to jump switch function on exception return.
    1. decrement ```PSP``` with size of exception entry stack
    2. fill function parameters for switch function (which is standard C function) into ```R0 - R4``` within the prepared exception entry stack
    3. set return address for the exception entry stack as a function entry of switch function (standard C function)

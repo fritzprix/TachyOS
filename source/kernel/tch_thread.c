@@ -363,12 +363,7 @@ __USER_API__ static void* tch_thread_getArg(){
 	return current->t_arg;
 }
 
-__attribute__((naked)) static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status){
-/*
-#if FEATURE_FLOAT > 0
-	float _force_fctx = 0.0f;
-	_force_fctx += 0.0f;
-#endif*/
+__attribute__((noreturn)) static void __tch_thread_entry(tch_thread_uheader* thr_p,tchStatus status){
 	tchStatus res = thr_p->fn(&thr_p->ctx);
 	__SYSCALL_2(thread_exit,thr_p,res);
 }
